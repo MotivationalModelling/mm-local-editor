@@ -1,0 +1,26 @@
+.drop-area {
+  border: 2px dashed #c6c4c4;
+  width: 50vw;
+  height: 20vh;
+  display: flex;
+  border-radius: 15px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.drop-area p {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.plus-icon {
+  font-size: 100px;
+  color: gray;
+}
+
+.drop-area.drag-over {
+  background-color: #74c2f0;
+  opacity: 70%;
+}

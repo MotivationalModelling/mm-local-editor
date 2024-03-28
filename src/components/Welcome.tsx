@@ -1,13 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
 import { Carousel } from "react-bootstrap";
 import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
+import WelcomeButtons from "./WelcomeButtons";
 
 const LEON_ICON = "/src/assets/img/leon.png";
 
 const Welcome = () => {
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const handleDragOver = (evt: React.DragEvent<HTMLDivElement>) => {
+    evt.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
   return (
-    <>
+    <div
+      className="over-container d-flex h-100 p-3  flex-column"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
       <WelcomeHeader />
       <main role="main" className="inner cover">
         <Carousel>
@@ -64,9 +80,10 @@ const Welcome = () => {
             </div>
           </Carousel.Item>
         </Carousel>
+        <WelcomeButtons isDragging={isDragging} setIsDragging={setIsDragging} />
       </main>
       <WelcomeFooter destination="papers" name="Papers" />
-    </>
+    </div>
   );
 };
 
