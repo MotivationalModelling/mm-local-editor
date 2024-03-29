@@ -120,7 +120,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
         <>
           <Link to="/projectEdit">
             <Button variant="primary" size="lg">
-              Create
+              Create Model
             </Button>
           </Link>
           <Button
@@ -129,7 +129,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
             onClick={handleUpload}
             className="align-self-start"
           >
-            Open
+            Open Model
           </Button>
         </>
       )}

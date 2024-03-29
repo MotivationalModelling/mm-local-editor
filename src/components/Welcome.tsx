@@ -34,7 +34,9 @@ const Welcome = () => {
                 alt="leon_icon"
                 style={{ height: "100px", width: "auto" }}
               />
-              <h1 className="cover-heading mt-4 mb-4">Motivational Models</h1>
+              <h1 className="cover-heading mt-4 mb-4">
+                Motivational Models Building Tool
+              </h1>
             </div>
           </Carousel.Item>
           <Carousel.Item>
