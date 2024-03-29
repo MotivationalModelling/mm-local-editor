@@ -14,15 +14,10 @@ const Welcome = () => {
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
   return (
     <div
       className="over-container d-flex h-100 p-3  flex-column"
       onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
     >
       <WelcomeHeader />
       <main role="main" className="inner cover">

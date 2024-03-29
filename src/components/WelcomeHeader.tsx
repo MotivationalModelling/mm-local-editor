@@ -1,7 +1,7 @@
 const WelcomeHeader = () => {
   return (
     <header className="masthead mb-auto">
-      <div className="inner" style={{ paddingBottom: "5vh" }} />
+      <div className="inner" />
     </header>
   );
 };
