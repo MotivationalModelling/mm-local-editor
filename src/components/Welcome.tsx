@@ -3,6 +3,7 @@ import { Carousel } from "react-bootstrap";
 import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
 import WelcomeButtons from "./WelcomeButtons";
+import ErrorModal from "./ErrorModal";
 
 const LEON_ICON = "/src/assets/img/leon.png";
 

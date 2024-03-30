@@ -3,12 +3,29 @@ import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
+import ErrorModal from "./ErrorModal";
 
-const ALERT_MESSAGE = "Please select a file";
+const EMPTY_FILE_ALERT = "Please select a file";
+const XML_FILE_ALERT = "Please select an XML file";
+const JSON_FILE_ALERT = "Please select a JSON file.";
 
 type WelcomeButtonsProps = {
   isDragging: boolean;
   setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+type ModalState = {
+  show: boolean;
+  title: string;
+  message: string;
+  onHide: () => void;
+};
+
+const defaultModalState: ModalState = {
+  show: false,
+  title: "",
+  message: "",
+  onHide: () => {},
 };
 
 const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
@@ -16,6 +33,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
   const [jsonFile, setJsonFile] = useState<File | null>(null);
   const [isXmlDragOver, setIsXmlDragOver] = useState(false);
   const [isJsonDragOver, setIsJsonDragOver] = useState(false);
+  const [errorModal, setErrorModal] = useState<ModalState>(defaultModalState);
 
   const xmlFileRef = useRef<HTMLInputElement>(null);
   const jsonFileRef = useRef<HTMLInputElement>(null);
@@ -50,7 +68,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
   const handleXMLUpload = () => {
     if (xmlFileRef.current) {
-      console.log(xmlFileRef.current);
       xmlFileRef.current.value = "";
       xmlFileRef.current.click();
     }
@@ -66,13 +83,25 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
   const handleXMLFileInputChange = (file: File | undefined) => {
     if (!file) {
       setIsXmlDragOver(false);
-      alert(ALERT_MESSAGE);
+      setErrorModal({
+        ...defaultModalState,
+        show: true,
+        title: "File Upload Failed",
+        message: EMPTY_FILE_ALERT,
+        onHide: () => setErrorModal(defaultModalState),
+      });
       return;
     }
 
     if (file.type !== "text/xml") {
       setIsXmlDragOver(false);
-      alert("Please select an XML file.");
+      setErrorModal({
+        ...defaultModalState,
+        show: true,
+        title: "Incorrect File Type",
+        message: XML_FILE_ALERT,
+        onHide: () => setErrorModal(defaultModalState),
+      });
       return;
     }
 
@@ -82,13 +111,25 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
   const handleJSONFileInputChange = (file: File | undefined) => {
     if (!file) {
       setIsJsonDragOver(false);
-      alert(ALERT_MESSAGE);
+      setErrorModal({
+        ...defaultModalState,
+        show: true,
+        title: "File Upload Failed",
+        message: EMPTY_FILE_ALERT,
+        onHide: () => setErrorModal(defaultModalState),
+      });
       return;
     }
 
     if (file.type !== "application/json") {
       setIsJsonDragOver(false);
-      alert("Please select a JSON file.");
+      setErrorModal({
+        ...defaultModalState,
+        show: true,
+        title: "Incorrect File Type",
+        message: JSON_FILE_ALERT,
+        onHide: () => setErrorModal(defaultModalState),
+      });
       return;
     }
 
@@ -110,6 +151,9 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
       className="d-flex justify-content-center mt-3"
       style={{ height: "100px" }}
     >
+      {/* Error Modal while user upload wrong types or invalid files */}
+      <ErrorModal {...errorModal} />
+
       {/* File Input */}
       <input
         type="file"
@@ -126,7 +170,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
         style={{ display: "none" }}
         ref={jsonFileRef}
       />
-
       {/* Show drop area when files are dragged into the page */}
       {isDragging ? (
         <>
