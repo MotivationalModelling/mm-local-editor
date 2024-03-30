@@ -5,15 +5,13 @@ import ProjectEdit from "./components/ProjectEdit";
 
 const App = () => {
   return (
-    <div id="bg" className=" text-center">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/papers" element={<Papers />} />
-          <Route path="/projectEdit" element={<ProjectEdit />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Welcome />} />
+        <Route path="/papers" element={<Papers />} />
+        <Route path="/projectEdit" element={<ProjectEdit />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

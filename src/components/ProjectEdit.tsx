@@ -1,7 +1,12 @@
-import React from "react";
+import ProjectEditHeader from "./ProjectEditHeader";
+import "./ProjectEdit.css";
 
 const ProjectEdit = () => {
-  return <div>ProjectEdit</div>;
+  return (
+    <div>
+      <ProjectEditHeader />
+    </div>
+  );
 };
 
 export default ProjectEdit;

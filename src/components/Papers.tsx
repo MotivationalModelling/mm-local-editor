@@ -6,7 +6,10 @@ import WelcomeFooter from "./WelcomeFooter";
 
 const Papers = () => {
   return (
-    <div className="cover-container d-flex h-100 p-3 mx-auto flex-column">
+    <div
+      className="cover-container d-flex h-100 p-3 mx-auto flex-column text-center"
+      id="bg"
+    >
       <WelcomeHeader />
       <main role="main" className="inner cover">
         <div>
