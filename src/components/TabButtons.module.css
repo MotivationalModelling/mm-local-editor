@@ -1,0 +1,51 @@
+.tabContainer {
+  width: 50%; /* Limit the container to half the width of the viewport */
+  margin-top: 20vh; /* Assuming the nav bar is about 20% of the viewport height */
+  background-color: #f8f9fa; /* Light grey background for the component */
+  padding-top: 1.5rem; /* Padding at the top inside the container */
+  height: 80vh;
+  float: left; /* Align the container to the left */
+}
+
+/* Add white background to the active tab */
+.navLink.active {
+  background-color: #fff; /* White background for active tab */
+}
+  
+  .navItem {
+    flex-grow: 1; /* Make nav items grow evenly */
+    text-align: center;
+  }
+  
+  .navLink {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 1rem; /* Spacing around icons and labels */
+  }
+  
+  .icon {
+    width: 1cm;
+    height: 1cm;
+    background: transparent;
+  }
+  
+  /* Ensure that the label text appears below the icon */
+  .labelBelowIcon {
+    margin-top: 0.25rem;
+  }
+  
+  /* Styling for the content area */
+  .contentArea {
+    padding: 1rem;
+  }
+  
+  /* Specific styles for the form control spacing */
+  .formGroup {
+    margin: 0.5rem 0;
+  }
+  
+  /* Button spacing */
+  .addButton {
+    margin-top: 1rem;
+  }
