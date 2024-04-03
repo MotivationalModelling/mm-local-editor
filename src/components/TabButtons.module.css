@@ -1,51 +1,84 @@
+
 .tabContainer {
-  width: 50%; /* Limit the container to half the width of the viewport */
-  margin-top: 20vh; /* Assuming the nav bar is about 20% of the viewport height */
-  background-color: #f8f9fa; /* Light grey background for the component */
-  padding-top: 1.5rem; /* Padding at the top inside the container */
-  height: 80vh;
-  float: left; /* Align the container to the left */
+  width: calc(50% - 2rem); 
+  margin-top: 20vh; /* Space for the navigation bar */
+  background-color: #f8f9fa; 
+  padding-top: 1rem; 
+  padding-left: 1rem; 
+  height: 80vh; 
+  float: left; 
+  box-sizing: border-box;
 }
 
-/* Add white background to the active tab */
-.navLink.active {
-  background-color: #fff; /* White background for active tab */
+/* Ensure that the tab buttons are the same size */
+.navItem {
+  flex: 1 1 0%; /* Grow and shrink evenly, don't base it on content */
+  background-color: #f8f9fa;
 }
-  
-  .navItem {
-    flex-grow: 1; /* Make nav items grow evenly */
-    text-align: center;
-  }
-  
-  .navLink {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.5rem 1rem; /* Spacing around icons and labels */
-  }
-  
-  .icon {
-    width: 1cm;
-    height: 1cm;
-    background: transparent;
-  }
-  
-  /* Ensure that the label text appears below the icon */
-  .labelBelowIcon {
-    margin-top: 0.25rem;
-  }
-  
-  /* Styling for the content area */
-  .contentArea {
-    padding: 1rem;
-  }
-  
-  /* Specific styles for the form control spacing */
-  .formGroup {
-    margin: 0.5rem 0;
-  }
-  
-  /* Button spacing */
-  .addButton {
-    margin-top: 1rem;
-  }
+
+/* Style for the nav links, with corrections for the active state */
+.navLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: transparent;
+}
+
+/* Override Bootstrap styles for active tabs */
+.navLink.active,
+.navLink.active:focus,
+.navLink.active:hover {
+  background-color: #fff; /* White background for active tab */
+  color: inherit;
+  box-shadow: none; /* No shadow for the tabs */
+}
+
+/* Remove the blue box shadow on focus provided by Bootstrap */
+.navLink:focus {
+  box-shadow: none;
+  background-color: #f8f9fa;
+}
+
+/* Style for the button to add new rows */
+.addButton {
+  margin-top: 1rem;
+  background-color: #f8f9fa; /* Light grey background */
+  border: 1px solid #ccc; /* A subtle border, can be removed if not needed */
+}
+
+/* Style for the container of the nav elements */
+.navContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 0.25rem 0.25rem 0 0;
+  background-color: #f8f9fa;
+}
+
+/* Style for the content area below the tabs */
+.contentArea {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 0.25rem 0.25rem;
+  border-top: none; /* Connects the tab content with the tab buttons visually */
+  margin-top: -1px; /* This negative margin helps overlap the content box with tabs */
+}
+
+.icon {
+  width: 1cm;
+  height: 1cm;
+  background: transparent;
+}
+
+.labelBelowIcon {
+  margin-top: 0.25rem;
+}
+
+.formGroup {
+  margin-bottom: 0.5rem; /* Adjusted bottom margin for spacing */
+}
+

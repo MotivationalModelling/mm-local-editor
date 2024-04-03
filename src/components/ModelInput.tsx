@@ -30,7 +30,7 @@ const ModelInput: React.FC = () => {
   // State for the active tab
   const [activeKey, setActiveKey] = useState<string>(tabs[0].label);
   // State to keep track of all data associated with tabs
-  const [tabData, setTabData] = useState<TabContent[]>(tabs);
+  const [tabData, setTabData] = useState<TabContent[]>(tabs.map(tab => ({ ...tab, rows: [''] })));
 
   // Function to handle selecting a tab
   const handleSelect = (selectedKey: string) => {
@@ -40,7 +40,7 @@ const ModelInput: React.FC = () => {
   // Function to add a new row to the active tab
   const handleAddRow = (label: string) => {
     const newTabData = tabData.map(tab => {
-      if (tab.label === label) {
+      if (tab.label === label && tab.rows[tab.rows.length - 1] !== '') {
         return { ...tab, rows: [...tab.rows, ''] };
       }
       return tab;
@@ -61,58 +61,60 @@ const ModelInput: React.FC = () => {
     setTabData(newTabData);
   };
 
+  // Get the last row of the active tab
+  const activeTab = tabData.find(tab => tab.label === activeKey);
+  // Check if the last row is not empty (it also checks if activeTab is defined)
+  const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
+
   return (
     <div className={styles.tabContainer}>
       <Tab.Container activeKey={activeKey} onSelect={handleSelect}>
-        <Row>
-          {/* Tab buttons with icons */}
-          <Nav variant="pills" className="flex-row">
-            {tabData.map(tab => (
-              <Nav.Item key={tab.label} className={styles.navItem}>
-                <Nav.Link
-                  eventKey={tab.label}
-                  className={`${styles.navLink} ${activeKey === tab.label ? 'active' : ''}`}
-                >
-                  <img src={tab.icon} alt={`${tab.label} icon`} className={styles.icon} />
-                  <span className={styles.labelBelowIcon}>{tab.label}</span>
-                </Nav.Link>
-              </Nav.Item>
-            ))}
-          </Nav>
-        </Row>
-        <Row>
-          {/* Content area for the selected tab */}
-          <Col sm={12}>
-            <Tab.Content className={styles.contentArea}>
-              {tabData.map(tab => (
-                <Tab.Pane key={tab.label} eventKey={tab.label}>
-                  <h4>{tab.label}</h4>
-                  {/* Dynamically generated rows for user input */}
-                  {tab.rows.map((row, index) => (
-                    <Form.Group key={`${tab.label}-${index}`} as={Row} className={styles.formGroup}>
-                      <Col sm={12}>
-                        <Form.Control
-                          type="text"
-                          value={row}
-                          onChange={e => handleRowChange(tab.label, index, e.target.value)}
-                          placeholder={`Enter ${tab.label}...`}
-                          spellCheck // Browser's spellcheck feature
-                          className="bg-white" // White background for input row
-                        />
-                      </Col>
-                    </Form.Group>
-                  ))}
-                  {/* Button to add new rows */}
-                  <Button onClick={() => handleAddRow(tab.label)} className={styles.addButton}>Add Row</Button>
-                </Tab.Pane>
+        <Nav variant="pills" className="flex-row">
+          {tabData.map(tab => (
+            <Nav.Item key={tab.label} className={styles.navItem}>
+              <Nav.Link
+                eventKey={tab.label}
+                className={`${styles.navLink} ${activeKey === tab.label ? 'active' : ''}`}
+              >
+                <img src={tab.icon} alt={`${tab.label} icon`} className={styles.icon} />
+                <span className={styles.labelBelowIcon}>{tab.label}</span>
+              </Nav.Link>
+            </Nav.Item>
+          ))}
+        </Nav>
+        <Tab.Content className={styles.contentArea}>
+          {tabData.map(tab => (
+            <Tab.Pane key={tab.label} eventKey={tab.label}>
+              {/* <h4>{tab.label}</h4> */}
+              {tab.rows.map((row, index) => (
+                <Form.Group key={`${tab.label}-${index}`} as={Row} className={styles.formGroup}>
+                  <Col sm={12}>
+                    <Form.Control
+                      type="text"
+                      value={row}
+                      onChange={e => handleRowChange(tab.label, index, e.target.value)}
+                      placeholder={`Enter ${tab.label}...`}
+                      spellCheck // Browser's spellcheck feature
+                      className="bg-white" // White background for input row
+                    />
+                  </Col>
+                </Form.Group>
               ))}
-            </Tab.Content>
-          </Col>
-        </Row>
+              {canAddRow && (
+                <Button 
+                    variant="outline-secondary" // Changed to 'outline-secondary' for the light grey background
+                    onClick={() => handleAddRow(activeKey)}
+                    className={styles.addButton}
+                >
+                  Add
+                </Button>
+              )}
+            </Tab.Pane>
+          ))}
+        </Tab.Content>
       </Tab.Container>
     </div>
   );
 };
-
 
 export default ModelInput;
