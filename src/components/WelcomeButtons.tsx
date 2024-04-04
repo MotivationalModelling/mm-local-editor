@@ -66,6 +66,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
     setIsJsonDragOver(false);
   };
 
+  // Triger file upload event for dropping files
   const handleXMLUpload = () => {
     if (xmlFileRef.current) {
       xmlFileRef.current.value = "";
@@ -80,6 +81,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
     }
   };
 
+  // Handle files upload and files type checking
   const handleXMLFileInputChange = (file: File | undefined) => {
     if (!file) {
       setIsXmlDragOver(false);
@@ -107,6 +109,8 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
     setXmlFile(file);
   };
+
+  /* --------------------------------------------------------------------------------------------------------*/
 
   const handleJSONFileInputChange = (file: File | undefined) => {
     if (!file) {
@@ -136,6 +140,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
     setJsonFile(file);
   };
 
+  // Remove uploaded files
   const handleXMLFileRemove = () => {
     setXmlFile(null);
     setIsXmlDragOver(false);
@@ -145,6 +150,8 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
     setJsonFile(null);
     setIsJsonDragOver(false);
   };
+
+/* --------------------------------------------------------------------------------------------------------*/
 
   return (
     <div
@@ -170,7 +177,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
         style={{ display: "none" }}
         ref={jsonFileRef}
       />
-      {/* Show drop area when files are dragged into the page */}
+      {/* Conditionally render create/open buttons or files section */}
       {isDragging ? (
         <>
           {!xmlFile ? (

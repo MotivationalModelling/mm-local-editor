@@ -10,6 +10,7 @@ const LEON_ICON = "/src/assets/img/leon.png";
 const Welcome = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
+  // Handle draging files to upload
   const handleDragOver = (evt: React.DragEvent<HTMLDivElement>) => {
     evt.preventDefault();
     setIsDragging(true);
@@ -23,6 +24,7 @@ const Welcome = () => {
     >
       <WelcomeHeader />
       <main role="main" className="inner cover">
+        {/* Carousel for viewing details*/}
         <Carousel>
           <Carousel.Item>
             <div className="content">

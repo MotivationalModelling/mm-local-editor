@@ -7,6 +7,7 @@ type ErrorModalProps = {
   onHide: () => void;
 };
 
+// Modal for error alert
 const ErrorModal = ({ show, title, message, onHide }: ErrorModalProps) => {
   return (
     <Modal show={show} onHide={onHide} centered>

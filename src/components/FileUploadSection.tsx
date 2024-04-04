@@ -6,6 +6,7 @@ type FileUploadSectionProps = {
   onUpload: () => void;
 };
 
+// Dropped files displaying section for user to remove and replace 
 const FileUploadSection = ({
   file,
   onRemove,
@@ -13,6 +14,7 @@ const FileUploadSection = ({
 }: FileUploadSectionProps) => {
   return (
     <div className="mt-3 border border-primary-subtle rounded file-container p-4 align-content-center mx-5">
+      {/* File remove button */}
       <div
         onClick={onRemove}
         style={{

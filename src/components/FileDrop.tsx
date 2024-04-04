@@ -11,6 +11,7 @@ type FileDropProps = {
   fileType: string;
 };
 
+// File drop section for drop xml file and json file depending on passing props
 const FileDrop = ({
   onDrop,
   onDragOver,

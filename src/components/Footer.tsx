@@ -1,3 +1,4 @@
+// Copyrights footer
 const Footer = () => {
   return (
     <footer className="mastfoot mt-auto">
