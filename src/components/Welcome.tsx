@@ -34,8 +34,9 @@ const Welcome = () => {
                 style={{ height: "100px", width: "auto" }}
               />
               <h1 className="cover-heading mt-4 mb-4">
-                Motivational Models Building Tool
+              AMMBER
               </h1>
+              <h2 className="mt-4" style={{fontSize: "20px"}}>A Motivational Model Builder For Essential Requirements</h2>
             </div>
           </Carousel.Item>
           <Carousel.Item>

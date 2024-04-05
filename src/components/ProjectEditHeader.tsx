@@ -11,7 +11,7 @@ const ProjectEditHeader = () => {
         <Row>
           <Col>
             &nbsp;&nbsp;&nbsp;
-            <strong style={{ fontSize: "35px" }}>Motivational Model</strong>
+            <strong style={{ fontSize: "35px" }}>AMMBER</strong>
           </Col>
         </Row>
       </Container>
