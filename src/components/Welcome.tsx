@@ -3,7 +3,6 @@ import { Carousel } from "react-bootstrap";
 import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
 import WelcomeButtons from "./WelcomeButtons";
-import ErrorModal from "./ErrorModal";
 
 const LEON_ICON = "/src/assets/img/leon.png";
 
@@ -33,10 +32,10 @@ const Welcome = () => {
                 alt="leon_icon"
                 style={{ height: "100px", width: "auto" }}
               />
-              <h1 className="cover-heading mt-4 mb-4">
-              AMMBER
-              </h1>
-              <h2 className="mt-4" style={{fontSize: "20px"}}>A Motivational Model Builder For Essential Requirements</h2>
+              <h1 className="cover-heading mt-4 mb-4">AMMBER</h1>
+              <h2 className="mt-4" style={{ fontSize: "20px" }}>
+                A Motivational Model Builder For Essential Requirements
+              </h2>
             </div>
           </Carousel.Item>
           <Carousel.Item>
