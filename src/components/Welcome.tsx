@@ -9,23 +9,21 @@ const LEON_ICON = "/src/assets/img/leon.png";
 const Welcome = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
+  // Handle draging files to upload
   const handleDragOver = (evt: React.DragEvent<HTMLDivElement>) => {
     evt.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
   return (
     <div
-      className="over-container d-flex h-100 p-3  flex-column"
+      className="over-container d-flex h-100 p-3  flex-column text-center"
       onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+      id="bg"
     >
       <WelcomeHeader />
       <main role="main" className="inner cover">
+        {/* Carousel for viewing details*/}
         <Carousel>
           <Carousel.Item>
             <div className="content">
@@ -34,9 +32,10 @@ const Welcome = () => {
                 alt="leon_icon"
                 style={{ height: "100px", width: "auto" }}
               />
-              <h1 className="cover-heading mt-4 mb-4">
-                Motivational Models Building Tool
-              </h1>
+              <h1 className="cover-heading mt-4 mb-4">AMMBER</h1>
+              <h2 className="mt-4" style={{ fontSize: "20px" }}>
+                A Motivational Model Builder For Essential Requirements
+              </h2>
             </div>
           </Carousel.Item>
           <Carousel.Item>

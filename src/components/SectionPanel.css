@@ -1,0 +1,9 @@
+.right-handler:hover {
+  background-color: gray;
+  opacity: 50%;
+}
+
+.left-handler:hover {
+  background-color: gray;
+  opacity: 50%;
+}

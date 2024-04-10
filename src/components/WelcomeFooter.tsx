@@ -6,6 +6,7 @@ type WelcomeFooterProps = {
   destination: string;
 };
 
+// Footer section in welcome page including copyrights, papers, user manual...
 const WelcomeFooter = ({ name, destination }: WelcomeFooterProps) => {
   return (
     <footer className="mastfoot mt-auto">
