@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Welcome from "./components/Welcome";
 import Papers from "./components/Papers";
 import ProjectEdit from "./components/ProjectEdit";
-import ModelInput from "./components/ModelInput";
+import ModelInput from "./components/GoalList";
 
 const App = () => {
   return (
@@ -11,7 +11,7 @@ const App = () => {
         <Route path="/" element={<Welcome />} />
         <Route path="/papers" element={<Papers />} />
         <Route path="/projectEdit" element={<ProjectEdit />} />
-        <Route path="/input" element={<ModelInput />} />
+        {/* <Route path="/input" element={<ModelInput />} /> */}
       </Routes>
     </BrowserRouter>
   );

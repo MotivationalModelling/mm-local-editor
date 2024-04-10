@@ -3,6 +3,7 @@ import DoIcon from '../assets/img/Function.png';
 import BeIcon from '../assets/img/Cloud.png';
 import FeelIcon from '../assets/img/Heart.png';
 import ConcernIcon from '../assets/img/Risk.png';
+import DeleteIcon from '../assets/img/delete.png'
 
 import React, { useState } from 'react';
 import { Tab, Nav, Row, Col, Form, Button } from 'react-bootstrap';
@@ -26,7 +27,7 @@ const tabs: TabContent[] = [
   { label: 'Concern', icon: ConcernIcon, rows: [] },
 ];
 
-const ModelInput: React.FC = () => {
+const GoalList = React.forwardRef((props, ref) => {
   // State for the active tab
   const [activeKey, setActiveKey] = useState<string>(tabs[0].label);
   // State to keep track of all data associated with tabs
@@ -35,6 +36,13 @@ const ModelInput: React.FC = () => {
   // Function to handle selecting a tab
   const handleSelect = (selectedKey: string) => {
     setActiveKey(selectedKey);
+  };
+
+  const handleKeyPress = (e, label: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent default Enter key behavior
+      handleAddRow(label);
+    }
   };
 
   // Function to add a new row to the active tab
@@ -61,22 +69,42 @@ const ModelInput: React.FC = () => {
     setTabData(newTabData);
   };
 
+  const handleDeleteRow = (label: string, index: number) => {
+    const newTabData = tabData.map(tab => {
+      if (tab.label === label) {
+        if (tab.rows.length > 1) {
+          const newRows = tab.rows.filter((_, rowIndex) => rowIndex !== index);
+          return { ...tab, rows: newRows };
+        }
+      }
+      return tab;
+    });
+    setTabData(newTabData);
+  };
+
   // Get the last row of the active tab
   const activeTab = tabData.find(tab => tab.label === activeKey);
   // Check if the last row is not empty (it also checks if activeTab is defined)
   const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
 
   return (
-    <div className={styles.tabContainer}>
-      <Tab.Container activeKey={activeKey} onSelect={handleSelect}>
-        <Nav variant="pills" className="flex-row">
+    <div className={styles.tabContainer} ref={ref}>
+      <Tab.Container activeKey={activeKey} 
+      onSelect={handleSelect}>
+        <Nav 
+        variant="pills" 
+        className="flex-row">
           {tabData.map(tab => (
-            <Nav.Item key={tab.label} className={styles.navItem}>
+            <Nav.Item 
+            key={tab.label} 
+            className={styles.navItem}>
               <Nav.Link
                 eventKey={tab.label}
                 className={`${styles.navLink} ${activeKey === tab.label ? 'active' : ''}`}
               >
-                <img src={tab.icon} alt={`${tab.label} icon`} className={styles.icon} />
+                <img src={tab.icon} 
+                alt={`${tab.label} icon`} 
+                className={styles.icon} />
                 <span className={styles.labelBelowIcon}>{tab.label}</span>
               </Nav.Link>
             </Nav.Item>
@@ -88,7 +116,7 @@ const ModelInput: React.FC = () => {
               {/* <h4>{tab.label}</h4> */}
               {tab.rows.map((row, index) => (
                 <Form.Group key={`${tab.label}-${index}`} as={Row} className={styles.formGroup}>
-                  <Col sm={12}>
+                  <Col sm={11}>
                     <Form.Control
                       type="text"
                       value={row}
@@ -96,25 +124,24 @@ const ModelInput: React.FC = () => {
                       placeholder={`Enter ${tab.label}...`}
                       spellCheck // Browser's spellcheck feature
                       className="bg-white" // White background for input row
+                      onKeyDown={e => handleKeyPress(e, tab.label)}
                     />
                   </Col>
+                  {tab.rows.length > 1 && (
+                  <Col sm={1}>
+                    <Button variant="outline-danger" onClick={() => handleDeleteRow(tab.label, index)}>
+                      <img src={DeleteIcon} alt="Delete" style={{ width: '10%', height: 'auto' }} />
+                    </Button>
+                  </Col>
+                  )}
                 </Form.Group>
               ))}
-              {canAddRow && (
-                <Button 
-                    variant="outline-secondary" // Changed to 'outline-secondary' for the light grey background
-                    onClick={() => handleAddRow(activeKey)}
-                    className={styles.addButton}
-                >
-                  Add
-                </Button>
-              )}
             </Tab.Pane>
           ))}
         </Tab.Content>
       </Tab.Container>
     </div>
   );
-};
+});
 
-export default ModelInput;
+export default GoalList;
