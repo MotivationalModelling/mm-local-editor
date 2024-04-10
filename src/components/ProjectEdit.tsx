@@ -1,7 +1,12 @@
 import React from "react";
+import ProgressBar from "./ProgressBar";
 
 const ProjectEdit = () => {
-  return <div>ProjectEdit</div>;
+  return (
+    <div>
+      <ProgressBar />
+    </div>
+  );
 };
 
 export default ProjectEdit;
