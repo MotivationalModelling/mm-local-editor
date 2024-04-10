@@ -9,9 +9,8 @@ const ProjectEditHeader = () => {
       style={{ width: "auto", minWidth: "1280px", maxWidth: "100%" }}
     >
       <Container fluid>
-        <Row>
+        <Row className="text-start align-content-center">
           <Col>
-            &nbsp;&nbsp;&nbsp;
             <strong style={{ fontSize: "35px" }}>AMMBER</strong>
           </Col>
           <Col className="text-end align-content-center">

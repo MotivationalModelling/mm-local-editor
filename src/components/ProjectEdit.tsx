@@ -5,13 +5,16 @@ import { useState } from "react";
 import ProgressBar from "./ProgressBar";
 
 const ProjectEdit = () => {
-  const [showGoalSection, setShowGoalSection] = useState(false);
-  const [showGraphSection, setShowGraphSection] = useState(false);
+  const [showGoalSection, setShowGoalSection] = useState<boolean>(true);
+  const [showGraphSection, setShowGraphSection] = useState<boolean>(false);
 
   return (
     <div>
       <ProjectEditHeader />
-      <ProgressBar />
+      <ProgressBar
+        setShowGoalSection={setShowGoalSection}
+        setShowGraphSection={setShowGraphSection}
+      />
       <SectionPanel
         showGoalSection={showGoalSection}
         showGraphSection={showGraphSection}

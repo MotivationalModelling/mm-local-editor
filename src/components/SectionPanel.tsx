@@ -17,6 +17,11 @@ const DEFINED_PROPOTIONS = {
   minWidth: "10%",
 };
 
+const INITIAL_PROPORTIONS = {
+  sectionOne: 0.5,
+  sectionThree: 0.75,
+};
+
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
@@ -79,7 +84,8 @@ const SectionPanel = ({
   useEffect(() => {
     if (parentRef.current) {
       setParentWidth(parentRef.current?.clientWidth - paddingX * 2);
-      setSectionThreeWidth(parentWidth * 0.5);
+      setSectionOneWidth(parentWidth * INITIAL_PROPORTIONS.sectionOne);
+      setSectionThreeWidth(parentWidth * INITIAL_PROPORTIONS.sectionThree);
     }
   }, []);
 

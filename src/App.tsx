@@ -6,16 +6,14 @@ import ModelInput from "./components/ModelInput";
 
 const App = () => {
   return (
-    <div id="bg" className=" text-center">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/papers" element={<Papers />} />
-          <Route path="/projectEdit" element={<ProjectEdit />} />
-          <Route path="/input" element={<ModelInput />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Welcome />} />
+        <Route path="/papers" element={<Papers />} />
+        <Route path="/projectEdit" element={<ProjectEdit />} />
+        <Route path="/input" element={<ModelInput />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

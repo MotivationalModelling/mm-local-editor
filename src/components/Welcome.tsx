@@ -17,7 +17,7 @@ const Welcome = () => {
 
   return (
     <div
-      className="over-container d-flex h-100 p-3  flex-column text-center"
+      className="over-container d-flex p-3 flex-column text-center"
       onDragOver={handleDragOver}
       id="bg"
     >
