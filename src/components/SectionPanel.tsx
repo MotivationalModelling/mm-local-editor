@@ -6,7 +6,10 @@ const defaultStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "solid 1px #ddd",
+  borderStyle: "solid",
+  borderColor: "lightgrey",
+  borderWidth: "1px",
+  borderRadius: "3px",
 };
 
 const DEFINED_PROPOTIONS = {
