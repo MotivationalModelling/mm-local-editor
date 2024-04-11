@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
 import "./SectionPanel.css";
+import GoalList from "./GoalList";
 
 const defaultStyle = {
   display: "flex",
@@ -18,8 +19,8 @@ const DEFINED_PROPOTIONS = {
 };
 
 const INITIAL_PROPORTIONS = {
-  sectionOne: 0.5,
-  sectionThree: 0.75,
+  sectionOne: 0.4,
+  sectionThree: 0.6,
 };
 
 type SectionPanelProps = {
@@ -36,11 +37,13 @@ const SectionPanel = ({
   paddingX,
 }: SectionPanelProps) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
+  const [sectionOneHeight, setSectionOneHeight] = useState("200px");
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
+  const goalListRef = useRef(null);
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (
@@ -124,14 +127,15 @@ const SectionPanel = ({
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",
           display: showGoalSection ? "flex" : "none",
+          minHeight: "200px",
         }}
-        size={{ width: sectionOneWidth, height: "200px" }}
+        size={{ width: sectionOneWidth, height: sectionOneHeight }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
         onResize={handleResizeSectionOne}
       >
         {/* First Panel Content */}
-        Section 1
+        <GoalList ref={goalListRef} />
       </Resizable>
 
       {/* Cluster Hierachy Section */}

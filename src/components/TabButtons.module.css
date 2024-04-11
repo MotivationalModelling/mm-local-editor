@@ -1,12 +1,11 @@
 
 .tabContainer {
-  width: calc(50% - 2rem); 
-  margin-top: 20vh; /* Space for the navigation bar */
+  width: 100%; 
+  margin: 0; /* Space for the navigation bar */
   background-color: #f8f9fa; 
-  padding-top: 1rem; 
-  padding-left: 1rem; 
-  height: 80vh; 
-  float: left; 
+  padding: 1rem; 
+  height: 100%; 
+  /* float: left;  */
   box-sizing: border-box;
 }
 
@@ -79,6 +78,6 @@
 }
 
 .formGroup {
-  margin-bottom: 0.5rem; /* Adjusted bottom margin for spacing */
+  margin-bottom: 0.2rem; /* Adjusted bottom margin for spacing */
 }
 
