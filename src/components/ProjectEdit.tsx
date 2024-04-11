@@ -18,14 +18,15 @@ const ProjectEdit = () => {
       <SectionPanel
         showGoalSection={showGoalSection}
         showGraphSection={showGraphSection}
+        setShowGoalSection={setShowGoalSection}
         paddingX={15}
       />
-      <button onClick={() => setShowGoalSection(!showGoalSection)}>
+      {/* <button onClick={() => setShowGoalSection(!showGoalSection)}>
         Show Section 1
-      </button>
-      <button onClick={() => setShowGraphSection(!showGraphSection)}>
+      </button> */}
+      {/* <button onClick={() => setShowGraphSection(!showGraphSection)}>
         Show Section 3
-      </button>
+      </button> */}
     </div>
   );
 };

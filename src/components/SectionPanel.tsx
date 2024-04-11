@@ -25,12 +25,14 @@ const INITIAL_PROPORTIONS = {
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
+  setShowGoalSection: React.Dispatch<React.SetStateAction<boolean>>;
   paddingX: number;
 };
 
 const SectionPanel = ({
   showGoalSection,
   showGraphSection,
+  setShowGoalSection,
   paddingX,
 }: SectionPanelProps) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
@@ -67,6 +69,11 @@ const SectionPanel = ({
     ref,
     delta
   ) => {
+    console.log(
+      sectionOneWidth,
+      sectionTwoRef.current?.offsetWidth,
+      ref.offsetWidth
+    );
     setSectionThreeWidth(ref.offsetWidth);
     // If the width sum exceed the parent total width, auto resize the section one until reach the minimum
     if (
@@ -80,14 +87,25 @@ const SectionPanel = ({
     }
   };
 
-  // Get the parent div inner width and set initial width for section three
+  // Get the parent div inner width and set starter width for section one and section three
   useEffect(() => {
     if (parentRef.current) {
-      setParentWidth(parentRef.current?.clientWidth - paddingX * 2);
-      setSectionOneWidth(parentWidth * INITIAL_PROPORTIONS.sectionOne);
-      setSectionThreeWidth(parentWidth * INITIAL_PROPORTIONS.sectionThree);
+      const newParentWidth = parentRef.current.clientWidth - paddingX * 2;
+
+      if (showGoalSection && showGraphSection) {
+        console.log(showGoalSection);
+        setSectionOneWidth(parentRef.current.offsetWidth * 0.2);
+        setSectionThreeWidth(parentRef.current.offsetWidth * 0.5);
+      } else if (showGoalSection) {
+        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
+      } else if (showGraphSection) {
+        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
+      } else {
+        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
+        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
+      }
     }
-  }, []);
+  }, [showGoalSection]);
 
   return (
     <div
@@ -149,6 +167,12 @@ const SectionPanel = ({
       >
         {/* Third Panel Content */}
         Section 3
+        <button
+          onClick={() => setShowGoalSection(!showGoalSection)}
+          style={{ marginLeft: "20px" }}
+        >
+          Show Section 1
+        </button>
       </Resizable>
     </div>
   );
