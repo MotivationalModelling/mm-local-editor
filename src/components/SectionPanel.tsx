@@ -37,7 +37,7 @@ const SectionPanel = ({
   paddingX,
 }: SectionPanelProps) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
-  const [sectionOneHeight, setSectionOneHeight] = useState("200px");
+  // const [sectionOneHeight, setSectionOneHeight] = useState("100%");
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
@@ -114,6 +114,7 @@ const SectionPanel = ({
     <div
       style={{
         width: "100%",
+        height: "100%",
         display: "flex",
         padding: paddingX,
       }}
@@ -129,7 +130,7 @@ const SectionPanel = ({
           display: showGoalSection ? "flex" : "none",
           minHeight: "200px",
         }}
-        size={{ width: sectionOneWidth, height: sectionOneHeight }}
+        size={{ width: sectionOneWidth }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
         onResize={handleResizeSectionOne}

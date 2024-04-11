@@ -3,7 +3,7 @@ import DoIcon from '../assets/img/Function.png';
 import BeIcon from '../assets/img/Cloud.png';
 import FeelIcon from '../assets/img/Heart.png';
 import ConcernIcon from '../assets/img/Risk.png';
-import DeleteIcon from '../assets/img/delete.png'
+import DeleteIcon from '../assets/img/trash-alt-solid.svg'
 
 import React, { useState } from 'react';
 import { Tab, Nav, Row, Col, Form, Button } from 'react-bootstrap';
@@ -96,26 +96,33 @@ const GoalList = React.forwardRef((props, ref) => {
         className="flex-row">
           {tabData.map(tab => (
             <Nav.Item 
-            key={tab.label} 
-            className={styles.navItem}>
+              key={tab.label} 
+              className={styles.navItem}>
               <Nav.Link
                 eventKey={tab.label}
                 className={`${styles.navLink} ${activeKey === tab.label ? 'active' : ''}`}
               >
-                <img src={tab.icon} 
+              <img 
+                src={tab.icon} 
                 alt={`${tab.label} icon`} 
-                className={styles.icon} />
-                <span className={styles.labelBelowIcon}>{tab.label}</span>
+                className={styles.icon}
+               />
+              <span className={styles.labelBelowIcon}>{tab.label}</span>
               </Nav.Link>
             </Nav.Item>
           ))}
         </Nav>
         <Tab.Content className={styles.contentArea}>
           {tabData.map(tab => (
-            <Tab.Pane key={tab.label} eventKey={tab.label}>
+            <Tab.Pane 
+              key={tab.label} 
+              eventKey={tab.label}>
               {/* <h4>{tab.label}</h4> */}
               {tab.rows.map((row, index) => (
-                <Form.Group key={`${tab.label}-${index}`} as={Row} className={styles.formGroup}>
+                <Form.Group 
+                  key={`${tab.label}-${index}`} 
+                  as={Row} 
+                  className={styles.formGroup}>
                   <Col sm={11}>
                     <Form.Control
                       type="text"
@@ -129,8 +136,13 @@ const GoalList = React.forwardRef((props, ref) => {
                   </Col>
                   {tab.rows.length > 1 && (
                   <Col sm={1}>
-                    <Button variant="outline-danger" onClick={() => handleDeleteRow(tab.label, index)}>
-                      <img src={DeleteIcon} alt="Delete" style={{ width: '10%', height: 'auto' }} />
+                    <Button 
+                      className={styles.deleteButton}
+                      onClick={() => handleDeleteRow(tab.label, index)}>
+                      <img 
+                        src={DeleteIcon} 
+                        alt="Delete" 
+                        className={styles.deleteIcon} />
                     </Button>
                   </Col>
                   )}

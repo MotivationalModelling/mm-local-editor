@@ -40,11 +40,18 @@
   background-color: #f8f9fa;
 }
 
-/* Style for the button to add new rows */
-.addButton {
-  margin-top: 1rem;
-  background-color: #f8f9fa; /* Light grey background */
-  border: 1px solid #ccc; /* A subtle border, can be removed if not needed */
+/* Style for the button to delete rows */
+.deleteButton {
+  width: 1cm;
+  height: 1cm;
+  background-color: #f8f9fab9;
+  border: none; 
+  padding: 0;
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin-right: 1.5rem; 
+  margin-left: -1rem;
 }
 
 /* Style for the container of the nav elements */
@@ -73,11 +80,18 @@
   background: transparent;
 }
 
+.deleteIcon {
+  width: 1rem;
+  height: 1rem;
+  background: transparent;
+}
+
 .labelBelowIcon {
   margin-top: 0.25rem;
 }
 
 .formGroup {
   margin-bottom: 0.2rem; /* Adjusted bottom margin for spacing */
+  margin-right: 0.2rem;
 }
 
