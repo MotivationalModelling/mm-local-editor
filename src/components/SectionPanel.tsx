@@ -19,8 +19,12 @@ const DEFINED_PROPOTIONS = {
 };
 
 const INITIAL_PROPORTIONS = {
-  sectionOne: 0.4,
-  sectionThree: 0.6,
+  sectionOne: 0.5,
+  sectionThree: 0.75,
+  sectionsCombine: {
+    sectionOne: 0.2,
+    sectionThree: 0.5,
+  }
 };
 
 type SectionPanelProps = {
@@ -94,11 +98,12 @@ const SectionPanel = ({
   useEffect(() => {
     if (parentRef.current) {
       const newParentWidth = parentRef.current.clientWidth - paddingX * 2;
+      setParentWidth(newParentWidth)
 
       if (showGoalSection && showGraphSection) {
         console.log(showGoalSection);
-        setSectionOneWidth(parentRef.current.offsetWidth * 0.2);
-        setSectionThreeWidth(parentRef.current.offsetWidth * 0.5);
+        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne);
+        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree);
       } else if (showGoalSection) {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
       } else if (showGraphSection) {
@@ -130,7 +135,7 @@ const SectionPanel = ({
           display: showGoalSection ? "flex" : "none",
           minHeight: "200px",
         }}
-        size={{ width: sectionOneWidth }}
+        size={{ width: sectionOneWidth, height: "100%" }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
         onResize={handleResizeSectionOne}

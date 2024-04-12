@@ -24,7 +24,7 @@ const Welcome = () => {
       <WelcomeHeader />
       <main role="main" className="inner cover">
         {/* Carousel for viewing details*/}
-        <Carousel>
+        <Carousel interval={null}>
           <Carousel.Item>
             <div className="content">
               <img

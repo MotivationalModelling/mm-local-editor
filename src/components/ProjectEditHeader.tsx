@@ -15,7 +15,7 @@ const ProjectEditHeader = () => {
           </Col>
           <Col className="text-end align-content-center">
             <Link to={"/"}>
-              <Button variant="warning">Return</Button>
+              <Button variant="warning">Back</Button>
             </Link>
           </Col>
         </Row>

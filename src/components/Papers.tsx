@@ -4,6 +4,26 @@ import WelcomeHeader from "./WelcomeHeader";
 import { Link } from "react-router-dom";
 import WelcomeFooter from "./WelcomeFooter";
 
+
+
+const papers:  {
+  title: string
+  link: string
+}[] = [
+  {title: "CHASE_2023_emotions", link: "CHASE_2023_emotions.pdf"},
+  {title: "CSCE_2021", link: "CSCE_2021.pdf"},
+  {title: "Design_meets_SE", link: "Design_meets_SE.pdf"},
+  {title: "ECSCW Final", link: "ECSCW Final.pdf"},
+  {title: "MMSurvey", link: "MMSurvey.pdf"},
+  {title: "MMtoUserStories", link: "MMtoUserStories.pdf"},
+  {title: "Paper_Motivational_Goals_EHR _2", link: "Paper_Motivational_Goals_EHR _2.pdf"},
+  {title: "RECameraReady", link: "RECameraReady.pdf"},
+  {title: "Requirements elicitation and specification using the agent paradi", link: "Requirements elicitation and specification using the agent paradi.pdf"},
+  {title: "Using_Goal_Models_in_Agile_Teaching__RE_", link: "Using_Goal_Models_in_Agile_Teaching__RE_.pdf"},
+  {title: "usermanual", link: "usermanual.pdf"},
+  
+]
+
 const Papers = () => {
   return (
     <div
@@ -13,22 +33,16 @@ const Papers = () => {
       <WelcomeHeader />
       <main role="main" className="inner cover">
         <div>
-          <p>
-            <Link to="/papers/Adding-Emotions-to-Models-in-a-Viewpoint-Modelling-Framework-From-Agent-Oriented-Software-Engineering_-A-Case-Study-With-Emergency-Alarms.pdf">
-              Adding-Emotions-to-Models.pdf
+          {papers.map((paper) => (
+            <p>
+            <Link to={`/papers/${paper.link}`} target="_blank"
+            className="text-decoration-none">
+              {paper.title}
             </Link>
           </p>
-          <p>
-            <Link to="/papers/Emotion-Led_Modelling_JSS_paper.pdf">
-              {" "}
-              Emotion-Led_Modelling.pdf
-            </Link>
-          </p>
-          <p>
-            <Link to="/papers/Interdisciplinary-Design-Teams-Translating-Ethnographic-Field-Data-Into-Design-Models_-Communicating-Ambiguous-Concepts-Using-Quality-Goals.pdf">
-              Interdisciplinary-Design.pdf
-            </Link>
-          </p>
+          ))}
+          
+          
         </div>
       </main>
       <WelcomeFooter destination="" name="Home" />

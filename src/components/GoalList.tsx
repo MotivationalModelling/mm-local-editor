@@ -5,7 +5,7 @@ import FeelIcon from '../assets/img/Heart.png';
 import ConcernIcon from '../assets/img/Risk.png';
 import DeleteIcon from '../assets/img/trash-alt-solid.svg'
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Tab, Nav, Row, Col, Form, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -33,6 +33,15 @@ const GoalList = React.forwardRef((props, ref) => {
   // State to keep track of all data associated with tabs
   const [tabData, setTabData] = useState<TabContent[]>(tabs.map(tab => ({ ...tab, rows: [''] })));
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto focus on the new input row
+  // useEffect(() => {
+  //   if (inputRef.current)
+  //   inputRef.current.focus();
+  // }, [tabData]);
+
+
   // Function to handle selecting a tab
   const handleSelect = (selectedKey: string) => {
     setActiveKey(selectedKey);
@@ -54,6 +63,12 @@ const GoalList = React.forwardRef((props, ref) => {
       return tab;
     });
     setTabData(newTabData);
+
+    setTimeout(() => {
+      if (inputRef.current){
+      inputRef.current.focus();
+    }
+    }, 0);
   };
 
   // Function to handle changes to input fields (rows) within a tab
@@ -132,6 +147,7 @@ const GoalList = React.forwardRef((props, ref) => {
                       spellCheck // Browser's spellcheck feature
                       className="bg-white" // White background for input row
                       onKeyDown={e => handleKeyPress(e, tab.label)}
+                      ref={index === tab.rows.length - 1 ? inputRef : undefined} 
                     />
                   </Col>
                   {tab.rows.length > 1 && (
