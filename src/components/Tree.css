@@ -1,0 +1,12 @@
+.delete-icon {
+  visibility: hidden;
+  margin-right: 10px;
+}
+
+.delete-icon:hover {
+  cursor: pointer;
+}
+
+.tree-list:hover .delete-icon {
+  visibility: visible;
+}

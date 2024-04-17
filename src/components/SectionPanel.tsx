@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
 import "./SectionPanel.css";
 import GoalList from "./GoalList";
+import Tree from "./Tree";
 
 const defaultStyle = {
   display: "flex",
@@ -24,7 +25,7 @@ const INITIAL_PROPORTIONS = {
   sectionsCombine: {
     sectionOne: 0.2,
     sectionThree: 0.5,
-  }
+  },
 };
 
 type SectionPanelProps = {
@@ -44,6 +45,8 @@ const SectionPanel = ({
   // const [sectionOneHeight, setSectionOneHeight] = useState("100%");
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
+
+  const [draggedItem, setDraggedItem] = useState<string>("");
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -98,12 +101,16 @@ const SectionPanel = ({
   useEffect(() => {
     if (parentRef.current) {
       const newParentWidth = parentRef.current.clientWidth - paddingX * 2;
-      setParentWidth(newParentWidth)
+      setParentWidth(newParentWidth);
 
       if (showGoalSection && showGraphSection) {
         console.log(showGoalSection);
-        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne);
-        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree);
+        setSectionOneWidth(
+          newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne
+        );
+        setSectionThreeWidth(
+          newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
+        );
       } else if (showGoalSection) {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
       } else if (showGraphSection) {
@@ -141,7 +148,7 @@ const SectionPanel = ({
         onResize={handleResizeSectionOne}
       >
         {/* First Panel Content */}
-        <GoalList ref={goalListRef} />
+        <GoalList ref={goalListRef} setDraggedItem={setDraggedItem} />
       </Resizable>
 
       {/* Cluster Hierachy Section */}
@@ -150,12 +157,14 @@ const SectionPanel = ({
           ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPOTIONS.minWidth,
-          height: 200,
+          minHeight: "800px",
+          height: "100%",
+          padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
         }}
         ref={sectionTwoRef}
       >
-        Section 2
+        <Tree draggedItem={draggedItem} />
       </div>
 
       {/* Graph Render Section */}

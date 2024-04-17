@@ -102,6 +102,14 @@ const GoalList = React.forwardRef((props, ref) => {
   // Check if the last row is not empty (it also checks if activeTab is defined)
   const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
 
+
+  const handleDragStart = (event: React.DragEvent<HTMLInputElement>) => {
+    console.log("drag start");
+    const itemText = event.currentTarget.value || "";
+    props.setDraggedItem(itemText);
+  };
+
+
   return (
     <div className={styles.tabContainer} ref={ref}>
       <Tab.Container activeKey={activeKey} 
@@ -140,6 +148,8 @@ const GoalList = React.forwardRef((props, ref) => {
                   className={styles.formGroup}>
                   <Col sm={11}>
                     <Form.Control
+                      onDragStart={handleDragStart}
+                      draggable
                       type="text"
                       value={row}
                       onChange={e => handleRowChange(tab.label, index, e.target.value)}
