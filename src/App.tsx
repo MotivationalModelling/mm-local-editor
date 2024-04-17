@@ -5,7 +5,7 @@ import ProjectEdit from "./components/ProjectEdit";
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/mm-local-editor/">
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/papers" element={<Papers />} />
