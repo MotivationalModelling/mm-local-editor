@@ -5,7 +5,7 @@ import FeelIcon from '../assets/img/Heart.png';
 import ConcernIcon from '../assets/img/Risk.png';
 import DeleteIcon from '../assets/img/trash-alt-solid.svg'
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, {useState, useRef} from 'react';
 import { Tab, Nav, Row, Col, Form, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -27,9 +27,9 @@ const tabs: TabContent[] = [
   { label: 'Concern', icon: ConcernIcon, rows: [] },
 ];
 
-const GoalList = React.forwardRef((props, ref) => {
+const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
   // State for the active tab
-  const [activeKey, setActiveKey] = useState<string>(tabs[0].label);
+  const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
   // State to keep track of all data associated with tabs
   const [tabData, setTabData] = useState<TabContent[]>(tabs.map(tab => ({ ...tab, rows: [''] })));
 
@@ -43,7 +43,7 @@ const GoalList = React.forwardRef((props, ref) => {
 
 
   // Function to handle selecting a tab
-  const handleSelect = (selectedKey: string) => {
+  const handleSelect = (selectedKey: string | null) => {
     setActiveKey(selectedKey);
   };
 
@@ -112,7 +112,7 @@ const GoalList = React.forwardRef((props, ref) => {
 
   return (
     <div className={styles.tabContainer} ref={ref}>
-      <Tab.Container activeKey={activeKey} 
+      <Tab.Container activeKey={activeKey ?? undefined}
       onSelect={handleSelect}>
         <Nav 
         variant="pills" 
