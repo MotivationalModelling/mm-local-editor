@@ -5,7 +5,7 @@ import FeelIcon from '../assets/img/Heart.png';
 import ConcernIcon from '../assets/img/Risk.png';
 import DeleteIcon from '../assets/img/trash-alt-solid.svg'
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, {useState, useRef} from 'react';
 import { Tab, Nav, Row, Col, Form, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
