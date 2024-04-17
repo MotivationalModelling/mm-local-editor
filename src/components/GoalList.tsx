@@ -6,16 +6,26 @@ import ConcernIcon from '../assets/img/Risk.png';
 import DeleteIcon from '../assets/img/trash-alt-solid.svg'
 
 import React, {useState, useRef} from 'react';
+import { saveAs } from 'file-saver';
 import { Tab, Nav, Row, Col, Form, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import styles from './TabButtons.module.css';
+type Label = 'Who' | 'Do' | 'Be' | 'Feel' | 'Concern';
+
+interface ListItem {
+  id: number;
+  type: Label;
+  content: string;
+  hierarchy: number;
+  parentId: string | null;
+}
 
 // Define the structure for the content of each tab
 type TabContent = {
-  label: string;
+  label: Label;
   icon: string;
-  rows: string[];
+  rows: ListItem[];
 };
 
 // Define the initial tabs with labels and corresponding icons
@@ -31,8 +41,10 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
   // State for the active tab
   const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
   // State to keep track of all data associated with tabs
-  const [tabData, setTabData] = useState<TabContent[]>(tabs.map(tab => ({ ...tab, rows: [''] })));
-
+  const nextId = useRef(0);
+  const [tabData, setTabData] = useState<TabContent[]>(tabs.map(tab => ({ 
+    ...tab, rows: [...tab.rows,{ id: nextId.current++, type: tab.label, content: '', hierarchy: 1, parentId: null }] 
+  })));
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto focus on the new input row
@@ -57,8 +69,10 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
   // Function to add a new row to the active tab
   const handleAddRow = (label: string) => {
     const newTabData = tabData.map(tab => {
-      if (tab.label === label && tab.rows[tab.rows.length - 1] !== '') {
-        return { ...tab, rows: [...tab.rows, ''] };
+      if (tab.label === label && (tab.rows.length === 0 || tab.rows[tab.rows.length - 1].content !== '')) {
+        return { 
+          ...tab, 
+          rows: [...tab.rows,{ id: nextId.current++, type: tab.label, content: '', hierarchy: 1, parentId: null }] };
       }
       return tab;
     });
@@ -76,7 +90,7 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
     const newTabData = tabData.map(tab => {
       if (tab.label === label) {
         const newRows = [...tab.rows];
-        newRows[index] = value;
+        newRows[index].content = value;
         return { ...tab, rows: newRows };
       }
       return tab;
@@ -100,20 +114,36 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
   // Get the last row of the active tab
   const activeTab = tabData.find(tab => tab.label === activeKey);
   // Check if the last row is not empty (it also checks if activeTab is defined)
-  const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
+  // const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
 
 
   const handleDragStart = (event: React.DragEvent<HTMLInputElement>) => {
     console.log("drag start");
     const itemText = event.currentTarget.value || "";
-    props.setDraggedItem(itemText);
+    // props.setDraggedItem(itemText);
   };
 
 
+  const handleSave = () => {
+    console.log("Data Saved"); // Implement actual save logic here
+  };
+
+
+  const handleConvert = () => {
+    const allItems = tabData.flatMap(tab => tab.rows);
+    if (allItems.length > 0) {
+      const jsonBlob = new Blob([JSON.stringify(allItems, null, 2)], { type: "application/json" });
+      saveAs(jsonBlob, "GoalList.json");
+    } else {
+      alert("No data to convert.");
+    }
+  };
+
   return (
     <div className={styles.tabContainer} ref={ref}>
-      <Tab.Container activeKey={activeKey ?? undefined}
-      onSelect={handleSelect}>
+      <Tab.Container 
+        activeKey={activeKey ?? undefined}
+        onSelect={handleSelect}>
         <Nav 
         variant="pills" 
         className="flex-row">
@@ -139,8 +169,8 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
           {tabData.map(tab => (
             <Tab.Pane 
               key={tab.label} 
-              eventKey={tab.label}>
-              {/* <h4>{tab.label}</h4> */}
+              eventKey={tab.label}
+              >
               {tab.rows.map((row, index) => (
                 <Form.Group 
                   key={`${tab.label}-${index}`} 
@@ -148,10 +178,8 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
                   className={styles.formGroup}>
                   <Col sm={11}>
                     <Form.Control
-                      onDragStart={handleDragStart}
-                      draggable
                       type="text"
-                      value={row}
+                      value={row.content}
                       onChange={e => handleRowChange(tab.label, index, e.target.value)}
                       placeholder={`Enter ${tab.label}...`}
                       spellCheck // Browser's spellcheck feature
@@ -178,6 +206,8 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
           ))}
         </Tab.Content>
       </Tab.Container>
+      <Button onClick={handleSave} className={styles.saveButton}>Save</Button>
+      <Button onClick={handleConvert} className={styles.saveButton}>Convert to JSON</Button>
     </div>
   );
 });

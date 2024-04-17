@@ -42,15 +42,15 @@ const SectionPanel = ({
   paddingX,
 }: SectionPanelProps) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
-  // const [sectionOneHeight, setSectionOneHeight] = useState("100%");
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
+  const [sectionHeight, setSectionHeight] = useState('800px');
 
   const [draggedItem, setDraggedItem] = useState<string>("");
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
-  const goalListRef = useRef(null);
+  const goalListRef = useRef<HTMLDivElement>(null);
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (
@@ -140,9 +140,10 @@ const SectionPanel = ({
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",
           display: showGoalSection ? "flex" : "none",
-          minHeight: "200px",
+          minHeight: sectionHeight,
+          // overflowX: 'auto'
         }}
-        size={{ width: sectionOneWidth, height: "100%" }}
+        size={{ width: sectionOneWidth, height: sectionHeight }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
         onResize={handleResizeSectionOne}
@@ -157,7 +158,7 @@ const SectionPanel = ({
           ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPOTIONS.minWidth,
-          minHeight: "800px",
+          minHeight: sectionHeight,
           height: "100%",
           padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
