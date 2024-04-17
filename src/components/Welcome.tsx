@@ -4,6 +4,8 @@ import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
 import WelcomeButtons from "./WelcomeButtons";
 
+const LEON_ICON = "/src/assets/img/leon.png";
+
 const Welcome = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
@@ -26,7 +28,7 @@ const Welcome = () => {
           <Carousel.Item>
             <div className="content">
               <img
-                src={"./leon.png"}
+                src={LEON_ICON}
                 alt="leon_icon"
                 style={{ height: "100px", width: "auto" }}
               />
