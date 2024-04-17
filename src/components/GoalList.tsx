@@ -37,7 +37,7 @@ const tabs: TabContent[] = [
   { label: 'Concern', icon: ConcernIcon, rows: [] },
 ];
 
-const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
+const GoalList = React.forwardRef<HTMLDivElement, { setDraggedItem: React.Dispatch<React.SetStateAction<string>> }>(({ setDraggedItem }, ref) => {
   // State for the active tab
   const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
   // State to keep track of all data associated with tabs
@@ -59,7 +59,7 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
     setActiveKey(selectedKey);
   };
 
-  const handleKeyPress = (e, label: string) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, label: string) => {
     if (e.key === 'Enter') {
       e.preventDefault(); // Prevent default Enter key behavior
       handleAddRow(label);
@@ -112,7 +112,7 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
   };
 
   // Get the last row of the active tab
-  const activeTab = tabData.find(tab => tab.label === activeKey);
+  // const activeTab = tabData.find(tab => tab.label === activeKey);
   // Check if the last row is not empty (it also checks if activeTab is defined)
   // const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
 
@@ -120,7 +120,7 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
   const handleDragStart = (event: React.DragEvent<HTMLInputElement>) => {
     console.log("drag start");
     const itemText = event.currentTarget.value || "";
-    // props.setDraggedItem(itemText);
+    props.setDraggedItem(itemText);
   };
 
 
@@ -184,7 +184,7 @@ const GoalList = React.forwardRef<HTMLDivElement>((props, ref) => {
                       placeholder={`Enter ${tab.label}...`}
                       spellCheck // Browser's spellcheck feature
                       className="bg-white" // White background for input row
-                      onKeyDown={e => handleKeyPress(e, tab.label)}
+                      onKeyDown={e => handleKeyPress(e as React.KeyboardEvent<HTMLInputElement>, tab.label)}
                       ref={index === tab.rows.length - 1 ? inputRef : undefined} 
                     />
                   </Col>

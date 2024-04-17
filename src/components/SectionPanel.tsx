@@ -6,7 +6,7 @@ import Tree from "./Tree";
 
 const defaultStyle = {
   display: "flex",
-  alignItems: "center",
+  alignItems: "flex-start",
   justifyContent: "center",
   borderStyle: "solid",
   borderColor: "lightgrey",
@@ -53,12 +53,7 @@ const SectionPanel = ({
   const goalListRef = useRef<HTMLDivElement>(null);
 
   // Handle section one resize and section three auto resize
-  const handleResizeSectionOne: ResizeCallback = (
-    event,
-    direction,
-    ref,
-    delta
-  ) => {
+  const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
     setSectionOneWidth(ref.offsetWidth);
     // If the width sum exceed the parent total width, auto resize the section three until reach the minimum
     if (
@@ -74,10 +69,9 @@ const SectionPanel = ({
 
   // Handle section three resize and section one auto resize
   const handleResizeSectionThree: ResizeCallback = (
-    event,
-    direction,
-    ref,
-    delta
+    _event,
+    _direction,
+    ref
   ) => {
     console.log(
       sectionOneWidth,
@@ -146,6 +140,7 @@ const SectionPanel = ({
         size={{ width: sectionOneWidth, height: sectionHeight }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
+        minHeight={800}
         onResize={handleResizeSectionOne}
       >
         {/* First Panel Content */}
@@ -179,10 +174,11 @@ const SectionPanel = ({
         }}
         size={{
           width: sectionThreeWidth,
-          height: 200,
+          height: "100%",
         }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
+        minHeight={800}
         onResize={handleResizeSectionThree}
       >
         {/* Third Panel Content */}
