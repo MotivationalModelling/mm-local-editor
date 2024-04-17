@@ -28,6 +28,8 @@ const INITIAL_PROPORTIONS = {
   },
 };
 
+const DEFAULT_HEIGHT = "800px";
+
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
@@ -44,7 +46,6 @@ const SectionPanel = ({
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
-  const [sectionHeight, setSectionHeight] = useState('800px');
 
   const [draggedItem, setDraggedItem] = useState<string>("");
 
@@ -134,13 +135,12 @@ const SectionPanel = ({
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",
           display: showGoalSection ? "flex" : "none",
-          minHeight: sectionHeight,
           // overflowX: 'auto'
         }}
-        size={{ width: sectionOneWidth, height: sectionHeight }}
+        size={{ width: sectionOneWidth, height: "100%" }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
-        minHeight={800}
+        minHeight={DEFAULT_HEIGHT}
         onResize={handleResizeSectionOne}
       >
         {/* First Panel Content */}
@@ -153,7 +153,7 @@ const SectionPanel = ({
           ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPOTIONS.minWidth,
-          minHeight: sectionHeight,
+          minHeight: DEFAULT_HEIGHT,
           height: "100%",
           padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
@@ -178,7 +178,7 @@ const SectionPanel = ({
         }}
         maxWidth={DEFINED_PROPOTIONS.maxWidth}
         minWidth={DEFINED_PROPOTIONS.minWidth}
-        minHeight={800}
+        minHeight={DEFAULT_HEIGHT}
         onResize={handleResizeSectionThree}
       >
         {/* Third Panel Content */}
