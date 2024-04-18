@@ -1,26 +1,30 @@
-import { Col, Container, Row, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import React from "react";
 
-const ProjectEditHeader = () => {
-  return (
-    <header
-      className="bg-white mb-2 py-3 px-5 overflow-hidden"
-      style={{ width: "auto", minWidth: "1280px", maxWidth: "100%" }}
-    >
-      <Container fluid>
-        <Row className="text-start align-content-center">
-          <Col>
-            <strong style={{ fontSize: "35px" }}>AMMBER</strong>
-          </Col>
-          <Col className="text-end align-content-center">
-            <Link to={"/"}>
-              <Button variant="warning">Back</Button>
-            </Link>
-          </Col>
-        </Row>
-      </Container>
-    </header>
-  );
+import {Link} from "react-router-dom";
+
+import {Col} from "react-bootstrap";
+import {Container} from "react-bootstrap";
+import {Row} from "react-bootstrap";
+import {Button} from "react-bootstrap";
+
+const ProjectEditHeader: React.FC = () => {
+    return (
+        <header className="bg-white mb-2 py-3 px-5 overflow-hidden"
+                style={{width: "auto", minWidth: "1280px", maxWidth: "100%"}}>
+            <Container fluid>
+                <Row className="text-start align-content-center">
+                    <Col>
+                        <strong style={{ fontSize: "35px" }}>AMMBER</strong>
+                    </Col>
+                    <Col className="text-end align-content-center">
+                        <Link to="/">
+                            <Button variant="warning">Back</Button>
+                        </Link>
+                    </Col>
+                </Row>
+            </Container>
+        </header>
+    );
 };
 
 export default ProjectEditHeader;
