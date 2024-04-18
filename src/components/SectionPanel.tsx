@@ -14,7 +14,7 @@ const defaultStyle = {
   borderRadius: "3px",
 };
 
-const DEFINED_PROPOTIONS = {
+const DEFINED_PROPORTIONS = {
   maxWidth: "80%",
   minWidth: "10%",
 };
@@ -180,8 +180,8 @@ const SectionPanel = ({
           // overflowX: 'auto'
         }}
         size={{ width: sectionOneWidth, height: "100%" }}
-        maxWidth={DEFINED_PROPOTIONS.maxWidth}
-        minWidth={DEFINED_PROPOTIONS.minWidth}
+        maxWidth={DEFINED_PROPORTIONS.maxWidth}
+        minWidth={DEFINED_PROPORTIONS.minWidth}
         minHeight={DEFAULT_HEIGHT}
         onResize={handleResizeSectionOne}
       >
@@ -194,7 +194,7 @@ const SectionPanel = ({
         style={{
           ...defaultStyle,
           width: "100%",
-          minWidth: DEFINED_PROPOTIONS.minWidth,
+          minWidth: DEFINED_PROPORTIONS.minWidth,
           minHeight: DEFAULT_HEIGHT,
           height: "100%",
           padding: "10px",
@@ -220,8 +220,8 @@ const SectionPanel = ({
           width: sectionThreeWidth,
           height: "100%",
         }}
-        maxWidth={DEFINED_PROPOTIONS.maxWidth}
-        minWidth={DEFINED_PROPOTIONS.minWidth}
+        maxWidth={DEFINED_PROPORTIONS.maxWidth}
+        minWidth={DEFINED_PROPORTIONS.minWidth}
         minHeight={DEFAULT_HEIGHT}
         onResize={handleResizeSectionThree}
       >
