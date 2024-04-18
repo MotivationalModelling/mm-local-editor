@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import Nestable, { NestableProps } from "react-nestable";
 import "react-nestable/dist/styles/index.css";
 import "./Tree.css";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import DeleteIcon from "../assets/img/trash-alt-solid.svg";
+import { TreeItem } from "./SectionPanel";
 
 // Inline style for element in Nestable, css style import not working
 const styles: React.CSSProperties = {
@@ -16,41 +17,12 @@ const styles: React.CSSProperties = {
   padding: "0.1rem",
 };
 
-type TreeItem = {
-  id: number;
-  text: string;
-  children?: TreeItem[];
-};
-
 type TreeProps = {
-  draggedItem: string;
+  treeData: TreeItem[];
+  setTreeData: React.Dispatch<React.SetStateAction<TreeItem[]>>;
 };
 
-// Dummy data
-const items: TreeItem[] = [
-  {
-    id: 0,
-    text: "Do 1",
-    children: [
-      { id: 1, text: "Be 1" },
-      { id: 2, text: "Role 2" },
-      { id: 3, text: "Do 7", children: [{ id: 4, text: "Be 1" }] },
-    ],
-  },
-  {
-    id: 5,
-    text: "Do 3",
-    children: [
-      { id: 6, text: "Role 5" },
-      { id: 7, text: "Be 3" },
-      { id: 8, text: "Feel 1" },
-    ],
-  },
-];
-
-const Tree = ({ draggedItem }: TreeProps) => {
-  const [treeData, setTreeData] = useState<TreeItem[]>(items);
-
+const Tree = ({ treeData, setTreeData }: TreeProps) => {
   // Remove item recursively from tree data
   const removeItemFromTree = (
     items: TreeItem[],
@@ -118,25 +90,8 @@ const Tree = ({ draggedItem }: TreeProps) => {
     );
   };
 
-  // Handle for goals drop on the nestable section
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (draggedItem) {
-      const newData: TreeItem[] = [
-        ...treeData,
-        { id: Date.now(), text: draggedItem },
-      ];
-      setTreeData(newData);
-    }
-    console.log("drop finish");
-  };
-
   return (
-    <div
-      onDrop={handleDrop}
-      onDragOver={(event) => event.preventDefault()}
-      style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}
-    >
+    <div style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}>
       <Nestable
         items={treeData}
         renderItem={renderItem}

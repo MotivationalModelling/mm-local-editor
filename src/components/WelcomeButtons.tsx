@@ -237,7 +237,12 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
           {/* Link section is bigger than Button section, click outside Button could trigger navigation,
              hard code a static height for temporary, need a better solution
           */}
-          <Link to="/projectEdit" className="me-5" style={{ height: "60px" }}>
+          <Link
+            to="/projectEdit"
+            className="me-5"
+            style={{ height: "60px" }}
+            draggable={false}
+          >
             <Button variant="primary" size="lg">
               Create Model
             </Button>

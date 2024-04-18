@@ -37,6 +37,34 @@ type SectionPanelProps = {
   paddingX: number;
 };
 
+export type TreeItem = {
+  id: number;
+  text: string;
+  children?: TreeItem[];
+};
+
+// Dummy data
+const items: TreeItem[] = [
+  {
+    id: 0,
+    text: "Do 1",
+    children: [
+      { id: 1, text: "Be 1" },
+      { id: 2, text: "Role 2" },
+      { id: 3, text: "Do 7", children: [{ id: 4, text: "Be 1" }] },
+    ],
+  },
+  {
+    id: 5,
+    text: "Do 3",
+    children: [
+      { id: 6, text: "Role 5" },
+      { id: 7, text: "Be 3" },
+      { id: 8, text: "Feel 1" },
+    ],
+  },
+];
+
 const SectionPanel = ({
   showGoalSection,
   showGraphSection,
@@ -48,6 +76,7 @@ const SectionPanel = ({
   const [parentWidth, setParentWidth] = useState(0);
 
   const [draggedItem, setDraggedItem] = useState<string>("");
+  const [treeData, setTreeData] = useState<TreeItem[]>(items);
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -90,6 +119,19 @@ const SectionPanel = ({
         parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
       );
     }
+  };
+
+  // Handle for goals drop on the nestable section
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (draggedItem) {
+      const newData: TreeItem[] = [
+        ...treeData,
+        { id: Date.now(), text: draggedItem },
+      ];
+      setTreeData(newData);
+    }
+    console.log("drop finish");
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -158,9 +200,11 @@ const SectionPanel = ({
           padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
         }}
+        onDrop={handleDrop}
+        onDragOver={(event) => event.preventDefault()}
         ref={sectionTwoRef}
       >
-        <Tree draggedItem={draggedItem} />
+        <Tree treeData={treeData} setTreeData={setTreeData} />
       </div>
 
       {/* Graph Render Section */}
