@@ -3,7 +3,7 @@ import React from "react";
 import Carousel from "react-bootstrap/Carousel";
 
 export const DetailCarousel: React.FC = () => (
-    <Carousel>
+    <Carousel interval={null}>
         <Carousel.Item>
             <div className="content">
                 <img src="./leon.png"

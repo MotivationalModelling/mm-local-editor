@@ -174,15 +174,15 @@ const papers: Reference[] = [{
 
 const Papers = () => {
     return (
-        <>
+        <div id="bg">
             <WelcomeHeader/>
             {/*<main role="main" className="inner cover">*/}
-                <Container>
+                <Container style={{overflow: "auto", height: "90vh"}}>
                     <PaperReferenceList references={papers}/>
                 </Container>
             {/*</main>*/}
             <WelcomeFooter destination="" name="Home"/>
-        </>
+        </div>
     );
 };
 

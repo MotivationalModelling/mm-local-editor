@@ -4,6 +4,7 @@ import {Link} from "react-router-dom";
 
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
+import "./PaperReferenceList.css"
 
 export interface Reference {
     title: string
@@ -41,7 +42,7 @@ const PaperReferenceList: React.FC<Props> = ({references}) => {
     return (
         <ListGroup as="ul" variant="flush">
             {references.map((paper, i) => (
-                <ListGroup.Item as="li" key={i}>
+                <ListGroup.Item as="li" key={i} style={{background: "transparent", border: "none"}}>
                     <PaperReference paper={paper} key={i}/>
                 </ListGroup.Item>
             ))}
