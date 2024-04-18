@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
 import "./SectionPanel.css";
 import GoalList from "./GoalList";
@@ -157,7 +157,7 @@ const SectionPanel = ({
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
       }
     }
-  }, [showGoalSection]);
+  }, [paddingX, showGoalSection, showGraphSection]);
 
   return (
     <div
