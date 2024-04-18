@@ -5,7 +5,7 @@ import FeelIcon from "../assets/img/Heart.png";
 import ConcernIcon from "../assets/img/Risk.png";
 import DeleteIcon from "../assets/img/trash-alt-solid.svg";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {saveAs} from "file-saver";
 
 import Tab from "react-bootstrap/Tab";
@@ -46,12 +46,13 @@ const GoalList = React.forwardRef<
   HTMLDivElement,
   { setDraggedItem: React.Dispatch<React.SetStateAction<string>> }
 >(({ setDraggedItem }, ref) => {
-  // State for the active tab
+
   const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
-  // State to keep track of all data associated with tabs
+ 
   const nextId = useRef(0);
-  const [tabData, setTabData] = useState<TabContent[]>(
-    tabs.map((tab) => ({
+  const [tabData, setTabData] = useState<TabContent[]>([]);
+  useEffect(() => {
+    const initialTabs = tabs.map((tab) => ({
       ...tab,
       rows: [
         ...tab.rows,
@@ -64,7 +65,9 @@ const GoalList = React.forwardRef<
         },
       ],
     }))
-  );
+    setTabData(initialTabs);
+  }, []);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto focus on the new input row
@@ -103,7 +106,7 @@ const GoalList = React.forwardRef<
               id: nextId.current++,
               type: tab.label,
               content: "",
-              hierarchy: 1,
+              hierarchy: 0,  //Initial all are parents and no hierarchy
               parentId: null,
             },
           ],
@@ -126,6 +129,7 @@ const GoalList = React.forwardRef<
       if (tab.label === label) {
         const newRows = [...tab.rows];
         newRows[index].content = value;
+        console.log("id" + newRows[index].id+ "content" + newRows[index].content); // Debug log
         return { ...tab, rows: newRows };
       }
       return tab;
@@ -157,19 +161,26 @@ const GoalList = React.forwardRef<
     setDraggedItem(itemText);
   };
 
-  const handleSave = () => {
-    console.log("Data Saved"); // Implement actual save logic here
-  };
-
   const handleConvert = () => {
-    const allItems = tabData.flatMap((tab) => tab.rows);
-    if (allItems.length > 0) {
-      const jsonBlob = new Blob([JSON.stringify(allItems, null, 2)], {
-        type: "application/json",
+    // Check if there is data here.
+    const hasNonEmptyRows = tabData.find(tab => tab.label === activeKey)?.rows.some(row => row.content !== "");
+    if (!hasNonEmptyRows) {
+        alert("Failed: Nothing to convert.");
+        return
+    }
+
+    const dataToConvert = tabData.map(tab => ({
+      type: tab.label,
+      items: tab.rows.filter(row => row.content.trim() !== "")
+    })).filter(tab => tab.items.length > 0);
+
+    if (dataToConvert.length > 0) {
+      const jsonBlob = new Blob([JSON.stringify(dataToConvert, null, 2)], {
+          type: "application/json"
       });
       saveAs(jsonBlob, "GoalList.json");
     } else {
-      alert("No data to convert.");
+      alert("Failed to convert: No data to convert.");
     }
   };
 
@@ -214,8 +225,8 @@ const GoalList = React.forwardRef<
                         handleRowChange(tab.label, index, e.target.value)
                       }
                       placeholder={`Enter ${tab.label}...`}
-                      spellCheck // Browser's spellcheck feature
-                      className="bg-white" // White background for input row
+                      spellCheck
+                      className="bg-white"
                       onKeyDown={(e) =>
                         handleKeyPress(
                           e as React.KeyboardEvent<HTMLInputElement>,
@@ -245,12 +256,11 @@ const GoalList = React.forwardRef<
           ))}
         </Tab.Content>
       </Tab.Container>
-      <Button onClick={handleSave} className={styles.saveButton}>
-        Save
-      </Button>
-      <Button onClick={handleConvert} className={styles.saveButton}>
-        Convert to JSON
-      </Button>
+      <div className={styles.buttonContainer}>
+        <Button onClick={handleConvert} className={styles.convertButton}>
+          Convert
+        </Button>
+      </div>
     </div>
   );
 });

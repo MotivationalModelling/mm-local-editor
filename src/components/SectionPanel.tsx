@@ -177,7 +177,6 @@ const SectionPanel = ({
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",
           display: showGoalSection ? "flex" : "none",
-          // overflowX: 'auto'
         }}
         size={{ width: sectionOneWidth, height: "100%" }}
         maxWidth={DEFINED_PROPORTIONS.maxWidth}
