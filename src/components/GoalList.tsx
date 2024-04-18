@@ -6,9 +6,14 @@ import ConcernIcon from "../assets/img/Risk.png";
 import DeleteIcon from "../assets/img/trash-alt-solid.svg";
 
 import React, { useState, useRef } from "react";
-import { saveAs } from "file-saver";
-import { Tab, Nav, Row, Col, Form, Button } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
+import {saveAs} from "file-saver";
+
+import Tab from "react-bootstrap/Tab";
+import Nav from "react-bootstrap/Nav";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
 
 import styles from "./TabButtons.module.css";
 type Label = "Who" | "Do" | "Be" | "Feel" | "Concern";
