@@ -93,6 +93,7 @@ const Tree = ({ treeData, setTreeData }: TreeProps) => {
   return (
     <div style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}>
       <Nestable
+        onChange={({items}) => console.log(items)}
         items={treeData}
         renderItem={renderItem}
         renderCollapseIcon={({ isCollapsed }) => (

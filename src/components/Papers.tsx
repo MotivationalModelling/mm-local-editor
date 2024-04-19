@@ -166,10 +166,6 @@ const papers: Reference[] = [{
         clients. Finally, we outline discussion points regarding where goal
         models could fit into other agile practices.`,
     link: "/papers/Using_Goal_Models_in_Agile_Teaching__RE_.pdf",
-}, {
-    title: `User Manual for Motivational Model Editor`,
-    summary: `User manual`,
-    link: "/papers/usermanual.pdf"
 }];
 
 const Papers = () => {

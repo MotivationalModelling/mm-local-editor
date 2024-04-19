@@ -17,14 +17,6 @@ const WelcomeFooter = ({ name, destination }: WelcomeFooterProps) => {
           </Link>
           &nbsp;|&nbsp;
           <Link
-            to="https://motivationalmodelling.com/kb/"
-            className="text-decoration-none"
-            target="_kb"
-          >
-            Knowledge Base
-          </Link>
-          &nbsp;|&nbsp;
-          <Link
             to="/papers/usermanual.pdf"
             target="_blank"
             className="text-decoration-none"
