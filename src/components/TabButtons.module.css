@@ -111,3 +111,7 @@
   gap: 10px;
   float: left;
 }
+
+input:not(:placeholder-shown) {
+	cursor: move;
+}

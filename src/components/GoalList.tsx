@@ -116,11 +116,12 @@ const GoalList = React.forwardRef<
     });
     setTabData(newTabData);
 
-    setTimeout(() => {
+    // Defer code execution until after the browser has finished rendering updates to the DOM.
+    requestAnimationFrame(() => {
       if (inputRef.current) {
         inputRef.current.focus();
       }
-    }, 0);
+    });
   };
 
   // Function to handle changes to input fields (rows) within a tab
