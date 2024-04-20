@@ -27,7 +27,7 @@ const PaperReference: React.FC<{paper: Reference}> = ({paper}) => {
             </Card.Body>
             <Card.Footer>
                 <Link to={paper.link} target="_blank">
-                    Download
+                    View
                 </Link>
             </Card.Footer>
         </Card>

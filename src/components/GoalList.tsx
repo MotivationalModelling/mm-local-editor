@@ -14,6 +14,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
+import InputGroup from "react-bootstrap/InputGroup";
 import { TreeItem, TabContent } from "./SectionPanel";
 
 import styles from "./TabButtons.module.css";
@@ -31,19 +32,24 @@ type GoalListProps = {
 	setDraggedItem: React.Dispatch<React.SetStateAction<TreeItem | null>>;
 	tabData: TabContent[];
 	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
+	groupSelected: TreeItem[];
+	setGroupSelected: React.Dispatch<React.SetStateAction<TreeItem[]>>;
 };
 
 const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
-	({ setDraggedItem, tabData, setTabData }, ref) => {
+	(
+		{ setDraggedItem, tabData, setTabData, groupSelected, setGroupSelected },
+		ref
+	) => {
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
 
 		useEffect(() => {
-			const initialTabs = tabs.map((tab) => ({
+			const initialTabs = tabs.map((tab, index) => ({
 				...tab,
 				rows: [
 					...tab.rows,
 					{
-						id: Date.now(),
+						id: Date.now() + index,
 						type: tab.label,
 						content: "",
 					},
@@ -175,6 +181,26 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 
+		const handleCheckboxToggle = (row: TreeItem) => {
+			// Ignore the item if the content is empty
+			if (row.content.trim() === "") {
+				return;
+			}
+			setGroupSelected((prevGroupSelected) => {
+				const isRowSelected = prevGroupSelected.some(
+					(item) => item.id === row.id
+				);
+
+				if (isRowSelected) {
+					// If row is already selected, remove it from groupSelected
+					return prevGroupSelected.filter((item) => item.id !== row.id);
+				} else {
+					// If row is not selected, add it to groupSelected
+					return [...prevGroupSelected, row];
+				}
+			});
+		};
+
 		return (
 			<div className={styles.tabContainer} ref={ref}>
 				<Tab.Container
@@ -194,7 +220,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										src={tab.icon}
 										alt={`${tab.label} icon`}
 										className={styles.icon}
-                    style={{width: tab.label == "Who" ? "0.7cm" : "1.5cm"}}
+										style={{ width: tab.label == "Who" ? "0.7cm" : "1.5cm" }}
 									/>
 									<span className={styles.labelBelowIcon}>{tab.label}</span>
 								</Nav.Link>
@@ -211,27 +237,34 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										className={styles.formGroup}
 									>
 										<Col sm={11}>
-											<Form.Control
-												onDragStart={() => handleDragStart(row)}
-												draggable
-												type="text"
-												value={row.content}
-												onChange={(e) =>
-													handleRowChange(tab.label, index, e.target.value)
-												}
-												placeholder={`Enter ${tab.label}...`}
-												spellCheck
-												className="bg-white"
-												onKeyDown={(e) =>
-													handleKeyPress(
-														e as React.KeyboardEvent<HTMLInputElement>,
-														tab.label
-													)
-												}
-												ref={
-													index === tab.rows.length - 1 ? inputRef : undefined
-												}
-											/>
+											<InputGroup>
+                      {row.content &&
+												<InputGroup.Checkbox
+													onChange={() => handleCheckboxToggle(row)}
+												/>
+                      }
+												<Form.Control
+													onDragStart={() => handleDragStart(row)}
+													draggable
+													type="text"
+													value={row.content}
+													onChange={(e) =>
+														handleRowChange(tab.label, index, e.target.value)
+													}
+													placeholder={`Enter ${tab.label}...`}
+													spellCheck
+													className="bg-white"
+													onKeyDown={(e) =>
+														handleKeyPress(
+															e as React.KeyboardEvent<HTMLInputElement>,
+															tab.label
+														)
+													}
+													ref={
+														index === tab.rows.length - 1 ? inputRef : undefined
+													}
+												/>
+											</InputGroup>
 										</Col>
 										{tab.rows.length > 1 && (
 											<Col sm={1}>

@@ -3,6 +3,7 @@ import { Resizable, ResizeCallback } from "re-resizable";
 import "./SectionPanel.css";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
+import { Button } from "react-bootstrap";
 
 const defaultStyle = {
 	display: "flex",
@@ -95,6 +96,7 @@ const SectionPanel = ({
 	const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
 	const [treeData, setTreeData] = useState<TreeItem[]>(items);
 	const [tabData, setTabData] = useState<TabContent[]>([]);
+	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
 	const sectionTwoRef = useRef<HTMLDivElement>(null);
 	const parentRef = useRef<HTMLDivElement>(null);
@@ -114,6 +116,7 @@ const SectionPanel = ({
 			);
 		}
 	};
+	useEffect(() => console.log(tabData), [tabData]);
 
 	// Handle section three resize and section one auto resize
 	const handleResizeSectionThree: ResizeCallback = (
@@ -121,11 +124,6 @@ const SectionPanel = ({
 		_direction,
 		ref
 	) => {
-		console.log(
-			sectionOneWidth,
-			sectionTwoRef.current?.offsetWidth,
-			ref.offsetWidth
-		);
 		setSectionThreeWidth(ref.offsetWidth);
 		// If the width sum exceed the parent total width, auto resize the section one until reach the minimum
 		if (
@@ -149,6 +147,17 @@ const SectionPanel = ({
 		console.log("drop finish");
 	};
 
+	const handleDropGroupSelected = () => {
+		setTreeData((prevTreeData) => [...prevTreeData, ...groupSelected]);
+		setGroupSelected([]);
+
+    // Untoggle checkboxes, temporary method, not recommended manipulate DOM in React
+  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  checkboxes.forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+	};
+
 	// Get the parent div inner width and set starter width for section one and section three
 	useEffect(() => {
 		if (parentRef.current) {
@@ -156,7 +165,6 @@ const SectionPanel = ({
 			setParentWidth(newParentWidth);
 
 			if (showGoalSection && showGraphSection) {
-				console.log(showGoalSection);
 				setSectionOneWidth(
 					newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne
 				);
@@ -205,8 +213,20 @@ const SectionPanel = ({
 					setDraggedItem={setDraggedItem}
 					tabData={tabData}
 					setTabData={setTabData}
+					groupSelected={groupSelected}
+					setGroupSelected={setGroupSelected}
 				/>
 			</Resizable>
+
+			<Button
+				className="m-2 justify-content-center align-items-center"
+				variant="primary"
+				style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+				onClick={handleDropGroupSelected}
+			>
+				{/* Click to Drop To Right Panel */}
+        Drop
+			</Button>
 
 			{/* Cluster Hierachy Section */}
 			<div
