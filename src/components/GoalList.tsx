@@ -194,6 +194,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										src={tab.icon}
 										alt={`${tab.label} icon`}
 										className={styles.icon}
+                    style={{width: tab.label == "Who" ? "0.7cm" : "1.5cm"}}
 									/>
 									<span className={styles.labelBelowIcon}>{tab.label}</span>
 								</Nav.Link>
