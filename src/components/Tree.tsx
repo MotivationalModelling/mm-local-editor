@@ -1,10 +1,17 @@
 import React, { useRef, useState } from "react";
+import WhoIcon from "../assets/img/Stakeholder.png";
+import DoIcon from "../assets/img/Function.png";
+import BeIcon from "../assets/img/Cloud.png";
+import FeelIcon from "../assets/img/Heart.png";
+import ConcernIcon from "../assets/img/Risk.png";
 import Nestable, { NestableProps } from "react-nestable";
-import "react-nestable/dist/styles/index.css";
-import "./Tree.css";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { TreeItem } from "./SectionPanel";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
+import { Label, TabContent } from "./SectionPanel";
+
+import "react-nestable/dist/styles/index.css";
+import "./Tree.css";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -19,23 +26,58 @@ const treeListStyle: React.CSSProperties = {
 
 const treeInputStyle: React.CSSProperties = {
 	backgroundColor: "#e0e0e0",
-  border: "none",
-  margin: 0,
-  padding: 0,
-  flex: 1,
-  outline: "none",
-  width: "100%",
-  height: "100%",
+	border: "none",
+	margin: 0,
+	padding: 0,
+	flex: 1,
+	outline: "none",
+	width: "100%",
+	height: "100%",
 };
-
-
 
 type TreeProps = {
 	treeData: TreeItem[];
 	setTreeData: React.Dispatch<React.SetStateAction<TreeItem[]>>;
+	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
 };
 
-const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
+// Goal icon in the tree
+const IconComponent = ({ type }: { type: Label }) => {
+	let icon = "";
+
+	switch (type) {
+		case "Be":
+			icon = BeIcon;
+			break;
+		case "Do":
+			icon = DoIcon;
+			break;
+		case "Concern":
+			icon = ConcernIcon;
+			break;
+		case "Feel":
+			icon = FeelIcon;
+			break;
+		case "Who":
+			icon = WhoIcon;
+			break;
+		default:
+			icon = "";
+	}
+
+	return (
+		<img
+			src={icon}
+			alt={`${type} icon`}
+			className="ms-2 me-1"
+			style={{
+				height: type == "Who" ? "30px" : "20px",
+			}}
+		/>
+	);
+};
+
+const Tree: React.FC<TreeProps> = ({ treeData, setTreeData, setTabData }) => {
 	const [editingItemId, setEditingItemId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
 	const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
@@ -74,7 +116,7 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
 	): TreeItem[] => {
 		return items.map((currentItem) => {
 			if (currentItem.id === idToUpdate) {
-				return { ...currentItem, text: newText }; // Update text of this item
+				return { ...currentItem, content: newText }; // Update text of this item
 			}
 			if (currentItem.children) {
 				currentItem.children = updateItemTextInTree(
@@ -89,12 +131,13 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
 
 	// Function for rendering every item
 	const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
-		const isEditing = editingItemId === item.id;
+		const treeItem = item as TreeItem;
+		const isEditing = editingItemId === treeItem.id;
 
 		// Handle when edit button clicked
 		const handleEdit = () => {
-			setEditingItemId(item.id);
-			setEditedText(item.text);
+			setEditingItemId(treeItem.id);
+			setEditedText(treeItem.content);
 			// Defer code execution until after the browser has finished rendering updates to the DOM.
 			requestAnimationFrame(() => {
 				if (inputRef.current) {
@@ -110,21 +153,50 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
 			}
 		};
 
+		// Update the tab data if exist while the tree data changed
+		const updateTabDataContent = (
+			label: Label,
+			id: number,
+			newText: string
+		) => {
+			setTabData((prevTabData) => {
+				return prevTabData.map((tabContent) => {
+					if (tabContent.label === label) {
+						return {
+							...tabContent,
+							rows: tabContent.rows.map((row) => {
+								if (row.id === id) {
+									return {
+										...row,
+										content: newText,
+									};
+								}
+								return row;
+							}),
+						};
+					}
+					return tabContent;
+				});
+			});
+		};
+
 		// Handle saving edited text
+		// Update the edited text in both the tree data and tab data
 		const handleSave = () => {
 			const updatedTreeData = updateItemTextInTree(
 				treeData,
-				item.id,
+				treeItem.id,
 				editedText
 			);
 			setTreeData(updatedTreeData);
+			updateTabDataContent(treeItem.type, treeItem.id, editedText);
 			setEditingItemId(null);
 		};
 
 		// Handle cancel edited text
 		const handleCancel = () => {
 			setEditingItemId(null);
-			setEditedText(item.text);
+			setEditedText(treeItem.content);
 			// Defer code execution until after the browser has finished rendering updates to the DOM.
 			requestAnimationFrame(() => {
 				setDisableOnBlur(false);
@@ -159,6 +231,7 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
 				onDoubleClick={handleDoubleClick}
 			>
 				{collapseIcon}
+				<IconComponent type={treeItem.type} />
 				<div
 					style={{
 						padding: ".5rem",
@@ -173,11 +246,11 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
 							onChange={(event) => setEditedText(event.target.value)}
 							onBlur={handleBlur}
 							onKeyDown={handleEditKeyDown}
-              className="tree-input"
+							className="tree-input"
 							style={treeInputStyle}
 						/>
 					) : (
-						item.text
+						treeItem.content
 					)}
 				</div>
 
@@ -195,9 +268,7 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData }) => {
 				</div>
 				<div
 					className="delete-icon"
-					onClick={
-						isEditing ? handleCancel : () => handleDeleteItem(item as TreeItem)
-					}
+					onClick={isEditing ? handleCancel : () => handleDeleteItem(treeItem)}
 					onMouseEnter={() => setDisableOnBlur(true)}
 				>
 					{isEditing ? (

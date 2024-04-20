@@ -15,9 +15,9 @@
 }
 
 .tree-list:hover {
-  cursor: move; 
+	cursor: move;
 }
 
 input:focus {
-  cursor: text;
+	cursor: text;
 }
