@@ -201,6 +201,10 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			});
 		};
 
+		const isChecked = (row: TreeItem): boolean | undefined => {
+			return groupSelected.some((item) => item.id === row.id);
+		};
+
 		return (
 			<div className={styles.tabContainer} ref={ref}>
 				<Tab.Container
@@ -238,11 +242,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 									>
 										<Col sm={11}>
 											<InputGroup>
-                      {row.content &&
-												<InputGroup.Checkbox
-													onChange={() => handleCheckboxToggle(row)}
-												/>
-                      }
+												{row.content && (
+													<InputGroup.Checkbox
+														onChange={() => handleCheckboxToggle(row)}
+														checked={isChecked(row)}
+													/>
+												)}
 												<Form.Control
 													onDragStart={() => handleDragStart(row)}
 													draggable

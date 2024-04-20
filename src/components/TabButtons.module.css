@@ -114,3 +114,7 @@
 input:not(:placeholder-shown) {
 	cursor: move;
 }
+
+input[type="checkbox"]:hover {
+	cursor: default;
+}

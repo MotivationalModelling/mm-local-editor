@@ -147,15 +147,10 @@ const SectionPanel = ({
 		console.log("drop finish");
 	};
 
+  // Add selected items to the tree and remset selected items, uncheck the checkboxes
 	const handleDropGroupSelected = () => {
 		setTreeData((prevTreeData) => [...prevTreeData, ...groupSelected]);
 		setGroupSelected([]);
-
-    // Untoggle checkboxes, temporary method, not recommended manipulate DOM in React
-  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-  checkboxes.forEach((checkbox) => {
-    checkbox.checked = false;
-  });
 	};
 
 	// Get the parent div inner width and set starter width for section one and section three
@@ -225,7 +220,7 @@ const SectionPanel = ({
 				onClick={handleDropGroupSelected}
 			>
 				{/* Click to Drop To Right Panel */}
-        Drop
+				Drop
 			</Button>
 
 			{/* Cluster Hierachy Section */}
