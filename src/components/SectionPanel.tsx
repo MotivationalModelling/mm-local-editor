@@ -4,6 +4,7 @@ import "./SectionPanel.css";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import { Button } from "react-bootstrap";
+import ErrorModal from "./ErrorModal";
 
 const defaultStyle = {
 	display: "flex",
@@ -95,12 +96,17 @@ const SectionPanel = ({
 
 	const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
 	const [treeData, setTreeData] = useState<TreeItem[]>(items);
+	// Simply store ids of all items in the tree for fast check instead of recursive search
+	const [treeIds, setTreeIds] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7, 8]);
 	const [tabData, setTabData] = useState<TabContent[]>([]);
 	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
+	const [itemExist, setItemExist] = useState<[number, boolean]>([0, false]);
+	const [groupItemsExist, setGroupItemsExist] = useState<boolean>(false);
 
 	const sectionTwoRef = useRef<HTMLDivElement>(null);
 	const parentRef = useRef<HTMLDivElement>(null);
 	const goalListRef = useRef<HTMLDivElement>(null);
+	const timeoutRef = useRef<number | null>(null);
 
 	// Handle section one resize and section three auto resize
 	const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
@@ -116,7 +122,14 @@ const SectionPanel = ({
 			);
 		}
 	};
-	useEffect(() => console.log(tabData), [tabData]);
+	// Clear timeout when component unmounts
+	useEffect(() => {
+		return () => {
+			if (timeoutRef.current !== null) {
+				clearTimeout(timeoutRef.current);
+			}
+		};
+	}, []);
 
 	// Handle section three resize and section one auto resize
 	const handleResizeSectionThree: ResizeCallback = (
@@ -140,16 +153,60 @@ const SectionPanel = ({
 	// Handle for goals drop on the nestable section
 	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
 		e.preventDefault();
-		if (draggedItem) {
-			const newData: TreeItem[] = [...treeData, draggedItem];
-			setTreeData(newData);
+
+		const delayTime = 1500;
+		if (draggedItem && draggedItem.content) {
+			if (!treeIds.includes(draggedItem.id)) {
+				const newData: TreeItem[] = [...treeData, draggedItem];
+				setTreeData(newData);
+				setTreeIds([...treeIds, draggedItem.id]);
+				console.log("drop successful");
+			} else {
+				setItemExist([draggedItem.id, true]);
+				// Clear previous timeout
+				if (timeoutRef.current !== null) {
+					clearTimeout(timeoutRef.current);
+				}
+				// Set new timeout
+				timeoutRef.current = setTimeout(() => {
+					setItemExist([draggedItem.id, false]);
+				}, delayTime);
+				console.log("drop failed");
+			}
 		}
-		console.log("drop finish");
 	};
 
-  // Add selected items to the tree and remset selected items, uncheck the checkboxes
+	// Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
 	const handleDropGroupSelected = () => {
-		setTreeData((prevTreeData) => [...prevTreeData, ...groupSelected]);
+		// Filter groupSelected to get only objects whose IDs are not in treeData
+		const newItemsToAdd = groupSelected.filter(
+			(item) => !treeIds.includes(item.id)
+		);
+
+		console.log(newItemsToAdd);
+
+		// If all items are in the tree, then show the warning
+		if (newItemsToAdd.length === 0) {
+			setGroupItemsExist(true);
+			return;
+		}
+		// Update treeData with new items, filter out the empty items
+		setTreeData((prevTreeData) => [
+			...prevTreeData,
+			...newItemsToAdd.filter((item) => item.content.trim() !== ""),
+		]);
+		// Update Ids with new items, filter out the empty items
+		setTreeIds((prevIds) => [
+			...prevIds,
+			...newItemsToAdd
+				.filter((item) => item.content.trim() !== "")
+				.map((item) => item.id),
+		]);
+		setGroupSelected([]);
+	};
+
+	const handleGroupDropModal = () => {
+		setGroupItemsExist(false);
 		setGroupSelected([]);
 	};
 
@@ -187,6 +244,17 @@ const SectionPanel = ({
 			}}
 			ref={parentRef}
 		>
+			<ErrorModal
+				show={itemExist[1]}
+				title="Drop Failed"
+				message="The Goal already exists."
+			/>
+			<ErrorModal
+				show={groupItemsExist}
+				title="Group Drop Failed"
+				message="All selected Goals already exist."
+				onHide={handleGroupDropModal}
+			/>
 			{/* Goal List Section */}
 			<Resizable
 				handleClasses={{ right: "right-handler" }}
@@ -240,8 +308,10 @@ const SectionPanel = ({
 			>
 				<Tree
 					treeData={treeData}
+					itemExist={itemExist}
 					setTreeData={setTreeData}
 					setTabData={setTabData}
+					setTreeIds={setTreeIds}
 				/>
 			</div>
 

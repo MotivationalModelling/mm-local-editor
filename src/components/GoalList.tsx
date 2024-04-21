@@ -129,7 +129,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setTabData(newTabData);
 		};
 
-		const handleDeleteRow = (label: string, index: number) => {
+		const handleDeleteRow = (label: string, index: number, row: TreeItem) => {
 			const newTabData = tabData.map((tab) => {
 				if (tab.label === label) {
 					if (tab.rows.length > 1) {
@@ -142,6 +142,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				return tab;
 			});
 			setTabData(newTabData);
+			setGroupSelected((prevSelected) =>
+				prevSelected.filter((item) => item.id !== row.id)
+			);
 		};
 
 		// Get the last row of the active tab
@@ -275,7 +278,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 											<Col sm={1}>
 												<Button
 													className={styles.deleteButton}
-													onClick={() => handleDeleteRow(tab.label, index)}
+													onClick={() => handleDeleteRow(tab.label, index, row)}
 												>
 													<img
 														src={DeleteIcon}

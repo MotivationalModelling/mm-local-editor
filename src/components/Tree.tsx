@@ -37,8 +37,10 @@ const treeInputStyle: React.CSSProperties = {
 
 type TreeProps = {
 	treeData: TreeItem[];
+	itemExist: [number, boolean];
 	setTreeData: React.Dispatch<React.SetStateAction<TreeItem[]>>;
 	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
+	setTreeIds: React.Dispatch<React.SetStateAction<number[]>>;
 };
 
 // Goal icon in the tree
@@ -77,7 +79,13 @@ const IconComponent = ({ type }: { type: Label }) => {
 	);
 };
 
-const Tree: React.FC<TreeProps> = ({ treeData, setTreeData, setTabData }) => {
+const Tree: React.FC<TreeProps> = ({
+	treeData,
+	itemExist,
+	setTreeData,
+	setTabData,
+	setTreeIds,
+}) => {
 	const [editingItemId, setEditingItemId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
 	const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
@@ -107,6 +115,7 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData, setTabData }) => {
 	const handleDeleteItem = (item: TreeItem) => {
 		const updatedTreeData = removeItemFromTree(treeData, item.id);
 		setTreeData(updatedTreeData);
+		setTreeIds((prevIds) => prevIds.filter((id) => id !== item.id));
 	};
 
 	const updateItemTextInTree = (
@@ -220,12 +229,17 @@ const Tree: React.FC<TreeProps> = ({ treeData, setTreeData, setTabData }) => {
 		};
 
 		const ICON_SIZE = 25;
-
+		const [id, exist] = itemExist;
 		return (
+			// While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
 			<div
 				style={{
 					...treeListStyle,
-					backgroundColor: isEditing ? "#e0e0e0" : "white",
+					backgroundColor: isEditing
+						? "#e0e0e0"
+						: id === treeItem.id && exist
+						? "#FF474C"
+						: "white",
 				}}
 				className="tree-list"
 				onDoubleClick={handleDoubleClick}
