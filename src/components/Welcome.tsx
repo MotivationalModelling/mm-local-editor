@@ -15,14 +15,14 @@ const Welcome = () => {
     };
 
     return (
-        <div className="over-container d-flex p-3 flex-column text-center"
+        <div className="d-flex p-3 flex-column text-center"
              onDragOver={handleDragOver}
              id="bg">
             <WelcomeHeader/>
-            <main role="main" className="inner cover">
+            <div>
                 <DetailCarousel/>
                 <WelcomeButtons isDragging={isDragging} setIsDragging={setIsDragging}/>
-            </main>
+            </div>
             <WelcomeFooter destination="papers" name="Papers"/>
         </div>
     );

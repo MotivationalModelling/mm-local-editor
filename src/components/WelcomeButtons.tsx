@@ -150,7 +150,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	return (
 		<div
 			className="d-flex justify-content-center mt-3"
-			style={{ height: "100px" }}
 		>
 			{/* Error Modal while user upload wrong types or invalid files */}
 			<ErrorModal {...errorModal} />

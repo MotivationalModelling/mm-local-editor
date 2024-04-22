@@ -9,7 +9,7 @@ export const DetailCarousel: React.FC = () => (
                 <img src="./leon.png"
                      alt="leon_icon"
                      style={{height: "100px", width: "auto"}}/>
-                <h1 className="cover-heading my-4">AMMBER</h1>
+                <h1 className="my-4">AMMBER</h1>
                 <h2 className="mt-4" style={{fontSize: "20px"}}>
                     A Motivational Model Builder For Essential Requirements
                 </h2>

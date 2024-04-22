@@ -9,8 +9,8 @@ type WelcomeFooterProps = {
 // Footer section in welcome page including copyrights, papers, user manual...
 const WelcomeFooter = ({ name, destination }: WelcomeFooterProps) => {
   return (
-    <footer className="mastfoot mt-auto">
-      <div className="inner text-center">
+    <footer className="mt-auto">
+      <div className="text-center">
         <p>
           <Link to={`/${destination}`} className="text-decoration-none">
             {name}

@@ -18,12 +18,6 @@ const ProjectEdit: React.FC = () => {
                       showGraphSection={showGraphSection}
                       setShowGoalSection={setShowGoalSection}
                       paddingX={15}/>
-      {/* <button onClick={() => setShowGoalSection(!showGoalSection)}>
-        Show Section 1
-      </button> */}
-      {/* <button onClick={() => setShowGraphSection(!showGraphSection)}>
-        Show Section 3
-      </button> */}
     </div>
   );
 };

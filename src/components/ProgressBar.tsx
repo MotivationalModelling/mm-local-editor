@@ -77,7 +77,6 @@ const ProgressBar = ({
 
   return (
     <div
-      className="wrapper"
       style={{
         width: "auto",
         minWidth: "1280px",
