@@ -37,7 +37,8 @@ const treeInputStyle: React.CSSProperties = {
 
 type TreeProps = {
 	treeData: TreeItem[];
-	itemExist: [number, boolean];
+	existingItemIds: number[];
+	existingError: boolean,
 	setTreeData: React.Dispatch<React.SetStateAction<TreeItem[]>>;
 	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
 	setTreeIds: React.Dispatch<React.SetStateAction<number[]>>;
@@ -81,7 +82,8 @@ const IconComponent = ({ type }: { type: Label }) => {
 
 const Tree: React.FC<TreeProps> = ({
 	treeData,
-	itemExist,
+	existingItemIds,
+	existingError,
 	setTreeData,
 	setTabData,
 	setTreeIds,
@@ -229,7 +231,6 @@ const Tree: React.FC<TreeProps> = ({
 		};
 
 		const ICON_SIZE = 25;
-		const [id, exist] = itemExist;
 		return (
 			// While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
 			<div
@@ -237,7 +238,7 @@ const Tree: React.FC<TreeProps> = ({
 					...treeListStyle,
 					backgroundColor: isEditing
 						? "#e0e0e0"
-						: id === treeItem.id && exist
+						: existingItemIds.includes(treeItem.id) && existingError
 						? "#FF474C"
 						: "white",
 				}}

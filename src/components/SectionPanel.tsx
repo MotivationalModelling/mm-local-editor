@@ -100,8 +100,9 @@ const SectionPanel = ({
 	const [treeIds, setTreeIds] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7, 8]);
 	const [tabData, setTabData] = useState<TabContent[]>([]);
 	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
-	const [itemExist, setItemExist] = useState<[number, boolean]>([0, false]);
-	const [groupItemsExist, setGroupItemsExist] = useState<boolean>(false);
+
+	const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
+	const [existingError, setExistingError] = useState<boolean>(false);
 
 	const sectionTwoRef = useRef<HTMLDivElement>(null);
 	const parentRef = useRef<HTMLDivElement>(null);
@@ -150,11 +151,25 @@ const SectionPanel = ({
 		}
 	};
 
+  // Hide the drop error modal automatically after a set time
+  const hideErrorModalTimeout = () => {
+    const delayTime = 1500;
+
+    // Clear previous timeout
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+    }
+    // Set new timeout
+    timeoutRef.current = setTimeout(() => {
+      setExistingItemIds([]);
+      setExistingError(false)
+    }, delayTime);
+  }
+
 	// Handle for goals drop on the nestable section
 	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
 		e.preventDefault();
 
-		const delayTime = 1500;
 		if (draggedItem && draggedItem.content) {
 			if (!treeIds.includes(draggedItem.id)) {
 				const newData: TreeItem[] = [...treeData, draggedItem];
@@ -162,15 +177,9 @@ const SectionPanel = ({
 				setTreeIds([...treeIds, draggedItem.id]);
 				console.log("drop successful");
 			} else {
-				setItemExist([draggedItem.id, true]);
-				// Clear previous timeout
-				if (timeoutRef.current !== null) {
-					clearTimeout(timeoutRef.current);
-				}
-				// Set new timeout
-				timeoutRef.current = setTimeout(() => {
-					setItemExist([draggedItem.id, false]);
-				}, delayTime);
+				setExistingItemIds([...existingItemIds, draggedItem.id]);
+        setExistingError(true)
+				hideErrorModalTimeout()
 				console.log("drop failed");
 			}
 		}
@@ -187,7 +196,9 @@ const SectionPanel = ({
 
 		// If all items are in the tree, then show the warning
 		if (newItemsToAdd.length === 0) {
-			setGroupItemsExist(true);
+      setExistingItemIds([...groupSelected.map(item => item.id)])
+			setExistingError(true);
+      hideErrorModalTimeout()
 			return;
 		}
 		// Update treeData with new items, filter out the empty items
@@ -206,7 +217,8 @@ const SectionPanel = ({
 	};
 
 	const handleGroupDropModal = () => {
-		setGroupItemsExist(false);
+		setExistingItemIds([]);
+    setExistingError(false);
 		setGroupSelected([]);
 	};
 
@@ -245,15 +257,10 @@ const SectionPanel = ({
 			ref={parentRef}
 		>
 			<ErrorModal
-				show={itemExist[1]}
+				show={existingError}
 				title="Drop Failed"
-				message="The Goal already exists."
-			/>
-			<ErrorModal
-				show={groupItemsExist}
-				title="Group Drop Failed"
-				message="All selected Goals already exist."
-				onHide={handleGroupDropModal}
+				message="The selected Goal(s) already exist(s)."
+        onHide={handleGroupDropModal}
 			/>
 			{/* Goal List Section */}
 			<Resizable
@@ -308,7 +315,8 @@ const SectionPanel = ({
 			>
 				<Tree
 					treeData={treeData}
-					itemExist={itemExist}
+					existingItemIds={existingItemIds}
+          existingError={existingError}
 					setTreeData={setTreeData}
 					setTabData={setTabData}
 					setTreeIds={setTreeIds}
