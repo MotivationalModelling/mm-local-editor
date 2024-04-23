@@ -35,6 +35,21 @@ const treeInputStyle: React.CSSProperties = {
 	height: "100%",
 };
 
+const iconFromType = (type: Label) => {
+	const typeToIcon = {
+		Be: BeIcon,
+		Do: DoIcon,
+		Concern: ConcernIcon,
+		Feel: FeelIcon,
+		Who: WhoIcon
+	};
+
+	if (type in typeToIcon) {
+		return typeToIcon[type];
+	}
+	throw Error(`iconFromType: Unknown type "${type}"`);
+};
+
 type TreeProps = {
 	treeData: TreeItem[];
 	existingItemIds: number[];
@@ -46,35 +61,13 @@ type TreeProps = {
 
 // Goal icon in the tree
 const IconComponent = ({ type }: { type: Label }) => {
-	let icon = "";
-
-	switch (type) {
-		case "Be":
-			icon = BeIcon;
-			break;
-		case "Do":
-			icon = DoIcon;
-			break;
-		case "Concern":
-			icon = ConcernIcon;
-			break;
-		case "Feel":
-			icon = FeelIcon;
-			break;
-		case "Who":
-			icon = WhoIcon;
-			break;
-		default:
-			icon = "";
-	}
-
 	return (
 		<img
-			src={icon}
+			src={iconFromType(type)}
 			alt={`${type} icon`}
 			className="ms-2 me-1"
 			style={{
-				height: type == "Who" ? "30px" : "20px",
+				height: (type === "Who") ? "30px" : "20px",
 			}}
 		/>
 	);
