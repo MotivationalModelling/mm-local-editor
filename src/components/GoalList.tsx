@@ -29,11 +29,11 @@ const tabs: TabContent[] = [
 ];
 
 type GoalListProps = {
-	setDraggedItem: React.Dispatch<React.SetStateAction<TreeItem | null>>;
+	setDraggedItem: (item: TreeItem | null) => void;
 	tabData: TabContent[];
-	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
+	setTabData: (tabData: TabContent[]) => void;
 	groupSelected: TreeItem[];
-	setGroupSelected: React.Dispatch<React.SetStateAction<TreeItem[]>>;
+	setGroupSelected: (grouSelected: TreeItem[]) => void;
 };
 
 const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
@@ -142,9 +142,11 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				return tab;
 			});
 			setTabData(newTabData);
-			setGroupSelected((prevSelected) =>
-				prevSelected.filter((item) => item.id !== row.id)
+			const filteredGroupSelected = groupSelected.filter(
+				(item) => item.id !== row.id
 			);
+
+			setGroupSelected(filteredGroupSelected);
 		};
 
 		// Get the last row of the active tab
@@ -189,19 +191,18 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			if (row.content.trim() === "") {
 				return;
 			}
-			setGroupSelected((prevGroupSelected) => {
-				const isRowSelected = prevGroupSelected.some(
-					(item) => item.id === row.id
-				);
+			const isRowSelected = groupSelected.some((item) => item.id === row.id);
 
-				if (isRowSelected) {
-					// If row is already selected, remove it from groupSelected
-					return prevGroupSelected.filter((item) => item.id !== row.id);
-				} else {
-					// If row is not selected, add it to groupSelected
-					return [...prevGroupSelected, row];
-				}
-			});
+			let newGroupSelected: TreeItem[];
+
+			// Create a new array based on the current groupSelected state
+			if (isRowSelected) {
+				newGroupSelected = groupSelected.filter((item) => item.id !== row.id);
+			} else {
+				newGroupSelected = [...groupSelected, row];
+			}
+
+			setGroupSelected(newGroupSelected);
 		};
 
 		const isChecked = (row: TreeItem): boolean | undefined => {

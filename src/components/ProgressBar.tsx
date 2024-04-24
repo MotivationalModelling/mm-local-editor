@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./ProgressBar.css";
 import { Popover, OverlayTrigger } from "react-bootstrap";
 import { FaInfoCircle } from "react-icons/fa";
@@ -9,8 +9,8 @@ enum TabOptions {
 }
 
 type ProgressBarProps = {
-  setShowGoalSection: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowGraphSection: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowGoalSection: (showGoalSection: boolean) => void;
+  setShowGraphSection: (showGraphSection: boolean) => void;
 };
 
 const ProgressBar = ({

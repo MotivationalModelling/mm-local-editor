@@ -37,11 +37,12 @@ const treeInputStyle: React.CSSProperties = {
 
 type TreeProps = {
 	treeData: TreeItem[];
+	tabData: TabContent[];
 	existingItemIds: number[];
-	existingError: boolean,
-	setTreeData: React.Dispatch<React.SetStateAction<TreeItem[]>>;
-	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
-	setTreeIds: React.Dispatch<React.SetStateAction<number[]>>;
+	existingError: boolean;
+	setTreeData: (items: TreeItem[]) => void;
+	setTabData: (tabData: TabContent[]) => void;
+	setTreeIds: (value: React.SetStateAction<number[]>) => void;
 };
 
 // Goal icon in the tree
@@ -82,6 +83,7 @@ const IconComponent = ({ type }: { type: Label }) => {
 
 const Tree: React.FC<TreeProps> = ({
 	treeData,
+	tabData,
 	existingItemIds,
 	existingError,
 	setTreeData,
@@ -170,25 +172,25 @@ const Tree: React.FC<TreeProps> = ({
 			id: number,
 			newText: string
 		) => {
-			setTabData((prevTabData) => {
-				return prevTabData.map((tabContent) => {
-					if (tabContent.label === label) {
-						return {
-							...tabContent,
-							rows: tabContent.rows.map((row) => {
-								if (row.id === id) {
-									return {
-										...row,
-										content: newText,
-									};
-								}
-								return row;
-							}),
-						};
-					}
-					return tabContent;
-				});
+			const updatedTabData = tabData.map((tabContent) => {
+				if (tabContent.label === label) {
+					return {
+						...tabContent,
+						rows: tabContent.rows.map((row) => {
+							if (row.id === id) {
+								return {
+									...row,
+									content: newText,
+								};
+							}
+							return row;
+						}),
+					};
+				}
+				return tabContent;
 			});
+
+			setTabData(updatedTabData);
 		};
 
 		// Handle saving edited text

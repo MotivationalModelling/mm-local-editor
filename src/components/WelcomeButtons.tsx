@@ -11,7 +11,7 @@ const JSON_FILE_ALERT = "Please select a JSON file.";
 
 type WelcomeButtonsProps = {
 	isDragging: boolean;
-	setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsDragging: (isDragging: boolean) => void;
 };
 
 const defaultModalState: ErrorModalProps = {
