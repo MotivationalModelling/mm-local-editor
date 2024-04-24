@@ -8,7 +8,7 @@ import Nestable, { NestableProps } from "react-nestable";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { TreeItem } from "./SectionPanel";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
-import { Label, TabContent } from "./SectionPanel";
+import { Label } from "./SectionPanel";
 
 import "react-nestable/dist/styles/index.css";
 import "./Tree.css";
@@ -41,7 +41,7 @@ const iconFromType = (type: Label) => {
 		Do: DoIcon,
 		Concern: ConcernIcon,
 		Feel: FeelIcon,
-		Who: WhoIcon
+		Who: WhoIcon,
 	};
 
 	if (type in typeToIcon) {
@@ -52,12 +52,11 @@ const iconFromType = (type: Label) => {
 
 type TreeProps = {
 	treeData: TreeItem[];
-	tabData: TabContent[];
 	existingItemIds: number[];
 	existingError: boolean;
 	setTreeData: (items: TreeItem[]) => void;
-	setTabData: (tabData: TabContent[]) => void;
 	setTreeIds: (value: React.SetStateAction<number[]>) => void;
+	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
 };
 
 // Goal icon in the tree
@@ -68,7 +67,7 @@ const IconComponent = ({ type }: { type: Label }) => {
 			alt={`${type} icon`}
 			className="ms-2 me-1"
 			style={{
-				height: (type === "Who") ? "30px" : "20px",
+				height: type === "Who" ? "30px" : "20px",
 			}}
 		/>
 	);
@@ -76,12 +75,11 @@ const IconComponent = ({ type }: { type: Label }) => {
 
 const Tree: React.FC<TreeProps> = ({
 	treeData,
-	tabData,
 	existingItemIds,
 	existingError,
 	setTreeData,
-	setTabData,
 	setTreeIds,
+	handleSynTableTree,
 }) => {
 	const [editingItemId, setEditingItemId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
@@ -115,26 +113,6 @@ const Tree: React.FC<TreeProps> = ({
 		setTreeIds((prevIds) => prevIds.filter((id) => id !== item.id));
 	};
 
-	const updateItemTextInTree = (
-		items: TreeItem[],
-		idToUpdate: number,
-		newText: string
-	): TreeItem[] => {
-		return items.map((currentItem) => {
-			if (currentItem.id === idToUpdate) {
-				return { ...currentItem, content: newText }; // Update text of this item
-			}
-			if (currentItem.children) {
-				currentItem.children = updateItemTextInTree(
-					currentItem.children,
-					idToUpdate,
-					newText
-				);
-			}
-			return currentItem;
-		});
-	};
-
 	// Function for rendering every item
 	const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
 		const treeItem = item as TreeItem;
@@ -159,43 +137,10 @@ const Tree: React.FC<TreeProps> = ({
 			}
 		};
 
-		// Update the tab data if exist while the tree data changed
-		const updateTabDataContent = (
-			label: Label,
-			id: number,
-			newText: string
-		) => {
-			const updatedTabData = tabData.map((tabContent) => {
-				if (tabContent.label === label) {
-					return {
-						...tabContent,
-						rows: tabContent.rows.map((row) => {
-							if (row.id === id) {
-								return {
-									...row,
-									content: newText,
-								};
-							}
-							return row;
-						}),
-					};
-				}
-				return tabContent;
-			});
-
-			setTabData(updatedTabData);
-		};
-
 		// Handle saving edited text
 		// Update the edited text in both the tree data and tab data
 		const handleSave = () => {
-			const updatedTreeData = updateItemTextInTree(
-				treeData,
-				treeItem.id,
-				editedText
-			);
-			setTreeData(updatedTreeData);
-			updateTabDataContent(treeItem.type, treeItem.id, editedText);
+			handleSynTableTree(treeItem, editedText);
 			setEditingItemId(null);
 		};
 

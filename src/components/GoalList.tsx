@@ -34,11 +34,19 @@ type GoalListProps = {
 	setTabData: (tabData: TabContent[]) => void;
 	groupSelected: TreeItem[];
 	setGroupSelected: (grouSelected: TreeItem[]) => void;
+	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
 };
 
 const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 	(
-		{ setDraggedItem, tabData, setTabData, groupSelected, setGroupSelected },
+		{
+			setDraggedItem,
+			tabData,
+			setTabData,
+			groupSelected,
+			setGroupSelected,
+			handleSynTableTree,
+		},
 		ref
 	) => {
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
@@ -127,6 +135,11 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				return tab;
 			});
 			setTabData(newTabData);
+		};
+
+		// Function to update tree data while user finish input changes
+		const handleSave = (treeItem: TreeItem, text: string) => {
+			handleSynTableTree(treeItem, text);
 		};
 
 		const handleDeleteRow = (label: string, index: number, row: TreeItem) => {
@@ -228,7 +241,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										src={tab.icon}
 										alt={`${tab.label} icon`}
 										className={styles.icon}
-										style={{ width: tab.label == "Who" ? "0.7cm" : "1.5cm" }}
+										style={{ width: tab.label === "Who" ? "0.7cm" : "1.5cm" }}
 									/>
 									<span className={styles.labelBelowIcon}>{tab.label}</span>
 								</Nav.Link>
@@ -268,6 +281,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 															e as React.KeyboardEvent<HTMLInputElement>,
 															tab.label
 														)
+													}
+													onBlur={(event) =>
+														handleSave(row, event.target.value)
 													}
 													ref={
 														index === tab.rows.length - 1 ? inputRef : undefined

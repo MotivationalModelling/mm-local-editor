@@ -151,20 +151,20 @@ const SectionPanel = ({
 		}
 	};
 
-  // Hide the drop error modal automatically after a set time
-  const hideErrorModalTimeout = () => {
-    const delayTime = 1500;
+	// Hide the drop error modal automatically after a set time
+	const hideErrorModalTimeout = () => {
+		const delayTime = 1500;
 
-    // Clear previous timeout
-    if (timeoutRef.current !== null) {
-      clearTimeout(timeoutRef.current);
-    }
-    // Set new timeout
-    timeoutRef.current = setTimeout(() => {
-      setExistingItemIds([]);
-      setExistingError(false)
-    }, delayTime);
-  }
+		// Clear previous timeout
+		if (timeoutRef.current !== null) {
+			clearTimeout(timeoutRef.current);
+		}
+		// Set new timeout
+		timeoutRef.current = setTimeout(() => {
+			setExistingItemIds([]);
+			setExistingError(false);
+		}, delayTime);
+	};
 
 	// Handle for goals drop on the nestable section
 	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -178,8 +178,8 @@ const SectionPanel = ({
 				console.log("drop successful");
 			} else {
 				setExistingItemIds([...existingItemIds, draggedItem.id]);
-        setExistingError(true)
-				hideErrorModalTimeout()
+				setExistingError(true);
+				hideErrorModalTimeout();
 				console.log("drop failed");
 			}
 		}
@@ -196,9 +196,9 @@ const SectionPanel = ({
 
 		// If all items are in the tree, then show the warning
 		if (newItemsToAdd.length === 0) {
-      setExistingItemIds([...groupSelected.map(item => item.id)])
+			setExistingItemIds([...groupSelected.map((item) => item.id)]);
 			setExistingError(true);
-      hideErrorModalTimeout()
+			hideErrorModalTimeout();
 			return;
 		}
 		// Update treeData with new items, filter out the empty items
@@ -218,8 +218,66 @@ const SectionPanel = ({
 
 	const handleGroupDropModal = () => {
 		setExistingItemIds([]);
-    setExistingError(false);
+		setExistingError(false);
 		setGroupSelected([]);
+	};
+
+	// Update the tab data if exist while the tree data changed
+	const updateTabDataContent = (label: Label, id: number, newText: string) => {
+		const updatedTabData = tabData.map((tabContent) => {
+			if (tabContent.label === label) {
+				return {
+					...tabContent,
+					rows: tabContent.rows.map((row) => {
+						if (row.id === id) {
+							return {
+								...row,
+								content: newText,
+							};
+						}
+						return row;
+					}),
+				};
+			}
+			return tabContent;
+		});
+
+		setTabData(updatedTabData);
+	};
+
+	// Update the tree recursively
+	const updateItemTextInTree = (
+		items: TreeItem[],
+		idToUpdate: number,
+		newText: string
+	): TreeItem[] => {
+		if (!treeIds.includes(idToUpdate)) return items;
+
+		return items.map((currentItem) => {
+			if (currentItem.id === idToUpdate) {
+				return { ...currentItem, content: newText }; // Update text of this item
+			}
+			if (currentItem.children) {
+				currentItem.children = updateItemTextInTree(
+					currentItem.children,
+					idToUpdate,
+					newText
+				);
+			}
+			return currentItem;
+		});
+	};
+
+	// Handle synchronize data in table data and tree data
+	const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
+		console.log(treeItem, editedText);
+		const updatedTreeData = updateItemTextInTree(
+			treeData,
+			treeItem.id,
+			editedText
+		);
+		setTreeData(updatedTreeData);
+		updateTabDataContent(treeItem.type, treeItem.id, editedText);
 	};
 
 	// Get the parent div inner width and set starter width for section one and section three
@@ -260,7 +318,7 @@ const SectionPanel = ({
 				show={existingError}
 				title="Drop Failed"
 				message="The selected Goal(s) already exist(s)."
-        onHide={handleGroupDropModal}
+				onHide={handleGroupDropModal}
 			/>
 			{/* Goal List Section */}
 			<Resizable
@@ -285,6 +343,7 @@ const SectionPanel = ({
 					setTabData={setTabData}
 					groupSelected={groupSelected}
 					setGroupSelected={setGroupSelected}
+					handleSynTableTree={handleSynTableTree}
 				/>
 			</Resizable>
 
@@ -315,12 +374,11 @@ const SectionPanel = ({
 			>
 				<Tree
 					treeData={treeData}
-          tabData={tabData}
 					existingItemIds={existingItemIds}
-          existingError={existingError}
+					existingError={existingError}
 					setTreeData={setTreeData}
-					setTabData={setTabData}
 					setTreeIds={setTreeIds}
+					handleSynTableTree={handleSynTableTree}
 				/>
 			</div>
 
