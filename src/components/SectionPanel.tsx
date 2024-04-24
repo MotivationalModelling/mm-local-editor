@@ -35,7 +35,7 @@ const DEFAULT_HEIGHT = "800px";
 type SectionPanelProps = {
 	showGoalSection: boolean;
 	showGraphSection: boolean;
-	setShowGoalSection: React.Dispatch<React.SetStateAction<boolean>>;
+	setShowGoalSection: (showGoalSection: boolean) => void;
 	paddingX: number;
 };
 
@@ -315,6 +315,7 @@ const SectionPanel = ({
 			>
 				<Tree
 					treeData={treeData}
+          tabData={tabData}
 					existingItemIds={existingItemIds}
           existingError={existingError}
 					setTreeData={setTreeData}
