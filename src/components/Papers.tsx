@@ -170,7 +170,7 @@ const papers: Reference[] = [{
 
 const Papers = () => {
     return (
-        <div id="bg">
+        <div id="bg" style={{ minHeight: "100vh" }} className="d-flex flex-column">
             <WelcomeHeader/>
                 <Container style={{overflow: "auto", height: "90vh"}}>
                     <PaperReferenceList references={papers}/>
