@@ -54,19 +54,6 @@ const GraphRender = ({ xml }: { xml: string }) => {
     while (elt != null && elt.nodeType === Node.ELEMENT_NODE) {
       let cell = codec.decode(elt as Element);
       cells.push(cell);
-      if (cell != undefined) {
-        if (cell.geometry != undefined) {
-          if (
-            cell.id != undefined &&
-            cell.parent != undefined &&
-            cell.id == cell.parent
-          ) {
-            elt = elt.nextSibling;
-            continue;
-          }
-          cells.push(cell);
-        }
-      }
       elt = elt.nextSibling;
     }
 
