@@ -93,7 +93,7 @@ const ProgressBar = ({
           onClick={handleClusterBarClick}
         >
           <span>
-            Cluster Goals / Arrange into Hierarchy
+            Enter Goals / Arrange Hierarchy
             <OverlayTrigger
               trigger={"click"}
               placement="right"
@@ -113,7 +113,7 @@ const ProgressBar = ({
           onClick={handleGraphBarClick}
         >
           <span>
-            Render Model
+          Arrange Hierarchy / Render Model
             <OverlayTrigger
               trigger={"click"}
               placement="left"

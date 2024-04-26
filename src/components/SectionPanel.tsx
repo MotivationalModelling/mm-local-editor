@@ -351,10 +351,11 @@ const SectionPanel = ({
 				className="m-2 justify-content-center align-items-center"
 				variant="primary"
 				style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+        // style={{display: groupSelected.length > 0 ? "flex" : "none", position: "absolute", top: "2vh", right: "10vw"}}
 				onClick={handleDropGroupSelected}
 			>
 				{/* Click to Drop To Right Panel */}
-				Drop
+				Add Group
 			</Button>
 
 			{/* Cluster Hierachy Section */}
