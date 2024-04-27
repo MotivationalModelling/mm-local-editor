@@ -10,7 +10,6 @@ import { TreeItem } from "./SectionPanel";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
 import { Label, TabContent } from "./SectionPanel";
 
-import "react-nestable/dist/styles/index.css";
 import "./Tree.css";
 
 // Inline style for element in Nestable, css style import not working
