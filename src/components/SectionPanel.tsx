@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
-import "./SectionPanel.css";
+
+import Button from "react-bootstrap/Button";
+
+import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { Button } from "react-bootstrap";
-import ErrorModal from "./ErrorModal";
 import GraphRender from "./GraphRender";
+import "./SectionPanel.css";
 
 // use for testing xml validation only
 const xmlData = `
@@ -50,7 +52,7 @@ const DEFAULT_HEIGHT = "800px";
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
-  setShowGoalSection: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowGoalSection: (showGoalSection: boolean) => void;
   paddingX: number;
 };
 
@@ -99,12 +101,12 @@ const items: TreeItem[] = [
   },
 ];
 
-const SectionPanel = ({
+const SectionPanel: React.FC<SectionPanelProps> = ({
   showGoalSection,
   showGraphSection,
   setShowGoalSection,
-  paddingX,
-}: SectionPanelProps) => {
+  paddingX
+}) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
@@ -170,7 +172,7 @@ const SectionPanel = ({
     e.preventDefault();
 
     const delayTime = 1500;
-    if (draggedItem && draggedItem.content) {
+    if (draggedItem?.content) {
       if (!treeIds.includes(draggedItem.id)) {
         const newData: TreeItem[] = [...treeData, draggedItem];
         setTreeData(newData);
@@ -351,12 +353,12 @@ const SectionPanel = ({
         {/* Third Panel Content */}
         Section 3
         <GraphRender xml={xmlData} />
-        <button
-          onClick={() => setShowGoalSection(!showGoalSection)}
-          style={{ marginLeft: "20px" }}
-        >
-          Show Section 1
-        </button>
+        <Button variant="outline-primary"
+                size="sm"
+                onClick={() => setShowGoalSection(!showGoalSection)}
+                style={{marginLeft: "20px"}}>
+          {(showGoalSection) ? "Hide section 1" : "Show section 1"}
+        </Button>
       </Resizable>
     </div>
   );
