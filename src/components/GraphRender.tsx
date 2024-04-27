@@ -21,7 +21,7 @@ window.GraphDataModel = GraphDataModel;
 window.Cell = Cell;
 window.Geometry = Geometry; */
 
-const GraphRender = ({ xml }: { xml: string }) => {
+const GraphRender: React.FC<{xml: string}> = ({xml}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // useEffect is called twice under <React.StrictMode> mode
   const mountRef = useRef(false);
@@ -47,14 +47,14 @@ const GraphRender = ({ xml }: { xml: string }) => {
     const doc = xmlUtils.parseXml(xml);
 
     const codec = new Codec(doc);
-
-    let elt = doc.documentElement.firstChild;
     const cells = [];
 
-    while (elt != null && elt.nodeType === Node.ELEMENT_NODE) {
-      let cell = codec.decode(elt as Element);
-      cells.push(cell);
-      elt = elt.nextSibling;
+    for (let elt = doc.documentElement.firstChild; elt; elt = elt.nextSibling) {
+      if (elt.nodeType === Node.ELEMENT_NODE) {
+        const cell = codec.decode(elt as Element);
+
+        cells.push(cell);
+      }
     }
 
     graph.addCells(cells, parent, null, null, null);
