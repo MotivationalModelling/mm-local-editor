@@ -8,8 +8,19 @@ import ErrorModal from "./ErrorModal";
 import GraphRender from "./GraphRender";
 
 // use for testing xml validation only
-const xmlData =
-  '<root><mxCell id="2" value="Hello," vertex="1"><mxGeometry x="20" y="20" width="80" height="30" as="geometry"/></mxCell><mxCell id="3" value="World!" vertex="1"><mxGeometry x="200" y="150" width="80" height="30" as="geometry"/></mxCell><mxCell id="4" value="" edge="1" source="2" target="3"><mxGeometry relative="1" as="geometry"/></mxCell></root>';
+const xmlData = `
+  <root>
+    <mxCell id="2" value="Hello," vertex="1">
+      <mxGeometry x="20" y="20" width="80" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="3" value="World!" vertex="1">
+      <mxGeometry x="200" y="150" width="80" height="30" as="geometry"/>
+    </mxCell>
+    <mxCell id="4" value="" edge="1" source="2" target="3">
+       <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+  </root>
+`;
 const defaultStyle = {
   display: "flex",
   alignItems: "flex-start",
