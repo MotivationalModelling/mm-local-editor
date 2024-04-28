@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/wicg-file-system-access": "^2023.10.5",
     "bootstrap": "^5.3.3",
     "file-saver": "^2.0.5",
     "re-resizable": "^6.9.11",
