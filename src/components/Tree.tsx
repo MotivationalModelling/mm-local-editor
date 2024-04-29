@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import WhoIcon from "../assets/img/Stakeholder.png";
 import DoIcon from "../assets/img/Function.png";
 import BeIcon from "../assets/img/Cloud.png";
@@ -6,9 +6,10 @@ import FeelIcon from "../assets/img/Heart.png";
 import ConcernIcon from "../assets/img/Risk.png";
 import Nestable, { NestableProps } from "react-nestable";
 import { FaPlus, FaMinus } from "react-icons/fa";
-import { TreeItem } from "./SectionPanel";
+import { TreeItem } from "./context/FileProvider";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
-import { Label } from "./SectionPanel";
+import { Label } from "./context/FileProvider";
+import { useFileContext } from "./context/FileProvider";
 
 import "react-nestable/dist/styles/index.css";
 import "./Tree.css";
@@ -51,10 +52,8 @@ const iconFromType = (type: Label) => {
 };
 
 type TreeProps = {
-	treeData: TreeItem[];
 	existingItemIds: number[];
 	existingError: boolean;
-	setTreeData: (items: TreeItem[]) => void;
 	setTreeIds: (value: React.SetStateAction<number[]>) => void;
 	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
 };
@@ -73,11 +72,38 @@ const IconComponent = ({ type }: { type: Label }) => {
 	);
 };
 
+// Dummy data
+const items: TreeItem[] = [
+	{
+		id: 0,
+		content: "Do 1",
+		type: "Do",
+		children: [
+			{ id: 1, content: "Be 1", type: "Be" },
+			{ id: 2, content: "Role 2", type: "Who" },
+			{
+				id: 3,
+				content: "Do 7",
+				type: "Do",
+				children: [{ id: 4, content: "Be 1", type: "Be" }],
+			},
+		],
+	},
+	{
+		id: 5,
+		content: "Do 3",
+		type: "Do",
+		children: [
+			{ id: 6, content: "Role 5", type: "Who" },
+			{ id: 7, content: "Be 3", type: "Be" },
+			{ id: 8, content: "Feel 1", type: "Feel" },
+		],
+	},
+];
+
 const Tree: React.FC<TreeProps> = ({
-	treeData,
 	existingItemIds,
 	existingError,
-	setTreeData,
 	setTreeIds,
 	handleSynTableTree,
 }) => {
@@ -85,6 +111,14 @@ const Tree: React.FC<TreeProps> = ({
 	const [editedText, setEditedText] = useState<string>("");
 	const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const { treeData, setTreeData } = useFileContext();
+
+	// Intialize tree data with dummy data if there is no created/selected file
+	useEffect(() => {
+		if (!treeData.length) {
+			setTreeData(items);
+		}
+	}, []);
 
 	// Remove item recursively from tree data
 	const removeItemFromTree = (
@@ -157,7 +191,6 @@ const Tree: React.FC<TreeProps> = ({
 		// Handle saving edited text when lost focus
 		const handleBlur = () => {
 			// Save changes only if cancel button was not clicked
-			console.log(disableOnBlur);
 			if (!disableOnBlur) {
 				handleSave();
 			}

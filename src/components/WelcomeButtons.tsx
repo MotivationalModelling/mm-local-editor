@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
+import { useFileContext, JSONData } from "./context/FileProvider";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const XML_FILE_ALERT = "Please select an XML file";
@@ -32,6 +33,8 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const xmlFileRef = useRef<HTMLInputElement>(null);
 	const jsonFileRef = useRef<HTMLInputElement>(null);
 
+	const { setJsonFileHandle, setTreeData, setTabData } = useFileContext();
+
 	// Handle File drag and drop
 	const hanldeXMLFileDrop = (evt: React.DragEvent<HTMLDivElement>) => {
 		evt.preventDefault();
@@ -39,10 +42,25 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		handleXMLFileInputChange(dropFiles?.[0]);
 	};
 
-	const hanldeJSONFileDrop = (evt: React.DragEvent<HTMLDivElement>) => {
-		evt.preventDefault();
-		const dropFiles = evt.dataTransfer.files;
-		handleJSONFileInputChange(dropFiles?.[0]);
+	// Handle JSON file drop
+	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		try {
+			const items = event.dataTransfer.items;
+			if (items.length > 0) {
+				const item = items[0];
+				if (item.kind === "file") {
+					const fileHandle =
+						(await item.getAsFileSystemHandle()) as FileSystemFileHandle;
+					if (fileHandle) {
+						const file = await fileHandle.getFile();
+						handleJSONFileInputChange(file, fileHandle);
+					}
+				}
+			}
+		} catch (error) {
+			console.error("Error handling dropped JSON file:", error);
+		}
 	};
 
 	const handleXMLFileDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -68,10 +86,26 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		}
 	};
 
-	const handleJSONUpload = () => {
-		if (jsonFileRef.current) {
-			jsonFileRef.current.value = "";
-			jsonFileRef.current.click();
+	const handleJSONUpload = async () => {
+		try {
+			const [handle] = await window.showOpenFilePicker({
+				types: [
+					{
+						description: "JSON file",
+						accept: { "application/json": [".json"] },
+					},
+				],
+				multiple: false,
+			});
+			const file = await handle.getFile();
+			setJsonFile(file);
+			const fileContent = await file.text();
+			const convertedJsonData: JSONData = JSON.parse(fileContent);
+			setTabData(convertedJsonData.tabData);
+			setTreeData(convertedJsonData.treeData);
+			setJsonFileHandle(handle);
+		} catch (error) {
+			console.error("Error selecting JSON file:", error);
 		}
 	};
 
@@ -106,7 +140,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	/* --------------------------------------------------------------------------------------------------------*/
 
-	const handleJSONFileInputChange = (file: File | undefined) => {
+	const handleJSONFileInputChange = async (
+		file: File | undefined,
+		fileHandle: FileSystemFileHandle
+	) => {
 		if (!file) {
 			setIsJsonDragOver(false);
 			setErrorModal({
@@ -132,6 +169,11 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		}
 
 		setJsonFile(file);
+		const fileContent = await file.text();
+		const convertedJsonData: JSONData = JSON.parse(fileContent);
+		setTabData(convertedJsonData.tabData);
+		setTreeData(convertedJsonData.treeData);
+		setJsonFileHandle(fileHandle);
 	};
 
 	// Remove uploaded files
@@ -148,9 +190,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	/* --------------------------------------------------------------------------------------------------------*/
 
 	return (
-		<div
-			className="d-flex justify-content-center mt-3"
-		>
+		<div className="d-flex justify-content-center mt-3">
 			{/* Error Modal while user upload wrong types or invalid files */}
 			<ErrorModal {...errorModal} />
 
@@ -166,7 +206,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				type="file"
 				accept=".json"
 				multiple
-				onChange={(e) => handleJSONFileInputChange(e.target.files?.[0])}
 				style={{ display: "none" }}
 				ref={jsonFileRef}
 			/>
@@ -193,7 +232,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 					{!jsonFile ? (
 						<FileDrop
 							onClick={handleJSONUpload}
-							onDrop={hanldeJSONFileDrop}
+							onDrop={handleJSONFileDrop}
 							onDragLeave={handleFileDragLeave}
 							onDragOver={handleJSONFileDragOver}
 							isDragOver={isJsonDragOver}

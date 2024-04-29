@@ -5,6 +5,8 @@ import GoalList from "./GoalList";
 import Tree from "./Tree";
 import { Button } from "react-bootstrap";
 import ErrorModal from "./ErrorModal";
+import { Label, TreeItem } from "./context/FileProvider";
+import { useFileContext } from "./context/FileProvider";
 
 const defaultStyle = {
 	display: "flex",
@@ -39,51 +41,6 @@ type SectionPanelProps = {
 	paddingX: number;
 };
 
-export type TreeItem = {
-	id: number;
-	content: string;
-	type: Label;
-	children?: TreeItem[];
-};
-
-// Define the structure for the content of each tab
-export type TabContent = {
-	label: Label;
-	icon: string;
-	rows: TreeItem[];
-};
-
-export type Label = "Who" | "Do" | "Be" | "Feel" | "Concern";
-
-// Dummy data
-const items: TreeItem[] = [
-	{
-		id: 0,
-		content: "Do 1",
-		type: "Do",
-		children: [
-			{ id: 1, content: "Be 1", type: "Be" },
-			{ id: 2, content: "Role 2", type: "Who" },
-			{
-				id: 3,
-				content: "Do 7",
-				type: "Do",
-				children: [{ id: 4, content: "Be 1", type: "Be" }],
-			},
-		],
-	},
-	{
-		id: 5,
-		content: "Do 3",
-		type: "Do",
-		children: [
-			{ id: 6, content: "Role 5", type: "Who" },
-			{ id: 7, content: "Be 3", type: "Be" },
-			{ id: 8, content: "Feel 1", type: "Feel" },
-		],
-	},
-];
-
 const SectionPanel = ({
 	showGoalSection,
 	showGraphSection,
@@ -95,10 +52,10 @@ const SectionPanel = ({
 	const [parentWidth, setParentWidth] = useState(0);
 
 	const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
-	const [treeData, setTreeData] = useState<TreeItem[]>(items);
 	// Simply store ids of all items in the tree for fast check instead of recursive search
-	const [treeIds, setTreeIds] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7, 8]);
-	const [tabData, setTabData] = useState<TabContent[]>([]);
+	const { treeData, setTreeData, tabData, setTabData } = useFileContext();
+	const [treeIds, setTreeIds] = useState<number[]>([]);
+
 	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
 	const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
@@ -130,6 +87,28 @@ const SectionPanel = ({
 				clearTimeout(timeoutRef.current);
 			}
 		};
+	}, []);
+
+	// Initialize the tree ids from the created/selected json file
+	useEffect(() => {
+		// Recursively get all the ids from the tree data
+		const getIds = (treeData: TreeItem[]) => {
+			const ids: number[] = [];
+			const traverse = (arr: TreeItem[]) => {
+				arr.forEach((item) => {
+					ids.push(item.id);
+
+					if (item.children && item.children.length > 0) {
+						traverse(item.children);
+					}
+				});
+			};
+			traverse(treeData);
+			return ids;
+		};
+		const ids = getIds(treeData);
+
+		setTreeIds(ids);
 	}, []);
 
 	// Handle section three resize and section one auto resize
@@ -202,11 +181,12 @@ const SectionPanel = ({
 			return;
 		}
 		// Update treeData with new items, filter out the empty items
-		setTreeData((prevTreeData) => [
-			...prevTreeData,
+		const filteredTreeData = [
+			...treeData,
 			...newItemsToAdd.filter((item) => item.content.trim() !== ""),
-		]);
-		// Update Ids with new items, filter out the empty items
+		];
+		setTreeData(filteredTreeData);
+		// Update Ids with new items, filter out the empjty items
 		setTreeIds((prevIds) => [
 			...prevIds,
 			...newItemsToAdd
@@ -270,7 +250,6 @@ const SectionPanel = ({
 
 	// Handle synchronize data in table data and tree data
 	const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
-		console.log(treeItem, editedText);
 		const updatedTreeData = updateItemTextInTree(
 			treeData,
 			treeItem.id,
@@ -339,8 +318,6 @@ const SectionPanel = ({
 				<GoalList
 					ref={goalListRef}
 					setDraggedItem={setDraggedItem}
-					tabData={tabData}
-					setTabData={setTabData}
 					groupSelected={groupSelected}
 					setGroupSelected={setGroupSelected}
 					handleSynTableTree={handleSynTableTree}
@@ -351,7 +328,7 @@ const SectionPanel = ({
 				className="m-2 justify-content-center align-items-center"
 				variant="primary"
 				style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
-        // style={{display: groupSelected.length > 0 ? "flex" : "none", position: "absolute", top: "2vh", right: "10vw"}}
+				// style={{display: groupSelected.length > 0 ? "flex" : "none", position: "absolute", top: "2vh", right: "10vw"}}
 				onClick={handleDropGroupSelected}
 			>
 				{/* Click to Drop To Right Panel */}
@@ -374,10 +351,8 @@ const SectionPanel = ({
 				ref={sectionTwoRef}
 			>
 				<Tree
-					treeData={treeData}
 					existingItemIds={existingItemIds}
 					existingError={existingError}
-					setTreeData={setTreeData}
 					setTreeIds={setTreeIds}
 					handleSynTableTree={handleSynTableTree}
 				/>

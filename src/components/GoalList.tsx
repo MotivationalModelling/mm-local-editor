@@ -15,7 +15,7 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
-import { TreeItem, TabContent } from "./SectionPanel";
+import { TabContent, TreeItem, useFileContext } from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
 
@@ -30,8 +30,6 @@ const tabs: TabContent[] = [
 
 type GoalListProps = {
 	setDraggedItem: (item: TreeItem | null) => void;
-	tabData: TabContent[];
-	setTabData: (tabData: TabContent[]) => void;
 	groupSelected: TreeItem[];
 	setGroupSelected: (grouSelected: TreeItem[]) => void;
 	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
@@ -39,40 +37,31 @@ type GoalListProps = {
 
 const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 	(
-		{
-			setDraggedItem,
-			tabData,
-			setTabData,
-			groupSelected,
-			setGroupSelected,
-			handleSynTableTree,
-		},
+		{ setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree },
 		ref
 	) => {
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
+		const { tabData, setTabData } = useFileContext();
 
+		// Intialize with empty data if there is not created/selected file
 		useEffect(() => {
-			const initialTabs = tabs.map((tab, index) => ({
-				...tab,
-				rows: [
-					...tab.rows,
-					{
-						id: Date.now() + index,
-						type: tab.label,
-						content: "",
-					},
-				],
-			}));
-			setTabData(initialTabs);
+			if (!tabData.length) {
+				const initialTabs = tabs.map((tab, index) => ({
+					...tab,
+					rows: [
+						...tab.rows,
+						{
+							id: Date.now() + index,
+							type: tab.label,
+							content: "",
+						},
+					],
+				}));
+				setTabData(initialTabs);
+			}
 		}, []);
 
 		const inputRef = useRef<HTMLInputElement>(null);
-
-		// Auto focus on the new input row
-		// useEffect(() => {
-		//   if (inputRef.current)
-		//   inputRef.current.focus();
-		// }, [tabData]);
 
 		// Function to handle selecting a tab
 		const handleSelect = (selectedKey: string | null) => {
