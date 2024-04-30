@@ -1,6 +1,6 @@
 import { Button } from "react-bootstrap";
 import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
@@ -33,7 +33,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const xmlFileRef = useRef<HTMLInputElement>(null);
 	const jsonFileRef = useRef<HTMLInputElement>(null);
 
-	const { setJsonFileHandle, setTreeData, setTabData } = useFileContext();
+	const { setJsonFileHandle, setXmlFileHandle, setTreeData, setTabData } =
+		useFileContext();
+
+	const navigate = useNavigate();
 
 	// Handle File drag and drop
 	const hanldeXMLFileDrop = (evt: React.DragEvent<HTMLDivElement>) => {
@@ -189,6 +192,47 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	/* --------------------------------------------------------------------------------------------------------*/
 
+	// Create json and xml file after use input the name
+	const handleCreateBtnClick = async () => {
+		try {
+			// Pop-up for user to input file name
+			const fileName = prompt("Enter file name:");
+			if (!fileName) return;
+
+			// Create JSON file handle
+			const jsonHandle = await window.showSaveFilePicker({
+				types: [
+					{
+						description: "JSON Files",
+						accept: {
+							"application/json": [".json"],
+						},
+					},
+				],
+				suggestedName: `${fileName}.json`,
+			});
+			// Create XML file handle
+			const xmlHandle = await window.showSaveFilePicker({
+				types: [
+					{
+						description: "XML Files",
+						accept: {
+							"text/xml": [".xml"],
+						},
+					},
+				],
+				suggestedName: `${fileName}.xml`,
+			});
+			setJsonFileHandle(jsonHandle);
+			setXmlFileHandle(xmlHandle);
+			navigate("/projectEdit");
+		} catch (error) {
+			console.error(`Error creating files: ${error}`);
+		}
+	};
+
+	/* --------------------------------------------------------------------------------------------------------*/
+
 	return (
 		<div className="d-flex justify-content-center mt-3">
 			{/* Error Modal while user upload wrong types or invalid files */}
@@ -270,9 +314,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
              hard code a static height for temporary, need a better solution
           */}
 					<Link
-						to="/projectEdit"
+						to="#"
 						className="me-5"
 						style={{ height: "60px" }}
+						onClick={handleCreateBtnClick}
 						draggable={false}
 					>
 						<Button variant="primary" size="lg">
