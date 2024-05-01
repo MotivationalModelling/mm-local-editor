@@ -4,7 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
-import { useFileContext, JSONData } from "./context/FileProvider";
+import {
+	useFileContext,
+	JSONData,
+	DataType,
+	tabs,
+} from "./context/FileProvider";
+import { set } from "idb-keyval";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const XML_FILE_ALERT = "Please select an XML file";
@@ -22,6 +28,9 @@ const defaultModalState: ErrorModalProps = {
 	onHide: () => {},
 };
 
+// File handle preserve on page refresh
+// https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
+
 const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const [xmlFile, setXmlFile] = useState<File | null>(null);
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
@@ -33,10 +42,65 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const xmlFileRef = useRef<HTMLInputElement>(null);
 	const jsonFileRef = useRef<HTMLInputElement>(null);
 
-	const { setJsonFileHandle, setXmlFileHandle, setTreeData, setTabData } =
-		useFileContext();
-
 	const navigate = useNavigate();
+
+	const { setJsonFileHandle, setTabData, setTreeData } = useFileContext();
+
+	// Handle after select JSON file
+	const handleJSONFileSetup = async (handle: FileSystemFileHandle) => {
+		try {
+			const file = await handle.getFile();
+			const fileContent = await file.text();
+			if (fileContent) {
+				const convertedJsonData: JSONData = JSON.parse(fileContent);
+				setTabData(convertedJsonData.tabData);
+				setTreeData(convertedJsonData.treeData);
+			} else {
+				setTabData([]);
+				setTreeData([]);
+			}
+			// Save JSON file handle to IndexedDB
+			set(DataType.JSON, handle);
+			setJsonFileHandle(handle);
+		} catch (error) {
+			console.log(`Error setup JSON File: ${error}`);
+		}
+	};
+
+	// Handle after create JSON file
+	const handleJSONFileInit = async (
+		handle: FileSystemFileHandle,
+		writable: FileSystemWritableFileStream
+	) => {
+		try {
+			console.log(handle);
+			const initialTabs = tabs.map((tab, index) => ({
+				...tab,
+				rows: [
+					...tab.rows,
+					{
+						id: Date.now() + index,
+						type: tab.label,
+						content: "",
+					},
+				],
+			}));
+			setTabData(initialTabs);
+			setTreeData([]);
+			const jsonData: JSONData = {
+				tabData: initialTabs,
+				treeData: [],
+			};
+			const json = JSON.stringify(jsonData);
+			await writable.write(json);
+			await writable.close();
+			// Save JSON file handle to IndexedDB
+			set(DataType.JSON, handle);
+			setJsonFileHandle(handle);
+		} catch (error) {
+			console.log(`Error initialize JSON File: ${error}`);
+		}
+	};
 
 	// Handle File drag and drop
 	const hanldeXMLFileDrop = (evt: React.DragEvent<HTMLDivElement>) => {
@@ -56,8 +120,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 					const fileHandle =
 						(await item.getAsFileSystemHandle()) as FileSystemFileHandle;
 					if (fileHandle) {
-						const file = await fileHandle.getFile();
-						handleJSONFileInputChange(file, fileHandle);
+						await handleJSONFileInputChange(fileHandle);
 					}
 				}
 			}
@@ -102,13 +165,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			});
 			const file = await handle.getFile();
 			setJsonFile(file);
-			const fileContent = await file.text();
-			const convertedJsonData: JSONData = JSON.parse(fileContent);
-			setTabData(convertedJsonData.tabData);
-			setTreeData(convertedJsonData.treeData);
-			setJsonFileHandle(handle);
+
+			await handleJSONFileSetup(handle);
 		} catch (error) {
-			console.error("Error selecting JSON file:", error);
+			console.error(`Error selecting JSON file: ${error}`);
 		}
 	};
 
@@ -144,9 +204,9 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	/* --------------------------------------------------------------------------------------------------------*/
 
 	const handleJSONFileInputChange = async (
-		file: File | undefined,
 		fileHandle: FileSystemFileHandle
 	) => {
+		const file = await fileHandle.getFile();
 		if (!file) {
 			setIsJsonDragOver(false);
 			setErrorModal({
@@ -170,13 +230,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			});
 			return;
 		}
-
-		setJsonFile(file);
-		const fileContent = await file.text();
-		const convertedJsonData: JSONData = JSON.parse(fileContent);
-		setTabData(convertedJsonData.tabData);
-		setTreeData(convertedJsonData.treeData);
-		setJsonFileHandle(fileHandle);
+		await handleJSONFileSetup(fileHandle);
 	};
 
 	// Remove uploaded files
@@ -211,6 +265,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				],
 				suggestedName: `${fileName}.json`,
 			});
+			const jsonWritable = await jsonHandle.createWritable();
 			// Create XML file handle
 			const xmlHandle = await window.showSaveFilePicker({
 				types: [
@@ -223,8 +278,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				],
 				suggestedName: `${fileName}.xml`,
 			});
-			setJsonFileHandle(jsonHandle);
-			setXmlFileHandle(xmlHandle);
+			await xmlHandle.createWritable();
+			await handleJSONFileInit(jsonHandle, jsonWritable);
+			// setJsonFileHandle(jsonHandle);
+			// setXmlFileHandle(xmlHandle);
 			navigate("/projectEdit");
 		} catch (error) {
 			console.error(`Error creating files: ${error}`);

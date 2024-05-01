@@ -1,11 +1,6 @@
-import WhoIcon from "../assets/img/Stakeholder.png";
-import DoIcon from "../assets/img/Function.png";
-import BeIcon from "../assets/img/Cloud.png";
-import FeelIcon from "../assets/img/Heart.png";
-import ConcernIcon from "../assets/img/Risk.png";
 import DeleteIcon from "../assets/img/trash-alt-solid.svg";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { saveAs } from "file-saver";
 
 import Tab from "react-bootstrap/Tab";
@@ -15,18 +10,9 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
-import { TabContent, TreeItem, useFileContext } from "./context/FileProvider";
+import { TreeItem, useFileContext, tabs } from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
-
-// Define the initial tabs with labels and corresponding icons
-const tabs: TabContent[] = [
-	{ label: "Who", icon: WhoIcon, rows: [] },
-	{ label: "Do", icon: DoIcon, rows: [] },
-	{ label: "Be", icon: BeIcon, rows: [] },
-	{ label: "Feel", icon: FeelIcon, rows: [] },
-	{ label: "Concern", icon: ConcernIcon, rows: [] },
-];
 
 type GoalListProps = {
 	setDraggedItem: (item: TreeItem | null) => void;
@@ -42,24 +28,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 	) => {
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
 		const { tabData, setTabData } = useFileContext();
-
-		// Intialize with empty data if there is not created/selected file
-		useEffect(() => {
-			if (!tabData.length) {
-				const initialTabs = tabs.map((tab, index) => ({
-					...tab,
-					rows: [
-						...tab.rows,
-						{
-							id: Date.now() + index,
-							type: tab.label,
-							content: "",
-						},
-					],
-				}));
-				setTabData(initialTabs);
-			}
-		}, []);
 
 		const inputRef = useRef<HTMLInputElement>(null);
 

@@ -1,4 +1,9 @@
 import React, { useState, createContext, useContext } from "react";
+import WhoIcon from "../../assets/img/Stakeholder.png";
+import DoIcon from "../../assets/img/Function.png";
+import BeIcon from "../../assets/img/Cloud.png";
+import FeelIcon from "../../assets/img/Heart.png";
+import ConcernIcon from "../../assets/img/Risk.png";
 
 // Type of the json data
 export type JSONData = {
@@ -21,7 +26,18 @@ export type TabContent = {
 	rows: TreeItem[];
 };
 
+// Define the initial tabs with labels and corresponding icons
+export const tabs: TabContent[] = [
+	{ label: "Who", icon: WhoIcon, rows: [] },
+	{ label: "Do", icon: DoIcon, rows: [] },
+	{ label: "Be", icon: BeIcon, rows: [] },
+	{ label: "Feel", icon: FeelIcon, rows: [] },
+	{ label: "Concern", icon: ConcernIcon, rows: [] },
+];
+
 export type Label = "Who" | "Do" | "Be" | "Feel" | "Concern";
+
+export const DataType = { JSON: "AMMBER_JSON", XML: "AMMBER_XML" };
 
 type FileContextProps = {
 	jsonFileHandle: FileSystemFileHandle | null;

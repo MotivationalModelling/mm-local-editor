@@ -5,8 +5,14 @@ import GoalList from "./GoalList";
 import Tree from "./Tree";
 import { Button } from "react-bootstrap";
 import ErrorModal from "./ErrorModal";
-import { Label, TreeItem } from "./context/FileProvider";
-import { useFileContext } from "./context/FileProvider";
+import {
+	Label,
+	TreeItem,
+	useFileContext,
+	DataType,
+	JSONData,
+} from "./context/FileProvider";
+import { get } from "idb-keyval";
 
 const defaultStyle = {
 	display: "flex",
@@ -53,7 +59,8 @@ const SectionPanel = ({
 
 	const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
 	// Simply store ids of all items in the tree for fast check instead of recursive search
-	const { treeData, setTreeData, tabData, setTabData } = useFileContext();
+	const { treeData, setTreeData, tabData, setTabData, setJsonFileHandle } =
+		useFileContext();
 	const [treeIds, setTreeIds] = useState<number[]>([]);
 
 	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
@@ -89,27 +96,40 @@ const SectionPanel = ({
 		};
 	}, []);
 
-	// Initialize the tree ids from the created/selected json file
 	useEffect(() => {
-		// Recursively get all the ids from the tree data
-		const getIds = (treeData: TreeItem[]) => {
-			const ids: number[] = [];
-			const traverse = (arr: TreeItem[]) => {
-				arr.forEach((item) => {
-					ids.push(item.id);
-
-					if (item.children && item.children.length > 0) {
-						traverse(item.children);
-					}
-				});
-			};
-			traverse(treeData);
-			return ids;
+		const fetchJSON = async () => {
+			const jsonHandle = await get(DataType.JSON);
+			console.log(jsonHandle);
+			if (jsonHandle) {
+				const file = await jsonHandle.getFile();
+				const fileContent = await file.text();
+				const convertedJsonData: JSONData = JSON.parse(fileContent);
+				setTabData(convertedJsonData.tabData);
+				setTreeData(convertedJsonData.treeData);
+				setJsonFileHandle(jsonHandle);
+				const ids = getIds(convertedJsonData.treeData);
+				setTreeIds(ids);
+			}
 		};
-		const ids = getIds(treeData);
-
-		setTreeIds(ids);
+		fetchJSON();
 	}, []);
+
+	// Initialize the tree ids from the created/selected json file
+	const getIds = (treeData: TreeItem[]) => {
+		const ids: number[] = [];
+		// Recursively get all the ids from the tree data
+		const traverse = (arr: TreeItem[]) => {
+			arr.forEach((item) => {
+				ids.push(item.id);
+
+				if (item.children && item.children.length > 0) {
+					traverse(item.children);
+				}
+			});
+		};
+		traverse(treeData);
+		return ids;
+	};
 
 	// Handle section three resize and section one auto resize
 	const handleResizeSectionThree: ResizeCallback = (
