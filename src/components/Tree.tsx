@@ -10,6 +10,7 @@ import { TreeItem } from "./context/FileProvider";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
 import { Label } from "./context/FileProvider";
 import { useFileContext } from "./context/FileProvider";
+import ConfirmModal from "./ConfirmModal";
 
 import "react-nestable/dist/styles/index.css";
 import "./Tree.css";
@@ -53,9 +54,9 @@ const iconFromType = (type: Label) => {
 
 type TreeProps = {
 	existingItemIds: number[];
-	existingError: boolean;
 	setTreeIds: (value: React.SetStateAction<number[]>) => void;
 	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
+	setExistingItemIds: (existingItemIds: number[]) => void;
 };
 
 // Goal icon in the tree
@@ -74,13 +75,16 @@ const IconComponent = ({ type }: { type: Label }) => {
 
 const Tree: React.FC<TreeProps> = ({
 	existingItemIds,
-	existingError,
 	setTreeIds,
 	handleSynTableTree,
+	setExistingItemIds,
 }) => {
 	const [editingItemId, setEditingItemId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
 	const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
+	const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+	const deletingItemRef = useRef<TreeItem | null>(null);
+
 	const inputRef = useRef<HTMLInputElement>(null);
 	const { treeData, setTreeData } = useFileContext();
 
@@ -105,10 +109,52 @@ const Tree: React.FC<TreeProps> = ({
 	};
 
 	// Delete item by its id
+	const deleteItem = () => {
+		if (deletingItemRef && deletingItemRef.current) {
+			const updatedTreeData = removeItemFromTree(
+				treeData,
+				deletingItemRef.current.id
+			);
+			setTreeData(updatedTreeData);
+			setTreeIds((prevIds) =>
+				prevIds.filter((id) => id !== deletingItemRef.current?.id)
+			);
+		} else {
+			console.log("Deleting item not found.");
+		}
+		setShowDeleteWarning(false);
+	};
+
+	// Handle delete button clicked
 	const handleDeleteItem = (item: TreeItem) => {
-		const updatedTreeData = removeItemFromTree(treeData, item.id);
-		setTreeData(updatedTreeData);
-		setTreeIds((prevIds) => prevIds.filter((id) => id !== item.id));
+		deletingItemRef.current = item;
+		const deletingIds = getAllIds(item);
+		if (item.children && item.children.length > 0) {
+			setExistingItemIds([...existingItemIds, ...deletingIds]);
+			setShowDeleteWarning(true);
+		} else {
+			deleteItem();
+		}
+	};
+
+	// Handle cancel deleting goal with children(s)
+	const handleDeleteCancel = () => {
+		setShowDeleteWarning(false);
+		setExistingItemIds([]);
+	};
+
+	// Get ids from the tree item
+	const getAllIds = (item: TreeItem) => {
+		const ids: number[] = [item.id];
+
+		// If the item has children, recursively collect their ids
+		if (item.children) {
+			item.children.forEach((child) => {
+				ids.push(...getAllIds(child));
+			});
+		}
+
+		return ids;
 	};
 
 	// Function for rendering every item
@@ -175,7 +221,7 @@ const Tree: React.FC<TreeProps> = ({
 					...treeListStyle,
 					backgroundColor: isEditing
 						? "#e0e0e0"
-						: existingItemIds.includes(treeItem.id) && existingError
+						: existingItemIds.includes(treeItem.id)
 						? "#FF474C"
 						: "white",
 				}}
@@ -251,6 +297,13 @@ const Tree: React.FC<TreeProps> = ({
 
 	return (
 		<div style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}>
+			<ConfirmModal
+				show={showDeleteWarning}
+				title="Delete Warning"
+				message="You are going to delete a goal with children goals, are you sure?"
+				onHide={handleDeleteCancel}
+				onConfirm={deleteItem}
+			/>
 			<Nestable
 				onChange={({ items }) => setTreeData(items as TreeItem[])}
 				items={treeData}

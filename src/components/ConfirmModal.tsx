@@ -1,19 +1,20 @@
 import React from "react";
 import { Modal, Button } from "react-bootstrap";
 
-export type ErrorModalProps = {
+export type ConfirmModalProps = {
 	show: boolean;
 	title: string;
 	message: string;
 	onHide?: () => void;
+	onConfirm: () => void;
 };
 
-// Modal for error alert
-const ErrorModal: React.FC<ErrorModalProps> = ({
+const ConfirmModal: React.FC<ConfirmModalProps> = ({
 	show,
 	title,
 	message,
 	onHide,
+	onConfirm,
 }) => {
 	return (
 		<Modal show={show} onHide={onHide} centered>
@@ -25,9 +26,12 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
 				<Button variant="secondary" onClick={onHide}>
 					Close
 				</Button>
+				<Button variant="primary" onClick={onConfirm}>
+					Confirm
+				</Button>
 			</Modal.Footer>
 		</Modal>
 	);
 };
 
-export default ErrorModal;
+export default ConfirmModal;

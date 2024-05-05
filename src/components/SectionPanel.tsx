@@ -162,6 +162,7 @@ const SectionPanel = ({
 		// Set new timeout
 		timeoutRef.current = setTimeout(() => {
 			setExistingItemIds([]);
+			setGroupSelected([]);
 			setExistingError(false);
 		}, delayTime);
 	};
@@ -172,7 +173,6 @@ const SectionPanel = ({
 
 		// Temporary Group drop
 		if (groupSelected.length > 1) {
-			console.log(groupSelected);
 			handleDropGroupSelected();
 			return;
 		}
@@ -198,8 +198,6 @@ const SectionPanel = ({
 		const newItemsToAdd = groupSelected.filter(
 			(item) => !treeIds.includes(item.id)
 		);
-
-		console.log(newItemsToAdd);
 
 		// If all items are in the tree, then show the warning
 		if (newItemsToAdd.length === 0) {
@@ -320,7 +318,7 @@ const SectionPanel = ({
 				padding: paddingX,
 			}}
 			ref={parentRef}
-			onFocus={() => setIsHintVisible(false)}
+			onClick={() => setIsHintVisible(false)}
 		>
 			{/* Additional helper components */}
 			<ErrorModal
@@ -374,9 +372,9 @@ const SectionPanel = ({
 			>
 				<Tree
 					existingItemIds={existingItemIds}
-					existingError={existingError}
 					setTreeIds={setTreeIds}
 					handleSynTableTree={handleSynTableTree}
+					setExistingItemIds={setExistingItemIds}
 				/>
 			</div>
 
