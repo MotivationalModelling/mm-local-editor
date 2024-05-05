@@ -170,6 +170,13 @@ const SectionPanel = ({
 	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
 		e.preventDefault();
 
+		// Temporary Group drop
+		if (groupSelected.length > 1) {
+			console.log(groupSelected);
+			handleDropGroupSelected();
+			return;
+		}
+
 		if (draggedItem && draggedItem.content) {
 			if (!treeIds.includes(draggedItem.id)) {
 				const newData: TreeItem[] = [...treeData, draggedItem];
