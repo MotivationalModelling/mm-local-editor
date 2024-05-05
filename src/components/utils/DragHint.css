@@ -1,0 +1,42 @@
+.hint {
+	z-index: 999;
+	position: fixed;
+	display: flex;
+	top: 30%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 10px 20px;
+	border-radius: 5px;
+	animation: dragAnimation 5s infinite ease-in;
+	/* animation-iteration-count: 2; */
+}
+
+@keyframes dragAnimation {
+	50%,
+	100% {
+		opacity: 0;
+		left: 85%;
+	}
+	0% {
+		left: 25%;
+		opacity: 0;
+	}
+	10% {
+		left: 25%;
+		opacity: 1;
+	}
+}
+
+.rectangle {
+	width: 40vw;
+	height: 4vh;
+	border-radius: 10px;
+	background-color: rgba(220, 220, 220, 0.5);
+	border: 2px solid rgba(100, 100, 100, 0.5);
+}
+
+.hand-icon {
+	position: absolute;
+	right: 1%;
+	bottom: -10%;
+}

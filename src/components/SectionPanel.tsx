@@ -3,7 +3,6 @@ import { Resizable, ResizeCallback } from "re-resizable";
 import "./SectionPanel.css";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { Button } from "react-bootstrap";
 import ErrorModal from "./ErrorModal";
 import {
 	Label,
@@ -13,6 +12,7 @@ import {
 	JSONData,
 } from "./context/FileProvider";
 import { get } from "idb-keyval";
+import DragHint from "./utils/DragHint";
 
 const defaultStyle = {
 	display: "flex",
@@ -68,6 +68,8 @@ const SectionPanel = ({
 	const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
 	const [existingError, setExistingError] = useState<boolean>(false);
 
+	const [isHintVisible, setIsHintVisible] = useState(true);
+
 	const sectionTwoRef = useRef<HTMLDivElement>(null);
 	const parentRef = useRef<HTMLDivElement>(null);
 	const goalListRef = useRef<HTMLDivElement>(null);
@@ -99,7 +101,6 @@ const SectionPanel = ({
 	useEffect(() => {
 		const fetchJSON = async () => {
 			const jsonHandle = await get(DataType.JSON);
-			console.log(jsonHandle);
 			if (jsonHandle) {
 				const file = await jsonHandle.getFile();
 				const fileContent = await file.text();
@@ -312,13 +313,17 @@ const SectionPanel = ({
 				padding: paddingX,
 			}}
 			ref={parentRef}
+			onFocus={() => setIsHintVisible(false)}
 		>
+			{/* Additional helper components */}
 			<ErrorModal
 				show={existingError}
 				title="Drop Failed"
 				message="The selected Goal(s) already exist(s)."
 				onHide={handleGroupDropModal}
 			/>
+			<DragHint isHintVisible={isHintVisible} />
+
 			{/* Goal List Section */}
 			<Resizable
 				handleClasses={{ right: "right-handler" }}
@@ -341,19 +346,9 @@ const SectionPanel = ({
 					groupSelected={groupSelected}
 					setGroupSelected={setGroupSelected}
 					handleSynTableTree={handleSynTableTree}
+					handleDropGroupSelected={handleDropGroupSelected}
 				/>
 			</Resizable>
-
-			<Button
-				className="m-2 justify-content-center align-items-center"
-				variant="primary"
-				style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
-				// style={{display: groupSelected.length > 0 ? "flex" : "none", position: "absolute", top: "2vh", right: "10vw"}}
-				onClick={handleDropGroupSelected}
-			>
-				{/* Click to Drop To Right Panel */}
-				Add Group
-			</Button>
 
 			{/* Cluster Hierachy Section */}
 			<div

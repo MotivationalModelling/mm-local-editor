@@ -1,7 +1,7 @@
 import DeleteIcon from "../assets/img/trash-alt-solid.svg";
 
 import React, { useState, useRef } from "react";
-import { saveAs } from "file-saver";
+// import { saveAs } from "file-saver";
 
 import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
@@ -19,11 +19,18 @@ type GoalListProps = {
 	groupSelected: TreeItem[];
 	setGroupSelected: (grouSelected: TreeItem[]) => void;
 	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
+	handleDropGroupSelected: () => void;
 };
 
 const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 	(
-		{ setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree },
+		{
+			setDraggedItem,
+			groupSelected,
+			setGroupSelected,
+			handleSynTableTree,
+			handleDropGroupSelected,
+		},
 		ref
 	) => {
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
@@ -129,32 +136,32 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setDraggedItem(row);
 		};
 
-		const handleConvert = () => {
-			// Check if there is data here.
-			const hasNonEmptyRows = tabData
-				.find((tab) => tab.label === activeKey)
-				?.rows.some((row) => row.content !== "");
-			if (!hasNonEmptyRows) {
-				alert("Failed: Nothing to convert.");
-				return;
-			}
+		// const handleConvert = () => {
+		// 	// Check if there is data here.
+		// 	const hasNonEmptyRows = tabData
+		// 		.find((tab) => tab.label === activeKey)
+		// 		?.rows.some((row) => row.content !== "");
+		// 	if (!hasNonEmptyRows) {
+		// 		alert("Failed: Nothing to convert.");
+		// 		return;
+		// 	}
 
-			const dataToConvert = tabData
-				.map((tab) => ({
-					type: tab.label,
-					items: tab.rows.filter((row) => row.content.trim() !== ""),
-				}))
-				.filter((tab) => tab.items.length > 0);
+		// 	const dataToConvert = tabData
+		// 		.map((tab) => ({
+		// 			type: tab.label,
+		// 			items: tab.rows.filter((row) => row.content.trim() !== ""),
+		// 		}))
+		// 		.filter((tab) => tab.items.length > 0);
 
-			if (dataToConvert.length > 0) {
-				const jsonBlob = new Blob([JSON.stringify(dataToConvert, null, 2)], {
-					type: "application/json",
-				});
-				saveAs(jsonBlob, "GoalList.json");
-			} else {
-				alert("Failed to convert: No data to convert.");
-			}
-		};
+		// 	if (dataToConvert.length > 0) {
+		// 		const jsonBlob = new Blob([JSON.stringify(dataToConvert, null, 2)], {
+		// 			type: "application/json",
+		// 		});
+		// 		saveAs(jsonBlob, "GoalList.json");
+		// 	} else {
+		// 		alert("Failed to convert: No data to convert.");
+		// 	}
+		// };
 
 		const handleCheckboxToggle = (row: TreeItem) => {
 			// Ignore the item if the content is empty
@@ -177,6 +184,19 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		const isChecked = (row: TreeItem): boolean | undefined => {
 			return groupSelected.some((item) => item.id === row.id);
+		};
+
+		const GroupDropBtn = () => {
+			return (
+				<Button
+					variant="primary"
+					style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+					onClick={handleDropGroupSelected}
+				>
+					{/* Click to Drop To Right Panel */}
+					Add Group
+				</Button>
+			);
 		};
 
 		return (
@@ -268,10 +288,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						))}
 					</Tab.Content>
 				</Tab.Container>
-				<div className={styles.buttonContainer}>
-					<Button onClick={handleConvert} className={styles.convertButton}>
-						Convert
-					</Button>
+				<div className="d-flex justify-content-end my-2 ">
+					<GroupDropBtn />
 				</div>
 			</div>
 		);
