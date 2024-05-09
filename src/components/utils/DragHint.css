@@ -28,8 +28,6 @@
 }
 
 .rectangle {
-	width: 40vw;
-	height: 4vh;
 	border-radius: 10px;
 	background-color: rgba(220, 220, 220, 0.5);
 	border: 2px solid rgba(100, 100, 100, 0.5);

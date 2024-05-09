@@ -162,7 +162,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		// 		alert("Failed to convert: No data to convert.");
 		// 	}
 		// };
-
+		//-------------------------------------------------------------------------------------
 		const handleCheckboxToggle = (row: TreeItem) => {
 			// Ignore the item if the content is empty
 			if (row.content.trim() === "") {
@@ -182,22 +182,49 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setGroupSelected(newGroupSelected);
 		};
 
+		const handleAddAll = () => {
+			// Collect all unique, non-empty items across all tabs
+			const allItems = tabData.flatMap(tab => 
+				tab.rows.filter(row => row.content.trim() !== "")
+			);
+			
+			// Filter out items already in groupSelected to avoid duplicates
+			const newItems = allItems.filter(item => 
+				!groupSelected.some(selected => selected.id === item.id)
+			);
+		
+			setGroupSelected([...groupSelected, ...newItems]);
+		};
+
 		const isChecked = (row: TreeItem): boolean | undefined => {
 			return groupSelected.some((item) => item.id === row.id);
 		};
 
 		const GroupDropBtn = () => {
 			return (
+				<div className="d-flex justify-content-end my-2">
 				<Button
 					variant="primary"
-					style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+					className="me-2"
+					// style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+					disabled={groupSelected.length <= 0}
 					onClick={handleDropGroupSelected}
 				>
 					{/* Click to Drop To Right Panel */}
 					Add Group
 				</Button>
+
+				<Button
+                	variant="primary"
+                	style={{ display: tabData.some(tab => tab.rows.length > 0) ? "flex" : "none" }}
+                	onClick={handleAddAll}
+            	>
+                Add All
+            </Button>
+			</div>
 			);
 		};
+		//------------------------------------------------------------------
 
 		return (
 			<div className={styles.tabContainer} ref={ref}>
@@ -288,9 +315,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						))}
 					</Tab.Content>
 				</Tab.Container>
-				<div className="d-flex justify-content-end my-2 ">
-					<GroupDropBtn />
-				</div>
+				<GroupDropBtn />
+
 			</div>
 		);
 	}

@@ -149,6 +149,7 @@ const SectionPanel = ({
 				parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
 			);
 		}
+		console.log(sectionOneWidth)
 	};
 
 	// Hide the drop error modal automatically after a set time
@@ -308,7 +309,7 @@ const SectionPanel = ({
 			}
 		}
 	}, [paddingX, showGoalSection, showGraphSection]);
-
+	
 	return (
 		<div
 			style={{
@@ -327,7 +328,7 @@ const SectionPanel = ({
 				message="The selected Goal(s) already exist(s)."
 				onHide={handleGroupDropModal}
 			/>
-			<DragHint isHintVisible={isHintVisible} />
+			<DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/>
 
 			{/* Goal List Section */}
 			<Resizable
