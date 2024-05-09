@@ -254,18 +254,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			if (!fileName) return;
 
 			// Create JSON file handle
-			const jsonHandle = await window.showSaveFilePicker({
-				types: [
-					{
-						description: "JSON Files",
-						accept: {
-							"application/json": [".json"],
-						},
-					},
-				],
-				suggestedName: `${fileName}.json`,
-			});
-			const jsonWritable = await jsonHandle.createWritable();
+			await triggerFileSave(fileName, 'json');
 			// Create XML file handle
 			const xmlHandle = await window.showSaveFilePicker({
 				types: [
@@ -279,7 +268,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				suggestedName: `${fileName}.xml`,
 			});
 			await xmlHandle.createWritable();
-			await handleJSONFileInit(jsonHandle, jsonWritable);
 			// setJsonFileHandle(jsonHandle);
 			// setXmlFileHandle(xmlHandle);
 			navigate("/projectEdit");
@@ -287,6 +275,41 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			console.error(`Error creating files: ${error}`);
 		}
 	};
+
+	async function triggerFileSave(fileName: string, fileType:'json' | 'xml'): Promise<void> {
+		const fileOptions: Record<string, any> = {
+			json: {
+				types: [
+					{
+						description: "JSON Files",
+						accept: {
+							"application/json": [".json"],
+						},
+					},
+				],
+				suggestedName: `${fileName}.json`,
+			},
+			xml: {
+				types: [
+					{
+						description: "XML Files",
+						accept: {
+							"text/xml": [".xml"],
+						},
+					},
+				],
+				suggestedName: `${fileName}.xml`,
+			}
+		};
+	
+		try {
+			const handle = await window.showSaveFilePicker(fileOptions[fileType]);
+			const writable = await handle.createWritable();
+			await handleJSONFileInit(handle, writable);
+		} catch (error) {
+			console.error(`Error creating ${fileType} file: ${error}`);
+		}
+	}
 
 	/* --------------------------------------------------------------------------------------------------------*/
 
