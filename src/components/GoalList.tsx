@@ -219,7 +219,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
                 	style={{ display: tabData.some(tab => tab.rows.length > 0) ? "flex" : "none" }}
                 	onClick={handleAddAll}
             	>
-                Add All
+                Select All
             </Button>
 			</div>
 			);

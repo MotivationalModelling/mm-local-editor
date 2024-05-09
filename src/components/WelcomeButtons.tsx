@@ -303,6 +303,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		};
 	
 		try {
+
 			const handle = await window.showSaveFilePicker(fileOptions[fileType]);
 			const writable = await handle.createWritable();
 			await handleJSONFileInit(handle, writable);
