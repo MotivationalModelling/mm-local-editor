@@ -26,7 +26,7 @@ const ProjectEditHeader: React.FC = () => {
 					</Col>
 					<Col className="text-end align-content-center">
 						<Link to="/">
-							<Button variant="warning">Back</Button>
+							<Button variant="primary">Back</Button>
 						</Link>
 					</Col>
 				</Row>
