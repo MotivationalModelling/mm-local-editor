@@ -37,13 +37,11 @@ export const tabs: TabContent[] = [
 
 export type Label = "Who" | "Do" | "Be" | "Feel" | "Concern";
 
-export const DataType = { JSON: "AMMBER_JSON", XML: "AMMBER_XML" };
+export const DataType = { JSON: "AMMBER_JSON" };
 
 type FileContextProps = {
 	jsonFileHandle: FileSystemFileHandle | null;
 	setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void;
-	xmlFileHandle: FileSystemFileHandle | null;
-	setXmlFileHandle: (xmlHandle: FileSystemFileHandle | null) => void;
 	tabData: TabContent[];
 	treeData: TreeItem[];
 	xmlData: string;
@@ -56,8 +54,6 @@ type FileContextProps = {
 const FileContext = createContext<FileContextProps>({
 	jsonFileHandle: null,
 	setJsonFileHandle: () => {},
-	xmlFileHandle: null,
-	setXmlFileHandle: () => {},
 	tabData: [],
 	treeData: [],
 	xmlData: "",
@@ -72,8 +68,6 @@ type FileProviderProps = { children: React.ReactNode };
 
 const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
 	const [jsonFileHandle, setJsonFileHandle] =
-		useState<FileSystemFileHandle | null>(null);
-	const [xmlFileHandle, setXmlFileHandle] =
 		useState<FileSystemFileHandle | null>(null);
 
 	const [treeData, setTreeData] = useState<TreeItem[]>([]);
@@ -92,8 +86,6 @@ const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
 				setXmlData,
 				jsonFileHandle,
 				setJsonFileHandle,
-				xmlFileHandle,
-				setXmlFileHandle,
 			}}
 		>
 			{children}

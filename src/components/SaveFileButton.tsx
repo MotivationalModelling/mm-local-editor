@@ -25,7 +25,6 @@ const SaveFileButton = () => {
 	};
 	const handleBtnClick = async () => {
 		await saveJson();
-		// Further save XML
 	};
 
 	return (

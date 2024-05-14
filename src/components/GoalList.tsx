@@ -184,15 +184,15 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		const handleAddAll = () => {
 			// Collect all unique, non-empty items across all tabs
-			const allItems = tabData.flatMap(tab => 
-				tab.rows.filter(row => row.content.trim() !== "")
+			const allItems = tabData.flatMap((tab) =>
+				tab.rows.filter((row) => row.content.trim() !== "")
 			);
-			
+
 			// Filter out items already in groupSelected to avoid duplicates
-			const newItems = allItems.filter(item => 
-				!groupSelected.some(selected => selected.id === item.id)
+			const newItems = allItems.filter(
+				(item) => !groupSelected.some((selected) => selected.id === item.id)
 			);
-		
+
 			setGroupSelected([...groupSelected, ...newItems]);
 		};
 
@@ -203,25 +203,29 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		const GroupDropBtn = () => {
 			return (
 				<div className="d-flex justify-content-end my-2">
-				<Button
-					variant="primary"
-					className="me-2"
-					// style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
-					disabled={groupSelected.length <= 0}
-					onClick={handleDropGroupSelected}
-				>
-					{/* Click to Drop To Right Panel */}
-					Add Group
-				</Button>
+					<Button
+						variant="primary"
+						className="me-2"
+						// style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+						disabled={groupSelected.length <= 0}
+						onClick={handleDropGroupSelected}
+					>
+						{/* Click to Drop To Right Panel */}
+						Add Group
+					</Button>
 
-				<Button
-                	variant="primary"
-                	style={{ display: tabData.some(tab => tab.rows.length > 0) ? "flex" : "none" }}
-                	onClick={handleAddAll}
-            	>
-                Select All
-            </Button>
-			</div>
+					<Button
+						variant="primary"
+						style={{
+							display: tabData.some((tab) => tab.rows.length > 0)
+								? "flex"
+								: "none",
+						}}
+						onClick={handleAddAll}
+					>
+						Select All
+					</Button>
+				</div>
 			);
 		};
 		//------------------------------------------------------------------
@@ -316,7 +320,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					</Tab.Content>
 				</Tab.Container>
 				<GroupDropBtn />
-
 			</div>
 		);
 	}

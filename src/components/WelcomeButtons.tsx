@@ -13,7 +13,6 @@ import {
 import { set } from "idb-keyval";
 
 const EMPTY_FILE_ALERT = "Please select a file";
-const XML_FILE_ALERT = "Please select an XML file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
 
 type WelcomeButtonsProps = {
@@ -32,14 +31,11 @@ const defaultModalState: ErrorModalProps = {
 // https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
 
 const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
-	const [xmlFile, setXmlFile] = useState<File | null>(null);
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
-	const [isXmlDragOver, setIsXmlDragOver] = useState(false);
 	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
 	const [errorModal, setErrorModal] =
 		useState<ErrorModalProps>(defaultModalState);
 
-	const xmlFileRef = useRef<HTMLInputElement>(null);
 	const jsonFileRef = useRef<HTMLInputElement>(null);
 
 	const navigate = useNavigate();
@@ -102,13 +98,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		}
 	};
 
-	// Handle File drag and drop
-	const hanldeXMLFileDrop = (evt: React.DragEvent<HTMLDivElement>) => {
-		evt.preventDefault();
-		const dropFiles = evt.dataTransfer.files;
-		handleXMLFileInputChange(dropFiles?.[0]);
-	};
-
 	// Handle JSON file drop
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
@@ -129,27 +118,13 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		}
 	};
 
-	const handleXMLFileDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-		event.preventDefault();
-		setIsXmlDragOver(true);
-	};
-
 	const handleJSONFileDragOver = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		setIsJsonDragOver(true);
 	};
 
 	const handleFileDragLeave = () => {
-		setIsXmlDragOver(false);
 		setIsJsonDragOver(false);
-	};
-
-	// Triger file upload event for dropping files
-	const handleXMLUpload = () => {
-		if (xmlFileRef.current) {
-			xmlFileRef.current.value = "";
-			xmlFileRef.current.click();
-		}
 	};
 
 	const handleJSONUpload = async () => {
@@ -170,35 +145,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		} catch (error) {
 			console.error(`Error selecting JSON file: ${error}`);
 		}
-	};
-
-	// Handle files upload and files type checking
-	const handleXMLFileInputChange = (file: File | undefined) => {
-		if (!file) {
-			setIsXmlDragOver(false);
-			setErrorModal({
-				...defaultModalState,
-				show: true,
-				title: "File Upload Failed",
-				message: EMPTY_FILE_ALERT,
-				onHide: () => setErrorModal(defaultModalState),
-			});
-			return;
-		}
-
-		if (file.type !== "text/xml") {
-			setIsXmlDragOver(false);
-			setErrorModal({
-				...defaultModalState,
-				show: true,
-				title: "Incorrect File Type",
-				message: XML_FILE_ALERT,
-				onHide: () => setErrorModal(defaultModalState),
-			});
-			return;
-		}
-
-		setXmlFile(file);
 	};
 
 	/* --------------------------------------------------------------------------------------------------------*/
@@ -233,12 +179,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		await handleJSONFileSetup(fileHandle);
 	};
 
-	// Remove uploaded files
-	const handleXMLFileRemove = () => {
-		setXmlFile(null);
-		setIsXmlDragOver(false);
-	};
-
 	const handleJSONFileRemove = () => {
 		setJsonFile(null);
 		setIsJsonDragOver(false);
@@ -246,7 +186,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	/* --------------------------------------------------------------------------------------------------------*/
 
-	// Create json and xml file after use input the name
+	// Create json file after use input the name
 	const handleCreateBtnClick = async () => {
 		try {
 			// Pop-up for user to input file name
@@ -254,31 +194,20 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			if (!fileName) return;
 
 			// Create JSON file handle
-			await triggerFileSave(fileName, 'json');
-			// Create XML file handle
-			const xmlHandle = await window.showSaveFilePicker({
-				types: [
-					{
-						description: "XML Files",
-						accept: {
-							"text/xml": [".xml"],
-						},
-					},
-				],
-				suggestedName: `${fileName}.xml`,
-			});
-			await xmlHandle.createWritable();
+			await triggerFileSave(fileName, "json");
 			// setJsonFileHandle(jsonHandle);
-			// setXmlFileHandle(xmlHandle);
 			navigate("/projectEdit");
 		} catch (error) {
 			console.error(`Error creating files: ${error}`);
 		}
 	};
 
-	async function triggerFileSave(fileName: string, fileType:'json' | 'xml'): Promise<void> {
-		const fileOptions: Record<string, any> = {
-			json: {
+	async function triggerFileSave(
+		fileName: string,
+		fileType: "json"
+	): Promise<void> {
+		try {
+			const handle = await window.showSaveFilePicker({
 				types: [
 					{
 						description: "JSON Files",
@@ -288,23 +217,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 					},
 				],
 				suggestedName: `${fileName}.json`,
-			},
-			xml: {
-				types: [
-					{
-						description: "XML Files",
-						accept: {
-							"text/xml": [".xml"],
-						},
-					},
-				],
-				suggestedName: `${fileName}.xml`,
-			}
-		};
-	
-		try {
-
-			const handle = await window.showSaveFilePicker(fileOptions[fileType]);
+			});
 			const writable = await handle.createWritable();
 			await handleJSONFileInit(handle, writable);
 		} catch (error) {
@@ -322,13 +235,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			{/* File Input */}
 			<input
 				type="file"
-				accept=".xml"
-				onChange={(e) => handleXMLFileInputChange(e.target.files?.[0])}
-				style={{ display: "none" }}
-				ref={xmlFileRef}
-			/>
-			<input
-				type="file"
 				accept=".json"
 				multiple
 				style={{ display: "none" }}
@@ -337,23 +243,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			{/* Conditionally render create/open buttons or files section */}
 			{isDragging ? (
 				<>
-					{!xmlFile ? (
-						<FileDrop
-							onClick={handleXMLUpload}
-							onDrop={hanldeXMLFileDrop}
-							onDragLeave={handleFileDragLeave}
-							onDragOver={handleXMLFileDragOver}
-							isDragOver={isXmlDragOver}
-							fileType="XML"
-						/>
-					) : (
-						<FileUploadSection
-							file={xmlFile}
-							onRemove={handleXMLFileRemove}
-							onUpload={handleXMLUpload}
-						/>
-					)}
-
 					{!jsonFile ? (
 						<FileDrop
 							onClick={handleJSONUpload}
@@ -382,11 +271,14 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 						>
 							Back
 						</Button>
-						<Link to="/projectEdit">
-							<Button variant="primary" size="lg">
-								Upload
-							</Button>
-						</Link>
+						<Button
+							variant="primary"
+							size="lg"
+							disabled={!jsonFile ? true : false}
+							onClick={() => navigate("/projectEdit")}
+						>
+							Upload
+						</Button>
 					</div>
 				</>
 			) : (

@@ -25,7 +25,6 @@ const ExportFileButton = () => {
 
 	const handleBtnClick = () => {
 		exportJson();
-		// Further XML export
 	};
 
 	return (
