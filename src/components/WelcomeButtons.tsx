@@ -45,6 +45,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	// Handle after select JSON file
 	const handleJSONFileSetup = async (handle: FileSystemFileHandle) => {
 		try {
+			await handle.createWritable();
 			const file = await handle.getFile();
 			const fileContent = await file.text();
 			if (fileContent) {
@@ -59,6 +60,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			set(DataType.JSON, handle);
 			setJsonFileHandle(handle);
 		} catch (error) {
+			// If user cancel the permission of writing files, remove the uploaded file
+			if (error instanceof DOMException) {
+				setJsonFile(null);
+			}
 			console.log(`Error setup JSON File: ${error}`);
 		}
 	};
