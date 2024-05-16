@@ -17,11 +17,12 @@ import {
   EventObject,
   error,
   PanningHandler,
-  GoalModelLayout,
   DomHelpers,
   xmlUtils,
   Codec,
 } from "@maxgraph/core";
+import { GoalModelLayout } from "./GoalModelLayout";
+
 import { useRef, useEffect, useState } from "react";
 import { Container, Button, Row, Col } from "react-bootstrap";
 import "./GraphWorker.css";
@@ -33,8 +34,7 @@ import {
   PARALLELOGRAM_SHAPE,
   HEART_SHAPE,
 } from "./GraphShapes";
-import Cookies from "js-cookie";
-import axios from "axios";
+
 import GraphSidebar from "./GraphSidebar";
 
 // ---------------------------------------------------------------------------
@@ -240,7 +240,7 @@ const GraphWorker = () => {
   };
 
   useEffect(() => {
-    let graph: Graph;
+    //let graph: Graph;
     const graphContainer: HTMLElement | undefined =
       divGraph.current || undefined;
 
@@ -248,7 +248,7 @@ const GraphWorker = () => {
       InternalEvent.disableContextMenu(graphContainer);
 
       // config: allow drag-panning using left click on empty canvas space
-      graph = new Graph(graphContainer);
+      let graph = new Graph(graphContainer);
       setGraphRef(graph);
       console.log(graph.getDataModel());
       graph.getDataModel().beginUpdate();
@@ -513,7 +513,7 @@ const GraphWorker = () => {
 
         // disable context menu
         InternalEvent.disableContextMenu(container);
-
+        //--------------------------------this should change to render from xml file --------------------------
         // grab the clusters from window.jsonData
         if (window.jsonData) {
           const clusters = window.jsonData.GoalModelProject.Clusters;
@@ -644,7 +644,7 @@ const GraphWorker = () => {
             image: image,
           }
         );
-        const edge = graph.insertEdge(null, null, null, source, node);
+        const edge = graph.insertEdge(null, null, "", source, node);
 
         // if no root goal is registered, then store this as root
         if (rootGoal === null) {
@@ -767,7 +767,7 @@ const GraphWorker = () => {
               height,
               style
             );
-            const edge = graph.insertEdge(null, null, null, source, node);
+            const edge = graph.insertEdge(null, null, "", source, node);
             // make the edge invisible - we still want to create the edge
             // the edge is needed when running the autolayout logic
             edge.visible = false;
@@ -958,6 +958,8 @@ const GraphWorker = () => {
     }
 
     registerCustomShapes();
+    const graph = graphRef;
+    if (!graph) return;
     const parent = graph.getDefaultParent();
     graph.batchUpdate(() => {
       const vertex1 = graph.insertVertex(
