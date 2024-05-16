@@ -1,9 +1,5 @@
 const WelcomeHeader = () => {
-  return (
-    <header className="masthead mb-auto">
-      <div className="inner" />
-    </header>
-  );
+	return <div className="mb-auto"></div>;
 };
 
 export default WelcomeHeader;

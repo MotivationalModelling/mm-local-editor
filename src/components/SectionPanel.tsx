@@ -6,9 +6,16 @@ import Button from "react-bootstrap/Button";
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import GraphRender from "./GraphRender";
-import "./SectionPanel.css";
-
+import ErrorModal from "./ErrorModal";
+import {
+	Label,
+	TreeItem,
+	useFileContext,
+	DataType,
+	JSONData,
+} from "./context/FileProvider";
+import { get } from "idb-keyval";
+import DragHint from "./utils/DragHint";
 // use for testing xml validation only
 const xmlData = `
   <root>
@@ -50,56 +57,11 @@ const INITIAL_PROPORTIONS = {
 const DEFAULT_HEIGHT = "800px";
 
 type SectionPanelProps = {
-  showGoalSection: boolean;
-  showGraphSection: boolean;
-  setShowGoalSection: (showGoalSection: boolean) => void;
-  paddingX: number;
+	showGoalSection: boolean;
+	showGraphSection: boolean;
+	setShowGoalSection: (showGoalSection: boolean) => void;
+	paddingX: number;
 };
-
-export type TreeItem = {
-  id: number;
-  content: string;
-  type: Label;
-  children?: TreeItem[];
-};
-
-// Define the structure for the content of each tab
-export type TabContent = {
-  label: Label;
-  icon: string;
-  rows: TreeItem[];
-};
-
-export type Label = "Who" | "Do" | "Be" | "Feel" | "Concern";
-
-// Dummy data
-const items: TreeItem[] = [
-  {
-    id: 0,
-    content: "Do 1",
-    type: "Do",
-    children: [
-      { id: 1, content: "Be 1", type: "Be" },
-      { id: 2, content: "Role 2", type: "Who" },
-      {
-        id: 3,
-        content: "Do 7",
-        type: "Do",
-        children: [{ id: 4, content: "Be 1", type: "Be" }],
-      },
-    ],
-  },
-  {
-    id: 5,
-    content: "Do 3",
-    type: "Do",
-    children: [
-      { id: 6, content: "Role 5", type: "Who" },
-      { id: 7, content: "Be 3", type: "Be" },
-      { id: 8, content: "Feel 1", type: "Feel" },
-    ],
-  },
-];
 
 const SectionPanel: React.FC<SectionPanelProps> = ({
   showGoalSection,
@@ -111,121 +73,234 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
-  const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
-  const [treeData, setTreeData] = useState<TreeItem[]>(items);
-  // Simply store ids of all items in the tree for fast check instead of recursive search
-  const [treeIds, setTreeIds] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7, 8]);
-  const [tabData, setTabData] = useState<TabContent[]>([]);
-  const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
-  const [itemExist, setItemExist] = useState<[number, boolean]>([0, false]);
-  const [groupItemsExist, setGroupItemsExist] = useState<boolean>(false);
+	const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
+	// Simply store ids of all items in the tree for fast check instead of recursive search
+	const { treeData, setTreeData, tabData, setTabData, setJsonFileHandle } =
+		useFileContext();
+	const [treeIds, setTreeIds] = useState<number[]>([]);
+
+	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
+
+	const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
+	const [existingError, setExistingError] = useState<boolean>(false);
+
+	const [isHintVisible, setIsHintVisible] = useState(true);
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
 
-  // Handle section one resize and section three auto resize
-  const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
-    setSectionOneWidth(ref.offsetWidth);
-    // If the width sum exceed the parent total width, auto resize the section three until reach the minimum
-    if (
-      sectionTwoRef.current &&
-      ref.offsetWidth + sectionTwoRef.current.offsetWidth + sectionThreeWidth >=
-        parentWidth
-    ) {
-      setSectionThreeWidth(
-        parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
-      );
-    }
-  };
-  // Clear timeout when component unmounts
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+	// Handle section one resize and section three auto resize
+	const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
+		setSectionOneWidth(ref.offsetWidth);
+		// If the width sum exceed the parent total width, auto resize the section three until reach the minimum
+		if (
+			sectionTwoRef.current &&
+			ref.offsetWidth + sectionTwoRef.current.offsetWidth + sectionThreeWidth >=
+				parentWidth
+		) {
+			setSectionThreeWidth(
+				parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
+			);
+		}
+	};
+	// Clear timeout when component unmounts
+	useEffect(() => {
+		return () => {
+			if (timeoutRef.current !== null) {
+				clearTimeout(timeoutRef.current);
+			}
+		};
+	}, []);
 
-  // Handle section three resize and section one auto resize
-  const handleResizeSectionThree: ResizeCallback = (
-    _event,
-    _direction,
-    ref
-  ) => {
-    setSectionThreeWidth(ref.offsetWidth);
-    // If the width sum exceed the parent total width, auto resize the section one until reach the minimum
-    if (
-      sectionTwoRef.current &&
-      sectionOneWidth + sectionTwoRef.current.offsetWidth + ref.offsetWidth >=
-        parentWidth
-    ) {
-      setSectionOneWidth(
-        parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
-      );
-    }
-  };
+	useEffect(() => {
+		const fetchJSON = async () => {
+			const jsonHandle = await get(DataType.JSON);
+			if (jsonHandle) {
+				const file = await jsonHandle.getFile();
+				const fileContent = await file.text();
+				const convertedJsonData: JSONData = JSON.parse(fileContent);
+				setTabData(convertedJsonData.tabData);
+				setTreeData(convertedJsonData.treeData);
+				setJsonFileHandle(jsonHandle);
+				const ids = getIds(convertedJsonData.treeData);
+				setTreeIds(ids);
+			}
+		};
+		fetchJSON();
+	}, []);
+
+	// Initialize the tree ids from the created/selected json file
+	const getIds = (treeData: TreeItem[]) => {
+		const ids: number[] = [];
+		// Recursively get all the ids from the tree data
+		const traverse = (arr: TreeItem[]) => {
+			arr.forEach((item) => {
+				ids.push(item.id);
+
+				if (item.children && item.children.length > 0) {
+					traverse(item.children);
+				}
+			});
+		};
+		traverse(treeData);
+		return ids;
+	};
+
+	// Handle section three resize and section one auto resize
+	const handleResizeSectionThree: ResizeCallback = (
+		_event,
+		_direction,
+		ref
+	) => {
+		setSectionThreeWidth(ref.offsetWidth);
+		// If the width sum exceed the parent total width, auto resize the section one until reach the minimum
+		if (
+			sectionTwoRef.current &&
+			sectionOneWidth + sectionTwoRef.current.offsetWidth + ref.offsetWidth >=
+				parentWidth
+		) {
+			setSectionOneWidth(
+				parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
+			);
+		}
+		console.log(sectionOneWidth)
+	};
+
+	// Hide the drop error modal automatically after a set time
+	const hideErrorModalTimeout = () => {
+		const delayTime = 1500;
+
+		// Clear previous timeout
+		if (timeoutRef.current !== null) {
+			clearTimeout(timeoutRef.current);
+		}
+		// Set new timeout
+		timeoutRef.current = setTimeout(() => {
+			setExistingItemIds([]);
+			setGroupSelected([]);
+			setExistingError(false);
+		}, delayTime);
+	};
 
   // Handle for goals drop on the nestable section
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    const delayTime = 1500;
-    if (draggedItem?.content) {
-      if (!treeIds.includes(draggedItem.id)) {
-        const newData: TreeItem[] = [...treeData, draggedItem];
-        setTreeData(newData);
-        setTreeIds([...treeIds, draggedItem.id]);
-        console.log("drop successful");
-      } else {
-        setItemExist([draggedItem.id, true]);
-        // Clear previous timeout
-        if (timeoutRef.current !== null) {
-          clearTimeout(timeoutRef.current);
-        }
-        // Set new timeout
-        timeoutRef.current = setTimeout(() => {
-          setItemExist([draggedItem.id, false]);
-        }, delayTime);
-        console.log("drop failed");
-      }
-    }
-  };
+		// Temporary Group drop
+		if (groupSelected.length > 1) {
+			handleDropGroupSelected();
+			return;
+		}
 
-  // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
-  const handleDropGroupSelected = () => {
-    // Filter groupSelected to get only objects whose IDs are not in treeData
-    const newItemsToAdd = groupSelected.filter(
-      (item) => !treeIds.includes(item.id)
-    );
+		if (draggedItem && draggedItem.content) {
+			if (!treeIds.includes(draggedItem.id)) {
+				const newData: TreeItem[] = [...treeData, draggedItem];
+				setTreeData(newData);
+				setTreeIds([...treeIds, draggedItem.id]);
+				console.log("drop successful");
+			} else {
+				setExistingItemIds([...existingItemIds, draggedItem.id]);
+				setExistingError(true);
+				hideErrorModalTimeout();
+				console.log("drop failed");
+			}
+		}
+	};
 
-    console.log(newItemsToAdd);
+	// Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
+	const handleDropGroupSelected = () => {
+		// Filter groupSelected to get only objects whose IDs are not in treeData
+		const newItemsToAdd = groupSelected.filter(
+			(item) => !treeIds.includes(item.id)
+		);
 
-    // If all items are in the tree, then show the warning
-    if (newItemsToAdd.length === 0) {
-      setGroupItemsExist(true);
-      return;
-    }
-    // Update treeData with new items, filter out the empty items
-    setTreeData((prevTreeData) => [
-      ...prevTreeData,
-      ...newItemsToAdd.filter((item) => item.content.trim() !== ""),
-    ]);
-    // Update Ids with new items, filter out the empty items
-    setTreeIds((prevIds) => [
-      ...prevIds,
-      ...newItemsToAdd
-        .filter((item) => item.content.trim() !== "")
-        .map((item) => item.id),
-    ]);
-    setGroupSelected([]);
-  };
+		// If all items are in the tree, then show the warning
+		if (newItemsToAdd.length === 0) {
+			setExistingItemIds([...groupSelected.map((item) => item.id)]);
+			setExistingError(true);
+			hideErrorModalTimeout();
+			return;
+		}
+		// Update treeData with new items, filter out the empty items
+		const filteredTreeData = [
+			...treeData,
+			...newItemsToAdd.filter((item) => item.content.trim() !== ""),
+		];
+		setTreeData(filteredTreeData);
+		// Update Ids with new items, filter out the empjty items
+		setTreeIds((prevIds) => [
+			...prevIds,
+			...newItemsToAdd
+				.filter((item) => item.content.trim() !== "")
+				.map((item) => item.id),
+		]);
+		setGroupSelected([]);
+	};
 
-  const handleGroupDropModal = () => {
-    setGroupItemsExist(false);
-    setGroupSelected([]);
-  };
+	const handleGroupDropModal = () => {
+		setExistingItemIds([]);
+		setExistingError(false);
+		setGroupSelected([]);
+	};
+
+	// Update the tab data if exist while the tree data changed
+	const updateTabDataContent = (label: Label, id: number, newText: string) => {
+		const updatedTabData = tabData.map((tabContent) => {
+			if (tabContent.label === label) {
+				return {
+					...tabContent,
+					rows: tabContent.rows.map((row) => {
+						if (row.id === id) {
+							return {
+								...row,
+								content: newText,
+							};
+						}
+						return row;
+					}),
+				};
+			}
+			return tabContent;
+		});
+
+		setTabData(updatedTabData);
+	};
+
+	// Update the tree recursively
+	const updateItemTextInTree = (
+		items: TreeItem[],
+		idToUpdate: number,
+		newText: string
+	): TreeItem[] => {
+		if (!treeIds.includes(idToUpdate)) return items;
+
+		return items.map((currentItem) => {
+			if (currentItem.id === idToUpdate) {
+				return { ...currentItem, content: newText }; // Update text of this item
+			}
+			if (currentItem.children) {
+				currentItem.children = updateItemTextInTree(
+					currentItem.children,
+					idToUpdate,
+					newText
+				);
+			}
+			return currentItem;
+		});
+	};
+
+	// Handle synchronize data in table data and tree data
+	const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
+		const updatedTreeData = updateItemTextInTree(
+			treeData,
+			treeItem.id,
+			editedText
+		);
+		setTreeData(updatedTreeData);
+		updateTabDataContent(treeItem.type, treeItem.id, editedText);
+	};
 
   // Get the parent div inner width and set starter width for section one and section three
   useEffect(() => {
@@ -233,104 +308,92 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       const newParentWidth = parentRef.current.clientWidth - paddingX * 2;
       setParentWidth(newParentWidth);
 
-      if (showGoalSection && showGraphSection) {
-        setSectionOneWidth(
-          newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne
-        );
-        setSectionThreeWidth(
-          newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
-        );
-      } else if (showGoalSection) {
-        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
-      } else if (showGraphSection) {
-        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
-      } else {
-        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
-        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
-      }
-    }
-  }, [paddingX, showGoalSection, showGraphSection]);
+			if (showGoalSection && showGraphSection) {
+				setSectionOneWidth(
+					newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne
+				);
+				setSectionThreeWidth(
+					newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
+				);
+			} else if (showGoalSection) {
+				setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
+			} else if (showGraphSection) {
+				setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
+			} else {
+				setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
+				setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
+			}
+		}
+	}, [paddingX, showGoalSection, showGraphSection]);
+	
+	return (
+		<div
+			style={{
+				width: "100%",
+				height: "100%",
+				display: "flex",
+				padding: paddingX,
+			}}
+			ref={parentRef}
+			onClick={() => setIsHintVisible(false)}
+		>
+			{/* Additional helper components */}
+			<ErrorModal
+				show={existingError}
+				title="Drop Failed"
+				message="The selected Goal(s) already exist(s)."
+				onHide={handleGroupDropModal}
+			/>
+			<DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/>
 
-  return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        padding: paddingX,
-      }}
-      ref={parentRef}
-    >
-      <ErrorModal
-        show={itemExist[1]}
-        title="Drop Failed"
-        message="The Goal already exists."
-      />
-      <ErrorModal
-        show={groupItemsExist}
-        title="Group Drop Failed"
-        message="All selected Goals already exist."
-        onHide={handleGroupDropModal}
-      />
-      {/* Goal List Section */}
-      <Resizable
-        handleClasses={{ right: "right-handler" }}
-        enable={{ right: true }}
-        style={{
-          ...defaultStyle,
-          backgroundColor: "rgb(236, 244, 244)",
-          display: showGoalSection ? "flex" : "none",
-        }}
-        size={{ width: sectionOneWidth, height: "100%" }}
-        maxWidth={DEFINED_PROPORTIONS.maxWidth}
-        minWidth={DEFINED_PROPORTIONS.minWidth}
-        minHeight={DEFAULT_HEIGHT}
-        onResize={handleResizeSectionOne}
-      >
-        {/* First Panel Content */}
-        <GoalList
-          ref={goalListRef}
-          setDraggedItem={setDraggedItem}
-          tabData={tabData}
-          setTabData={setTabData}
-          groupSelected={groupSelected}
-          setGroupSelected={setGroupSelected}
-        />
-      </Resizable>
+			{/* Goal List Section */}
+			<Resizable
+				handleClasses={{ right: "right-handler" }}
+				enable={{ right: true }}
+				style={{
+					...defaultStyle,
+					backgroundColor: "rgb(236, 244, 244)",
+					display: showGoalSection ? "flex" : "none",
+				}}
+				size={{ width: sectionOneWidth, height: "100%" }}
+				maxWidth={DEFINED_PROPORTIONS.maxWidth}
+				minWidth={DEFINED_PROPORTIONS.minWidth}
+				minHeight={DEFAULT_HEIGHT}
+				onResize={handleResizeSectionOne}
+			>
+				{/* First Panel Content */}
+				<GoalList
+					ref={goalListRef}
+					setDraggedItem={setDraggedItem}
+					groupSelected={groupSelected}
+					setGroupSelected={setGroupSelected}
+					handleSynTableTree={handleSynTableTree}
+					handleDropGroupSelected={handleDropGroupSelected}
+				/>
+			</Resizable>
 
-      <Button
-        className="m-2 justify-content-center align-items-center"
-        variant="primary"
-        style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
-        onClick={handleDropGroupSelected}
-      >
-        {/* Click to Drop To Right Panel */}
-        Drop
-      </Button>
-
-      {/* Cluster Hierachy Section */}
-      <div
-        style={{
-          ...defaultStyle,
-          width: "100%",
-          minWidth: DEFINED_PROPORTIONS.minWidth,
-          minHeight: DEFAULT_HEIGHT,
-          height: "100%",
-          padding: "10px",
-          backgroundColor: "rgba(35, 144, 231, 0.1)",
-        }}
-        onDrop={handleDrop}
-        onDragOver={(event) => event.preventDefault()}
-        ref={sectionTwoRef}
-      >
-        <Tree
-          treeData={treeData}
-          itemExist={itemExist}
-          setTreeData={setTreeData}
-          setTabData={setTabData}
-          setTreeIds={setTreeIds}
-        />
-      </div>
+			{/* Cluster Hierachy Section */}
+			<div
+				style={{
+					...defaultStyle,
+					width: "100%",
+					minWidth: DEFINED_PROPORTIONS.minWidth,
+					minHeight: DEFAULT_HEIGHT,
+					height: "100%",
+					padding: "10px",
+					backgroundColor: "rgba(35, 144, 231, 0.1)",
+				}}
+				onDrop={handleDrop}
+				onDragOver={(event) => event.preventDefault()}
+				ref={sectionTwoRef}
+			>
+				<Tree
+					existingItemIds={existingItemIds}
+					setTreeIds={setTreeIds}
+					handleSynTableTree={handleSynTableTree}
+					setExistingItemIds={setExistingItemIds}
+				/>
+			</div>
 
       {/* Graph Render Section */}
       <Resizable

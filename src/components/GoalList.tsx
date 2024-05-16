@@ -1,12 +1,7 @@
-import WhoIcon from "../assets/img/Stakeholder.png";
-import DoIcon from "../assets/img/Function.png";
-import BeIcon from "../assets/img/Cloud.png";
-import FeelIcon from "../assets/img/Heart.png";
-import ConcernIcon from "../assets/img/Risk.png";
 import DeleteIcon from "../assets/img/trash-alt-solid.svg";
 
-import React, { useState, useRef, useEffect } from "react";
-import { saveAs } from "file-saver";
+import React, { useState, useRef } from "react";
+// import { saveAs } from "file-saver";
 
 import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
@@ -15,56 +10,33 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
-import { TreeItem, TabContent } from "./SectionPanel";
+import { TreeItem, useFileContext, tabs } from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
 
-// Define the initial tabs with labels and corresponding icons
-const tabs: TabContent[] = [
-	{ label: "Who", icon: WhoIcon, rows: [] },
-	{ label: "Do", icon: DoIcon, rows: [] },
-	{ label: "Be", icon: BeIcon, rows: [] },
-	{ label: "Feel", icon: FeelIcon, rows: [] },
-	{ label: "Concern", icon: ConcernIcon, rows: [] },
-];
-
 type GoalListProps = {
-	setDraggedItem: React.Dispatch<React.SetStateAction<TreeItem | null>>;
-	tabData: TabContent[];
-	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
+	setDraggedItem: (item: TreeItem | null) => void;
 	groupSelected: TreeItem[];
-	setGroupSelected: React.Dispatch<React.SetStateAction<TreeItem[]>>;
+	setGroupSelected: (grouSelected: TreeItem[]) => void;
+	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
+	handleDropGroupSelected: () => void;
 };
 
 const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 	(
-		{ setDraggedItem, tabData, setTabData, groupSelected, setGroupSelected },
+		{
+			setDraggedItem,
+			groupSelected,
+			setGroupSelected,
+			handleSynTableTree,
+			handleDropGroupSelected,
+		},
 		ref
 	) => {
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
-
-		useEffect(() => {
-			const initialTabs = tabs.map((tab, index) => ({
-				...tab,
-				rows: [
-					...tab.rows,
-					{
-						id: Date.now() + index,
-						type: tab.label,
-						content: "",
-					},
-				],
-			}));
-			setTabData(initialTabs);
-		}, []);
+		const { tabData, setTabData } = useFileContext();
 
 		const inputRef = useRef<HTMLInputElement>(null);
-
-		// Auto focus on the new input row
-		// useEffect(() => {
-		//   if (inputRef.current)
-		//   inputRef.current.focus();
-		// }, [tabData]);
 
 		// Function to handle selecting a tab
 		const handleSelect = (selectedKey: string | null) => {
@@ -129,6 +101,11 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setTabData(newTabData);
 		};
 
+		// Function to update tree data while user finish input changes
+		const handleSave = (treeItem: TreeItem, text: string) => {
+			handleSynTableTree(treeItem, text);
+		};
+
 		const handleDeleteRow = (label: string, index: number, row: TreeItem) => {
 			const newTabData = tabData.map((tab) => {
 				if (tab.label === label) {
@@ -142,9 +119,11 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				return tab;
 			});
 			setTabData(newTabData);
-			setGroupSelected((prevSelected) =>
-				prevSelected.filter((item) => item.id !== row.id)
+			const filteredGroupSelected = groupSelected.filter(
+				(item) => item.id !== row.id
 			);
+
+			setGroupSelected(filteredGroupSelected);
 		};
 
 		// Get the last row of the active tab
@@ -157,56 +136,99 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setDraggedItem(row);
 		};
 
-		const handleConvert = () => {
-			// Check if there is data here.
-			const hasNonEmptyRows = tabData
-				.find((tab) => tab.label === activeKey)
-				?.rows.some((row) => row.content !== "");
-			if (!hasNonEmptyRows) {
-				alert("Failed: Nothing to convert.");
-				return;
-			}
+		// const handleConvert = () => {
+		// 	// Check if there is data here.
+		// 	const hasNonEmptyRows = tabData
+		// 		.find((tab) => tab.label === activeKey)
+		// 		?.rows.some((row) => row.content !== "");
+		// 	if (!hasNonEmptyRows) {
+		// 		alert("Failed: Nothing to convert.");
+		// 		return;
+		// 	}
 
-			const dataToConvert = tabData
-				.map((tab) => ({
-					type: tab.label,
-					items: tab.rows.filter((row) => row.content.trim() !== ""),
-				}))
-				.filter((tab) => tab.items.length > 0);
+		// 	const dataToConvert = tabData
+		// 		.map((tab) => ({
+		// 			type: tab.label,
+		// 			items: tab.rows.filter((row) => row.content.trim() !== ""),
+		// 		}))
+		// 		.filter((tab) => tab.items.length > 0);
 
-			if (dataToConvert.length > 0) {
-				const jsonBlob = new Blob([JSON.stringify(dataToConvert, null, 2)], {
-					type: "application/json",
-				});
-				saveAs(jsonBlob, "GoalList.json");
-			} else {
-				alert("Failed to convert: No data to convert.");
-			}
-		};
-
+		// 	if (dataToConvert.length > 0) {
+		// 		const jsonBlob = new Blob([JSON.stringify(dataToConvert, null, 2)], {
+		// 			type: "application/json",
+		// 		});
+		// 		saveAs(jsonBlob, "GoalList.json");
+		// 	} else {
+		// 		alert("Failed to convert: No data to convert.");
+		// 	}
+		// };
+		//-------------------------------------------------------------------------------------
 		const handleCheckboxToggle = (row: TreeItem) => {
 			// Ignore the item if the content is empty
 			if (row.content.trim() === "") {
 				return;
 			}
-			setGroupSelected((prevGroupSelected) => {
-				const isRowSelected = prevGroupSelected.some(
-					(item) => item.id === row.id
-				);
+			const isRowSelected = groupSelected.some((item) => item.id === row.id);
 
-				if (isRowSelected) {
-					// If row is already selected, remove it from groupSelected
-					return prevGroupSelected.filter((item) => item.id !== row.id);
-				} else {
-					// If row is not selected, add it to groupSelected
-					return [...prevGroupSelected, row];
-				}
-			});
+			let newGroupSelected: TreeItem[];
+
+			// Create a new array based on the current groupSelected state
+			if (isRowSelected) {
+				newGroupSelected = groupSelected.filter((item) => item.id !== row.id);
+			} else {
+				newGroupSelected = [...groupSelected, row];
+			}
+
+			setGroupSelected(newGroupSelected);
+		};
+
+		const handleAddAll = () => {
+			// Collect all unique, non-empty items across all tabs
+			const allItems = tabData.flatMap((tab) =>
+				tab.rows.filter((row) => row.content.trim() !== "")
+			);
+
+			// Filter out items already in groupSelected to avoid duplicates
+			const newItems = allItems.filter(
+				(item) => !groupSelected.some((selected) => selected.id === item.id)
+			);
+
+			setGroupSelected([...groupSelected, ...newItems]);
 		};
 
 		const isChecked = (row: TreeItem): boolean | undefined => {
 			return groupSelected.some((item) => item.id === row.id);
 		};
+
+		const GroupDropBtn = () => {
+			return (
+				<div className="d-flex justify-content-end my-2">
+					<Button
+						variant="primary"
+						className="me-2"
+						// style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
+						disabled={groupSelected.length <= 0}
+						onClick={handleDropGroupSelected}
+					>
+						{/* Click to Drop To Right Panel */}
+						Add Group
+					</Button>
+
+					<Button
+						variant="primary"
+						style={{
+							display: tabData.some((tab) => tab.rows.length > 0)
+								? "flex"
+								: "none",
+						}}
+						onClick={handleAddAll}
+					>
+						Select All
+					</Button>
+				</div>
+			);
+		};
+		//------------------------------------------------------------------
 
 		return (
 			<div className={styles.tabContainer} ref={ref}>
@@ -227,7 +249,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										src={tab.icon}
 										alt={`${tab.label} icon`}
 										className={styles.icon}
-										style={{ width: tab.label == "Who" ? "0.7cm" : "1.5cm" }}
+										style={{ width: tab.label === "Who" ? "0.7cm" : "1.5cm" }}
 									/>
 									<span className={styles.labelBelowIcon}>{tab.label}</span>
 								</Nav.Link>
@@ -268,6 +290,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 															tab.label
 														)
 													}
+													onBlur={(event) =>
+														handleSave(row, event.target.value)
+													}
 													ref={
 														index === tab.rows.length - 1 ? inputRef : undefined
 													}
@@ -294,11 +319,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						))}
 					</Tab.Content>
 				</Tab.Container>
-				<div className={styles.buttonContainer}>
-					<Button onClick={handleConvert} className={styles.convertButton}>
-						Convert
-					</Button>
-				</div>
+				<GroupDropBtn />
 			</div>
 		);
 	}

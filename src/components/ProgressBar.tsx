@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./ProgressBar.css";
 import { Popover, OverlayTrigger } from "react-bootstrap";
 import { FaInfoCircle } from "react-icons/fa";
@@ -9,8 +9,8 @@ enum TabOptions {
 }
 
 type ProgressBarProps = {
-  setShowGoalSection: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowGraphSection: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowGoalSection: (showGoalSection: boolean) => void;
+  setShowGraphSection: (showGraphSection: boolean) => void;
 };
 
 const ProgressBar = ({
@@ -77,7 +77,6 @@ const ProgressBar = ({
 
   return (
     <div
-      className="wrapper"
       style={{
         width: "auto",
         minWidth: "1280px",
@@ -94,7 +93,7 @@ const ProgressBar = ({
           onClick={handleClusterBarClick}
         >
           <span>
-            Cluster Goals / Arrange into Hierarchy
+            Enter Goals / Arrange Hierarchy
             <OverlayTrigger
               trigger={"click"}
               placement="right"
@@ -114,7 +113,7 @@ const ProgressBar = ({
           onClick={handleGraphBarClick}
         >
           <span>
-            Render Model
+          Arrange Hierarchy / Render Model
             <OverlayTrigger
               trigger={"click"}
               placement="left"

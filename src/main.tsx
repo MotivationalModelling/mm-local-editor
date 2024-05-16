@@ -7,9 +7,12 @@ import "react-nestable/dist/styles/index.css";
 
 import App from "./App.tsx";
 import "./index.css";
+import FileProvider from "./components/context/FileProvider.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App/>
-  </React.StrictMode>
+	<React.StrictMode>
+		<FileProvider>
+			<App />
+		</FileProvider>
+	</React.StrictMode>
 );

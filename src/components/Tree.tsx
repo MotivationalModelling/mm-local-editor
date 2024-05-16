@@ -6,9 +6,11 @@ import FeelIcon from "../assets/img/Heart.png";
 import ConcernIcon from "../assets/img/Risk.png";
 import Nestable, { NestableProps } from "react-nestable";
 import { FaPlus, FaMinus } from "react-icons/fa";
-import { TreeItem } from "./SectionPanel";
+import { TreeItem } from "./context/FileProvider";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
-import { Label, TabContent } from "./SectionPanel";
+import { Label } from "./context/FileProvider";
+import { useFileContext } from "./context/FileProvider";
+import ConfirmModal from "./ConfirmModal";
 
 import "./Tree.css";
 
@@ -34,61 +36,56 @@ const treeInputStyle: React.CSSProperties = {
 	height: "100%",
 };
 
+const iconFromType = (type: Label) => {
+	const typeToIcon = {
+		Be: BeIcon,
+		Do: DoIcon,
+		Concern: ConcernIcon,
+		Feel: FeelIcon,
+		Who: WhoIcon,
+	};
+
+	if (type in typeToIcon) {
+		return typeToIcon[type];
+	}
+	throw Error(`iconFromType: Unknown type "${type}"`);
+};
+
 type TreeProps = {
-	treeData: TreeItem[];
-	itemExist: [number, boolean];
-	setTreeData: React.Dispatch<React.SetStateAction<TreeItem[]>>;
-	setTabData: React.Dispatch<React.SetStateAction<TabContent[]>>;
-	setTreeIds: React.Dispatch<React.SetStateAction<number[]>>;
+	existingItemIds: number[];
+	setTreeIds: (value: React.SetStateAction<number[]>) => void;
+	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
+	setExistingItemIds: (existingItemIds: number[]) => void;
 };
 
 // Goal icon in the tree
 const IconComponent = ({ type }: { type: Label }) => {
-	let icon = "";
-
-	switch (type) {
-		case "Be":
-			icon = BeIcon;
-			break;
-		case "Do":
-			icon = DoIcon;
-			break;
-		case "Concern":
-			icon = ConcernIcon;
-			break;
-		case "Feel":
-			icon = FeelIcon;
-			break;
-		case "Who":
-			icon = WhoIcon;
-			break;
-		default:
-			icon = "";
-	}
-
 	return (
 		<img
-			src={icon}
+			src={iconFromType(type)}
 			alt={`${type} icon`}
 			className="ms-2 me-1"
 			style={{
-				height: type == "Who" ? "30px" : "20px",
+				height: type === "Who" ? "30px" : "20px",
 			}}
 		/>
 	);
 };
 
 const Tree: React.FC<TreeProps> = ({
-	treeData,
-	itemExist,
-	setTreeData,
-	setTabData,
+	existingItemIds,
 	setTreeIds,
+	handleSynTableTree,
+	setExistingItemIds,
 }) => {
 	const [editingItemId, setEditingItemId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
 	const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
+	const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+	const deletingItemRef = useRef<TreeItem | null>(null);
+
 	const inputRef = useRef<HTMLInputElement>(null);
+	const { treeData, setTreeData } = useFileContext();
 
 	// Remove item recursively from tree data
 	const removeItemFromTree = (
@@ -111,30 +108,52 @@ const Tree: React.FC<TreeProps> = ({
 	};
 
 	// Delete item by its id
-	const handleDeleteItem = (item: TreeItem) => {
-		const updatedTreeData = removeItemFromTree(treeData, item.id);
-		setTreeData(updatedTreeData);
-		setTreeIds((prevIds) => prevIds.filter((id) => id !== item.id));
+	const deleteItem = () => {
+		if (deletingItemRef && deletingItemRef.current) {
+			const updatedTreeData = removeItemFromTree(
+				treeData,
+				deletingItemRef.current.id
+			);
+			setTreeData(updatedTreeData);
+			setTreeIds((prevIds) =>
+				prevIds.filter((id) => id !== deletingItemRef.current?.id)
+			);
+		} else {
+			console.log("Deleting item not found.");
+		}
+		setShowDeleteWarning(false);
 	};
 
-	const updateItemTextInTree = (
-		items: TreeItem[],
-		idToUpdate: number,
-		newText: string
-	): TreeItem[] => {
-		return items.map((currentItem) => {
-			if (currentItem.id === idToUpdate) {
-				return { ...currentItem, content: newText }; // Update text of this item
-			}
-			if (currentItem.children) {
-				currentItem.children = updateItemTextInTree(
-					currentItem.children,
-					idToUpdate,
-					newText
-				);
-			}
-			return currentItem;
-		});
+	// Handle delete button clicked
+	const handleDeleteItem = (item: TreeItem) => {
+		deletingItemRef.current = item;
+		const deletingIds = getAllIds(item);
+		if (item.children && item.children.length > 0) {
+			setExistingItemIds([...existingItemIds, ...deletingIds]);
+			setShowDeleteWarning(true);
+		} else {
+			deleteItem();
+		}
+	};
+
+	// Handle cancel deleting goal with children(s)
+	const handleDeleteCancel = () => {
+		setShowDeleteWarning(false);
+		setExistingItemIds([]);
+	};
+
+	// Get ids from the tree item
+	const getAllIds = (item: TreeItem) => {
+		const ids: number[] = [item.id];
+
+		// If the item has children, recursively collect their ids
+		if (item.children) {
+			item.children.forEach((child) => {
+				ids.push(...getAllIds(child));
+			});
+		}
+
+		return ids;
 	};
 
 	// Function for rendering every item
@@ -161,43 +180,10 @@ const Tree: React.FC<TreeProps> = ({
 			}
 		};
 
-		// Update the tab data if exist while the tree data changed
-		const updateTabDataContent = (
-			label: Label,
-			id: number,
-			newText: string
-		) => {
-			setTabData((prevTabData) => {
-				return prevTabData.map((tabContent) => {
-					if (tabContent.label === label) {
-						return {
-							...tabContent,
-							rows: tabContent.rows.map((row) => {
-								if (row.id === id) {
-									return {
-										...row,
-										content: newText,
-									};
-								}
-								return row;
-							}),
-						};
-					}
-					return tabContent;
-				});
-			});
-		};
-
 		// Handle saving edited text
 		// Update the edited text in both the tree data and tab data
 		const handleSave = () => {
-			const updatedTreeData = updateItemTextInTree(
-				treeData,
-				treeItem.id,
-				editedText
-			);
-			setTreeData(updatedTreeData);
-			updateTabDataContent(treeItem.type, treeItem.id, editedText);
+			handleSynTableTree(treeItem, editedText);
 			setEditingItemId(null);
 		};
 
@@ -214,7 +200,6 @@ const Tree: React.FC<TreeProps> = ({
 		// Handle saving edited text when lost focus
 		const handleBlur = () => {
 			// Save changes only if cancel button was not clicked
-			console.log(disableOnBlur);
 			if (!disableOnBlur) {
 				handleSave();
 			}
@@ -228,7 +213,6 @@ const Tree: React.FC<TreeProps> = ({
 		};
 
 		const ICON_SIZE = 25;
-		const [id, exist] = itemExist;
 		return (
 			// While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
 			<div
@@ -236,7 +220,7 @@ const Tree: React.FC<TreeProps> = ({
 					...treeListStyle,
 					backgroundColor: isEditing
 						? "#e0e0e0"
-						: id === treeItem.id && exist
+						: existingItemIds.includes(treeItem.id)
 						? "#FF474C"
 						: "white",
 				}}
@@ -312,6 +296,13 @@ const Tree: React.FC<TreeProps> = ({
 
 	return (
 		<div style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}>
+			<ConfirmModal
+				show={showDeleteWarning}
+				title="Delete Warning"
+				message="You are going to delete a goal with children goals, are you sure?"
+				onHide={handleDeleteCancel}
+				onConfirm={deleteItem}
+			/>
 			<Nestable
 				onChange={({ items }) => setTreeData(items as TreeItem[])}
 				items={treeData}
