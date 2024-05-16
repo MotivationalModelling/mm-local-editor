@@ -9,19 +9,7 @@ import {
   Cell,
 } from "@maxgraph/core";
 
-/* declare global {
-  interface Window {
-    GraphDataModel: typeof GraphDataModel;
-    Cell: typeof Cell;
-    Geometry: typeof Geometry;
-  }
-}
-
-window.GraphDataModel = GraphDataModel;
-window.Cell = Cell;
-window.Geometry = Geometry; */
-
-const GraphRender: React.FC<{xml: string}> = ({xml}) => {
+const GraphRender: React.FC<{ xml: string }> = ({ xml }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // useEffect is called twice under <React.StrictMode> mode
   const mountRef = useRef(false);
