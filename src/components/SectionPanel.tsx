@@ -12,7 +12,7 @@ import {
 	JSONData,
 } from "./context/FileProvider";
 import { get } from "idb-keyval";
-import DragHint from "./utils/DragHint";
+// import DragHint from "./utils/DragHint";
 
 const defaultStyle = {
 	display: "flex",
@@ -68,7 +68,7 @@ const SectionPanel = ({
 	const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
 	const [existingError, setExistingError] = useState<boolean>(false);
 
-	const [isHintVisible, setIsHintVisible] = useState(true);
+	// const [isHintVisible, setIsHintVisible] = useState(true);
 
 	const sectionTwoRef = useRef<HTMLDivElement>(null);
 	const parentRef = useRef<HTMLDivElement>(null);
@@ -149,7 +149,7 @@ const SectionPanel = ({
 				parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
 			);
 		}
-		console.log(sectionOneWidth)
+		console.log(sectionOneWidth);
 	};
 
 	// Hide the drop error modal automatically after a set time
@@ -309,7 +309,7 @@ const SectionPanel = ({
 			}
 		}
 	}, [paddingX, showGoalSection, showGraphSection]);
-	
+
 	return (
 		<div
 			style={{
@@ -319,16 +319,18 @@ const SectionPanel = ({
 				padding: paddingX,
 			}}
 			ref={parentRef}
-			onClick={() => setIsHintVisible(false)}
+			// onClick={() => setIsHintVisible(false)}
 		>
 			{/* Additional helper components */}
 			<ErrorModal
 				show={existingError}
 				title="Drop Failed"
-				message="The selected Goal(s) already exist(s)."
+				message={`The selected ${
+					groupSelected.length > 1 ? "goals" : "goal"
+				} already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
 				onHide={handleGroupDropModal}
 			/>
-			<DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/>
+			{/* <DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/> */}
 
 			{/* Goal List Section */}
 			<Resizable

@@ -8,12 +8,19 @@ type DragHintProps = {
 	height: number;
 };
 
-const DragHint: React.FC<DragHintProps> = ({ isHintVisible, width = 40, height = 5 }) => {
+const DragHint: React.FC<DragHintProps> = ({
+	isHintVisible,
+	width = 40,
+	height = 5,
+}) => {
 	return (
 		<>
 			{isHintVisible && (
 				<div className="hint">
-					<div className="rectangle" style={{width: width, height: `${height}vh`}} />
+					<div
+						className="rectangle"
+						style={{ width: width, height: `${height}vh` }}
+					/>
 
 					<div className="hand-icon">
 						<PiHandGrabbingLight size={40} />

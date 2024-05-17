@@ -317,6 +317,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 								))}
 							</Tab.Pane>
 						))}
+						<div className="text-muted text-end mt-3">
+							Drag goals to arrange hierarchy
+						</div>
 					</Tab.Content>
 				</Tab.Container>
 				<GroupDropBtn />
