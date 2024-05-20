@@ -1,9 +1,9 @@
 import React, { useState, createContext, useContext } from "react";
-import WhoIcon from "../../assets/img/Stakeholder.png";
-import DoIcon from "../../assets/img/Function.png";
-import BeIcon from "../../assets/img/Cloud.png";
-import FeelIcon from "../../assets/img/Heart.png";
-import ConcernIcon from "../../assets/img/Risk.png";
+import WhoIcon from "/img/Stakeholder.png";
+import DoIcon from "/img/Function.png";
+import BeIcon from "/img/Cloud.png";
+import FeelIcon from "/img/Heart.png";
+import ConcernIcon from "/img/Risk.png";
 
 // Type of the json data
 export type JSONData = {

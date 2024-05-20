@@ -1,9 +1,9 @@
 import React, { useRef, useState } from "react";
-import WhoIcon from "../assets/img/Stakeholder.png";
-import DoIcon from "../assets/img/Function.png";
-import BeIcon from "../assets/img/Cloud.png";
-import FeelIcon from "../assets/img/Heart.png";
-import ConcernIcon from "../assets/img/Risk.png";
+import WhoIcon from "/img/Stakeholder.png";
+import DoIcon from "/img/Function.png";
+import BeIcon from "/img/Cloud.png";
+import FeelIcon from "/img/Heart.png";
+import ConcernIcon from "/img/Risk.png";
 import Nestable, { NestableProps } from "react-nestable";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import { TreeItem } from "./context/FileProvider";

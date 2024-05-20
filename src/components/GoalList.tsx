@@ -1,4 +1,4 @@
-import DeleteIcon from "../assets/img/trash-alt-solid.svg";
+import DeleteIcon from "/img/trash-alt-solid.svg";
 
 import React, { useState, useRef } from "react";
 // import { saveAs } from "file-saver";
