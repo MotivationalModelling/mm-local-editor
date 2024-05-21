@@ -4,12 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
-import {
-	useFileContext,
-	JSONData,
-	DataType,
-	tabs,
-} from "./context/FileProvider";
+import { useFileContext, JSONData, DataType } from "./context/FileProvider";
 import { set } from "idb-keyval";
 
 const EMPTY_FILE_ALERT = "Please select a file";
@@ -65,41 +60,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				setJsonFile(null);
 			}
 			console.log(`Error setup JSON File: ${error}`);
-		}
-	};
-
-	// Handle after create JSON file
-	const handleJSONFileInit = async (
-		handle: FileSystemFileHandle,
-		writable: FileSystemWritableFileStream
-	) => {
-		try {
-			console.log(handle);
-			const initialTabs = tabs.map((tab, index) => ({
-				...tab,
-				rows: [
-					...tab.rows,
-					{
-						id: Date.now() + index,
-						type: tab.label,
-						content: "",
-					},
-				],
-			}));
-			setTabData(initialTabs);
-			setTreeData([]);
-			const jsonData: JSONData = {
-				tabData: initialTabs,
-				treeData: [],
-			};
-			const json = JSON.stringify(jsonData);
-			await writable.write(json);
-			await writable.close();
-			// Save JSON file handle to IndexedDB
-			set(DataType.JSON, handle);
-			setJsonFileHandle(handle);
-		} catch (error) {
-			console.log(`Error initialize JSON File: ${error}`);
 		}
 	};
 
@@ -191,47 +151,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	/* --------------------------------------------------------------------------------------------------------*/
 
-	// Create json file after use input the name
-	const handleCreateBtnClick = async () => {
-		try {
-			// Pop-up for user to input file name
-			const fileName = prompt("Enter file name:");
-			if (!fileName) return;
-
-			// Create JSON file handle
-			await triggerFileSave(fileName, "json");
-			// setJsonFileHandle(jsonHandle);
-			navigate("/projectEdit");
-		} catch (error) {
-			console.error(`Error creating files: ${error}`);
-		}
-	};
-
-	async function triggerFileSave(
-		fileName: string,
-		fileType: "json"
-	): Promise<void> {
-		try {
-			const handle = await window.showSaveFilePicker({
-				types: [
-					{
-						description: "JSON Files",
-						accept: {
-							"application/json": [".json"],
-						},
-					},
-				],
-				suggestedName: `${fileName}.json`,
-			});
-			const writable = await handle.createWritable();
-			await handleJSONFileInit(handle, writable);
-		} catch (error) {
-			console.error(`Error creating ${fileType} file: ${error}`);
-		}
-	}
-
-	/* --------------------------------------------------------------------------------------------------------*/
-
 	return (
 		<div className="d-flex justify-content-center mt-3">
 			{/* Error Modal while user upload wrong types or invalid files */}
@@ -292,10 +211,9 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
              hard code a static height for temporary, need a better solution
           */}
 					<Link
-						to="#"
+						to="/projectEdit"
 						className="me-5"
 						style={{ height: "60px" }}
-						onClick={handleCreateBtnClick}
 						draggable={false}
 					>
 						<Button variant="primary" size="lg">

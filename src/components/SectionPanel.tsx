@@ -10,6 +10,7 @@ import {
 	useFileContext,
 	DataType,
 	JSONData,
+	tabs,
 } from "./context/FileProvider";
 import { get } from "idb-keyval";
 // import DragHint from "./utils/DragHint";
@@ -110,6 +111,20 @@ const SectionPanel = ({
 				setJsonFileHandle(jsonHandle);
 				const ids = getIds(convertedJsonData.treeData);
 				setTreeIds(ids);
+			} else {
+				const initialTabs = tabs.map((tab, index) => ({
+					...tab,
+					rows: [
+						...tab.rows,
+						{
+							id: Date.now() + index,
+							type: tab.label,
+							content: "",
+						},
+					],
+				}));
+				setTabData(initialTabs);
+				setTreeData([]);
 			}
 		};
 		fetchJSON();

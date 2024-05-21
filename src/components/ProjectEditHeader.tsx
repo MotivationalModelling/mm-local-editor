@@ -8,8 +8,19 @@ import { Row } from "react-bootstrap";
 import { Button } from "react-bootstrap";
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
+import { del } from "idb-keyval";
+import { DataType, useFileContext } from "./context/FileProvider";
 
 const ProjectEditHeader: React.FC = () => {
+	const { setJsonFileHandle, setTreeData, setTabData } = useFileContext();
+
+	const handleBackBtnClick = () => {
+		setJsonFileHandle(null);
+		del(DataType.JSON);
+		setTabData([]);
+		setTreeData([]);
+	};
+
 	return (
 		<header
 			className="bg-white mb-2 py-3 px-5 overflow-hidden"
@@ -26,7 +37,9 @@ const ProjectEditHeader: React.FC = () => {
 					</Col>
 					<Col className="text-end align-content-center">
 						<Link to="/">
-							<Button variant="primary">Back</Button>
+							<Button variant="primary" onClick={handleBackBtnClick}>
+								Back
+							</Button>
 						</Link>
 					</Col>
 				</Row>
