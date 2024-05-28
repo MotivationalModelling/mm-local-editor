@@ -1,11 +1,12 @@
 import { Button } from "react-bootstrap";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
 import { useFileContext, JSONData, DataType } from "./context/FileProvider";
 import { set } from "idb-keyval";
+import { isChrome, isOpera, isEdge } from "react-device-detect";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -48,8 +49,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				setTabData(convertedJsonData.tabData);
 				setTreeData(convertedJsonData.treeData);
 			} else {
-				setTabData([]);
-				setTreeData([]);
+				console.log("File can't be read and parsed");
 			}
 			// Save JSON file handle to IndexedDB
 			set(DataType.JSON, handle);
@@ -93,22 +93,46 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	};
 
 	const handleJSONUpload = async () => {
-		try {
-			const [handle] = await window.showOpenFilePicker({
-				types: [
-					{
-						description: "JSON file",
-						accept: { "application/json": [".json"] },
-					},
-				],
-				multiple: false,
-			});
-			const file = await handle.getFile();
-			setJsonFile(file);
+		if (isChrome || isEdge || isOpera) {
+			try {
+				const [handle] = await window.showOpenFilePicker({
+					types: [
+						{
+							description: "JSON file",
+							accept: { "application/json": [".json"] },
+						},
+					],
+					multiple: false,
+				});
+				const file = await handle.getFile();
+				setJsonFile(file);
 
-			await handleJSONFileSetup(handle);
+				await handleJSONFileSetup(handle);
+			} catch (error) {
+				console.error(`Error selecting JSON file: ${error}`);
+			}
+		} else if (jsonFileRef && jsonFileRef.current) {
+			jsonFileRef.current.click();
+		}
+	};
+
+	const handleFileChange = async (evt: ChangeEvent<HTMLInputElement>) => {
+		try {
+			if (evt.target.files && evt.target.files.length > 0) {
+				const file = evt.target.files[0];
+				setJsonFile(file);
+
+				const fileContent = await file.text();
+				if (fileContent) {
+					const convertedJsonData: JSONData = JSON.parse(fileContent);
+					setTabData(convertedJsonData.tabData);
+					setTreeData(convertedJsonData.treeData);
+				} else {
+					console.log("File can't be read and parsed");
+				}
+			}
 		} catch (error) {
-			console.error(`Error selecting JSON file: ${error}`);
+			console.error("Error handling upload JSON file in Safari:", error);
 		}
 	};
 
@@ -161,6 +185,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				type="file"
 				accept=".json"
 				multiple
+				onChange={handleFileChange}
 				style={{ display: "none" }}
 				ref={jsonFileRef}
 			/>

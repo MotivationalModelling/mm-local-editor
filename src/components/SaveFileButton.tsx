@@ -1,10 +1,9 @@
 import { Button } from "react-bootstrap";
 import { useFileContext, JSONData, DataType } from "./context/FileProvider";
-import { set } from "idb-keyval";
+import { set, get } from "idb-keyval";
 
 const SaveFileButton = () => {
-	const { jsonFileHandle, setJsonFileHandle, treeData, tabData } =
-		useFileContext();
+	const { setJsonFileHandle, treeData, tabData } = useFileContext();
 
 	async function triggerFileSave(
 		fileName: string,
@@ -51,27 +50,25 @@ const SaveFileButton = () => {
 		}
 	};
 
-	const saveJson = async () => {
+	const saveJson = async (handle: FileSystemFileHandle) => {
 		// Use the created/selected file handle to have write access to the local file
-		if (jsonFileHandle) {
-			try {
-				const writable = await jsonFileHandle.createWritable();
-				const jsonData: JSONData = {
-					tabData: tabData,
-					treeData: treeData,
-				};
-				const json = JSON.stringify(jsonData);
-				await writable.write(json);
-				await writable.close();
-			} catch (error) {
-				console.error("Error saving content to file:", error);
-			}
-		} else {
-			console.error("No file handle available to save content");
+		try {
+			const writable = await handle.createWritable();
+			const jsonData: JSONData = {
+				tabData: tabData,
+				treeData: treeData,
+			};
+			const json = JSON.stringify(jsonData);
+			await writable.write(json);
+			await writable.close();
+		} catch (error) {
+			console.error("Error saving content to file:", error);
 		}
 	};
 	const handleBtnClick = async () => {
-		if (!jsonFileHandle) {
+		const jsonHandle = await get(DataType.JSON);
+		console.log(jsonHandle);
+		if (!jsonHandle) {
 			try {
 				// Pop-up for user to input file name
 				const fileName = prompt("Enter file name:");
@@ -83,7 +80,7 @@ const SaveFileButton = () => {
 				console.error(`Error creating files: ${error}`);
 			}
 		} else {
-			await saveJson();
+			await saveJson(jsonHandle);
 		}
 	};
 

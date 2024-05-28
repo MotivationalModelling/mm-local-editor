@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { Col } from "react-bootstrap";
 import { Container } from "react-bootstrap";
@@ -8,17 +8,23 @@ import { Row } from "react-bootstrap";
 import { Button } from "react-bootstrap";
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
-import { del } from "idb-keyval";
-import { DataType, useFileContext } from "./context/FileProvider";
+import { useFileContext } from "./context/FileProvider";
+import { isChrome, isOpera, isEdge } from "react-device-detect";
 
 const ProjectEditHeader: React.FC = () => {
-	const { setJsonFileHandle, setTreeData, setTabData } = useFileContext();
+	const { resetData } = useFileContext();
+	const navigate = useNavigate();
+	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+
+	useEffect(() => {
+		if (isChrome || isEdge || isOpera) {
+			setIsBrowserSupported(true);
+		}
+	}, []);
 
 	const handleBackBtnClick = () => {
-		setJsonFileHandle(null);
-		del(DataType.JSON);
-		setTabData([]);
-		setTreeData([]);
+		resetData();
+		navigate("/", { replace: true });
 	};
 
 	return (
@@ -33,14 +39,12 @@ const ProjectEditHeader: React.FC = () => {
 					</Col>
 					<Col className="text-end align-content-center" xs={8}>
 						<ExportFileButton />
-						<SaveFileButton />
+						{isBrowserSupported && <SaveFileButton />}
 					</Col>
 					<Col className="text-end align-content-center">
-						<Link to="/">
-							<Button variant="primary" onClick={handleBackBtnClick}>
-								Back
-							</Button>
-						</Link>
+						<Button variant="primary" onClick={handleBackBtnClick}>
+							Back
+						</Button>
 					</Col>
 				</Row>
 			</Container>

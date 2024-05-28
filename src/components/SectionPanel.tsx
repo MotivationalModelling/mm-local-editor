@@ -4,15 +4,7 @@ import "./SectionPanel.css";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import ErrorModal from "./ErrorModal";
-import {
-	Label,
-	TreeItem,
-	useFileContext,
-	DataType,
-	JSONData,
-	tabs,
-} from "./context/FileProvider";
-import { get } from "idb-keyval";
+import { Label, TreeItem, useFileContext } from "./context/FileProvider";
 // import DragHint from "./utils/DragHint";
 
 const defaultStyle = {
@@ -60,8 +52,7 @@ const SectionPanel = ({
 
 	const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
 	// Simply store ids of all items in the tree for fast check instead of recursive search
-	const { treeData, setTreeData, tabData, setTabData, setJsonFileHandle } =
-		useFileContext();
+	const { treeData, setTreeData, tabData, setTabData } = useFileContext();
 	const [treeIds, setTreeIds] = useState<number[]>([]);
 
 	const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
@@ -100,34 +91,10 @@ const SectionPanel = ({
 	}, []);
 
 	useEffect(() => {
-		const fetchJSON = async () => {
-			const jsonHandle = await get(DataType.JSON);
-			if (jsonHandle) {
-				const file = await jsonHandle.getFile();
-				const fileContent = await file.text();
-				const convertedJsonData: JSONData = JSON.parse(fileContent);
-				setTabData(convertedJsonData.tabData);
-				setTreeData(convertedJsonData.treeData);
-				setJsonFileHandle(jsonHandle);
-				const ids = getIds(convertedJsonData.treeData);
-				setTreeIds(ids);
-			} else {
-				const initialTabs = tabs.map((tab, index) => ({
-					...tab,
-					rows: [
-						...tab.rows,
-						{
-							id: Date.now() + index,
-							type: tab.label,
-							content: "",
-						},
-					],
-				}));
-				setTabData(initialTabs);
-				setTreeData([]);
-			}
-		};
-		fetchJSON();
+		if (treeData.length) {
+			const ids = getIds(treeData);
+			setTreeIds(ids);
+		}
 	}, []);
 
 	// Initialize the tree ids from the created/selected json file
