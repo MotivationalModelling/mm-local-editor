@@ -1,16 +1,12 @@
 import { Button } from "react-bootstrap";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
-import {
-	useFileContext,
-	JSONData,
-	DataType,
-	tabs,
-} from "./context/FileProvider";
+import { useFileContext, JSONData, DataType } from "./context/FileProvider";
 import { set } from "idb-keyval";
+import { isChrome, isOpera, isEdge } from "react-device-detect";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -53,8 +49,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				setTabData(convertedJsonData.tabData);
 				setTreeData(convertedJsonData.treeData);
 			} else {
-				setTabData([]);
-				setTreeData([]);
+				console.log("File can't be read and parsed");
 			}
 			// Save JSON file handle to IndexedDB
 			set(DataType.JSON, handle);
@@ -65,41 +60,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				setJsonFile(null);
 			}
 			console.log(`Error setup JSON File: ${error}`);
-		}
-	};
-
-	// Handle after create JSON file
-	const handleJSONFileInit = async (
-		handle: FileSystemFileHandle,
-		writable: FileSystemWritableFileStream
-	) => {
-		try {
-			console.log(handle);
-			const initialTabs = tabs.map((tab, index) => ({
-				...tab,
-				rows: [
-					...tab.rows,
-					{
-						id: Date.now() + index,
-						type: tab.label,
-						content: "",
-					},
-				],
-			}));
-			setTabData(initialTabs);
-			setTreeData([]);
-			const jsonData: JSONData = {
-				tabData: initialTabs,
-				treeData: [],
-			};
-			const json = JSON.stringify(jsonData);
-			await writable.write(json);
-			await writable.close();
-			// Save JSON file handle to IndexedDB
-			set(DataType.JSON, handle);
-			setJsonFileHandle(handle);
-		} catch (error) {
-			console.log(`Error initialize JSON File: ${error}`);
 		}
 	};
 
@@ -133,22 +93,46 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	};
 
 	const handleJSONUpload = async () => {
-		try {
-			const [handle] = await window.showOpenFilePicker({
-				types: [
-					{
-						description: "JSON file",
-						accept: { "application/json": [".json"] },
-					},
-				],
-				multiple: false,
-			});
-			const file = await handle.getFile();
-			setJsonFile(file);
+		if (isChrome || isEdge || isOpera) {
+			try {
+				const [handle] = await window.showOpenFilePicker({
+					types: [
+						{
+							description: "JSON file",
+							accept: { "application/json": [".json"] },
+						},
+					],
+					multiple: false,
+				});
+				const file = await handle.getFile();
+				setJsonFile(file);
 
-			await handleJSONFileSetup(handle);
+				await handleJSONFileSetup(handle);
+			} catch (error) {
+				console.error(`Error selecting JSON file: ${error}`);
+			}
+		} else if (jsonFileRef && jsonFileRef.current) {
+			jsonFileRef.current.click();
+		}
+	};
+
+	const handleFileChange = async (evt: ChangeEvent<HTMLInputElement>) => {
+		try {
+			if (evt.target.files && evt.target.files.length > 0) {
+				const file = evt.target.files[0];
+				setJsonFile(file);
+
+				const fileContent = await file.text();
+				if (fileContent) {
+					const convertedJsonData: JSONData = JSON.parse(fileContent);
+					setTabData(convertedJsonData.tabData);
+					setTreeData(convertedJsonData.treeData);
+				} else {
+					console.log("File can't be read and parsed");
+				}
+			}
 		} catch (error) {
-			console.error(`Error selecting JSON file: ${error}`);
+			console.error("Error handling upload JSON file in Safari:", error);
 		}
 	};
 
@@ -191,47 +175,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	/* --------------------------------------------------------------------------------------------------------*/
 
-	// Create json file after use input the name
-	const handleCreateBtnClick = async () => {
-		try {
-			// Pop-up for user to input file name
-			const fileName = prompt("Enter file name:");
-			if (!fileName) return;
-
-			// Create JSON file handle
-			await triggerFileSave(fileName, "json");
-			// setJsonFileHandle(jsonHandle);
-			navigate("/projectEdit");
-		} catch (error) {
-			console.error(`Error creating files: ${error}`);
-		}
-	};
-
-	async function triggerFileSave(
-		fileName: string,
-		fileType: "json"
-	): Promise<void> {
-		try {
-			const handle = await window.showSaveFilePicker({
-				types: [
-					{
-						description: "JSON Files",
-						accept: {
-							"application/json": [".json"],
-						},
-					},
-				],
-				suggestedName: `${fileName}.json`,
-			});
-			const writable = await handle.createWritable();
-			await handleJSONFileInit(handle, writable);
-		} catch (error) {
-			console.error(`Error creating ${fileType} file: ${error}`);
-		}
-	}
-
-	/* --------------------------------------------------------------------------------------------------------*/
-
 	return (
 		<div className="d-flex justify-content-center mt-3">
 			{/* Error Modal while user upload wrong types or invalid files */}
@@ -242,6 +185,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				type="file"
 				accept=".json"
 				multiple
+				onChange={handleFileChange}
 				style={{ display: "none" }}
 				ref={jsonFileRef}
 			/>
@@ -292,10 +236,9 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
              hard code a static height for temporary, need a better solution
           */}
 					<Link
-						to="#"
+						to="/projectEdit"
 						className="me-5"
 						style={{ height: "60px" }}
-						onClick={handleCreateBtnClick}
 						draggable={false}
 					>
 						<Button variant="primary" size="lg">

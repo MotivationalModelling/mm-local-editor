@@ -1,4 +1,4 @@
-import DeleteIcon from "../assets/img/trash-alt-solid.svg";
+import DeleteIcon from "/img/trash-alt-solid.svg";
 
 import React, { useState, useRef } from "react";
 // import { saveAs } from "file-saver";
@@ -317,6 +317,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 								))}
 							</Tab.Pane>
 						))}
+						<div className="text-muted text-end mt-3">
+							Drag goals to arrange hierarchy
+						</div>
 					</Tab.Content>
 				</Tab.Container>
 				<GroupDropBtn />

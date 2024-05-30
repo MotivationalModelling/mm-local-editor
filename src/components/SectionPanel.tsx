@@ -6,13 +6,7 @@ import Button from "react-bootstrap/Button";
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import {
-  Label,
-  TreeItem,
-  useFileContext,
-  DataType,
-  JSONData,
-} from "./context/FileProvider";
+import { Label, TreeItem, useFileContext } from "./context/FileProvider";
 import { get } from "idb-keyval";
 import DragHint from "./utils/DragHint";
 import GraphRender from "./GraphRender";
@@ -76,8 +70,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const { treeData, setTreeData, tabData, setTabData, setJsonFileHandle } =
-    useFileContext();
+  const { treeData, setTreeData, tabData, setTabData } = useFileContext();
   const [treeIds, setTreeIds] = useState<number[]>([]);
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
@@ -85,7 +78,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
   const [existingError, setExistingError] = useState<boolean>(false);
 
-  const [isHintVisible, setIsHintVisible] = useState(true);
+  // const [isHintVisible, setIsHintVisible] = useState(true);
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -116,20 +109,10 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    const fetchJSON = async () => {
-      const jsonHandle = await get(DataType.JSON);
-      if (jsonHandle) {
-        const file = await jsonHandle.getFile();
-        const fileContent = await file.text();
-        const convertedJsonData: JSONData = JSON.parse(fileContent);
-        setTabData(convertedJsonData.tabData);
-        setTreeData(convertedJsonData.treeData);
-        setJsonFileHandle(jsonHandle);
-        const ids = getIds(convertedJsonData.treeData);
-        setTreeIds(ids);
-      }
-    };
-    fetchJSON();
+    if (treeData.length) {
+      const ids = getIds(treeData);
+      setTreeIds(ids);
+    }
   }, []);
 
   // Initialize the tree ids from the created/selected json file
@@ -336,20 +319,18 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         padding: paddingX,
       }}
       ref={parentRef}
-      onClick={() => setIsHintVisible(false)}
+      // onClick={() => setIsHintVisible(false)}
     >
       {/* Additional helper components */}
       <ErrorModal
         show={existingError}
         title="Drop Failed"
-        message="The selected Goal(s) already exist(s)."
+        message={`The selected ${
+          groupSelected.length > 1 ? "goals" : "goal"
+        } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />
-      <DragHint
-        isHintVisible={isHintVisible}
-        width={sectionOneWidth - paddingX * 2}
-        height={4}
-      />
+      {/* <DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/> */}
 
       {/* Goal List Section */}
       <Resizable
