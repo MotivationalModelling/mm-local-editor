@@ -18,11 +18,11 @@ import {
 } from "./GraphShapes";
 
 // paths to the image
-const HEART_PATH = "src/assets/img/Heart.png";
-const PARALLELOGRAM_PATH = "src/assets/img/Function.png";
-const NEGATIVE_PATH = "src/assets/img/Risk.png";
-const CLOUD_PATH = "src/assets/img/Cloud.png";
-const PERSON_PATH = "src/assets/img/Stakeholder.png";
+const HEART_PATH = "public/img/Heart.png";
+const PARALLELOGRAM_PATH = "public/img/Function.png";
+const NEGATIVE_PATH = "public/img/Risk.png";
+const CLOUD_PATH = "public/img/Cloud.png";
+const PERSON_PATH = "public/img/Stakeholder.png";
 
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
@@ -39,10 +39,10 @@ const QUALITY_DATA = "qualitydata";
 const STAKEHOLDER_DATA = "stakeholderdata";
 
 // some image path
-const ZOOMIN_PATH = "src/assets/img/zoomin.svg";
-const ZOOMOUT_PATH = "src/assets/img/zoomout.svg";
-const CENTRE_PATH = "src/assets/img/centre.svg";
-const LINE_PATH = "src/assets/img/line.svg";
+const ZOOMIN_PATH = "public/img/zoomin.svg";
+const ZOOMOUT_PATH = "public/img/zoomout.svg";
+const CENTRE_PATH = "public/img/centre.svg";
+const LINE_PATH = "public/img/line.svg";
 
 const SIDEBAR_DIV_ID = "sidebarContainer";
 

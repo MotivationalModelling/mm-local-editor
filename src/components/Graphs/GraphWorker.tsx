@@ -45,18 +45,18 @@ const GRAPH_DIV_ID = "graphContainer";
 const SIDEBAR_DIV_ID = "sidebarContainer";
 
 // paths to the image
-const HEART_PATH = "src/assets/img/Heart.png";
-const PARALLELOGRAM_PATH = "src/assets/img/Function.png";
-const NEGATIVE_PATH = "src/assets/img/Risk.png";
-const CLOUD_PATH = "src/assets/img/Cloud.png";
-const PERSON_PATH = "src/assets/img/Stakeholder.png";
+const HEART_PATH = "public/img/Heart.png";
+const PARALLELOGRAM_PATH = "public/img/Function.png";
+const NEGATIVE_PATH = "public/img/Risk.png";
+const CLOUD_PATH = "public/img/Cloud.png";
+const PERSON_PATH = "public/img/Stakeholder.png";
 
 // some image path
-const ZOOMIN_PATH = "src/assets/img/zoomin.svg";
-const ZOOMOUT_PATH = "src/assets/img/zoomout.svg";
-const CENTRE_PATH = "src/assets/img/centre.svg";
-const LINE_PATH = "src/assets/img/line.svg";
-const PATH_EDGE_HANDLER_ICON = "src/assets/img/link.png";
+const ZOOMIN_PATH = "public/img/zoomin.svg";
+const ZOOMOUT_PATH = "public/img/zoomout.svg";
+const CENTRE_PATH = "public/img/centre.svg";
+const LINE_PATH = "public/img/line.svg";
+const PATH_EDGE_HANDLER_ICON = "public/img/link.png";
 
 // default width/height of the root goal in the graph
 const SYMBOL_WIDTH = 145;

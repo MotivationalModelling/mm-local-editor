@@ -7,8 +7,7 @@ import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import { Label, TreeItem, useFileContext } from "./context/FileProvider";
-import { get } from "idb-keyval";
-import DragHint from "./utils/DragHint";
+
 import GraphRender from "./GraphRender";
 import GraphWorker from "./Graphs/GraphWorker";
 // use for testing xml validation only
