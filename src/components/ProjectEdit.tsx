@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 
 import ProjectEditHeader from "./ProjectEditHeader";
 import "./ProjectEdit.css";
@@ -12,12 +12,16 @@ const ProjectEdit: React.FC = () => {
   return (
     <div>
       <ProjectEditHeader />
-        <ProgressBar setShowGoalSection={setShowGoalSection}
-                     setShowGraphSection={setShowGraphSection}/>
-        <SectionPanel showGoalSection={showGoalSection}
-                      showGraphSection={showGraphSection}
-                      setShowGoalSection={setShowGoalSection}
-                      paddingX={15}/>
+      <ProgressBar
+        setShowGoalSection={setShowGoalSection}
+        setShowGraphSection={setShowGraphSection}
+      />
+      <SectionPanel
+        showGoalSection={showGoalSection}
+        showGraphSection={showGraphSection}
+        setShowGoalSection={setShowGoalSection}
+        paddingX={15}
+      />
     </div>
   );
 };
