@@ -6,10 +6,6 @@ import {
   CellStateStyle,
   DragSource,
   Cell,
-  MaxToolbar,
-  Geometry,
-  Point,
-  gestureUtils,
   ConnectionHandler,
   ImageBox,
   KeyHandler,
@@ -17,7 +13,6 @@ import {
   EventObject,
   error,
   PanningHandler,
-  DomHelpers,
   xmlUtils,
   Codec,
   ModelXmlSerializer,
@@ -25,7 +20,7 @@ import {
 import { GoalModelLayout } from "./GoalModelLayout";
 
 import { useRef, useEffect, useState } from "react";
-import { Container, Button, Row, Col } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import "./GraphWorker.css";
 import {
   registerCustomShapes,
@@ -42,21 +37,16 @@ import GraphSidebar from "./GraphSidebar";
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
-const SIDEBAR_DIV_ID = "sidebarContainer";
 
 // paths to the image
-const HEART_PATH = "public/img/Heart.png";
-const PARALLELOGRAM_PATH = "public/img/Function.png";
-const NEGATIVE_PATH = "public/img/Risk.png";
-const CLOUD_PATH = "public/img/Cloud.png";
-const PERSON_PATH = "public/img/Stakeholder.png";
+const HEART_PATH = "img/Heart.png";
+const PARALLELOGRAM_PATH = "img/Function.png";
+const NEGATIVE_PATH = "img/Risk.png";
+const CLOUD_PATH = "img/Cloud.png";
+const PERSON_PATH = "img/Stakeholder.png";
 
 // some image path
-const ZOOMIN_PATH = "public/img/zoomin.svg";
-const ZOOMOUT_PATH = "public/img/zoomout.svg";
-const CENTRE_PATH = "public/img/centre.svg";
-const LINE_PATH = "public/img/line.svg";
-const PATH_EDGE_HANDLER_ICON = "public/img/link.png";
+const PATH_EDGE_HANDLER_ICON = "img/link.png";
 
 // default width/height of the root goal in the graph
 const SYMBOL_WIDTH = 145;
@@ -68,8 +58,7 @@ const ICON_HEIGHT = 14;
 
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
-// vertex default font colour
-const VERTEX_FONT_COLOUR = "black";
+
 
 // default x,y coordinates of the root goal in the graph - (functional graph)
 const SYMBOL_X_COORD = 0;
@@ -86,8 +75,6 @@ const SH_FONT = 2.375; //scale factor for height base on font size
 
 // scale factors for non-functional goals; these scale factors are relative
 //   to the size of the associated functional goal
-const SW_FUNCTIONAL = 1.045;
-const SH_FUNCTIONAL = 0.8;
 const SW_EMOTIONAL = 0.9;
 const SH_EMOTIONAL = 0.96;
 const SW_QUALITY = 1;
@@ -108,7 +95,6 @@ const DELETE_KEYBINDING2 = 46;
 const VERTICAL_SPACING = 60;
 const HORIZONTAL_SPACING = 60;
 
-const LINE_SIZE = 50;
 
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
@@ -119,21 +105,7 @@ const STAKEHOLDER_TYPE = "Stakeholder";
 
 // Define shape data
 const FUNCTIONAL_DATA = "functionaldata";
-const EMOTIONAL_DATA = "emotionaldata";
-const NEGATIVE_DATA = "negativedata";
-const QUALITY_DATA = "qualitydata";
-const STAKEHOLDER_DATA = "stakeholderdata";
 
-// Colour set
-const COLOUR_SET = [
-  "#d54417",
-  "#edd954",
-  "#1a9850",
-  "#e68f35",
-  "#daf266",
-  "#acc93f",
-  "#ffffff",
-];
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -149,13 +121,13 @@ interface GlobObject {
 }
 
 // DropHandler from DragSource @maxgraph/core
-type DropHandler = (
-  graph: Graph,
-  evt: MouseEvent,
-  cell: Cell | null,
-  x?: number,
-  y?: number
-) => void;
+// type DropHandler = (
+//   graph: Graph,
+//   evt: MouseEvent,
+//   cell: Cell | null,
+//   x?: number,
+//   y?: number
+// ) => void;
 
 // ---------------------------------------------------------------------------
 
@@ -364,7 +336,7 @@ const GraphWorker = () => {
     // undo: add undo manager, this is the object that keeps track of the
     //   history of changes made to the graph
     const undoManager = new UndoManager();
-    const listener = (sender: string, evt: EventObject) => {
+    const listener = (_sender: string, evt: EventObject) => {
       undoManager.undoableEditHappened(evt.getProperty("edit"));
     };
 
