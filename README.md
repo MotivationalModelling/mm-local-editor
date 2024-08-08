@@ -11,7 +11,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### 1. Prerequisites
 
-You will need to have [Node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed on the computer before you can start the React installation process. It is recommended that you choose a version higher than [v18.20.4](https://nodejs.org/en/download/package-manager).
+You will need to have [Node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed on the computer before you can start the React installation process. It is recommended that you choose a version higher than [v20.20.0](https://nodejs.org/en/download/package-manager) or v18.18.0.
 
 ### 1.1 [Optional]
 It is  recommended that you install [node version manager (NVM)](https://github.com/nvm-sh/nvm) as a tool for installing Nodejs, npm, and for managing Node versions on your device. For detailed instructions, visit:
