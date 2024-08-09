@@ -236,13 +236,13 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					activeKey={activeKey ?? undefined}
 					onSelect={handleSelect}
 				>
-					<Nav variant="pills" className="flex-row">
+					<Nav variant="tabs" className="flex-row">
 						{tabData.map((tab) => (
 							<Nav.Item key={tab.label} className={styles.navItem}>
-								<Nav.Link
-									eventKey={tab.label}
+								<Nav.Link eventKey={tab.label}
+									active={activeKey === tab.label}
 									className={`${styles.navLink} ${
-										activeKey === tab.label ? "active" : ""
+										activeKey === tab.label ? "bg-primary" : ""
 									}`}
 								>
 									<img
