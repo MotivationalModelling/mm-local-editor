@@ -23,22 +23,6 @@
   align-items: center;
   padding: 0.5rem 1rem;
   border: none;
-  background-color: transparent;
-}
-
-/* Override Bootstrap styles for active tabs */
-.navLink.active,
-.navLink.active:focus,
-.navLink.active:hover {
-  background-color: #fff; /* White background for active tab */
-  color: inherit;
-  box-shadow: none; /* No shadow for the tabs */
-}
-
-/* Remove the blue box shadow on focus provided by Bootstrap */
-.navLink:focus {
-  box-shadow: none;
-  background-color: #f8f9fa;
 }
 
 /* Style for the button to delete rows */
