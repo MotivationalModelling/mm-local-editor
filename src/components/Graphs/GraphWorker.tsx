@@ -849,228 +849,49 @@ const GraphWorker = () => {
   };
 
   useEffect(() => {
-    //let graph: Graph;
-    const graphContainer: HTMLElement | undefined =
-      divGraph.current || undefined;
-
+    const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
+  
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
-
-      // config: allow drag-panning using left click on empty canvas space
-      let graph = new Graph(graphContainer);
+  
+      const graph = new Graph(graphContainer);
       setGraphRef(graph);
-      console.log(graph.getDataModel());
-      graph.getDataModel().beginUpdate();
-
-      const layout = new GoalModelLayout(
-        graph,
-        VERTICAL_SPACING,
-        HORIZONTAL_SPACING
-      );
+  
+      const layout = new GoalModelLayout(graph, VERTICAL_SPACING, HORIZONTAL_SPACING);
       layout.execute(graph.getDefaultParent());
-      // const layout = new CompactTreeLayout(graph);
-      // layout.execute(graph.getDefaultParent());
-
-      graph.setPanning(true); // Use mouse right button for panning
-      // set up graph default style of edges and vertices
+  
+      graph.setPanning(true);
       setGraphStyle(graph);
-
-      // listen to graph changes and add item to graphs accordingly
       graphListener(graph);
-
-      // Gets the default parent for inserting new cells. This
-      // is normally the first child of the root (ie. layer 0).
-      // const parent = graph.getDefaultParent();
-
-      // // keep the container focused
-      // const graphFireMouseEvent = Graph.prototype.fireMouseEvent;
-      // Graph.prototype.fireMouseEvent = (evtName: string, me: InternalMouseEvent, sender?: EventSource) => {
-      //     if (evtName === InternalEvent.MOUSE_DOWN){
-      //         graph.container.focus();
-      //     }
-      //     graphFireMouseEvent.apply(this,[evtName, me, sender]);
-      // }
-
-      /**
-       * Edge Handler
-       *
-       * This manifests an icon that appears in the middle of a vertex when you
-       * hover over it with the mouse; the icon can be used to create edges out
-       * of the vertex by click-and-drag.
-       */
-      const connectionHandler = graph.getPlugin(
-        "ConnectionHandler"
-      ) as ConnectionHandler;
-      connectionHandler.connectImage = new ImageBox(
-        PATH_EDGE_HANDLER_ICON,
-        ICON_WIDTH,
-        ICON_HEIGHT
-      );
-      // delete and undo action in graph
+  
+      const connectionHandler = graph.getPlugin('ConnectionHandler') as ConnectionHandler;
+      connectionHandler.connectImage = new ImageBox(PATH_EDGE_HANDLER_ICON, ICON_WIDTH, ICON_HEIGHT);
       supportFunctions(graph);
-
-      /**
-       * Autolayout
-       *
-       * The following functions are used to run generate and autolayout the graph
-       * using the goal list provided by the editor.
-       */
-
-      // variable, stores the identity of the root function
-      let rootGoal: Cell | null = null;
-
-      // maps from function_id -> associated non-functional goals
-      //    A bug that arises from this implementation is that if a functional goal
-      //    of identical name appears in multiple places in the goal hierarchy, then
-      //    every instance of the goal will be rendered with non-functional goals
-      //    pertaining to all instances of the functional goal/
-
-      let emotionsGlob: GlobObject = {};
-      let negativesGlob: GlobObject = {};
-      let qualitiesGlob: GlobObject = {};
-      let stakeholdersGlob: GlobObject = {};
-
-      /**
-       * Renders window.jsonData into a motivational model into graphContainer.
-       */
-      const renderGraph = (container: HTMLElement) => {
-        // saveJSON(false);
-        console.log("Logging: renderGraph() called.");
-
-        resetGraph(
-          graph,
-          rootGoal,
-          emotionsGlob,
-          negativesGlob,
-          qualitiesGlob,
-          stakeholdersGlob
-        );
-
-        // check that browser is supported
-        if (!Client.isBrowserSupported()) {
-          console.log("Logging: browser not supported");
-          error("Browser not supported!", 200, false);
-          // utils.error("Browser not supported!", 200, false);
-          return;
-        }
-
-        // disable context menu
-        InternalEvent.disableContextMenu(container);
-        //--------------------------------this should change to render from xml file --------------------------
-        // grab the clusters from window.jsonData
-        if (window.jsonData) {
-          const clusters = window.jsonData.GoalModelProject.Clusters;
-
-          // render the graph
-          graph.getDataModel().beginUpdate(); // start transaction
-          for (let i = 0; i < clusters.length; i++) {
-            // grab goal hierarchy from the cluster
-            const goals = clusters[i].ClusterGoals;
-            // ... then call render
-            renderGoals(
-              goals,
-              graph,
-              null,
-              rootGoal,
-              emotionsGlob,
-              negativesGlob,
-              qualitiesGlob,
-              stakeholdersGlob
-            );
-          }
-          layoutFunctions(graph, rootGoal);
-          associateNonFunctions(
-            graph,
-            rootGoal,
-            emotionsGlob,
-            negativesGlob,
-            qualitiesGlob,
-            stakeholdersGlob
-          );
-          graph.getDataModel().endUpdate(); // end transaction
-        }
-      };
-
-      graph.getDataModel().endUpdate();
+  
+      registerCustomShapes();
+  
+      // Now that graphRef is safely set, perform batch updates
+      graph.batchUpdate(() => {
+        const parent = graph.getDefaultParent();
+        console.log("graphing batch update");
+        const vertex1 = graph.insertVertex(parent, null, "person shape", 100, 40, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" });
+        const vertex2 = graph.insertVertex(parent, null, "parallelogram shape", 500, 100, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
+        graph.insertEdge(parent, null, "", vertex1, vertex2);
+  
+        const vertex3 = graph.insertVertex(parent, null, "heart shape", 20, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" });
+        const vertex4 = graph.insertVertex(parent, null, "negative shape", 150, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PERSON_SHAPE, fontColor: "black" });
+        graph.insertEdge(parent, null, "", vertex3, vertex4);
+  
+        const vertex5 = graph.insertVertex(parent, null, "heart shape", 200, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: HEART_SHAPE, fontColor: "black" });
+        const vertex6 = graph.insertVertex(parent, null, "cloud shape", 350, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
+        graph.insertEdge(parent, null, "", vertex5, vertex6);
+      });
     }
-
-    registerCustomShapes();
-    const graph = graphRef;
-    if (!graph) return;
-
-    const parent = graph.getDefaultParent();
-    graph.batchUpdate(() => {
-      console.log("graphing batch update");
-      const vertex1 = graph.insertVertex(
-        parent,
-        null,
-        "person shape",
-        100,
-        40,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" }
-      );
-      const vertex2 = graph.insertVertex(
-        parent,
-        null,
-        "parallelogram shape",
-        500,
-        100,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: CLOUD_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex1, vertex2);
-
-      const vertex3 = graph.insertVertex(
-        parent,
-        null,
-        "heart shape",
-        20,
-        200,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" }
-      );
-      const vertex4 = graph.insertVertex(
-        parent,
-        null,
-        "negative shape",
-        150,
-        350,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: PERSON_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex3, vertex4);
-
-      const vertex5 = graph.insertVertex(
-        parent,
-        null,
-        "heart shape",
-        200,
-        200,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: HEART_SHAPE, fontColor: "black" }
-      );
-      const vertex6 = graph.insertVertex(
-        parent,
-        null,
-        "cloud shape",
-        350,
-        350,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: CLOUD_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex5, vertex6);
-    });
-    // }
-
+  
     return () => {
-      graph.destroy();
+      if (graphRef) {
+        graphRef.destroy();
+      }
     };
   }, []);
 
