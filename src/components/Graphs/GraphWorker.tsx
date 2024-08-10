@@ -848,6 +848,82 @@ const GraphWorker = () => {
     }
   };
 
+  const renderGraph = (graph: Graph) => {
+    console.log("Logging: renderGraph() called.");
+  
+    // Initialize or reset necessary variables
+    let rootGoal: Cell | null = null;
+    let emotionsGlob: GlobObject = {};
+    let negativesGlob: GlobObject = {};
+    let qualitiesGlob: GlobObject = {};
+    let stakeholdersGlob: GlobObject = {};
+  
+    // Reset the graph before rendering
+    resetGraph(
+      graph,
+      rootGoal,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+  
+    // Check if the browser is supported
+    if (!Client.isBrowserSupported()) {
+      console.log("Logging: browser not supported");
+      error("Browser not supported!", 200, false);
+      return;
+    }
+  
+    // Disable context menu on the graph container
+    InternalEvent.disableContextMenu(graph.container);
+  
+    // Check if jsonData is available
+    if (window.jsonData) {
+      const clusters = window.jsonData.GoalModelProject.Clusters;
+  
+      // Start the transaction to render the graph
+      graph.getDataModel().beginUpdate();
+      try {
+        for (let i = 0; i < clusters.length; i++) {
+          // Grab the goal hierarchy from each cluster
+          const goals = clusters[i].ClusterGoals;
+          
+          // Render the goals into the graph
+          renderGoals(
+            goals,
+            graph,
+            null,
+            rootGoal,
+            emotionsGlob,
+            negativesGlob,
+            qualitiesGlob,
+            stakeholdersGlob
+          );
+        }
+  
+        // Apply layout to the graph based on the rendered goals
+        layoutFunctions(graph, rootGoal);
+  
+        // Associate non-functional goals (emotions, qualities, concerns, stakeholders)
+        associateNonFunctions(
+          graph,
+          rootGoal,
+          emotionsGlob,
+          negativesGlob,
+          qualitiesGlob,
+          stakeholdersGlob
+        );
+  
+        // Re-centre the graph view after rendering
+        recentreView();
+      } finally {
+        // End the transaction, applying all changes at once
+        graph.getDataModel().endUpdate();
+      }
+    }
+  };
+
   useEffect(() => {
     const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
   
@@ -869,23 +945,29 @@ const GraphWorker = () => {
       supportFunctions(graph);
   
       registerCustomShapes();
-  
+      
+      console.log(window.jsonData);
       // Now that graphRef is safely set, perform batch updates
-      graph.batchUpdate(() => {
-        const parent = graph.getDefaultParent();
-        console.log("graphing batch update");
-        const vertex1 = graph.insertVertex(parent, null, "person shape", 100, 40, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" });
-        const vertex2 = graph.insertVertex(parent, null, "parallelogram shape", 500, 100, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
-        graph.insertEdge(parent, null, "", vertex1, vertex2);
-  
-        const vertex3 = graph.insertVertex(parent, null, "heart shape", 20, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" });
-        const vertex4 = graph.insertVertex(parent, null, "negative shape", 150, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PERSON_SHAPE, fontColor: "black" });
-        graph.insertEdge(parent, null, "", vertex3, vertex4);
-  
-        const vertex5 = graph.insertVertex(parent, null, "heart shape", 200, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: HEART_SHAPE, fontColor: "black" });
-        const vertex6 = graph.insertVertex(parent, null, "cloud shape", 350, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
-        graph.insertEdge(parent, null, "", vertex5, vertex6);
-      });
+      if (window.jsonData) {
+        renderGraph(graph);
+      }
+      else {
+        graph.batchUpdate(() => {
+          const parent = graph.getDefaultParent();
+          console.log("graphing batch update");
+          const vertex1 = graph.insertVertex(parent, null, "person shape", 100, 40, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" });
+          const vertex2 = graph.insertVertex(parent, null, "parallelogram shape", 500, 100, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
+          graph.insertEdge(parent, null, "", vertex1, vertex2);
+    
+          const vertex3 = graph.insertVertex(parent, null, "heart shape", 20, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" });
+          const vertex4 = graph.insertVertex(parent, null, "negative shape", 150, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PERSON_SHAPE, fontColor: "black" });
+          graph.insertEdge(parent, null, "", vertex3, vertex4);
+    
+          const vertex5 = graph.insertVertex(parent, null, "heart shape", 200, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: HEART_SHAPE, fontColor: "black" });
+          const vertex6 = graph.insertVertex(parent, null, "cloud shape", 350, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
+          graph.insertEdge(parent, null, "", vertex5, vertex6);
+        });
+      }
     }
   
     return () => {
