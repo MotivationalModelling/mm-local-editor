@@ -32,7 +32,6 @@ import {
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
-
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -129,9 +128,26 @@ interface GlobObject {
 //   y?: number
 // ) => void;
 
+type Goal = {
+  GoalID: number;
+  GoalType: string;
+  GoalContent: string;
+  SubGoals: Goal[];
+};
+
+type Cluster = {
+  ClusterID: string;
+  ClusterGoals: Goal[];
+};
+
+type GraphWorkerProps = {
+  clusters: Cluster[];
+};
+
+
 // ---------------------------------------------------------------------------
 
-const GraphWorker = () => {
+const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
   const divGraph = useRef<HTMLDivElement>(null);
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const [graphRef, setGraphRef] = useState<Graph | null>(null);
@@ -422,7 +438,8 @@ const GraphWorker = () => {
     goal,
     graph: Graph,
     source: Cell | null = null,
-    rootGoal: Cell | null,
+    // rootGoal: Cell | null,
+    rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
@@ -463,8 +480,9 @@ const GraphWorker = () => {
     const edge = graph.insertEdge(null, null, "", source, node);
 
     // if no root goal is registered, then store this as root
-    if (rootGoal === null) {
-      rootGoal = node;
+    if (rootGoalWrapper.value === null) {
+      rootGoalWrapper.value = node;
+      console.log("rootgoal registered", rootGoalWrapper.value);
     }
 
     //resize functional goal base on text length and number of lines
@@ -488,7 +506,7 @@ const GraphWorker = () => {
       goal.SubGoals,
       graph,
       node,
-      rootGoal,
+      rootGoalWrapper,
       emotionsGlob,
       negativesGlob,
       qualitiesGlob,
@@ -506,14 +524,14 @@ const GraphWorker = () => {
     goals,
     graph: Graph,
     source: Cell | null = null,
-    rootGoal: Cell | null,
+    // rootGoal: Cell | null,
+    rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    console.log("Logging: renderGoals() called on list: " + goals);
-
+    console.log("Logging: renderGoals() called on list: ", goals);
     // accumulate non-functional goals to be rendered into a single symbol
     const emotions = [];
     const qualities = [];
@@ -526,12 +544,13 @@ const GraphWorker = () => {
       const type = goal.GoalType;
       const content = goal.GoalContent;
       // recurse over functional goals
-      if (type === FUNCTIONAL_DATA) {
+      console.log("Render goals type:", type);
+      if (type === FUNCTIONAL_TYPE) {
         renderFunction(
           goal,
           graph,
           source,
-          rootGoal,
+          rootGoalWrapper,
           emotionsGlob,
           negativesGlob,
           qualitiesGlob,
@@ -849,17 +868,54 @@ const GraphWorker = () => {
   };
 
   const renderGraph = (graph: Graph) => {
-    console.log("Logging: renderGraph() called.");
-  
-    // Initialize or reset necessary variables
+
+    // Declare necessary variables
     let rootGoal: Cell | null = null;
-    let emotionsGlob: GlobObject = {};
-    let negativesGlob: GlobObject = {};
-    let qualitiesGlob: GlobObject = {};
-    let stakeholdersGlob: GlobObject = {};
-  
-    // Reset the graph before rendering
+    // Use wrapper since basic rootGoal variable doesn't get updated
+    const rootGoalWrapper = { value: null as Cell | null };
+    const emotionsGlob: GlobObject = {};
+    const negativesGlob: GlobObject = {};
+    const qualitiesGlob: GlobObject = {};
+    const stakeholdersGlob: GlobObject = {};
+
     resetGraph(
+      graph,
+      rootGoalWrapper.value,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+
+    // Check if the browser is supported
+    if (!Client.isBrowserSupported()) {
+      console.log("Logging: browser not supported");
+      error("Browser not supported!", 200, false);
+      return;
+    }
+
+    // Start the transaction to render the graph
+    graph.getDataModel().beginUpdate();
+    console.log("renderGraph transaction");
+    clusters.forEach((cluster) => {
+      renderGoals(
+        cluster.ClusterGoals,
+        graph,
+        null,
+        rootGoalWrapper,
+        emotionsGlob,
+        negativesGlob,
+        qualitiesGlob,
+        stakeholdersGlob
+      );
+    });
+    rootGoal = rootGoalWrapper.value;
+    console.log("renderGraph stakeholders:", stakeholdersGlob);
+    console.log("renderGraph rootGoal", rootGoal);
+    console.log("renderGraph rootGoalWrapper", rootGoalWrapper);
+    layoutFunctions(graph, rootGoal);
+    console.log("done layout");
+    associateNonFunctions(
       graph,
       rootGoal,
       emotionsGlob,
@@ -867,62 +923,12 @@ const GraphWorker = () => {
       qualitiesGlob,
       stakeholdersGlob
     );
-  
-    // Check if the browser is supported
-    if (!Client.isBrowserSupported()) {
-      console.log("Logging: browser not supported");
-      error("Browser not supported!", 200, false);
-      return;
-    }
-  
-    // Disable context menu on the graph container
-    InternalEvent.disableContextMenu(graph.container);
-  
-    // Check if jsonData is available
-    if (window.jsonData) {
-      const clusters = window.jsonData.GoalModelProject.Clusters;
-  
-      // Start the transaction to render the graph
-      graph.getDataModel().beginUpdate();
-      try {
-        for (let i = 0; i < clusters.length; i++) {
-          // Grab the goal hierarchy from each cluster
-          const goals = clusters[i].ClusterGoals;
-          
-          // Render the goals into the graph
-          renderGoals(
-            goals,
-            graph,
-            null,
-            rootGoal,
-            emotionsGlob,
-            negativesGlob,
-            qualitiesGlob,
-            stakeholdersGlob
-          );
-        }
-  
-        // Apply layout to the graph based on the rendered goals
-        layoutFunctions(graph, rootGoal);
-  
-        // Associate non-functional goals (emotions, qualities, concerns, stakeholders)
-        associateNonFunctions(
-          graph,
-          rootGoal,
-          emotionsGlob,
-          negativesGlob,
-          qualitiesGlob,
-          stakeholdersGlob
-        );
-  
-        // Re-centre the graph view after rendering
-        recentreView();
-      } finally {
-        // End the transaction, applying all changes at once
-        graph.getDataModel().endUpdate();
-      }
-    }
+    recentreView();
+    graph.getDataModel().endUpdate();
+    
   };
+
+
 
   useEffect(() => {
     const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
@@ -946,9 +952,11 @@ const GraphWorker = () => {
   
       registerCustomShapes();
       
-      console.log(window.jsonData);
       // Now that graphRef is safely set, perform batch updates
-      if (window.jsonData) {
+      console.log("GraphWorker clusters: ", clusters);
+      console.log("Clusters length", clusters.length);
+      if (clusters && clusters.length > 0) {
+        console.log("Rendering graph");
         renderGraph(graph);
       }
       else {
@@ -975,7 +983,8 @@ const GraphWorker = () => {
         graphRef.destroy();
       }
     };
-  }, []);
+  }, [clusters]);
+
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
   // graphXML content(should have a way to separate codes into another file)

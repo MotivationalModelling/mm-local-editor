@@ -50,6 +50,19 @@ const INITIAL_PROPORTIONS = {
 
 const DEFAULT_HEIGHT = "800px";
 
+type Goal = {
+  GoalID: number;
+  GoalType: string;
+  GoalContent: string;
+  SubGoals: Goal[];
+};
+
+type Cluster = {
+  ClusterID: number;
+  ClusterGoals: Goal[];
+};
+
+
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
@@ -76,6 +89,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
   const [existingError, setExistingError] = useState<boolean>(false);
+
+  const [clusters, setClusters] = useState<Cluster[]>([]);
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
 
@@ -309,6 +324,41 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }
   }, [paddingX, showGoalSection, showGraphSection]);
 
+  // Mapping of old types to new types
+  const typeMapping: Record<string, string> = {
+    Who: "Stakeholder",
+    Do: "Functional",
+    Be: "Quality",
+    Feel: "Emotional",
+    Concern: "Negative",
+  };
+
+  // Function to convert TreeItem to Goal
+  const convertTreeItemToGoal = (item: TreeItem): Goal => {
+    console.log("Converting type: ", item.type, " to ", typeMapping[item.type]);
+    return {
+      GoalID: item.id,
+      GoalType: typeMapping[item.type], //typeMapping[item.type]
+      GoalContent: item.content,
+      SubGoals: item.children ? item.children.map(convertTreeItemToGoal) : [],
+    };
+  };
+  
+
+  // Convert the entire treeData to Clusters structure
+  const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster[] => [
+    {
+      ClusterID: treeData[0].id,
+      ClusterGoals: treeData.map(convertTreeItemToGoal),
+    },
+  ];
+
+  useEffect(() => {
+    setClusters(convertTreeDataToClusters(treeData));
+    console.log("Cluster changed ", clusters);
+    console.log("treeData: ",  treeData);
+  }, [treeData]);
+ 
   return (
     <div
       style={{
@@ -400,7 +450,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         Section 3
-        <GraphWorker />
+        <GraphWorker clusters={clusters}/>
         {/*  <GraphRender xml={xmlData} /> */}
         <Button
           variant="outline-primary"
