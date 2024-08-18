@@ -480,7 +480,7 @@ const GraphWorker = () => {
       node_geo.height = Math.max(
         node_geo.height,
         preferred.width * SH_PREFERRED,
-        height
+        height 
       );
     }
     // then recurse over the goal's children
@@ -848,12 +848,10 @@ const GraphWorker = () => {
     }
   };
 
-  useEffect(() => {
+  useEffect(() => {  
     //let graph: Graph;
-    const graphContainer: HTMLElement | undefined =
-      divGraph.current || undefined;
-
-    if (graphContainer) {
+    if (divGraph.current) {
+      const graphContainer = divGraph.current
       InternalEvent.disableContextMenu(graphContainer);
 
       // config: allow drag-panning using left click on empty canvas space
@@ -997,7 +995,6 @@ const GraphWorker = () => {
     registerCustomShapes();
     const graph = graphRef;
     if (!graph) return;
-
     const parent = graph.getDefaultParent();
     graph.batchUpdate(() => {
       console.log("graphing batch update");
@@ -1014,7 +1011,7 @@ const GraphWorker = () => {
       const vertex2 = graph.insertVertex(
         parent,
         null,
-        "parallelogram shape",
+        "parallelogram shape",   
         500,
         100,
         SYMBOL_WIDTH,
@@ -1072,7 +1069,7 @@ const GraphWorker = () => {
     return () => {
       graph.destroy();
     };
-  }, []);
+  }, [divGraph.current]);
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
   // graphXML content(should have a way to separate codes into another file)
