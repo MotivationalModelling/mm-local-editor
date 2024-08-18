@@ -348,7 +348,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   // Convert the entire treeData to Clusters structure
   const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster[] => [
     {
-      ClusterID: treeData[0].id,
+      ClusterID: 1,
       ClusterGoals: treeData.map(convertTreeItemToGoal),
     },
   ];

@@ -136,7 +136,7 @@ type Goal = {
 };
 
 type Cluster = {
-  ClusterID: string;
+  ClusterID: number;
   ClusterGoals: Goal[];
 };
 
@@ -148,10 +148,10 @@ type GraphWorkerProps = {
 // ---------------------------------------------------------------------------
 
 const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
-  const divGraph = useRef<HTMLDivElement>(null);
-  //   const divSidebar = useRef<HTMLDivElement>(null);
-  const [graphRef, setGraphRef] = useState<Graph | null>(null);
 
+  //   const divSidebar = useRef<HTMLDivElement>(null);
+  const divGraph = useRef<HTMLDivElement>(null);
+  const [graphRef, setGraphRef] = useState<Graph | null>(null);
   /**
    * Re-centre/Re-scale
    * Function for resetting zoom and recentring the graph
@@ -238,6 +238,14 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
     // config: permit vertices to be connected by edges
     graph.setConnectable(true);
     graph.setCellsEditable(true);
+    graph.setPanning(true);
+    graph.setCellsResizable(true);
+    graph.setCellsMovable(true); // Allow cells to be moved
+    graph.setCellsSelectable(true); // Allow cells to be selected
+
+    // Ensure pointer events are enabled
+    graph.container.style.cursor = 'default';
+    graph.container.style.pointerEvents = 'all';
 
     // config: set default style for edges inserted into graph
     const edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
@@ -445,10 +453,10 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    console.log("functionalllll");
-    console.log(goal.GoalContent);
+    // console.log("functionalllll");
+    // console.log(goal.GoalContent);
     const arr = goal.GoalContent.split(" ");
-    console.log(arr);
+    // console.log(arr);
     // styling
     const image = PARALLELOGRAM_PATH;
     let width = SYMBOL_WIDTH;
@@ -866,6 +874,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
       );
     }
   };
+  
 
   const renderGraph = (graph: Graph) => {
 
@@ -896,7 +905,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
 
     // Start the transaction to render the graph
     graph.getDataModel().beginUpdate();
-    console.log("renderGraph transaction");
+    // console.log("renderGraph transaction");
     clusters.forEach((cluster) => {
       renderGoals(
         cluster.ClusterGoals,
@@ -910,11 +919,11 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
       );
     });
     rootGoal = rootGoalWrapper.value;
-    console.log("renderGraph stakeholders:", stakeholdersGlob);
+    // console.log("renderGraph stakeholders:", stakeholdersGlob);
     console.log("renderGraph rootGoal", rootGoal);
-    console.log("renderGraph rootGoalWrapper", rootGoalWrapper);
+    // console.log("renderGraph rootGoalWrapper", rootGoalWrapper);
     layoutFunctions(graph, rootGoal);
-    console.log("done layout");
+    // console.log("done layout");
     associateNonFunctions(
       graph,
       rootGoal,
@@ -928,62 +937,101 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
     
   };
 
-
-
   useEffect(() => {
     const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
   
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
   
-      const graph = new Graph(graphContainer);
+      const graph = new Graph(graphContainer); // Create the graph
       setGraphRef(graph);
-  
-      const layout = new GoalModelLayout(graph, VERTICAL_SPACING, HORIZONTAL_SPACING);
-      layout.execute(graph.getDefaultParent());
-  
-      graph.setPanning(true);
+      
       setGraphStyle(graph);
       graphListener(graph);
-  
-      const connectionHandler = graph.getPlugin('ConnectionHandler') as ConnectionHandler;
-      connectionHandler.connectImage = new ImageBox(PATH_EDGE_HANDLER_ICON, ICON_WIDTH, ICON_HEIGHT);
       supportFunctions(graph);
-  
       registerCustomShapes();
       
-      // Now that graphRef is safely set, perform batch updates
-      console.log("GraphWorker clusters: ", clusters);
-      console.log("Clusters length", clusters.length);
-      if (clusters && clusters.length > 0) {
-        console.log("Rendering graph");
-        renderGraph(graph);
-      }
-      else {
-        graph.batchUpdate(() => {
-          const parent = graph.getDefaultParent();
-          console.log("graphing batch update");
-          const vertex1 = graph.insertVertex(parent, null, "person shape", 100, 40, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" });
-          const vertex2 = graph.insertVertex(parent, null, "parallelogram shape", 500, 100, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
-          graph.insertEdge(parent, null, "", vertex1, vertex2);
-    
-          const vertex3 = graph.insertVertex(parent, null, "heart shape", 20, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" });
-          const vertex4 = graph.insertVertex(parent, null, "negative shape", 150, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PERSON_SHAPE, fontColor: "black" });
-          graph.insertEdge(parent, null, "", vertex3, vertex4);
-    
-          const vertex5 = graph.insertVertex(parent, null, "heart shape", 200, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: HEART_SHAPE, fontColor: "black" });
-          const vertex6 = graph.insertVertex(parent, null, "cloud shape", 350, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
-          graph.insertEdge(parent, null, "", vertex5, vertex6);
-        });
-      }
     }
   
     return () => {
       if (graphRef) {
+        console.log("Destroy");
         graphRef.destroy();
       }
     };
-  }, [clusters]);
+  }, []); // Only run on mount
+
+  // Separate useEffect for clusters update
+  useEffect(() => {
+    if (graphRef && clusters.length > 0) {
+      renderGraph(graphRef);
+    }
+  }, [clusters]); // Rerun when clusters change
+    
+
+
+  // useEffect(() => {
+  //   const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
+  
+  //   if (graphContainer) {
+  //     InternalEvent.disableContextMenu(graphContainer);
+  
+  //     const graph = new Graph(graphContainer);
+  //     setGraphRef(graph);
+
+  //     // This called in renderGraph
+  //     // const layout = new GoalModelLayout(graph, VERTICAL_SPACING, HORIZONTAL_SPACING);
+  //     // layout.execute(graph.getDefaultParent());
+  
+  //     setGraphStyle(graph);
+  //     graphListener(graph);
+  //     supportFunctions(graph);
+  //     registerCustomShapes();
+
+  //     graph.addListener(InternalEvent.CLICK, (sender: string, evt: EventObject) => {
+  //       const cell = evt.getProperty('cell'); // Get the clicked cell
+  //       if (cell) {
+  //         console.log('Cell clicked:', cell);
+  //       } else {
+  //         console.log('Background clicked');
+  //       }
+  //     });
+  //     // const connectionHandler = graph.getPlugin('ConnectionHandler') as ConnectionHandler;
+  //     // connectionHandler.connectImage = new ImageBox(PATH_EDGE_HANDLER_ICON, ICON_WIDTH, ICON_HEIGHT);
+  
+      
+  //     console.log("GraphWorker clusters: ", clusters);
+  //     console.log("Clusters length", clusters.length);
+
+  //     if (clusters && clusters.length > 0) {
+  //       console.log("Rendering graph");
+  //       renderGraph(graph);
+  //     }
+  //     else {
+        // graph.batchUpdate(() => {
+        //   const parent = graph.getDefaultParent();
+        //   console.log("graphing batch update");
+        //   const vertex1 = graph.insertVertex(parent, null, "person shape", 100, 40, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" });
+        //   const vertex2 = graph.insertVertex(parent, null, "parallelogram shape", 500, 100, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
+        //   graph.insertEdge(parent, null, "", vertex1, vertex2);
+    
+        //   const vertex3 = graph.insertVertex(parent, null, "heart shape", 20, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" });
+        //   const vertex4 = graph.insertVertex(parent, null, "negative shape", 150, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PERSON_SHAPE, fontColor: "black" });
+        //   graph.insertEdge(parent, null, "", vertex3, vertex4);
+    
+        //   const vertex5 = graph.insertVertex(parent, null, "heart shape", 200, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: HEART_SHAPE, fontColor: "black" });
+        //   const vertex6 = graph.insertVertex(parent, null, "cloud shape", 350, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
+        //   graph.insertEdge(parent, null, "", vertex5, vertex6);
+        // });
+  //     }
+  //   }
+  
+  //   return () => {
+  //     if (graphRef) {
+  //       graphRef.destroy();
+  //     }
+  //   };
+  // }, [clusters]);
 
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
