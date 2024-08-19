@@ -58,7 +58,6 @@ type Goal = {
 };
 
 type Cluster = {
-  ClusterID: number;
   ClusterGoals: Goal[];
 };
 
@@ -90,7 +89,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
   const [existingError, setExistingError] = useState<boolean>(false);
 
-  const [clusters, setClusters] = useState<Cluster[]>([]);
+  // Stores user defined goals (treeData) into a structure used in GraphWorker. Initialise as empty
+  const [cluster, setCluster] = useState<Cluster>({ ClusterGoals: []});
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
 
@@ -338,25 +338,27 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     console.log("Converting type: ", item.type, " to ", typeMapping[item.type]);
     return {
       GoalID: item.id,
-      GoalType: typeMapping[item.type], //typeMapping[item.type]
+      GoalType: typeMapping[item.type],
       GoalContent: item.content,
       SubGoals: item.children ? item.children.map(convertTreeItemToGoal) : [],
     };
   };
   
 
-  // Convert the entire treeData to Clusters structure
-  const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster[] => [
-    {
-      ClusterID: 1,
+  // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
+  const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster => {
+    return {
       ClusterGoals: treeData.map(convertTreeItemToGoal),
-    },
-  ];
+    };
+  };
+
 
   useEffect(() => {
-    setClusters(convertTreeDataToClusters(treeData));
-    console.log("Cluster changed ", clusters);
-    console.log("treeData: ",  treeData);
+    setCluster((prevCluster) => {
+      const newCluster = convertTreeDataToClusters(treeData);
+      console.log("Cluster changed ", newCluster);
+      return newCluster;
+    });
   }, [treeData]);
  
   return (
@@ -450,7 +452,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         Section 3
-        <GraphWorker clusters={clusters}/>
+        <GraphWorker cluster={cluster}/>
         {/*  <GraphRender xml={xmlData} /> */}
         <Button
           variant="outline-primary"

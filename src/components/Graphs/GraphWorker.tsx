@@ -128,6 +128,7 @@ interface GlobObject {
 //   y?: number
 // ) => void;
 
+// As in SectionPanel
 type Goal = {
   GoalID: number;
   GoalType: string;
@@ -136,18 +137,17 @@ type Goal = {
 };
 
 type Cluster = {
-  ClusterID: number;
   ClusterGoals: Goal[];
 };
 
 type GraphWorkerProps = {
-  clusters: Cluster[];
+  cluster: Cluster;
 };
 
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
+const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
@@ -529,7 +529,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
    * : source, the parent goal of the given array, defaults to null
    */
   const renderGoals = (
-    goals,
+    goals: Cluster['ClusterGoals'],
     graph: Graph,
     source: Cell | null = null,
     // rootGoal: Cell | null,
@@ -876,56 +876,52 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
   };
   
 
-  const renderGraph = (graph: Graph) => {
+  const renderGraph = () => {
+    if (!graphRef) return;
 
+    console.log("Rendering Graph")
+  
     // Declare necessary variables
+    // Use rootGoalWrapper to be able to update its value
     let rootGoal: Cell | null = null;
-    // Use wrapper since basic rootGoal variable doesn't get updated
     const rootGoalWrapper = { value: null as Cell | null };
     const emotionsGlob: GlobObject = {};
     const negativesGlob: GlobObject = {};
     const qualitiesGlob: GlobObject = {};
     const stakeholdersGlob: GlobObject = {};
-
+  
     resetGraph(
-      graph,
+      graphRef,
       rootGoalWrapper.value,
       emotionsGlob,
       negativesGlob,
       qualitiesGlob,
       stakeholdersGlob
     );
-
+  
     // Check if the browser is supported
     if (!Client.isBrowserSupported()) {
       console.log("Logging: browser not supported");
       error("Browser not supported!", 200, false);
       return;
     }
-
+  
     // Start the transaction to render the graph
-    graph.getDataModel().beginUpdate();
-    // console.log("renderGraph transaction");
-    clusters.forEach((cluster) => {
-      renderGoals(
-        cluster.ClusterGoals,
-        graph,
-        null,
-        rootGoalWrapper,
-        emotionsGlob,
-        negativesGlob,
-        qualitiesGlob,
-        stakeholdersGlob
-      );
-    });
+    graphRef.getDataModel().beginUpdate();
+    renderGoals(
+      cluster.ClusterGoals,
+      graphRef,
+      null,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
     rootGoal = rootGoalWrapper.value;
-    // console.log("renderGraph stakeholders:", stakeholdersGlob);
-    console.log("renderGraph rootGoal", rootGoal);
-    // console.log("renderGraph rootGoalWrapper", rootGoalWrapper);
-    layoutFunctions(graph, rootGoal);
-    // console.log("done layout");
+    layoutFunctions(graphRef, rootGoal);
     associateNonFunctions(
-      graph,
+      graphRef,
       rootGoal,
       emotionsGlob,
       negativesGlob,
@@ -933,10 +929,10 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
       stakeholdersGlob
     );
     recentreView();
-    graph.getDataModel().endUpdate();
-    
+    graphRef.getDataModel().endUpdate();
   };
 
+  // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
     const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
   
@@ -944,12 +940,18 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
       InternalEvent.disableContextMenu(graphContainer);
   
       const graph = new Graph(graphContainer); // Create the graph
-      setGraphRef(graph);
       
       setGraphStyle(graph);
       graphListener(graph);
       supportFunctions(graph);
       registerCustomShapes();
+      // Ensure graph is set properly (no async problems)
+      setGraphRef((prevGraph) => {
+        if (prevGraph) {
+          prevGraph.destroy();
+        }
+        return graph;
+      });
       
     }
   
@@ -959,81 +961,18 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ clusters }) => {
         graphRef.destroy();
       }
     };
-  }, []); // Only run on mount
+  }, []);
 
-  // Separate useEffect for clusters update
+  // Separate useEffect to render / update the graph.
   useEffect(() => {
-    if (graphRef && clusters.length > 0) {
-      renderGraph(graphRef);
+    if (graphRef) {
+      // If user has goals defined, draw the graph
+      if (cluster.ClusterGoals.length > 0) {
+        renderGraph();
+      }
     }
-  }, [clusters]); // Rerun when clusters change
+  }, [cluster, graphRef]);
     
-
-
-  // useEffect(() => {
-  //   const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
-  
-  //   if (graphContainer) {
-  //     InternalEvent.disableContextMenu(graphContainer);
-  
-  //     const graph = new Graph(graphContainer);
-  //     setGraphRef(graph);
-
-  //     // This called in renderGraph
-  //     // const layout = new GoalModelLayout(graph, VERTICAL_SPACING, HORIZONTAL_SPACING);
-  //     // layout.execute(graph.getDefaultParent());
-  
-  //     setGraphStyle(graph);
-  //     graphListener(graph);
-  //     supportFunctions(graph);
-  //     registerCustomShapes();
-
-  //     graph.addListener(InternalEvent.CLICK, (sender: string, evt: EventObject) => {
-  //       const cell = evt.getProperty('cell'); // Get the clicked cell
-  //       if (cell) {
-  //         console.log('Cell clicked:', cell);
-  //       } else {
-  //         console.log('Background clicked');
-  //       }
-  //     });
-  //     // const connectionHandler = graph.getPlugin('ConnectionHandler') as ConnectionHandler;
-  //     // connectionHandler.connectImage = new ImageBox(PATH_EDGE_HANDLER_ICON, ICON_WIDTH, ICON_HEIGHT);
-  
-      
-  //     console.log("GraphWorker clusters: ", clusters);
-  //     console.log("Clusters length", clusters.length);
-
-  //     if (clusters && clusters.length > 0) {
-  //       console.log("Rendering graph");
-  //       renderGraph(graph);
-  //     }
-  //     else {
-        // graph.batchUpdate(() => {
-        //   const parent = graph.getDefaultParent();
-        //   console.log("graphing batch update");
-        //   const vertex1 = graph.insertVertex(parent, null, "person shape", 100, 40, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" });
-        //   const vertex2 = graph.insertVertex(parent, null, "parallelogram shape", 500, 100, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
-        //   graph.insertEdge(parent, null, "", vertex1, vertex2);
-    
-        //   const vertex3 = graph.insertVertex(parent, null, "heart shape", 20, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" });
-        //   const vertex4 = graph.insertVertex(parent, null, "negative shape", 150, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: PERSON_SHAPE, fontColor: "black" });
-        //   graph.insertEdge(parent, null, "", vertex3, vertex4);
-    
-        //   const vertex5 = graph.insertVertex(parent, null, "heart shape", 200, 200, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: HEART_SHAPE, fontColor: "black" });
-        //   const vertex6 = graph.insertVertex(parent, null, "cloud shape", 350, 350, SYMBOL_WIDTH, SYMBOL_HEIGHT, { shape: CLOUD_SHAPE, fontColor: "black" });
-        //   graph.insertEdge(parent, null, "", vertex5, vertex6);
-        // });
-  //     }
-  //   }
-  
-  //   return () => {
-  //     if (graphRef) {
-  //       graphRef.destroy();
-  //     }
-  //   };
-  // }, [clusters]);
-
-
   // --------------------------------------------------------------------------------------------------------------------------------------------------
   // graphXML content(should have a way to separate codes into another file)
 
