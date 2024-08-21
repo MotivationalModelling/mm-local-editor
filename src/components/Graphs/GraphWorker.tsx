@@ -58,7 +58,6 @@ const ICON_HEIGHT = 14;
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
 
-
 // default x,y coordinates of the root goal in the graph - (functional graph)
 const SYMBOL_X_COORD = 0;
 const SYMBOL_Y_COORD = 0;
@@ -94,7 +93,6 @@ const DELETE_KEYBINDING2 = 46;
 const VERTICAL_SPACING = 60;
 const HORIZONTAL_SPACING = 60;
 
-
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
 const EMOTIONAL_TYPE = "Emotional";
@@ -104,7 +102,6 @@ const STAKEHOLDER_TYPE = "Stakeholder";
 
 // Define shape data
 const FUNCTIONAL_DATA = "functionaldata";
-
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -144,11 +141,9 @@ type GraphWorkerProps = {
   cluster: Cluster;
 };
 
-
 // ---------------------------------------------------------------------------
 
 const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
-
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const [graphRef, setGraphRef] = useState<Graph | null>(null);
@@ -244,8 +239,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     graph.setCellsSelectable(true); // Allow cells to be selected
 
     // Ensure pointer events are enabled
-    graph.container.style.cursor = 'default';
-    graph.container.style.pointerEvents = 'all';
+    graph.container.style.cursor = "default";
+    graph.container.style.pointerEvents = "all";
 
     // config: set default style for edges inserted into graph
     const edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
@@ -529,7 +524,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
    * : source, the parent goal of the given array, defaults to null
    */
   const renderGoals = (
-    goals: Cluster['ClusterGoals'],
+    goals: Cluster["ClusterGoals"],
     graph: Graph,
     source: Cell | null = null,
     // rootGoal: Cell | null,
@@ -874,13 +869,69 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       );
     }
   };
-  
 
-  const renderGraph = () => {
+  // Just renders an example graph
+  const renderExampleGraph = () => {
     if (!graphRef) return;
 
-    console.log("Rendering Graph")
-  
+    console.log("Rendering Example Graph");
+
+    // Predefined constant cluster to use for the example graph
+    const defaultCluster: Cluster = {
+      ClusterGoals: [
+        {
+          GoalID: 1,
+          GoalType: "Functional",
+          GoalContent: "Functional Goal",
+          SubGoals: [
+            {
+              GoalID: 6,
+              GoalType: "Functional",
+              GoalContent: "Functional Goal",
+              SubGoals: [
+                {
+                  GoalID: 1,
+                  GoalType: "Functional",
+                  GoalContent: "Functional Goal",
+                  SubGoals: [],
+                },
+              ],
+            },
+            {
+              GoalID: 1,
+              GoalType: "Functional",
+              GoalContent: "Functional Goal",
+              SubGoals: [],
+            },
+          ],
+        },
+        {
+          GoalID: 2,
+          GoalType: "Quality",
+          GoalContent: "Quality Goals",
+          SubGoals: [],
+        },
+        {
+          GoalID: 3,
+          GoalType: "Emotional",
+          GoalContent: "Emotional Goals",
+          SubGoals: [],
+        },
+        {
+          GoalID: 4,
+          GoalType: "Stakeholder",
+          GoalContent: "Stakeholders ",
+          SubGoals: [],
+        },
+        {
+          GoalID: 5,
+          GoalType: "Negative",
+          GoalContent: "Negatives",
+          SubGoals: [],
+        },
+      ],
+    };
+
     // Declare necessary variables
     // Use rootGoalWrapper to be able to update its value
     let rootGoal: Cell | null = null;
@@ -889,7 +940,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     const negativesGlob: GlobObject = {};
     const qualitiesGlob: GlobObject = {};
     const stakeholdersGlob: GlobObject = {};
-  
+
     resetGraph(
       graphRef,
       rootGoalWrapper.value,
@@ -898,14 +949,70 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       qualitiesGlob,
       stakeholdersGlob
     );
-  
+
     // Check if the browser is supported
     if (!Client.isBrowserSupported()) {
       console.log("Logging: browser not supported");
       error("Browser not supported!", 200, false);
       return;
     }
-  
+
+    // Start the transaction to render the graph
+    graphRef.getDataModel().beginUpdate();
+    renderGoals(
+      defaultCluster.ClusterGoals,
+      graphRef,
+      null,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    rootGoal = rootGoalWrapper.value;
+    layoutFunctions(graphRef, rootGoal);
+    associateNonFunctions(
+      graphRef,
+      rootGoal,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    recentreView();
+    graphRef.getDataModel().endUpdate();
+  };
+
+  const renderGraph = () => {
+    if (!graphRef) return;
+
+    console.log("Rendering Graph");
+
+    // Declare necessary variables
+    // Use rootGoalWrapper to be able to update its value
+    let rootGoal: Cell | null = null;
+    const rootGoalWrapper = { value: null as Cell | null };
+    const emotionsGlob: GlobObject = {};
+    const negativesGlob: GlobObject = {};
+    const qualitiesGlob: GlobObject = {};
+    const stakeholdersGlob: GlobObject = {};
+
+    resetGraph(
+      graphRef,
+      rootGoalWrapper.value,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+
+    // Check if the browser is supported
+    if (!Client.isBrowserSupported()) {
+      console.log("Logging: browser not supported");
+      error("Browser not supported!", 200, false);
+      return;
+    }
+
     // Start the transaction to render the graph
     graphRef.getDataModel().beginUpdate();
     renderGoals(
@@ -934,27 +1041,22 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
-    const graphContainer: HTMLElement | undefined = divGraph.current || undefined;
-  
+    const graphContainer: HTMLElement | undefined =
+      divGraph.current || undefined;
+
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
-  
+
       const graph = new Graph(graphContainer); // Create the graph
-      
+
       setGraphStyle(graph);
       graphListener(graph);
       supportFunctions(graph);
       registerCustomShapes();
-      // Ensure graph is set properly (no async problems)
-      setGraphRef((prevGraph) => {
-        if (prevGraph) {
-          prevGraph.destroy();
-        }
-        return graph;
-      });
-      
+
+      setGraphRef(graph);
     }
-  
+
     return () => {
       if (graphRef) {
         console.log("Destroy");
@@ -970,9 +1072,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       if (cluster.ClusterGoals.length > 0) {
         renderGraph();
       }
+      // Render example graph
+      else {
+        renderExampleGraph();
+      }
     }
   }, [cluster, graphRef]);
-    
+
   // --------------------------------------------------------------------------------------------------------------------------------------------------
   // graphXML content(should have a way to separate codes into another file)
 
