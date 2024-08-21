@@ -56,11 +56,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		// Function to add a new row to the active tab
 		const handleAddRow = (label: string) => {
 			const newTabData = tabData.map((tab) => {
-				if (
-					tab.label === label &&
-					(tab.rows.length === 0 ||
-						tab.rows[tab.rows.length - 1].content !== "")
-				) {
+				if (tab.label === label) {
 					return {
 						...tab,
 						rows: [
@@ -203,6 +199,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		const GroupDropBtn = () => {
 			return (
 				<div className="d-flex justify-content-end my-2">
+					<Button 
+                className="me-2"
+                onClick={() => handleAddRow(activeKey || '')}
+                variant="primary"
+            > Add Goal
+            	</Button>
 					<Button
 						variant="primary"
 						className="me-2"
