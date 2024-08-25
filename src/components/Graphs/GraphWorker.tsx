@@ -64,7 +64,7 @@ const SYMBOL_Y_COORD = 0;
 
 // scale factor for sizing child goals in the functional hierarchy; functional
 //   goals at each layer should be slightly smaller than their parents
-const CHILD_SIZE_SCALE = 0.8;
+const CHILD_SIZE_SCALE = 0.9;
 
 // scale factor for sizing functional goals
 const SH_PREFERRED = 1.1;
@@ -90,8 +90,8 @@ const DELETE_KEYBINDING2 = 46;
 // preferred vertical and horizontal spacing between functional goals; note
 //   the autolayout won't always accomodate these - it will depend on the
 //   topology of the model you are trying to render
-const VERTICAL_SPACING = 60;
-const HORIZONTAL_SPACING = 60;
+const VERTICAL_SPACING = 80;
+const HORIZONTAL_SPACING = 100;
 
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
@@ -412,7 +412,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   const resetGraph = (
     graph: Graph,
-    rootGoal: Cell | null,
+    rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
@@ -421,13 +421,14 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     // reset - remove any existing graph if render is called
     graph.removeCells(graph.getChildVertices(graph.getDefaultParent()));
     graph.removeCells(graph.getChildEdges(graph.getDefaultParent()));
-    rootGoal = null;
+    rootGoalWrapper = { value: null};
 
     // reset the accumulators for non-functional goals
     emotionsGlob = {};
     negativesGlob = {};
     qualitiesGlob = {};
     stakeholdersGlob = {};
+
   };
 
   /**
@@ -438,20 +439,18 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
    * : source, the parent of the goal
    */
   const renderFunction = (
-    goal,
+    goal: Goal,
     graph: Graph,
     source: Cell | null = null,
-    // rootGoal: Cell | null,
     rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    // console.log("functionalllll");
-    // console.log(goal.GoalContent);
+
     const arr = goal.GoalContent.split(" ");
-    // console.log(arr);
+    
     // styling
     const image = PARALLELOGRAM_PATH;
     let width = SYMBOL_WIDTH;
@@ -608,9 +607,10 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     source: Cell | null = null,
     type: string = "None"
   ) => {
-    console.log("nonfunctionalllll");
-    console.log(descriptions);
-    // fetch parent coordinates
+    
+    console.log("Rendering non-functional goal: ", descriptions);
+  
+    // Fetch parent coordinates
     if (source) {
       const geo = source.getGeometry();
       let x = 0;
@@ -624,50 +624,54 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         let height = fHeight;
         let delimiter = "";
         let image = "";
-
+  
         switch (type) {
-          case EMOTIONAL_TYPE:
+          case EMOTIONAL_TYPE: // Top Right (TR)
             image = HEART_PATH;
             width = fWidth * SW_EMOTIONAL;
             height = fHeight * SH_EMOTIONAL;
-            x = sourceX - width / 2 - fWidth / 4;
-            y = sourceY - height / 2 - fHeight / 4;
+            x = sourceX + fWidth * 1.3 - width / 2; // Move to the right
+            y = sourceY - fHeight / 4 - height / 2 ; // Move up
             delimiter = ",\n";
             break;
-          case NEGATIVE_TYPE:
+  
+          case NEGATIVE_TYPE: // Bottom Right (BR)
             image = NEGATIVE_PATH;
             width = fWidth * SW_NEGATIVE;
             height = fHeight * SH_NEGATIVE;
-            x = sourceX + fWidth * 1.15 - width / 2;
-            y = sourceY - height / 2 - fHeight / 4;
+            x = sourceX + fWidth * 1.3 - width / 2; // Move to the right
+            y = sourceY + fHeight * 0.9 - height / 2; // Move down
             delimiter = ",\n";
             break;
-          case QUALITY_TYPE:
+  
+          case QUALITY_TYPE: // Top Left (TL)
             image = CLOUD_PATH;
             width = fWidth * SW_QUALITY;
             height = fHeight * SH_QUALITY;
-            x = sourceX - width / 2 - fWidth / 4;
-            y = sourceY + fHeight * 1.15 - height / 2;
+            x = sourceX - fWidth / 4 - width / 2 ; // Move to the left
+            y = sourceY - fHeight / 4 - height / 2 ; // Move up
             delimiter = ",\n";
             break;
-          case STAKEHOLDER_TYPE:
-            image = descriptions.length > 1 ? PERSON_PATH : PERSON_PATH; // Need image for multiple stakholders ???????????
+  
+          case STAKEHOLDER_TYPE: // Bottom Left (BL)
+            image = PERSON_PATH;
             width = fWidth * SW_STAKEHOLDER;
             height = fHeight * SH_STAKEHOLDER;
-            x = sourceX + fWidth * 1.05 - width / 2;
-            y = sourceY + fHeight - height / 2;
+            x = sourceX - fWidth / 2 - width / 2; // Move to the left
+            y = sourceY + fHeight * 0.9 - height / 2; // Move down
             delimiter = "\n";
             break;
         }
-
-        // customize vertex style
+  
+        // Customize vertex style
         let style: CellStateStyle = {
           fontSize: VERTEX_FONT_SIZE,
           fontColor: "black",
           shape: "image",
           image: image,
         };
-        // if stakeholder, text goes at bottom
+  
+        // If stakeholder, text goes at bottom
         if (type === STAKEHOLDER_TYPE) {
           style = {
             ...style,
@@ -675,8 +679,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
             verticalLabelPosition: "bottom",
           };
         }
-
-        // insert the vertex
+  
+        // Insert the vertex
         const node = graph.insertVertex(
           null,
           null,
@@ -687,10 +691,9 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
           height,
           style
         );
+  
         const edge = graph.insertEdge(null, null, "", source, node);
-        // make the edge invisible - we still want to create the edge
-        // the edge is needed when running the autolayout logic
-        edge.visible = false;
+        edge.visible = false; // Make the edge invisible - used in auto layout
       }
     }
   };
@@ -816,7 +819,12 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
       // render all qualities
       if (qualitiesGlob[value]) {
-        renderNonFunction(qualitiesGlob[goal.value], graph, goal, QUALITY_TYPE);
+        renderNonFunction(
+          qualitiesGlob[goal.value],
+          graph, 
+          goal, 
+          QUALITY_TYPE
+        );
       }
 
       // render all concerns
@@ -850,7 +858,12 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       );
     }
     if (qualitiesGlob[ROOT_KEY] && rootGoal != null) {
-      renderNonFunction(qualitiesGlob[ROOT_KEY], graph, rootGoal, QUALITY_TYPE);
+      renderNonFunction(
+        qualitiesGlob[ROOT_KEY], 
+        graph, 
+        rootGoal, 
+        QUALITY_TYPE
+      );
     }
     if (negativesGlob[ROOT_KEY] && rootGoal != null) {
       renderNonFunction(
@@ -943,7 +956,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
     resetGraph(
       graphRef,
-      rootGoalWrapper.value,
+      rootGoalWrapper,
       emotionsGlob,
       negativesGlob,
       qualitiesGlob,
@@ -999,7 +1012,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
     resetGraph(
       graphRef,
-      rootGoalWrapper.value,
+      rootGoalWrapper,
       emotionsGlob,
       negativesGlob,
       qualitiesGlob,
