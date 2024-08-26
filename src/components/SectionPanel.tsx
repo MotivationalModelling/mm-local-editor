@@ -454,14 +454,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         Section 3
         <GraphWorker cluster={cluster}/>
         {/*  <GraphRender xml={xmlData} /> */}
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={() => setShowGoalSection(!showGoalSection)}
-          style={{ marginLeft: "20px" }}
-        >
-          {showGoalSection ? "Hide section 1" : "Show section 1"}
-        </Button>
       </Resizable>
     </div>
   );
