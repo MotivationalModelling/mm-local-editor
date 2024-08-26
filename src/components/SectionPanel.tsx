@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
 
-import Button from "react-bootstrap/Button";
-
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
@@ -313,11 +311,14 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         setSectionThreeWidth(
           newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
         );
-      } else if (showGoalSection) {
+      } 
+      else if (showGoalSection) {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
-      } else if (showGraphSection) {
+      } 
+      else if (showGraphSection) {
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
-      } else {
+      } 
+      else {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
       }
@@ -451,7 +452,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         onResize={handleResizeSectionThree}
       >
         {/* Third Panel Content */}
-        Section 3
+        
         <GraphWorker cluster={cluster}/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>

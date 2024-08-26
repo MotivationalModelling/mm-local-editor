@@ -14,7 +14,8 @@ import { isChrome, isOpera, isEdge } from "react-device-detect";
 type ProjectEditHeaderProps = {
 	showGoalSection: boolean;
 	setShowGoalSection: (showGoalSection: boolean) => void;
-  };
+};
+
 
 const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	showGoalSection,
@@ -25,14 +26,14 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
   
 	useEffect(() => {
-	  if (isChrome || isEdge || isOpera) {
-		setIsBrowserSupported(true);
-	  }
+		if (isChrome || isEdge || isOpera) {
+			setIsBrowserSupported(true);
+		}
 	}, []);
   
 	const handleBackBtnClick = () => {
-	  resetData();
-	  navigate("/", { replace: true });
+		resetData();
+		navigate("/", { replace: true });
 	};
 
 	return (
@@ -46,10 +47,10 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 						<strong style={{ fontSize: "35px" }}>AMMBER</strong>
 					</Col>
 					<Col className="text-end align-content-center">
-            	<Button onClick={() => setShowGoalSection(!showGoalSection)}>
-              		{showGoalSection ? "Hide Goal List" : "Show Goal List"}
-            		</Button>
-          			</Col>
+						<Button onClick={() => setShowGoalSection(!showGoalSection)}>
+							{showGoalSection ? "Hide Goal List" : "Show Goal List"}
+						</Button>
+					</Col>
 					<Col className="text-end align-content-center" xs={8}>
 						<ExportFileButton />
 						{isBrowserSupported && <SaveFileButton />}

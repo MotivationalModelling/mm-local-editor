@@ -146,7 +146,21 @@ type GraphWorkerProps = {
 const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
-  const [graphRef, setGraphRef] = useState<Graph | null>(null);
+  const [graph, setGraph] = useState<Graph | null>(null);
+  const [warningShown, setWarningShown] = useState(false); // Track whether the warning has been shown
+
+  /**
+   * Check if goals list have functional goals
+   */
+  const hasFunctionalGoals = (cluster: Cluster): boolean => {
+    for (const goal of cluster.ClusterGoals) {
+      if (goal.GoalType === "Functional") {
+        return true;
+      }
+    }
+    return false;
+  };
+  
   /**
    * Re-centre/Re-scale
    * Function for resetting zoom and recentring the graph
@@ -157,7 +171,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
    *      y = y coord of topmost symbol
    */
   const recentreView = () => {
-    const graph = graphRef;
     if (graph) {
       // get the list of all cells in the graph
       const widthCanvas = graph.container.clientWidth;
@@ -885,7 +898,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   // Just renders an example graph
   const renderExampleGraph = () => {
-    if (!graphRef) return;
+    if (!graph) return;
 
     console.log("Rendering Example Graph");
 
@@ -955,7 +968,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     const stakeholdersGlob: GlobObject = {};
 
     resetGraph(
-      graphRef,
+      graph,
       rootGoalWrapper,
       emotionsGlob,
       negativesGlob,
@@ -971,10 +984,10 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     }
 
     // Start the transaction to render the graph
-    graphRef.getDataModel().beginUpdate();
+    graph.getDataModel().beginUpdate();
     renderGoals(
       defaultCluster.ClusterGoals,
-      graphRef,
+      graph,
       null,
       rootGoalWrapper,
       emotionsGlob,
@@ -983,9 +996,9 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       stakeholdersGlob
     );
     rootGoal = rootGoalWrapper.value;
-    layoutFunctions(graphRef, rootGoal);
+    layoutFunctions(graph, rootGoal);
     associateNonFunctions(
-      graphRef,
+      graph,
       rootGoal,
       emotionsGlob,
       negativesGlob,
@@ -993,11 +1006,11 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       stakeholdersGlob
     );
     recentreView();
-    graphRef.getDataModel().endUpdate();
+    graph.getDataModel().endUpdate();
   };
 
   const renderGraph = () => {
-    if (!graphRef) return;
+    if (!graph) return;
 
     console.log("Rendering Graph");
 
@@ -1011,7 +1024,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     const stakeholdersGlob: GlobObject = {};
 
     resetGraph(
-      graphRef,
+      graph,
       rootGoalWrapper,
       emotionsGlob,
       negativesGlob,
@@ -1027,10 +1040,10 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     }
 
     // Start the transaction to render the graph
-    graphRef.getDataModel().beginUpdate();
+    graph.getDataModel().beginUpdate();
     renderGoals(
       cluster.ClusterGoals,
-      graphRef,
+      graph,
       null,
       rootGoalWrapper,
       emotionsGlob,
@@ -1039,9 +1052,9 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       stakeholdersGlob
     );
     rootGoal = rootGoalWrapper.value;
-    layoutFunctions(graphRef, rootGoal);
+    layoutFunctions(graph, rootGoal);
     associateNonFunctions(
-      graphRef,
+      graph,
       rootGoal,
       emotionsGlob,
       negativesGlob,
@@ -1049,7 +1062,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       stakeholdersGlob
     );
     recentreView();
-    graphRef.getDataModel().endUpdate();
+    graph.getDataModel().endUpdate();
   };
 
   // First useEffect to set up graph. Only run on mount.
@@ -1067,30 +1080,44 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       supportFunctions(graph);
       registerCustomShapes();
 
-      setGraphRef(graph);
+      setGraph(graph);
     }
 
     return () => {
-      if (graphRef) {
+      if (graph) {
         console.log("Destroy");
-        graphRef.destroy();
+        graph.destroy();
+        setGraph(null);
       }
     };
   }, []);
 
   // Separate useEffect to render / update the graph.
   useEffect(() => {
-    if (graphRef) {
+    if (graph) {
       // If user has goals defined, draw the graph
       if (cluster.ClusterGoals.length > 0) {
-        renderGraph();
+        // Check if there are functional goals
+        if (hasFunctionalGoals(cluster)) {
+          renderGraph();
+          setWarningShown(false); // Reset warningShown when functional goals are present
+        } 
+        else {
+          // Show warning and render the example graph
+          console.warn("No functional goals found. Rendering the example graph.");
+          if (!warningShown) {
+            alert("No functional goals found. Rendering the example graph.");
+            setWarningShown(true);
+          }
+          renderExampleGraph();
+        }
       }
       // Render example graph
       else {
         renderExampleGraph();
       }
     }
-  }, [cluster, graphRef]);
+  }, [cluster, graph]);
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
   // graphXML content(should have a way to separate codes into another file)
@@ -1321,7 +1348,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
           <div id={GRAPH_DIV_ID} ref={divGraph} />
         </Col>
         <Col md={1}>
-          <GraphSidebar graph={graphRef} recentreView={recentreView} />
+          <GraphSidebar graph={graph} recentreView={recentreView} />
         </Col>
       </Row>
     </Container>
