@@ -676,12 +676,16 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
             break;
         }
   
-        // Customize vertex style
+        // customize vertex style to center text
         let style: CellStateStyle = {
           fontSize: VERTEX_FONT_SIZE,
           fontColor: "black",
           shape: "image",
           image: image,
+          align: "center",           // Center horizontally
+          verticalAlign: "middle",   // Center vertically
+          labelPosition: "center",
+          spacingTop: -10,
         };
   
         // If stakeholder, text goes at bottom
