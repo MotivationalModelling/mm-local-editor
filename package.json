@@ -10,14 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@types/wicg-file-system-access": "^2023.10.5",
     "@maxgraph/core": "^0.9.0",
+    "@types/react-color": "^3.0.12",
+    "@types/wicg-file-system-access": "^2023.10.5",
     "bootstrap": "^5.3.3",
     "file-saver": "^2.0.5",
     "idb-keyval": "^6.2.1",
     "re-resizable": "^6.9.11",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",
+    "react-color": "^2.19.3",
     "react-device-detect": "^2.2.3",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ColorResult, ChromePicker }  from "react-color";
 import {
   Graph,
   MaxToolbar,
@@ -75,9 +76,6 @@ const COLOUR_SET = [
   "#d54417",
   "#edd954",
   "#1a9850",
-  "#e68f35",
-  "#daf266",
-  "#acc93f",
   "#ffffff",
 ];
 
@@ -99,28 +97,38 @@ type GraphSidebarProps = {
 
 const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
   const divSidebar = useRef<HTMLDivElement>(null);
+  const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
+  const [showPicker, setShowPicker] = useState<boolean>(false);
+
+  const handleColorChange = (color: ColorResult) => {
+    setSelectedColor(color.hex);
+    if (graph) {
+      graph.getDataModel().beginUpdate();
+      try {
+        const cells = graph.getSelectionCells();
+        for (let i = 0; i < cells.length; i++) {
+          const style = graph.getCellStyle(cells[i]);
+          style.fillColor = color.hex;
+          graph.getDataModel().setStyle(cells[i], style);
+        }
+      } finally {
+        graph.getDataModel().endUpdate();
+      }
+    }
+  };
 
   useEffect(() => {
-    console.log("sidebar");
+    if (!divSidebar.current || !graph) return;
 
-    let sidebar: MaxToolbar;
-    const sidebarContainer: HTMLElement | undefined =
-      divSidebar.current || undefined;
+    let sidebar = new MaxToolbar(divSidebar.current);
+    sidebar.enabled = false;
 
-    // const sidebarElement = document.getElementById("sidebarContainer")
-    if (sidebarContainer && graph) {
-      console.log("Establish sidebar container");
-      console.log(graph);
+    const label = document.createElement("label");
 
-      // Add colour selection section to sidebar
-      if (divSidebar.current) {
-        const label = document.createElement("label");
-        label.innerHTML = "Select Colour:";
-        label.htmlFor = "choose_colours";
 
         divSidebar.current.appendChild(label);
 
-        // Apply the color changing function
+        // Apply the colour changing function
         const addButton = (colour: string) => {
           const btn = DomHelpers.button("", () => {
             graph.getDataModel().beginUpdate();
@@ -137,8 +145,8 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
           });
 
           btn.className = "ColorButton";
-          btn.style.width = "60px";
-          btn.style.height = "20px";
+          btn.style.width = "80px";
+          btn.style.height = "30px";
           btn.style.backgroundColor = colour;
           btn.style.border = "2px";
 
@@ -146,17 +154,17 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
             case "#d54417":
               btn.ariaLabel = "HIGH";
               btn.innerHTML = "HIGH";
-              btn.style.fontSize = "10px";
+              btn.style.fontSize = "12px";
               break;
             case "#edd954":
               btn.ariaLabel = "MEDIUM";
               btn.innerHTML = "MEDIUM";
-              btn.style.fontSize = "10px";
+              btn.style.fontSize = "12px";
               break;
             case "#1a9850":
               btn.ariaLabel = "LOW";
               btn.innerHTML = "LOW";
-              btn.style.fontSize = "10px";
+              btn.style.fontSize = "12px";
               break;
           }
           divSidebar.current.appendChild(btn);
@@ -188,201 +196,203 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
         zoomOut.style.width = "20px";
         sidebar.addLine();
 
-        // add the sidebar elements for each of the goals
-        const addSidebarItem = (
-          graph: Graph,
-          sidebar: MaxToolbar,
-          imagePath: string,
-          width: number,
-          height: number,
-          isEdge: boolean
-        ) => {
-          let type = "";
-          let goalID: string | null;
-          let data = "";
-          let prototype: Cell;
-          // create the prototype cell which will be cloned when a sidebar item
-          // is dragged on to the graph
-          if (!isEdge) {
-            let shape = "";
-            switch (imagePath) {
-              case PARALLELOGRAM_PATH:
-                shape = PARALLELOGRAM_SHAPE;
-                type = FUNCTIONAL_TYPE;
-                data = FUNCTIONAL_DATA;
-                break;
-              case HEART_PATH:
-                shape = HEART_SHAPE;
-                type = EMOTIONAL_TYPE;
-                data = EMOTIONAL_DATA;
-                break;
-              case NEGATIVE_PATH:
-                shape = NEGATIVE_SHAPE;
-                type = NEGATIVE_TYPE;
-                data = NEGATIVE_DATA;
-                break;
-              case CLOUD_PATH:
-                shape = CLOUD_SHAPE;
-                type = QUALITY_TYPE;
-                data = QUALITY_DATA;
-                break;
-              case PERSON_PATH:
-                shape = PERSON_SHAPE;
-                type = STAKEHOLDER_TYPE;
-                data = STAKEHOLDER_DATA;
-                break;
-            }
+    // Add sidebar items
+    const addSidebarItem = (
+      graph: Graph,
+      sidebar: MaxToolbar,
+      imagePath: string,
+      width: number,
+      height: number,
+      isEdge: boolean
+    ) => {
+      let type = "";
+      let goalID: string | null;
+      let data = "";
+      let prototype: Cell;
 
-            let shapeStyle: CellStateStyle = {
-              fontSize: VERTEX_FONT_SIZE,
-              fontColor: VERTEX_FONT_COLOUR,
-              shape: shape,
-            };
-            graph.getStylesheet().putCellStyle("minWidth", shapeStyle);
-            graph.getStylesheet().putCellStyle("minHeight", shapeStyle);
+      if (!isEdge) {
+        let shape = "";
+        switch (imagePath) {
+          case PARALLELOGRAM_PATH:
+            shape = PARALLELOGRAM_SHAPE;
+            type = FUNCTIONAL_TYPE;
+            data = FUNCTIONAL_DATA;
+            break;
+          case HEART_PATH:
+            shape = HEART_SHAPE;
+            type = EMOTIONAL_TYPE;
+            data = EMOTIONAL_DATA;
+            break;
+          case NEGATIVE_PATH:
+            shape = NEGATIVE_SHAPE;
+            type = NEGATIVE_TYPE;
+            data = NEGATIVE_DATA;
+            break;
+          case CLOUD_PATH:
+            shape = CLOUD_SHAPE;
+            type = QUALITY_TYPE;
+            data = QUALITY_DATA;
+            break;
+          case PERSON_PATH:
+            shape = PERSON_SHAPE;
+            type = STAKEHOLDER_TYPE;
+            data = STAKEHOLDER_DATA;
+            break;
+        }
 
-            if (imagePath == PERSON_PATH) {
-              shapeStyle = {
-                ...shapeStyle,
-                verticalAlign: "top",
-                verticalLabelPosition: "bottom",
-                autoSize: false,
-              };
-            } else if (imagePath == NEGATIVE_PATH) {
-              shapeStyle = { ...shapeStyle, fillColor: "grey" };
-            }
-            prototype = new Cell(
-              null,
-              new Geometry(0, 0, width, height),
-              shapeStyle
-            );
-            prototype.setVertex(true);
-          } else {
-            prototype = new Cell(null, new Geometry(0, 0, width, height));
-            if (prototype.geometry) {
-              prototype.geometry.relative = true;
-              prototype.setEdge(true);
-            }
-          }
-
-          const dragAndDrop: DropHandler = (
-            graph: Graph,
-            evt: MouseEvent,
-            cell: Cell | null,
-            x?: number,
-            y?: number
-          ): void => {
-            graph.stopEditing(false);
-            const point = graph.getPointForEvent(evt);
-            const goal = graph.getDataModel().cloneCell(prototype);
-
-            if (goal && goal.geometry) {
-              goal.geometry.x = point.x;
-              goal.geometry.y = point.y;
-              graph.importCells([goal], 0, 0, cell);
-            }
-          };
-
-          const dragAndDropEdge: DropHandler = (
-            graph: Graph,
-            evt: MouseEvent,
-            cell: Cell | null,
-            x?: number,
-            y?: number
-          ) => {
-            graph.stopEditing(false);
-            const point = graph.getPointForEvent(evt);
-            const goal = graph.getDataModel().cloneCell(prototype);
-
-            if (goal && goal.geometry) {
-              goal.geometry.setTerminalPoint(new Point(point.x, point.y), true);
-              goal.geometry.setTerminalPoint(
-                new Point(point.x + LINE_SIZE, point.y + LINE_SIZE),
-                false
-              );
-              goal.parent = graph.getDefaultParent();
-              graph.importCells([goal], 0, 0, cell);
-            }
-          };
-          // add a symbol to the sidebar
-          const sidebarItem = sidebar.addMode(
-            null,
-            imagePath,
-            dragAndDrop,
-            imagePath
-          );
-          sidebarItem.style.width = "60px";
-          if (imagePath == PERSON_PATH) {
-            sidebarItem.style.width = "30px";
-          }
-          if (!isEdge) {
-            gestureUtils.makeDraggable(sidebarItem, graph, dragAndDrop);
-          } else {
-            gestureUtils.makeDraggable(sidebarItem, graph, dragAndDropEdge);
-            sidebarItem.style.width = "50px";
-          }
+        let shapeStyle: CellStateStyle = {
+          fontSize: VERTEX_FONT_SIZE,
+          fontColor: VERTEX_FONT_COLOUR,
+          shape: shape,
         };
+        graph.getStylesheet().putCellStyle("minWidth", shapeStyle);
+        graph.getStylesheet().putCellStyle("minHeight", shapeStyle);
 
-        // add sidebar items for each of the goal types
-        addSidebarItem(
-          graph,
-          sidebar,
-          PERSON_PATH,
-          SYMBOL_WIDTH * SW_STAKEHOLDER,
-          SYMBOL_HEIGHT * SH_STAKEHOLDER,
-          false
+        if (imagePath == PERSON_PATH) {
+          shapeStyle = {
+            ...shapeStyle,
+            verticalAlign: "top",
+            verticalLabelPosition: "bottom",
+            autoSize: false,
+          };
+        } else if (imagePath == NEGATIVE_PATH) {
+          shapeStyle = { ...shapeStyle, fillColor: "grey" };
+        }
+        prototype = new Cell(
+          null,
+          new Geometry(0, 0, width, height),
+          shapeStyle
         );
-        addSidebarItem(
-          graph,
-          sidebar,
-          PARALLELOGRAM_PATH,
-          SYMBOL_WIDTH * SW_FUNCTIONAL,
-          SYMBOL_HEIGHT * SH_FUNCTIONAL,
-          false
-        );
-        addSidebarItem(
-          graph,
-          sidebar,
-          HEART_PATH,
-          SYMBOL_WIDTH * SW_EMOTIONAL,
-          SYMBOL_HEIGHT * SH_EMOTIONAL,
-          false
-        );
-        addSidebarItem(
-          graph,
-          sidebar,
-          NEGATIVE_PATH,
-          SYMBOL_WIDTH * SW_NEGATIVE,
-          SYMBOL_HEIGHT * SH_NEGATIVE,
-          false
-        );
-        addSidebarItem(
-          graph,
-          sidebar,
-          CLOUD_PATH,
-          SYMBOL_WIDTH * SW_QUALITY,
-          SYMBOL_HEIGHT * SH_QUALITY,
-          false
-        );
-        addSidebarItem(graph, sidebar, LINE_PATH, LINE_SIZE, LINE_SIZE, true);
-        sidebar.addLine();
+        prototype.setVertex(true);
+      } else {
+        prototype = new Cell(null, new Geometry(0, 0, width, height));
+        if (prototype.geometry) {
+          prototype.geometry.relative = true;
+          prototype.setEdge(true);
+        }
       }
-    }
+
+      const dragAndDrop: DropHandler = (
+        graph: Graph,
+        evt: MouseEvent,
+        cell: Cell | null,
+        x?: number,
+        y?: number
+      ): void => {
+        graph.stopEditing(false);
+        const point = graph.getPointForEvent(evt);
+        const goal = graph.getDataModel().cloneCell(prototype);
+
+        if (goal && goal.geometry) {
+          goal.geometry.x = point.x;
+          goal.geometry.y = point.y;
+          graph.importCells([goal], 0, 0, cell);
+        }
+      };
+
+      const dragAndDropEdge: DropHandler = (
+        graph: Graph,
+        evt: MouseEvent,
+        cell: Cell | null,
+        x?: number,
+        y?: number
+      ) => {
+        graph.stopEditing(false);
+        const point = graph.getPointForEvent(evt);
+        const goal = graph.getDataModel().cloneCell(prototype);
+
+        if (goal && goal.geometry) {
+          goal.geometry.setTerminalPoint(new Point(point.x, point.y), true);
+          goal.geometry.setTerminalPoint(
+            new Point(point.x + LINE_SIZE, point.y + LINE_SIZE),
+            false
+          );
+          goal.parent = graph.getDefaultParent();
+          graph.importCells([goal], 0, 0, cell);
+        }
+      };
+
+      const sidebarItem = sidebar.addMode(
+        null,
+        imagePath,
+        dragAndDrop,
+        imagePath
+      );
+      sidebarItem.style.width = "60px";
+      if (imagePath == PERSON_PATH) {
+        sidebarItem.style.width = "30px";
+      }
+      if (!isEdge) {
+        gestureUtils.makeDraggable(sidebarItem, graph, dragAndDrop);
+      } else {
+        gestureUtils.makeDraggable(sidebarItem, graph, dragAndDropEdge);
+        sidebarItem.style.width = "50px";
+      }
+    };
+
+    addSidebarItem(
+      graph,
+      sidebar,
+      PERSON_PATH,
+      SYMBOL_WIDTH * SW_STAKEHOLDER,
+      SYMBOL_HEIGHT * SH_STAKEHOLDER,
+      false
+    );
+    addSidebarItem(
+      graph,
+      sidebar,
+      PARALLELOGRAM_PATH,
+      SYMBOL_WIDTH * SW_FUNCTIONAL,
+      SYMBOL_HEIGHT * SH_FUNCTIONAL,
+      false
+    );
+    addSidebarItem(
+      graph,
+      sidebar,
+      HEART_PATH,
+      SYMBOL_WIDTH * SW_EMOTIONAL,
+      SYMBOL_HEIGHT * SH_EMOTIONAL,
+      false
+    );
+    addSidebarItem(
+      graph,
+      sidebar,
+      NEGATIVE_PATH,
+      SYMBOL_WIDTH * SW_NEGATIVE,
+      SYMBOL_HEIGHT * SH_NEGATIVE,
+      false
+    );
+    addSidebarItem(
+      graph,
+      sidebar,
+      CLOUD_PATH,
+      SYMBOL_WIDTH * SW_QUALITY,
+      SYMBOL_HEIGHT * SH_QUALITY,
+      false
+    );
+    addSidebarItem(graph, sidebar, LINE_PATH, LINE_SIZE, LINE_SIZE, true);
+    sidebar.addLine();
 
     return () => {
-      // sidebar.destroy();
       if (divSidebar.current) {
-        console.log("sidebar element exist");
         divSidebar.current.innerHTML = "";
       }
     };
   }, [graph]);
 
+  const handleButtonClick = () => {
+    setShowPicker(!showPicker);
+  };
+
   return (
     <div id={SIDEBAR_DIV_ID} ref={divSidebar}>
-      {<label htmlFor="choose_colours">Select Colour: </label>}
+      {showPicker && (
+        <div id="color-picker-container" style={{ position: "absolute", top: "10px", right: "100px" }}>
+          <ChromePicker color={selectedColor} onChangeComplete={handleColorChange} />
+        </div>
+      )}
+      <button onClick={handleButtonClick}>Select Colour</button>
     </div>
   );
 };
-
 export default GraphSidebar;

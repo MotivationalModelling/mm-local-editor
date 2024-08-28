@@ -39,7 +39,7 @@ const DEFINED_PROPORTIONS = {
 
 const INITIAL_PROPORTIONS = {
   sectionOne: 0.5,
-  sectionThree: 0.75,
+  sectionThree: 0.63,
   sectionsCombine: {
     sectionOne: 0.2,
     sectionThree: 0.5,
@@ -323,7 +323,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
       }
     }
-  }, [paddingX, showGoalSection, showGraphSection]);
+  }, [paddingX, showGoalSection, showGraphSection]); 
 
   // Mapping of old types to new types
   const typeMapping: Record<string, string> = {
