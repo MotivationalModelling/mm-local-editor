@@ -100,6 +100,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
   const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
   const [showPicker, setShowPicker] = useState<boolean>(false);
 
+  // Handler for changing colours
   const handleColorChange = (color: ColorResult) => {
     setSelectedColor(color.hex);
     if (graph) {
@@ -128,7 +129,6 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
 
         divSidebar.current.appendChild(label);
 
-        // Apply the colour changing function
         const addButton = (colour: string) => {
           const btn = DomHelpers.button("", () => {
             graph.getDataModel().beginUpdate();
@@ -143,7 +143,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
               graph.getDataModel().endUpdate();
             }
           });
-
+          //Add Colour Buttons
           btn.className = "ColorButton";
           btn.style.width = "80px";
           btn.style.height = "30px";
@@ -167,6 +167,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
               btn.style.fontSize = "12px";
               break;
           }
+          if (divSidebar.current)
           divSidebar.current.appendChild(btn);
         };
 
@@ -174,8 +175,6 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
           addButton(COLOUR_SET[i]);
         }
 
-        // create the sidebar in the specified container
-        sidebar = new MaxToolbar(sidebarContainer);
         sidebar.enabled = false; // turn off 'activated' aesthetic
         // zoom-in and zoom-out buttons
         sidebar.addLine(); // purely aesthetic
@@ -329,7 +328,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
         sidebarItem.style.width = "50px";
       }
     };
-
+    // Add shapes to the sidebar
     addSidebarItem(
       graph,
       sidebar,
@@ -380,6 +379,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
     };
   }, [graph]);
 
+  // Open & close the colour picker
   const handleButtonClick = () => {
     setShowPicker(!showPicker);
   };
