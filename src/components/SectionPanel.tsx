@@ -6,7 +6,6 @@ import GoalList from "./GoalList";
 import Tree from "./Tree";
 import { Label, TreeItem, useFileContext } from "./context/FileProvider";
 
-import GraphRender from "./GraphRender";
 import GraphWorker from "./Graphs/GraphWorker";
 // use for testing xml validation only
 const xmlData = `
@@ -96,6 +95,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
+  // Store export function
+  const exportGraphRef = useRef<() => void>(() => {});
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
@@ -361,6 +362,14 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       return newCluster;
     });
   }, [treeData]);
+
+  // Function to handle exporting graph when button is clicked
+  const handleExportGraph = () => {
+    if (exportGraphRef.current) {
+      exportGraphRef.current();
+    }
+  };
+
  
   return (
     <div
@@ -453,7 +462,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker cluster={cluster}/>
+        <GraphWorker cluster={cluster} onExportGraph={(func) => (exportGraphRef.current = func)}/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>

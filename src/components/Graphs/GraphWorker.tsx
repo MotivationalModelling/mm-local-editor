@@ -6,8 +6,6 @@ import {
   CellStateStyle,
   DragSource,
   Cell,
-  ConnectionHandler,
-  ImageBox,
   KeyHandler,
   UndoManager,
   EventObject,
@@ -16,8 +14,6 @@ import {
   xmlUtils,
   Codec,
   ModelXmlSerializer,
-  ImageExport,
-  XmlCanvas2D,
 } from "@maxgraph/core";
 import { GoalModelLayout } from "./GoalModelLayout";
 import { useRef, useEffect, useState } from "react";
@@ -34,6 +30,7 @@ import {
 
 import GraphSidebar from "./GraphSidebar";
 import Button from 'react-bootstrap/Button';
+import { useGraph } from "../context/GraphContext";
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -52,10 +49,6 @@ const PATH_EDGE_HANDLER_ICON = "img/link.png";
 // default width/height of the root goal in the graph
 const SYMBOL_WIDTH = 145;
 const SYMBOL_HEIGHT = 110;
-
-// size of the edge-creation icon
-const ICON_WIDTH = 14;
-const ICON_HEIGHT = 14;
 
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
@@ -102,8 +95,6 @@ const NEGATIVE_TYPE = "Negative";
 const QUALITY_TYPE = "Quality";
 const STAKEHOLDER_TYPE = "Stakeholder";
 
-// Define shape data
-const FUNCTIONAL_DATA = "functionaldata";
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -148,7 +139,7 @@ type GraphWorkerProps = {
 const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
-  const [graph, setGraph] = useState<Graph | null>(null);
+  const {graph, setGraph} = useGraph();
   const [warningShown, setWarningShown] = useState(false); // Track whether the warning has been shown
 
   /**
@@ -1079,23 +1070,15 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
 
-      const graph = new Graph(graphContainer); // Create the graph
+      const graphInstance = new Graph(graphContainer); // Create the graph
 
-      setGraphStyle(graph);
-      graphListener(graph);
-      supportFunctions(graph);
+      setGraphStyle(graphInstance);
+      graphListener(graphInstance);
+      supportFunctions(graphInstance);
       registerCustomShapes();
 
-      setGraph(graph);
+      setGraph(graphInstance);
     }
-
-    return () => {
-      if (graph) {
-        console.log("Destroy");
-        graph.destroy();
-        setGraph(null);
-      }
-    };
   }, []);
 
   // Separate useEffect to render / update the graph.
@@ -1387,7 +1370,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
           <div id={GRAPH_DIV_ID} ref={divGraph} />
         </Col>
         <Col md={1}>
-        < Button onClick={exportGraphAsImage}>Export Graph</Button>
           <GraphSidebar graph={graph} recentreView={recentreView} />
         </Col>
       </Row>

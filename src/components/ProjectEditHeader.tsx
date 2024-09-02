@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import { Col } from "react-bootstrap";
-import { Container } from "react-bootstrap";
-import { Row } from "react-bootstrap";
-import { Button } from "react-bootstrap";
+import { Col, Container, Row, Button } from "react-bootstrap";
+
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
 import { useFileContext } from "./context/FileProvider";
