@@ -16,9 +16,10 @@ import {
   xmlUtils,
   Codec,
   ModelXmlSerializer,
+  ImageExport,
+  XmlCanvas2D,
 } from "@maxgraph/core";
 import { GoalModelLayout } from "./GoalModelLayout";
-
 import { useRef, useEffect, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import "./GraphWorker.css";
@@ -32,6 +33,7 @@ import {
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
+import Button from 'react-bootstrap/Button';
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -1305,8 +1307,40 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   const parseToXML = (graph: Graph) => {
     const encoder = new Codec();
     const node = encoder.encode(graph.getDataModel());
-    const xml = xmlUtils.getPrettyXml(node);
+    const xml = xmlUtils.getXml(node);    
     return xml;
+  };
+
+  // Function to export graph as an image
+  const exportGraphAsImage = () => {
+    if (!graph) {
+      return;
+    }
+
+    // Get the container holding the SVG
+    const svgElement = graph.getContainer().querySelector('svg');
+
+    if (!svgElement) {
+      console.error('Failed to find SVG element in the graph container.');
+      return;
+    }
+
+    // Serialize the SVG element to a string
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgElement);
+
+    // Create a Blob and trigger download
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'graph.svg';
+    link.click();
+
+    // Step 4: Clean up
+    URL.revokeObjectURL(url);
+
   };
 
   /**
@@ -1343,6 +1377,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     graph.addCells(cells, parent, null, null, null);
   };
 
+
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 
   return (
@@ -1352,6 +1387,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
           <div id={GRAPH_DIV_ID} ref={divGraph} />
         </Col>
         <Col md={1}>
+        < Button onClick={exportGraphAsImage}>Export Graph</Button>
           <GraphSidebar graph={graph} recentreView={recentreView} />
         </Col>
       </Row>
