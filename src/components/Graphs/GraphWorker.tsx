@@ -140,6 +140,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
+  const [showWarning, setShowWarning] = useState(false);
 
   /**
    * Check if goals list have functional goals
@@ -152,51 +153,50 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     }
     return false;
   };
+
+  // const recentreView = () => {
+  //   if (graph) {
+  //     // get the list of all cells in the graph
+  //     const widthCanvas = graph.container.clientWidth;
+  //     const heightCanvas = graph.container.clientHeight;
+  //     const vertices = graph.getChildVertices();
+
+  //     // if no vertices, then just centre to (0,0)
+  //     if (vertices.length == 0) {
+  //       graph.view.setTranslate(0, 0);
+  //       graph.view.setScale(1);
+  //       return;
+  //     }
+
+  //     // if there are vertices, then find the leftmost x coord and upmost y coord
+  //     let horizontal = 0;
+  //     let vertical = 0;
+
+  //     for (let i = 0; i < vertices.length; i++) {
+  //       const curr = vertices[i].geometry;
+  //       if (curr) {
+  //         horizontal += curr?.x;
+  //         vertical += curr?.y;
+  //       }
+  //     }
+  //     const centroid_x = horizontal / vertices.length;
+  //     const centroid_y = vertical / vertices.length;
+
+  //     // recentres the view to its starting point (x = 0, y = 0)
+
+  //     graph.view.setTranslate(
+  //       -centroid_x + (widthCanvas - 100) / 2,
+  //       -centroid_y + heightCanvas / 2
+  //     );
+  //   }
+  // };
   
-  /**
-   * Re-centre/Re-scale
-   * Function for resetting zoom and recentring the graph
-   *  This is necessary when "Export" is pressed to help export the graph to the
-   *    right resolution. to properly locate the canvas view for the export
-   *    function, we actually need to centre the view such that:
-   *      x = x coord of leftmost symbol; and
-   *      y = y coord of topmost symbol
-   */
   const recentreView = () => {
     if (graph) {
-      // get the list of all cells in the graph
-      const widthCanvas = graph.container.clientWidth;
-      const heightCanvas = graph.container.clientHeight;
-      const vertices = graph.getChildVertices();
-
-      // if no vertices, then just centre to (0,0)
-      if (vertices.length == 0) {
-        graph.view.setTranslate(0, 0);
-        graph.view.setScale(1);
-        return;
-      }
-
-      // if there are vertices, then find the leftmost x coord and upmost y coord
-      let horizontal = 0;
-      let vertical = 0;
-
-      for (let i = 0; i < vertices.length; i++) {
-        const curr = vertices[i].geometry;
-        if (curr) {
-          horizontal += curr?.x;
-          vertical += curr?.y;
-        }
-      }
-      const centroid_x = horizontal / vertices.length;
-      const centroid_y = vertical / vertices.length;
-
-      // recentres the view to its starting point (x = 0, y = 0)
-
-      graph.view.setTranslate(
-        -centroid_x + (widthCanvas - 100) / 2,
-        -centroid_y + heightCanvas / 2
-      );
+      graph.view.setScale(1);
+      graph.center();
     }
+    console.log("center")
   };
 
   const adjustFontSize = (
@@ -484,7 +484,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         image: image,
       }
     );
-    const edge = graph.insertEdge(null, null, "", source, node);
+    graph.insertEdge(null, null, "", source, node);
 
     // if no root goal is registered, then store this as root
     if (rootGoalWrapper.value === null) {
@@ -781,7 +781,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         }
       );
     });
-
+    
     return legend;
   };
 
@@ -1001,8 +1001,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       qualitiesGlob,
       stakeholdersGlob
     );
-    recentreView();
     graph.getDataModel().endUpdate();
+    recentreView();
   };
 
   const renderGraph = () => {
@@ -1057,8 +1057,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       qualitiesGlob,
       stakeholdersGlob
     );
-    recentreView();
     graph.getDataModel().endUpdate();
+    recentreView();
   };
 
   // First useEffect to set up graph. Only run on mount.
@@ -1075,8 +1075,16 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       graphListener(graphInstance);
       supportFunctions(graphInstance);
       registerCustomShapes();
-
       setGraph(graphInstance);
+
+      // Cleanup function to destroy graph
+      return () => {
+        if (graph) {
+          console.log("Destroy");
+          graph.destroy();
+          setGraph(null); // Reset state
+        }
+      };
     }
   }, []);
 
@@ -1088,194 +1096,19 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         // Check if there are functional goals
         if (hasFunctionalGoals(cluster)) {
           renderGraph();
+          setShowWarning(false);
         } 
         else {
           console.warn("No functional goals found.");
+          setShowWarning(true);
         }
-      }
-      // Render example graph
+      } 
       else {
         renderExampleGraph();
       }
     }
   }, [cluster, graph]);
 
-  // --------------------------------------------------------------------------------------------------------------------------------------------------
-  // graphXML content(should have a way to separate codes into another file)
-
-  interface Secret {
-    token: string;
-    uid: string;
-    uuid?: string;
-  }
-
-  interface ExportResponse {
-    png: {
-      data: number[];
-    };
-    version: string;
-  }
-
-  interface Navigator {
-    msSaveOrOpenBlob?: (blob: Blob, defaultName?: string) => boolean;
-  }
-
-  /* const exportModel = () => {
-    recentreView();
-
-    const payload = Cookies.get("LOKIDIED") ?? '{token: "", uid: "", uiid: ""}';
-    const SECRET: Secret = JSON.parse(payload);
-    const FILENAME = "MM_image";
-
-    const token = SECRET.token;
-    const userId = SECRET.uid;
-
-    const modelId = Cookies.get("CMID");
-    const exportURL = `/goal_model/exportToPng/${userId}/${modelId}`;
-
-    const svg = document.getElementsByTagName("svg")[0];
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-
-    const style = svg.getAttribute("style")?.split(";") ?? [];
-    const width = style[3]?.split(":")[1];
-    const height = style[4]?.split(":")[1];
-
-    if (width && height) {
-      svg.setAttribute("width", width);
-      svg.setAttribute("height", height);
-    }
-
-    const serializer = new XMLSerializer();
-    const ser = serializer.serializeToString(svg);
-
-    axios
-      .post<ExportResponse>(
-        exportURL,
-        { svg: ser },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "json",
-        }
-      )
-      .then((response) => {
-        const res = response.data;
-        console.log(res.png.data);
-        const data = new Uint8Array(res.png.data);
-        const pngFile = new Blob([data], { type: "image/png" });
-
-        const navigator = window.navigator as Navigator;
-        if (navigator.msSaveOrOpenBlob) {
-          // IE10+
-          navigator.msSaveOrOpenBlob(pngFile, FILENAME);
-        } else {
-          const a = document.createElement("a"),
-            url = URL.createObjectURL(pngFile);
-          a.href = url;
-          a.download = res.version + ".png";
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          }, 0);
-        }
-      })
-      .catch((error) => {
-        console.error("There was an error!", error);
-      });
-  };
- */
-
-  /**
-   * send XML to backend
-   * @param isTemplate
-   */
-  /* const sendXML = (isTemplate: boolean) => {
-    const graph = graphRef;
-    if (!graph) return;
-
-    const payload = Cookies.get("LOKIDIED") ?? '{token: "", uid: "", uiid: ""}';
-
-    const SECRET: Secret = JSON.parse(payload);
-
-    const token = SECRET.token;
-    const userId = SECRET.uid;
-
-    const modelId = Cookies.get("CMID");
-    let url = `/goal_model/xml/${userId}/${modelId}`;
-
-    if (isTemplate) {
-      const templateId = Cookies.get("TID");
-      url = `/template/${userId}/${templateId}`;
-    }
-
-    recentreView();
-
-    const xml = parseToXML(graph);
-    const svg = graph.container.firstElementChild as SVGSVGElement;
-
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-
-    const style = svg.getAttribute("style")?.split(";") ?? [];
-    const width = style[3]?.split(":")[1];
-    const height = style[4]?.split(":")[1];
-
-    if (width && height) {
-      svg.setAttribute("width", width);
-      svg.setAttribute("height", height);
-    }
-
-    const serializer = new XMLSerializer();
-    const ser = serializer.serializeToString(svg);
-
-    axios
-      .put(
-        url,
-        { xml: xml, svg: ser },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "json",
-        }
-      )
-      .then(() => {
-        // handle success
-      })
-      .catch((error) => {
-        // handle error
-      });
-  };
- */
-  /**
-   * get XML from backend
-   */
-  /* const getXML = () => {
-    const payload = Cookies.get("LOKIDIED") ?? '{token: "", uid: "", uiid: ""}';
-
-    const SECRET = JSON.parse(payload);
-
-    const token = SECRET.token;
-    const userId = SECRET.uid;
-
-    const modelId = Cookies.get("CMID");
-    const url = `/goal_model/xml/${userId}/${modelId}`;
-
-    // the API of upload pictures
-    axios
-      .get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        // handle success
-      })
-      .catch(() => {
-        // handle error
-      });
-  };
- */
   /**
    * Parses the graph to XML, to be saved/loaded in a differenct session.
    */
@@ -1284,38 +1117,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     const node = encoder.encode(graph.getDataModel());
     const xml = xmlUtils.getXml(node);    
     return xml;
-  };
-
-  // Function to export graph as an image
-  const exportGraphAsImage = () => {
-    if (!graph) {
-      return;
-    }
-
-    // Get the container holding the SVG
-    const svgElement = graph.getContainer().querySelector('svg');
-
-    if (!svgElement) {
-      console.error('Failed to find SVG element in the graph container.');
-      return;
-    }
-
-    // Serialize the SVG element to a string
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svgElement);
-
-    // Create a Blob and trigger download
-    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'graph.svg';
-    link.click();
-
-    // Step 4: Clean up
-    URL.revokeObjectURL(url);
-
   };
 
   /**
@@ -1357,7 +1158,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <WarningMessage cluster={cluster} />
+      <WarningMessage showWarning={showWarning} />
       <Container>
         <Row className="row">
           <Col md={11}>
@@ -1369,7 +1170,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         </Row>
       </Container>
     </div>
-    );
+  );
 };
 
 // ---------------------------------------------------------------------------
