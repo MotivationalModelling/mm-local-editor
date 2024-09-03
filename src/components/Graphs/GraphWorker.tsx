@@ -29,7 +29,7 @@ import {
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
-import Button from 'react-bootstrap/Button';
+import WarningMessage from "./WarningMessage";
 import { useGraph } from "../context/GraphContext";
 // ---------------------------------------------------------------------------
 
@@ -140,7 +140,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
-  const [warningShown, setWarningShown] = useState(false); // Track whether the warning has been shown
 
   /**
    * Check if goals list have functional goals
@@ -1089,16 +1088,9 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         // Check if there are functional goals
         if (hasFunctionalGoals(cluster)) {
           renderGraph();
-          setWarningShown(false); // Reset warningShown when functional goals are present
         } 
         else {
-          // Show warning and render the example graph
-          console.warn("No functional goals found. Rendering the example graph.");
-          if (!warningShown) {
-            alert("No functional goals found. Rendering the example graph.");
-            setWarningShown(true);
-          }
-          renderExampleGraph();
+          console.warn("No functional goals found.");
         }
       }
       // Render example graph
@@ -1364,17 +1356,20 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 
   return (
-    <Container>
-      <Row className="row">
-        <Col md={11}>
-          <div id={GRAPH_DIV_ID} ref={divGraph} />
-        </Col>
-        <Col md={1}>
-          <GraphSidebar graph={graph} recentreView={recentreView} />
-        </Col>
-      </Row>
-    </Container>
-  );
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <WarningMessage cluster={cluster} />
+      <Container>
+        <Row className="row">
+          <Col md={11}>
+            <div id={GRAPH_DIV_ID} ref={divGraph} />
+          </Col>
+          <Col md={1}>
+            <GraphSidebar graph={graph} recentreView={recentreView} />
+          </Col>
+        </Row>
+      </Container>
+    </div>
+    );
 };
 
 // ---------------------------------------------------------------------------
