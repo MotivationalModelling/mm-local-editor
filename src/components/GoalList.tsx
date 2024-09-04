@@ -155,10 +155,15 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		// Check whether all goals are selected in the table (excluding undefined ones)
 		const isAllSelected = () => {
 			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
-			return allItemsInTab && allItemsInTab.length > 0 &&
+			// Return true if all items in goal list are selected and list is not empty
+			return (
+				allItemsInTab &&
+				allItemsInTab.length > 0 &&
+				allItemsInTab.filter(row => row.content.trim() !== "").length > 0 && 
 				allItemsInTab
-					.filter(row => row.content.trim() !== "") // Exclude empty goals
-					.every(row => groupSelected.some(item => item.id === row.id));
+					.filter(row => row.content.trim() !== "") 
+					.every(row => groupSelected.some(item => item.id === row.id))
+			);
 		};
 		
 		// Select all items in the goals tab
@@ -252,7 +257,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 											type="checkbox"
 											label={isAllSelected() ? "Deselect All" : "Select All"}
 											onChange={handleSelectAll}
-											checked={isAllSelected()} // Set checkbox state based on selection
+											checked={isAllSelected()} 
 										/>
 									</Col>
 								</Form.Group>
