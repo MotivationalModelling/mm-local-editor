@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ColorResult, ChromePicker }  from "react-color";
+import { ColorResult, CompactPicker }  from "react-color";
 import {
   Graph,
   MaxToolbar,
@@ -388,7 +388,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
     <div id={SIDEBAR_DIV_ID} ref={divSidebar}>
       {showPicker && (
         <div id="color-picker-container" style={{ position: "absolute", top: "10px", right: "100px" }}>
-          <ChromePicker color={selectedColor} onChangeComplete={handleColorChange} />
+          <CompactPicker color={selectedColor} onChangeComplete={handleColorChange} />
         </div>
       )}
       <button onClick={handleButtonClick}>Select Colour</button>
