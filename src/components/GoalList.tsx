@@ -186,6 +186,26 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 
+		const handleDeleteSelected = () => {
+			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
+    
+    if (confirmed) {
+        const newTabData = tabData.map((tab) => {
+            if (tab.label === activeKey) {
+                // Get selected goals
+                const newRows = tab.rows.filter(
+                    (row) => !groupSelected.some((selected) => selected.id === row.id)
+                );
+                return { ...tab, rows: newRows };
+            }
+            return tab;
+        });
+
+        setTabData(newTabData);
+        setGroupSelected([]); // Clear selected group after deletion
+    }
+		};
+
 		const GroupDropBtn = () => {
 			return (
 				<div className="d-flex justify-content-end my-2">
@@ -205,6 +225,14 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						{/* Click to Drop To Right Panel */}
 						Add Group
 					</Button>
+					<Button
+						variant="danger"
+						className="me-2"
+						disabled={groupSelected.length <= 0}
+						onClick={handleDeleteSelected}
+					>
+						Delete Selected
+            		</Button>
 
 					<Button
 						variant="primary"
