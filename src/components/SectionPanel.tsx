@@ -370,6 +370,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }
   };
 
+  // Function to reset treeData and clear all goals
+  const resetTreeDataToEmpty = () => {
+    setTreeData([]); // Empty treeData
+  };
+
+  // Function to reset treeData to the default set of goals
+  const resetTreeDataToDefault = () => {
+    setTreeData([]); // Set to default data (define defaultTreeData as needed)
+  };
+
  
   return (
     <div
@@ -462,7 +472,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker cluster={cluster} onExportGraph={(func) => (exportGraphRef.current = func)}/>
+        <GraphWorker cluster={cluster} onResetEmpty={resetTreeDataToEmpty} onResetDefault={resetTreeDataToDefault} />
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>

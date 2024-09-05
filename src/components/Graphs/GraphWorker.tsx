@@ -30,6 +30,7 @@ import {
 
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
+import ResetGraphButton from "../ResetGraph.tsx";
 import { useGraph } from "../context/GraphContext";
 // ---------------------------------------------------------------------------
 
@@ -180,11 +181,13 @@ type Cluster = {
 
 type GraphWorkerProps = {
   cluster: Cluster;
+  onResetEmpty: () => void; // Function to reset the graph to empty
+  onResetDefault: () => void; // Function to reset the graph to default
 };
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
+const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onResetDefault }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
@@ -192,6 +195,41 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
   );
   const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
+  const [showWarning, setShowWarning] = useState(false);
+  //const [emptyReset, setEmptyReset] = useState(false);
+
+  /**
+   * Check if goals list have functional goals
+   */
+  const hasFunctionalGoals = (cluster: Cluster): boolean => {
+    for (const goal of cluster.ClusterGoals) {
+      if (goal.GoalType === "Functional") {
+        return true;
+      }
+    }
+    return false;
+  };
+
+   // Function to reset the graph to empty
+   const resetEmptyGraph = () => {
+    if (graph) {
+      graph.getDataModel().clear();
+      //onResetEmpty();
+      setShowWarning(false);
+      //setEmptyReset(true);
+    }
+  };
+
+  // Function to reset the graph to the default set of goals
+  const resetDefaultGraph = () => {
+    if (graph) {
+      graph.getDataModel().clear();
+      //onResetDefault();
+      renderExampleGraph();
+      setShowWarning(false);
+      //setEmptyReset(false);
+    }
+  };
 
   // const recentreView = () => {
   //   if (graph) {
@@ -230,6 +268,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   //   }
   // };
   
+
+
   const recentreView = () => {
     if (graph) {
       graph.view.setScale(1);
@@ -1081,7 +1121,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
         renderExampleGraph();
       }
     }
-  }, [cluster, graph, renderExampleGraph, renderGraph]);
+  }, [cluster, graph, renderExampleGraph]);
 
   /**
    * Parses the graph to XML, to be saved/loaded in a differenct session.
@@ -1132,6 +1172,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <ResetGraphButton resetEmptyGraph={resetEmptyGraph} resetDefaultGraph={resetDefaultGraph}></ResetGraphButton>
       <Container>
         <Row className="row">
           <Col md={11}>
