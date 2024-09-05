@@ -15,9 +15,9 @@ import {
   Codec,
   ModelXmlSerializer,
 } from "@maxgraph/core";
-import { GoalModelLayout } from "./GoalModelLayout";
-import { useRef, useEffect, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import {GoalModelLayout} from "./GoalModelLayout";
+import {useRef, useEffect, useState, useMemo} from "react";
+import {Container, Row, Col} from "react-bootstrap";
 import "./GraphWorker.css";
 import {
   registerCustomShapes,
@@ -99,6 +99,54 @@ const STAKEHOLDER_TYPE = "Stakeholder";
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
 
+// Predefined constant cluster to use for the example graph
+const defaultCluster: Cluster = {
+  ClusterGoals: [{
+      GoalID: 1,
+      GoalType: "Functional",
+      GoalContent: "Functional Goal",
+      SubGoals: [{
+          GoalID: 6,
+          GoalType: "Functional",
+          GoalContent: "Functional Goal",
+          SubGoals: [{
+              GoalID: 1,
+              GoalType: "Functional",
+              GoalContent: "Functional Goal",
+              SubGoals: []
+            }
+          ]
+        }, {
+          GoalID: 1,
+          GoalType: "Functional",
+          GoalContent: "Functional Goal",
+          SubGoals: []
+        }
+      ]
+    }, {
+      GoalID: 2,
+      GoalType: "Quality",
+      GoalContent: "Quality Goals",
+      SubGoals: []
+    }, {
+      GoalID: 3,
+      GoalType: "Emotional",
+      GoalContent: "Emotional Goals",
+      SubGoals: []
+    }, {
+      GoalID: 4,
+      GoalType: "Stakeholder",
+      GoalContent: "Stakeholders ",
+      SubGoals: []
+    }, {
+      GoalID: 5,
+      GoalType: "Negative",
+      GoalContent: "Negatives",
+      SubGoals: []
+    }
+  ]
+};
+
 // ---------------------------------------------------------------------------
 
 interface CellHistory {
@@ -140,19 +188,10 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
-  const [showWarning, setShowWarning] = useState(false);
-
-  /**
-   * Check if goals list have functional goals
-   */
-  const hasFunctionalGoals = (cluster: Cluster): boolean => {
-    for (const goal of cluster.ClusterGoals) {
-      if (goal.GoalType === "Functional") {
-        return true;
-      }
-    }
-    return false;
-  };
+  const hasFunctionalGoal = (cluster: Cluster) => (
+      cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
+  );
+  const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
 
   // const recentreView = () => {
   //   if (graph) {
@@ -898,62 +937,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
     console.log("Rendering Example Graph");
 
-    // Predefined constant cluster to use for the example graph
-    const defaultCluster: Cluster = {
-      ClusterGoals: [
-        {
-          GoalID: 1,
-          GoalType: "Functional",
-          GoalContent: "Functional Goal",
-          SubGoals: [
-            {
-              GoalID: 6,
-              GoalType: "Functional",
-              GoalContent: "Functional Goal",
-              SubGoals: [
-                {
-                  GoalID: 1,
-                  GoalType: "Functional",
-                  GoalContent: "Functional Goal",
-                  SubGoals: [],
-                },
-              ],
-            },
-            {
-              GoalID: 1,
-              GoalType: "Functional",
-              GoalContent: "Functional Goal",
-              SubGoals: [],
-            },
-          ],
-        },
-        {
-          GoalID: 2,
-          GoalType: "Quality",
-          GoalContent: "Quality Goals",
-          SubGoals: [],
-        },
-        {
-          GoalID: 3,
-          GoalType: "Emotional",
-          GoalContent: "Emotional Goals",
-          SubGoals: [],
-        },
-        {
-          GoalID: 4,
-          GoalType: "Stakeholder",
-          GoalContent: "Stakeholders ",
-          SubGoals: [],
-        },
-        {
-          GoalID: 5,
-          GoalType: "Negative",
-          GoalContent: "Negatives",
-          SubGoals: [],
-        },
-      ],
-    };
-
     // Declare necessary variables
     // Use rootGoalWrapper to be able to update its value
     let rootGoal: Cell | null = null;
@@ -1093,21 +1076,12 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
     if (graph) {
       // If user has goals defined, draw the graph
       if (cluster.ClusterGoals.length > 0) {
-        // Check if there are functional goals
-        if (hasFunctionalGoals(cluster)) {
-          renderGraph();
-          setShowWarning(false);
-        } 
-        else {
-          console.warn("No functional goals found.");
-          setShowWarning(true);
-        }
-      } 
-      else {
+        renderGraph();
+      } else {
         renderExampleGraph();
       }
     }
-  }, [cluster, graph]);
+  }, [cluster, graph, renderExampleGraph, renderGraph]);
 
   /**
    * Parses the graph to XML, to be saved/loaded in a differenct session.
@@ -1158,16 +1132,18 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster }) => {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <WarningMessage showWarning={showWarning} />
       <Container>
         <Row className="row">
           <Col md={11}>
-            <div id={GRAPH_DIV_ID} ref={divGraph} />
+            <div id={GRAPH_DIV_ID} ref={divGraph}/>
           </Col>
           <Col md={1}>
             <GraphSidebar graph={graph} recentreView={recentreView} />
           </Col>
         </Row>
+      {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
+          <WarningMessage message="No functional goals found"/>
+      )}
       </Container>
     </div>
   );
