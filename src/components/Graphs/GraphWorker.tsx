@@ -32,6 +32,8 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "../ResetGraph.tsx";
 import { useGraph } from "../context/GraphContext";
+import {Cluster, ClusterGoal, Goal} from "../types.ts";
+
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -607,7 +609,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
    * : source, the parent goal of the given array, defaults to null
    */
   const renderGoals = (
-    goals: Cluster["ClusterGoals"],
+    goals: ClusterGoal[],
     graph: Graph,
     source: Cell | null = null,
     // rootGoal: Cell | null,
