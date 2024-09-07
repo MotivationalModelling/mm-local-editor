@@ -29,8 +29,9 @@ import {
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
-import {Cluster, ClusterGoal, Goal} from "../types.ts";
-
+import WarningMessage from "./WarningMessage";
+import ResetGraphButton from "../ResetGraph.tsx";
+import { useGraph } from "../context/GraphContext";
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -606,7 +607,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
    * : source, the parent goal of the given array, defaults to null
    */
   const renderGoals = (
-    goals: ClusterGoal[],
+    goals: Cluster["ClusterGoals"],
     graph: Graph,
     source: Cell | null = null,
     // rootGoal: Cell | null,
@@ -1057,73 +1058,39 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
       return;
     }
 
-        // disable context menu
-        InternalEvent.disableContextMenu(container);
-        //--------------------------------this should change to render from xml file --------------------------
-        // grab the clusters from window.jsonData
-        if (window.jsonData) {
-          const clusters = window.jsonData.GoalModelProject.Clusters as Cluster[];
+    // Start the transaction to render the graph
+    graph.getDataModel().beginUpdate();
+    renderGoals(
+      cluster.ClusterGoals,
+      graph,
+      null,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    rootGoal = rootGoalWrapper.value;
+    layoutFunctions(graph, rootGoal);
+    associateNonFunctions(
+      graph,
+      rootGoal,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    graph.getDataModel().endUpdate();
+    recentreView();
+  };
 
-          // render the graph
-          graph.getDataModel().beginUpdate(); // start transaction
-          for (let i = 0; i < clusters.length; i++) {
-            // grab goal hierarchy from the cluster
-            const goals = clusters[i].ClusterGoals;
-            // ... then call render
-            renderGoals(
-              goals,
-              graph,
-              null,
-              rootGoal,
-              emotionsGlob,
-              negativesGlob,
-              qualitiesGlob,
-              stakeholdersGlob
-            );
-          }
-          layoutFunctions(graph, rootGoal);
-          associateNonFunctions(
-            graph,
-            rootGoal,
-            emotionsGlob,
-            negativesGlob,
-            qualitiesGlob,
-            stakeholdersGlob
-          );
-          graph.getDataModel().endUpdate(); // end transaction
-        }
-      };
+  // First useEffect to set up graph. Only run on mount.
+  useEffect(() => {
+    const graphContainer: HTMLElement | undefined =
+      divGraph.current || undefined;
 
-      graph.getDataModel().endUpdate();
-    }
-
-    registerCustomShapes();
-    const graph = graphRef;
-    if (!graph) return;
-    const parent = graph.getDefaultParent();
-    graph.batchUpdate(() => {
-      console.log("graphing batch update");
-      const vertex1 = graph.insertVertex(
-        parent,
-        null,
-        "person shape",
-        100,
-        40,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" }
-      );
-      const vertex2 = graph.insertVertex(
-        parent,
-        null,
-        "parallelogram shape",   
-        500,
-        100,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: CLOUD_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex1, vertex2);
+    if (graphContainer) {
+      InternalEvent.disableContextMenu(graphContainer);
 
       const graphInstance = new Graph(graphContainer); // Create the graph
 
