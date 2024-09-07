@@ -32,7 +32,6 @@ import {
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
-import {Cluster, ClusterGoal, Goal} from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -504,7 +503,7 @@ const GraphWorker = () => {
    * : source, the parent goal of the given array, defaults to null
    */
   const renderGoals = (
-    goals: ClusterGoal[],
+    goals,
     graph: Graph,
     source: Cell | null = null,
     rootGoal: Cell | null,
@@ -958,7 +957,7 @@ const GraphWorker = () => {
         //--------------------------------this should change to render from xml file --------------------------
         // grab the clusters from window.jsonData
         if (window.jsonData) {
-          const clusters = window.jsonData.GoalModelProject.Clusters as Cluster[];
+          const clusters = window.jsonData.GoalModelProject.Clusters;
 
           // render the graph
           graph.getDataModel().beginUpdate(); // start transaction
