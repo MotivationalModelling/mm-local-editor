@@ -21,11 +21,11 @@ import {Container, Row, Col} from "react-bootstrap";
 import "./GraphWorker.css";
 import {
   registerCustomShapes,
-  NEGATIVE_SHAPE,
-  PERSON_SHAPE,
-  CLOUD_SHAPE,
-  PARALLELOGRAM_SHAPE,
-  HEART_SHAPE,
+  // NEGATIVE_SHAPE,
+  // PERSON_SHAPE,
+  // CLOUD_SHAPE,
+  // PARALLELOGRAM_SHAPE,
+  // HEART_SHAPE,
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
@@ -47,7 +47,7 @@ const CLOUD_PATH = "img/Cloud.png";
 const PERSON_PATH = "img/Stakeholder.png";
 
 // some image path
-const PATH_EDGE_HANDLER_ICON = "img/link.png";
+// const PATH_EDGE_HANDLER_ICON = "img/link.png";
 
 // default width/height of the root goal in the graph
 const SYMBOL_WIDTH = 145;
@@ -108,21 +108,25 @@ const defaultCluster: Cluster = {
       GoalID: 1,
       GoalType: "Functional",
       GoalContent: "Functional Goal",
+      GoalNote: "",
       SubGoals: [{
           GoalID: 6,
           GoalType: "Functional",
           GoalContent: "Functional Goal",
+          GoalNote: "",
           SubGoals: [{
-              GoalID: 1,
+              GoalID: 7,
               GoalType: "Functional",
               GoalContent: "Functional Goal",
+              GoalNote: "",
               SubGoals: []
             }
           ]
         }, {
-          GoalID: 1,
+          GoalID: 8,
           GoalType: "Functional",
           GoalContent: "Functional Goal",
+          GoalNote: "",
           SubGoals: []
         }
       ]
@@ -130,21 +134,25 @@ const defaultCluster: Cluster = {
       GoalID: 2,
       GoalType: "Quality",
       GoalContent: "Quality Goals",
+      GoalNote: "",
       SubGoals: []
     }, {
       GoalID: 3,
       GoalType: "Emotional",
       GoalContent: "Emotional Goals",
+      GoalNote: "",
       SubGoals: []
     }, {
       GoalID: 4,
       GoalType: "Stakeholder",
       GoalContent: "Stakeholders ",
+      GoalNote: "",
       SubGoals: []
     }, {
       GoalID: 5,
       GoalType: "Negative",
       GoalContent: "Negatives",
+      GoalNote: "",
       SubGoals: []
     }
   ]
@@ -160,26 +168,6 @@ interface GlobObject {
   [key: string]: string[];
 }
 
-// DropHandler from DragSource @maxgraph/core
-// type DropHandler = (
-//   graph: Graph,
-//   evt: MouseEvent,
-//   cell: Cell | null,
-//   x?: number,
-//   y?: number
-// ) => void;
-
-// As in SectionPanel
-type Goal = {
-  GoalID: number;
-  GoalType: string;
-  GoalContent: string;
-  SubGoals: Goal[];
-};
-
-type Cluster = {
-  ClusterGoals: Goal[];
-};
 
 type GraphWorkerProps = {
   cluster: Cluster;
@@ -193,24 +181,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
+  const [showWarning, setShowWarning] = useState(false);
+  //const [emptyReset, setEmptyReset] = useState(false);
+
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
   );
   const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
-  const [showWarning, setShowWarning] = useState(false);
-  //const [emptyReset, setEmptyReset] = useState(false);
-
-  /**
-   * Check if goals list have functional goals
-   */
-  const hasFunctionalGoals = (cluster: Cluster): boolean => {
-    for (const goal of cluster.ClusterGoals) {
-      if (goal.GoalType === "Functional") {
-        return true;
-      }
-    }
-    return false;
-  };
 
    // Function to reset the graph to empty
    const resetEmptyGraph = () => {
@@ -233,52 +210,21 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     }
   };
 
-  // const recentreView = () => {
-  //   if (graph) {
-  //     // get the list of all cells in the graph
-  //     const widthCanvas = graph.container.clientWidth;
-  //     const heightCanvas = graph.container.clientHeight;
-  //     const vertices = graph.getChildVertices();
-
-  //     // if no vertices, then just centre to (0,0)
-  //     if (vertices.length == 0) {
-  //       graph.view.setTranslate(0, 0);
-  //       graph.view.setScale(1);
-  //       return;
-  //     }
-
-  //     // if there are vertices, then find the leftmost x coord and upmost y coord
-  //     let horizontal = 0;
-  //     let vertical = 0;
-
-  //     for (let i = 0; i < vertices.length; i++) {
-  //       const curr = vertices[i].geometry;
-  //       if (curr) {
-  //         horizontal += curr?.x;
-  //         vertical += curr?.y;
-  //       }
-  //     }
-  //     const centroid_x = horizontal / vertices.length;
-  //     const centroid_y = vertical / vertices.length;
-
-  //     // recentres the view to its starting point (x = 0, y = 0)
-
-  //     graph.view.setTranslate(
-  //       -centroid_x + (widthCanvas - 100) / 2,
-  //       -centroid_y + heightCanvas / 2
-  //     );
-  //   }
-  // };
-  
-
-
   const recentreView = () => {
     if (graph) {
-      graph.view.setScale(1);
+      graph.fit();
       graph.center();
     }
     console.log("center")
   };
+  
+  // const recentreView = () => {
+  //   if (graph) {
+  //     graph.view.setScale(1);
+  //     graph.center();
+  //   }
+  //   console.log("center")
+  // };
 
   const adjustFontSize = (
     theOldStyle: CellStyle,
@@ -478,6 +424,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
       return null;
     };
   };
+
   /**
    * Sidebar
    */
@@ -525,7 +472,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
    * : source, the parent of the goal
    */
   const renderFunction = (
-    goal: Goal,
+    goal: ClusterGoal,
     graph: Graph,
     source: Cell | null = null,
     rootGoalWrapper: { value: Cell | null },
@@ -600,6 +547,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
       qualitiesGlob,
       stakeholdersGlob
     );
+
   };
 
   /**

@@ -5,6 +5,7 @@ import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import { Label, TreeItem, useFileContext } from "./context/FileProvider";
+import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
 // use for testing xml validation only
@@ -47,16 +48,16 @@ const INITIAL_PROPORTIONS = {
 
 const DEFAULT_HEIGHT = "800px";
 
-type Goal = {
-  GoalID: number;
-  GoalType: string;
-  GoalContent: string;
-  SubGoals: Goal[];
-};
+// type Goal = {
+//   GoalID: number;
+//   GoalType: string;
+//   GoalContent: string;
+//   SubGoals: Goal[];
+// };
 
-type Cluster = {
-  ClusterGoals: Goal[];
-};
+// type Cluster = {
+//   ClusterGoals: Goal[];
+// };
 
 
 type SectionPanelProps = {
@@ -95,8 +96,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
-  // Store export function
-  const exportGraphRef = useRef<() => void>(() => {});
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
@@ -326,27 +325,27 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }
   }, [paddingX, showGoalSection, showGraphSection]); 
 
-  // Mapping of old types to new types
-  const typeMapping: Record<string, string> = {
-    Who: "Stakeholder",
-    Do: "Functional",
-    Be: "Quality",
-    Feel: "Emotional",
-    Concern: "Negative",
-  };
+    // Mapping of old types to new types
+    const typeMapping: Record<string, GoalType> = {
+      Who: "Stakeholder",
+      Do: "Functional",
+      Be: "Quality",
+      Feel: "Emotional",
+      Concern: "Negative",
+    };
 
-  // Function to convert TreeItem to Goal
-  const convertTreeItemToGoal = (item: TreeItem): Goal => {
+  // Function to convert TreeItem to ClusterGoal
+  const convertTreeItemToGoal = (item: TreeItem): ClusterGoal => {
     console.log("Converting type: ", item.type, " to ", typeMapping[item.type]);
     return {
       GoalID: item.id,
       GoalType: typeMapping[item.type],
       GoalContent: item.content,
+      GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
       SubGoals: item.children ? item.children.map(convertTreeItemToGoal) : [],
     };
   };
   
-
   // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
   const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster => {
     return {
@@ -362,13 +361,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       return newCluster;
     });
   }, [treeData]);
-
-  // Function to handle exporting graph when button is clicked
-  const handleExportGraph = () => {
-    if (exportGraphRef.current) {
-      exportGraphRef.current();
-    }
-  };
 
   // Function to reset treeData and clear all goals
   const resetTreeDataToEmpty = () => {

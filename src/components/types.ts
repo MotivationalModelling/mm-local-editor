@@ -3,7 +3,7 @@ import {z} from "zod";
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
 
 export interface GoalBase {
-    GoalID: string,
+    GoalID: number
     GoalType: GoalType
     GoalContent: string
     GoalNote: string
@@ -26,8 +26,7 @@ export interface GoalList extends Record<GoalType, Goal[]> {
 }
 
 export interface Cluster {
-    ClusterID: string
-    ClusterGoals: ClusterGoal[]
+    ClusterGoals: ClusterGoal[];
 }
 
 // XXX really -- three different notes fields?!?!
@@ -44,7 +43,7 @@ export const GoalTypeSchema = z.enum(
 );
 
 export const GoalBaseSchema = z.object({
-    GoalID: z.string(),
+    GoalID: z.number(),
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string()
@@ -73,7 +72,6 @@ export const ClusterGoalSchema: z.ZodType<ClusterGoal> = GoalBaseSchema.extend({
 });
 
 export const ClusterSchema = z.object({
-    ClusterID: z.string(),
     ClusterGoals: ClusterGoalSchema.array()
 });
 
