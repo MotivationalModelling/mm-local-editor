@@ -189,36 +189,29 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		const handleDeleteSelected = () => {
 			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
     
-    if (confirmed) {
-        const newTabData = tabData.map((tab) => {
-            if (tab.label === activeKey) {
-                // Get selected goals
-                const newRows = tab.rows.filter(
-                    (row) => !groupSelected.some((selected) => selected.id === row.id)
-                );
-                return { ...tab, rows: newRows };
-            }
-            return tab;
-        });
+		if (confirmed) {
+			const newTabData = tabData.map((tab) => {
+				if (tab.label === activeKey) {
+					// Get selected goals
+					const newRows = tab.rows.filter(
+						(row) => !groupSelected.some((selected) => selected.id === row.id)
+					);
+					return { ...tab, rows: newRows };
+				}
+				return tab;
+			});
 
-        setTabData(newTabData);
-        setGroupSelected([]); // Clear selected group after deletion
-    }
+			setTabData(newTabData);
+			setGroupSelected([]); // Clear selected group after deletion
+    		}
 		};
 
 		const GroupDropBtn = () => {
 			return (
 				<div className="d-flex justify-content-end my-2">
-					<Button 
-                className="me-2"
-                onClick={() => handleAddRow(activeKey || '')}
-                variant="primary"
-            > Add Goal
-            	</Button>
 					<Button
 						variant="primary"
 						className="me-2"
-						// style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
 						disabled={groupSelected.length <= 0}
 						onClick={handleDropGroupSelected}
 					>
@@ -233,18 +226,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					>
 						Delete Selected
             		</Button>
-
-					<Button
-						variant="primary"
-						style={{
-							display: tabData.some((tab) => tab.rows.length > 0)
-								? "flex"
-								: "none",
-						}}
-						onClick={handleSelectAll}
-					>
-						{isAllSelected() ? "Deselect All" : "Select All"}
-					</Button>
 				</div>
 			);
 		};
@@ -346,9 +327,18 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										)}
 									</Form.Group>
 								))}
+								<div className="text-muted text-left mt-3">
+								<Button 
+									className="me-2" 
+									onClick={() => handleAddRow(activeKey || "")} 
+									variant="primary"
+								>
+									+
+								</Button>
 								<div className="text-muted text-end mt-3">
 									Drag goals to arrange hierarchy
 								</div>
+							</div>
 							</Tab.Pane>
 						))}
 					</Tab.Content>
