@@ -14,7 +14,7 @@ import {
   Codec,
   ModelXmlSerializer,
 } from "@maxgraph/core";
-
+import {GoalModelLayout} from "./GoalModelLayout";
 import {useRef, useEffect, useState, useMemo} from "react";
 import {Container, Row, Col} from "react-bootstrap";
 import { renderFunction, renderGoals, renderNonFunction, renderLegend, layoutFunctions, associateNonFunctions } from './GraphHelpers';
@@ -30,9 +30,9 @@ import {
 
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
-import ResetGraphButton from "../ResetGraph.tsx";
+import ResetGraphButton from "../ResetGraphButton.tsx";
 import { useGraph } from "../context/GraphContext";
-import {Cluster, ClusterGoal, Goal} from "../types.ts";
+import {Cluster, ClusterGoal} from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -43,6 +43,20 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
+
+// preferred vertical and horizontal spacing between functional goals; note
+//   the autolayout won't always accomodate these - it will depend on the
+//   topology of the model you are trying to render
+const VERTICAL_SPACING = 80;
+const HORIZONTAL_SPACING = 100;
+
+// Define shape type
+const FUNCTIONAL_TYPE = "Functional";
+const EMOTIONAL_TYPE = "Emotional";
+const NEGATIVE_TYPE = "Negative";
+const QUALITY_TYPE = "Quality";
+const STAKEHOLDER_TYPE = "Stakeholder";
+
 
 // Predefined constant cluster to use for the example graph
 const defaultCluster: Cluster = {
@@ -100,6 +114,9 @@ const defaultCluster: Cluster = {
   ]
 };
 
+// random string, used to store unassociated non-functions in accumulators
+const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
+
 // ---------------------------------------------------------------------------
 
 interface CellHistory {
@@ -114,17 +131,16 @@ interface GlobObject {
 type GraphWorkerProps = {
   cluster: Cluster;
   onResetEmpty: () => void; // Function to reset the graph to empty
-  onResetDefault: () => void; // Function to reset the graph to default
 };
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onResetDefault }) => {
+const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
-  const [showWarning, setShowWarning] = useState(false);
-  //const [emptyReset, setEmptyReset] = useState(false);
+  const [isDefaultReset, setIsDefaultReset] = useState(true);
+
 
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
@@ -135,9 +151,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
    const resetEmptyGraph = () => {
     if (graph) {
       graph.getDataModel().clear();
-      //onResetEmpty();
-      setShowWarning(false);
-      //setEmptyReset(true);
+      onResetEmpty();
+      setIsDefaultReset(false);
     }
   };
 
@@ -145,10 +160,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
   const resetDefaultGraph = () => {
     if (graph) {
       graph.getDataModel().clear();
-      //onResetDefault();
-      renderExampleGraph();
-      setShowWarning(false);
-      //setEmptyReset(false);
+      onResetEmpty();
+      setIsDefaultReset(true);
     }
   };
 
@@ -160,13 +173,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     console.log("center")
   };
   
-  // const recentreView = () => {
-  //   if (graph) {
-  //     graph.view.setScale(1);
-  //     graph.center();
-  //   }
-  //   console.log("center")
-  // };
+  const initRecentreView = () => {
+    if (graph) {
+      graph.view.setScale(1);
+      graph.center();
+    }
+    console.log("center")
+  };
 
   const adjustFontSize = (
     theOldStyle: CellStyle,
@@ -243,7 +256,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     const cellHistory: CellHistory = {};
     graph
       .getDataModel()
-      .addListener(InternalEvent.CHANGE, (sender: string, evt: EventObject) => {
+      .addListener(InternalEvent.CHANGE, (_sender: string, evt: EventObject) => {
         console.log("graph changed");
         graph.getDataModel().beginUpdate();
         evt.consume();
@@ -460,7 +473,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
       stakeholdersGlob
     );
     graph.getDataModel().endUpdate();
-    recentreView();
+    initRecentreView();
   };
 
   const renderGraph = () => {
@@ -516,7 +529,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
       stakeholdersGlob
     );
     graph.getDataModel().endUpdate();
-    recentreView();
+    initRecentreView();
   };
 
   // First useEffect to set up graph. Only run on mount.
@@ -552,11 +565,12 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
       // If user has goals defined, draw the graph
       if (cluster.ClusterGoals.length > 0) {
         renderGraph();
-      } else {
+      } 
+      else if (isDefaultReset) {
         renderExampleGraph();
       }
     }
-  }, [cluster, graph, renderExampleGraph]);
+  }, [cluster, graph, renderExampleGraph, isDefaultReset]);
 
   /**
    * Parses the graph to XML, to be saved/loaded in a differenct session.

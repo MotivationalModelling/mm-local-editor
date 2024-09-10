@@ -4,7 +4,7 @@ import { Resizable, ResizeCallback } from "re-resizable";
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { Label, TreeItem, useFileContext } from "./context/FileProvider";
+import { initialTabs, Label, TreeItem, useFileContext } from "./context/FileProvider";
 import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
@@ -22,6 +22,7 @@ const xmlData = `
     </mxCell>
   </root>
 `;
+
 const defaultStyle = {
   display: "flex",
   alignItems: "flex-start",
@@ -48,17 +49,59 @@ const INITIAL_PROPORTIONS = {
 
 const DEFAULT_HEIGHT = "800px";
 
-// type Goal = {
-//   GoalID: number;
-//   GoalType: string;
-//   GoalContent: string;
-//   SubGoals: Goal[];
-// };
-
-// type Cluster = {
-//   ClusterGoals: Goal[];
-// };
-
+// Predefined constant cluster to use for the example graph
+const defaultTreeData: TreeItem[] = [
+  {
+    id: 1,
+    content: "Functional Goal",
+    type: "Do",
+    children: [
+      {
+        id: 6,
+        content: "Functional Goal",
+        type: "Do",
+        children: [
+          {
+            id: 7,
+            content: "Functional Goal",
+            type: "Do",
+            children: []
+          }
+        ]
+      },
+      {
+        id: 8,
+        content: "Functional Goal",
+        type: "Do",
+        children: []
+      }
+    ]
+  },
+  {
+    id: 2,
+    content: "Quality Goals",
+    type: "Be",
+    children: []
+  },
+  {
+    id: 3,
+    content: "Emotional Goals",
+    type: "Feel",
+    children: []
+  },
+  {
+    id: 4,
+    content: "Stakeholders",
+    type: "Who",
+    children: []
+  },
+  {
+    id: 5,
+    content: "Negatives",
+    type: "Concern",
+    children: []
+  }
+];
 
 type SectionPanelProps = {
   showGoalSection: boolean;
@@ -353,7 +396,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     };
   };
 
-
   useEffect(() => {
     setCluster((prevCluster) => {
       const newCluster = convertTreeDataToClusters(treeData);
@@ -362,17 +404,49 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     });
   }, [treeData]);
 
-  // Function to reset treeData and clear all goals
-  const resetTreeDataToEmpty = () => {
-    setTreeData([]); // Empty treeData
-  };
+  // Reset tree data to empty, tab data to initial
+  const onResetEmpty = () => {
+    setTreeData([]);
+    //setTabData(initialTabs);
+    setGroupSelected([]);
+    setExistingItemIds([]);
+    setTreeIds([]);
+    setExistingError(false);
+  }
 
-  // Function to reset treeData to the default set of goals
-  const resetTreeDataToDefault = () => {
-    setTreeData([]); // Set to default data (define defaultTreeData as needed)
-  };
+  // // Function to reset treeData and tabData to the default set of goals
+  // const resetTreeDataToDefault = () => {
+  //   setTreeData(defaultTreeData);
+  //   updateTabDataFromTreeData(defaultTreeData); 
+  //   console.log("TREEDATA: ", defaultTreeData);
+  // };
 
- 
+  // // Function to convert defaultTree to tabData format
+  // const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
+  //   // Initialize an empty structure for the new tab data
+  //   const newTabData: TabContent[] = tabs.map((tab) => ({ 
+  //     ...tab, 
+  //     rows: [] as TreeItem[]
+  //   }));
+
+  //   // Recursively traverse the treeData and populate the corresponding tab rows
+  //   const populateTabData = (item: TreeItem) => {
+  //     const correspondingTab = newTabData.find(tab => tab.label === item.type);
+  //     if (correspondingTab) {
+  //       correspondingTab.rows.push(item);
+  //     }
+
+  //     if (item.children && item.children.length > 0) {
+  //       item.children.forEach(child => populateTabData(child));
+  //     }
+  //   };
+
+  //   // Populate the new tab data from the provided tree data
+  //   treeData.forEach(item => populateTabData(item));
+
+  //   setTabData(newTabData); // Set the new tab data
+  // };
+  
   return (
     <div
       style={{
@@ -464,7 +538,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker cluster={cluster} onResetEmpty={resetTreeDataToEmpty} onResetDefault={resetTreeDataToDefault} />
+        <GraphWorker cluster={cluster} onResetEmpty={onResetEmpty}/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>
