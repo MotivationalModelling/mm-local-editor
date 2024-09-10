@@ -13,6 +13,10 @@ export interface Goal extends GoalBase {
     Used: boolean
 }
 
+export interface GlobObject {
+    [key: string]: string[];
+  }
+
 export interface ClusterGoal extends GoalBase {
     SubGoals: ClusterGoal[]
 }
