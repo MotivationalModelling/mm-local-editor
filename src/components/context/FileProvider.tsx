@@ -30,11 +30,11 @@ export type TabContent = {
 
 // Define the initial tabs with labels and corresponding icons
 export const tabs: TabContent[] = [
-  { label: "Who", icon: WhoIcon, rows: [] },
   { label: "Do", icon: DoIcon, rows: [] },
   { label: "Be", icon: BeIcon, rows: [] },
   { label: "Feel", icon: FeelIcon, rows: [] },
   { label: "Concern", icon: ConcernIcon, rows: [] },
+  { label: "Who", icon: WhoIcon, rows: [] },
 ];
 
 export const initialTabs = tabs.map((tab, index) => ({
@@ -49,7 +49,7 @@ export const initialTabs = tabs.map((tab, index) => ({
   ],
 }));
 
-export type Label = "Who" | "Do" | "Be" | "Feel" | "Concern";
+export type Label =  "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export const DataType = { JSON: "AMMBER_JSON" };
 
