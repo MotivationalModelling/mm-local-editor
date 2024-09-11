@@ -111,6 +111,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
           const style = graph.getCellStyle(cells[i]);
           style.fillColor = color.hex;
           graph.getDataModel().setStyle(cells[i], style);
+          console.log("colour selected");
         }
       } finally {
         graph.getDataModel().endUpdate();
@@ -126,74 +127,78 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
 
     const label = document.createElement("label");
 
+    divSidebar.current.appendChild(label);
 
-        divSidebar.current.appendChild(label);
-
-        const addButton = (colour: string) => {
-          const btn = DomHelpers.button("", () => {
-            graph.getDataModel().beginUpdate();
-            try {
-              const cells = graph.getSelectionCells();
-              for (let i = 0; i < cells.length; i++) {
-                const style = graph.getCellStyle(cells[i]);
-                style.fillColor = colour;
-                graph.getDataModel().setStyle(cells[i], style);
-              }
-            } finally {
-              graph.getDataModel().endUpdate();
-            }
-          });
-          //Add Colour Buttons
-          btn.className = "ColorButton";
-          btn.style.width = "80px";
-          btn.style.height = "30px";
-          btn.style.backgroundColor = colour;
-          btn.style.border = "2px";
-
-          switch (colour) {
-            case "#d54417":
-              btn.ariaLabel = "HIGH";
-              btn.innerHTML = "HIGH";
-              btn.style.fontSize = "12px";
-              break;
-            case "#edd954":
-              btn.ariaLabel = "MEDIUM";
-              btn.innerHTML = "MEDIUM";
-              btn.style.fontSize = "12px";
-              break;
-            case "#1a9850":
-              btn.ariaLabel = "LOW";
-              btn.innerHTML = "LOW";
-              btn.style.fontSize = "12px";
-              break;
+    const addButton = (colour: string) => {
+      const btn = DomHelpers.button("", () => {
+        graph.getDataModel().beginUpdate();
+        try {
+          const cells = graph.getSelectionCells();
+          console.log("cells are: ", cells);
+          for (let i = 0; i < cells.length; i++) {
+            const style = graph.getCellStyle(cells[i]);
+            console.log("first style: ", style);
+            style.fillColor = colour;
+            console.log("Second style: ", style);
+            graph.getDataModel().setStyle(cells[i], style);
+            console.log("Third style: ", graph.getCellStyle(cells[i]));
+            console.log("default colours clicked");
           }
-          if (divSidebar.current)
-          divSidebar.current.appendChild(btn);
-        };
-
-        for (let i = 0; i < COLOUR_SET.length; i++) {
-          addButton(COLOUR_SET[i]);
+        } finally {
+          graph.getDataModel().endUpdate();
         }
+      });
+      //Add Colour Buttons
+      btn.className = "ColorButton";
+      btn.style.width = "80px";
+      btn.style.height = "30px";
+      btn.style.backgroundColor = colour;
+      btn.style.border = "2px";
 
-        sidebar.enabled = false; // turn off 'activated' aesthetic
-        // zoom-in and zoom-out buttons
-        sidebar.addLine(); // purely aesthetic
-        const zoomIn = sidebar.addItem("Zoom In", ZOOMIN_PATH, () => {
-          graph.zoomIn();
-        });
-        zoomIn.style.width = "20px"; // set width of the zoom icon
+      switch (colour) {
+        case "#d54417":
+          btn.ariaLabel = "HIGH";
+          btn.innerHTML = "HIGH";
+          btn.style.fontSize = "12px";
+          break;
+        case "#edd954":
+          btn.ariaLabel = "MEDIUM";
+          btn.innerHTML = "MEDIUM";
+          btn.style.fontSize = "12px";
+          break;
+        case "#1a9850":
+          btn.ariaLabel = "LOW";
+          btn.innerHTML = "LOW";
+          btn.style.fontSize = "12px";
+          break;
+      }
+      if (divSidebar.current)
+      divSidebar.current.appendChild(btn);
+    };
 
-        // centring graph button (svg not found)
-        const centre = sidebar.addItem("centre", CENTRE_PATH, () => {
-          recentreView();
-        });
-        centre.style.width = "20px";
+    for (let i = 0; i < COLOUR_SET.length; i++) {
+      addButton(COLOUR_SET[i]);
+    }
 
-        const zoomOut = sidebar.addItem("Zoom Out", ZOOMOUT_PATH, () => {
-          graph.zoomOut();
-        });
-        zoomOut.style.width = "20px";
-        sidebar.addLine();
+    sidebar.enabled = false; // turn off 'activated' aesthetic
+    // zoom-in and zoom-out buttons
+    sidebar.addLine(); // purely aesthetic
+    const zoomIn = sidebar.addItem("Zoom In", ZOOMIN_PATH, () => {
+      graph.zoomIn();
+    });
+    zoomIn.style.width = "20px"; // set width of the zoom icon
+
+    // centring graph button (svg not found)
+    const centre = sidebar.addItem("centre", CENTRE_PATH, () => {
+      recentreView();
+    });
+    centre.style.width = "20px";
+
+    const zoomOut = sidebar.addItem("Zoom Out", ZOOMOUT_PATH, () => {
+      graph.zoomOut();
+    });
+    zoomOut.style.width = "20px";
+    sidebar.addLine();
 
     // Add sidebar items
     const addSidebarItem = (

@@ -14,10 +14,9 @@ import {
   Codec,
   ModelXmlSerializer,
 } from "@maxgraph/core";
-import {GoalModelLayout} from "./GoalModelLayout";
 import {useRef, useEffect, useState, useMemo} from "react";
 import {Container, Row, Col} from "react-bootstrap";
-import { renderFunction, renderGoals, renderNonFunction, renderLegend, layoutFunctions, associateNonFunctions } from './GraphHelpers';
+import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
 import "./GraphWorker.css";
 import {
   registerCustomShapes,
@@ -32,7 +31,7 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "../ResetGraphButton.tsx";
 import { useGraph } from "../context/GraphContext";
-import {Cluster, ClusterGoal} from "../types.ts";
+import {Cluster} from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -43,6 +42,9 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
+
+// vertex default font size
+const VERTEX_FONT_SIZE = 16;
 
 // preferred vertical and horizontal spacing between functional goals; note
 //   the autolayout won't always accomodate these - it will depend on the
@@ -244,10 +246,12 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     nodeStyle.fillColor = "#ffffff";
     nodeStyle.strokeColor = "#000000";
     nodeStyle.strokeWidth = 2;
-    nodeStyle.autoSize = true;
-    nodeStyle.spacing = 10;
-    nodeStyle.spacingLeft = 10;
-    nodeStyle.spacingRight = 10;
+    // nodeStyle.autoSize = true;
+    //nodeStyle.spacing = 10;
+    // nodeStyle.spacingLeft = 10;
+    // nodeStyle.spacingRight = 10;
+    nodeStyle.fontSize = VERTEX_FONT_SIZE;
+    nodeStyle.fontColor = "black";
     nodeStyle.editable = true;
     graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
   };

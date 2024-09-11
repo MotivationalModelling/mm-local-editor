@@ -91,7 +91,7 @@ export const renderFunction = (
 
  const arr = goal.GoalContent.split(" ");
  
- // styling
+ // Dynamically set size, based on source (parent) size
  const image = PARALLELOGRAM_PATH;
  let width = SYMBOL_WIDTH;
  let height = SYMBOL_HEIGHT;
@@ -103,6 +103,11 @@ export const renderFunction = (
    }
  }
 
+ // Get default style from the stylesheet
+ const style = graph.getStylesheet().getDefaultVertexStyle();
+ style.shape = "image";
+ style.image = image;
+
  // insert new vertex and edge into graph
  const node = graph.insertVertex(
    null,
@@ -112,12 +117,7 @@ export const renderFunction = (
    SYMBOL_Y_COORD,
    width,
    height,
-   {
-     fontSize: VERTEX_FONT_SIZE,
-     fontColor: "black",
-     shape: "image",
-     image: image,
-   }
+   style
  );
  graph.insertEdge(null, null, "", source, node);
 
@@ -300,10 +300,10 @@ export const renderNonFunction = (
           fontColor: "black",
           shape: "image",
           image: image,
-          align: "center",           // Center horizontally
-          verticalAlign: "middle",   // Center vertically
+          align: "center",
+          verticalAlign: "middle", 
           labelPosition: "center",
-          spacingTop: -10,
+          spacingTop: -10,           // Move text up slightly from center
         };
   
         // If stakeholder, text goes at bottom
