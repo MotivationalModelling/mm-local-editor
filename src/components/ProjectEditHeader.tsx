@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-
 import { useNavigate } from "react-router-dom";
-
-import { Col, Container, Row, Button } from "react-bootstrap";
+import { Col, Container, Row, Button, ButtonGroup, Dropdown } from "react-bootstrap";
 
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
@@ -50,8 +48,11 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 						</Button>
 					</Col>
 					<Col className="text-end align-content-center" xs={8}>
-						<ExportFileButton />
-						{isBrowserSupported && <SaveFileButton />}
+						<ButtonGroup>
+							<ExportFileButton />
+							{isBrowserSupported && <SaveFileButton />}
+						</ButtonGroup>
+						
 					</Col>		
 					<Col className="text-end align-content-center">
 						<Button variant="primary" onClick={handleBackBtnClick}>

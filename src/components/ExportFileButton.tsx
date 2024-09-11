@@ -1,7 +1,5 @@
 import { useRef } from "react";
-import { useFileContext, JSONData } from "./context/FileProvider";
 import { Button } from "react-bootstrap";
-
 import { useGraph } from "./context/GraphContext";
 
 const ExportFileButton = () => {
@@ -9,7 +7,7 @@ const ExportFileButton = () => {
 	const downloadRef = useRef<HTMLAnchorElement>(null);
 
 	// Function to export graph as an image
-	const exportGraph = () => {
+	const exportGraph = async () => {
 		if (!graph) {
 			return;
 		}
@@ -25,18 +23,43 @@ const ExportFileButton = () => {
 		// Serialize the SVG element to a string
 		const serializer = new XMLSerializer();
 		const svgString = serializer.serializeToString(svgElement);
+		try {
+			// If chromium browser
+			if ('showSaveFilePicker' in self) {
+				const options = {
+					id: 'exportImage',
+					suggestedName: 'Graph.svg',
+					startIn: 'downloads',
+					types: [{
+						description: 'SVG Image',
+						accept: { 'image/svg+xml': ['.svg']}
+					}]
+				};
+				const handle = await self.showSaveFilePicker(options);
+				const writable = await handle.createWritable();
+				await writable.write(new Blob([svgString], {type: 'image/svg+xml;charset=utf-8' }));
+				await writable.close();
 	
-		// Create a Blob and trigger download
-		const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-		const url = URL.createObjectURL(blob);
-	
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = 'graph.svg';
-		link.click();
-	
-		// Step 4: Clean up
-		URL.revokeObjectURL(url);
+			}
+			// Fallback for non chromium browsers
+			else {
+				// Create a Blob and trigger download
+				const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+				const url = URL.createObjectURL(blob);
+			
+				const link = document.createElement('a');
+				link.href = url;
+				link.download = 'graph.svg';
+				link.click();
+			
+				// Clean up
+				URL.revokeObjectURL(url);
+			}
+		}
+
+		catch (error) {
+			console.error('Failed to sive file: ', error);
+		}
 	};
 
 	const handleBtnClick = () => {
