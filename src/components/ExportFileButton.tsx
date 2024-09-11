@@ -65,10 +65,10 @@ const ExportFileButton = () => {
 	const handleBtnClick = () => {
 		exportGraph();
 	};
-
+	// className="me-3"
 	return (
 		<>
-			<Button className="me-3" onClick={handleBtnClick}>
+			<Button variant="outline-primary" onClick={handleBtnClick}>
 				Export
 			</Button>
 			<a ref={downloadRef} style={{ display: "none" }}>
