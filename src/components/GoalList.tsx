@@ -9,6 +9,7 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
+import Table from "react-bootstrap/Table";
 import { TreeItem, useFileContext, tabs } from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
@@ -165,6 +166,16 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					.every(row => groupSelected.some(item => item.id === row.id))
 			);
 		};
+
+		// Check whether any goal is selected in the table (excluding undefined ones)
+		const isSomeSelected = () => {
+			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
+			return (
+			  allItemsInTab &&
+			  allItemsInTab.length > 0 &&
+			  allItemsInTab.filter(row => row.content.trim() !== "").some(row => groupSelected.some(item => item.id === row.id))
+			);
+		  };
 		
 		// Select all items in the goals tab
 		const handleSelectAll = () => {
@@ -260,73 +271,76 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					<Tab.Content className={styles.contentArea}>
 						{tabData.map((tab) => (
 							<Tab.Pane key={tab.label} eventKey={tab.label}>
-								 <Form.Group as={Row} className="mb-2">
-									<Col sm={11}>
-										<Form.Check
-											type="checkbox"
-											label={isAllSelected() ? "Deselect All" : "Select All"}
-											onChange={handleSelectAll}
-											checked={isAllSelected()} 
-										/>
-									</Col>
-								</Form.Group>
-								{/* Goal Rows */}
-								{tab.rows.map((row, index) => (
-									<Form.Group
-										key={`${tab.label}-${index}`}
-										as={Row}
-										className={styles.formGroup}
-									>
-										<Col sm={11}>
+								<Table striped bordered hover>
+									<thead>
+										<tr>
+											<th style={{ width: '1px', whiteSpace: 'nowrap' }}>
+											<Form.Group as={Row} className="mb-2">
+													<Col sm={11}>
+														<Form.Check
+														type="checkbox"
+														onChange={handleSelectAll}
+														checked={isAllSelected()}
+														/>
+													</Col>
+													</Form.Group>
+											</th>
+											<th style={{ display: 'flex' }}>Goal Name</th>
+										</tr>
+									</thead>
+									<tbody>
+									{tab.rows.map((row, index) => (
+										<tr key={`${tab.label}-${index}`}>
+											<td>
+											<Form.Check
+												type="checkbox"
+												onChange={() => handleCheckboxToggle(row)}
+												checked={isChecked(row)}
+												disabled={!row.content.trim()} 
+											/>
+											</td>
+											<td>
 											<InputGroup>
-												{row.content && (
-													<InputGroup.Checkbox
-														onChange={() => handleCheckboxToggle(row)}
-														checked={isChecked(row)}
-													/>
-												)}
 												<Form.Control
-													onDragStart={() => handleDragStart(row)}
-													draggable
-													type="text"
-													value={row.content}
-													onChange={(e) =>
-														handleRowChange(tab.label, index, e.target.value)
-													}
-													placeholder={`Enter ${tab.label}...`}
-													spellCheck
-													className="bg-white"
-													onKeyDown={(e) =>
-														handleKeyPress(
-															e as React.KeyboardEvent<HTMLInputElement>,
-															tab.label
-														)
-													}
-													onBlur={(event) =>
-														handleSave(row, event.target.value)
-													}
-													ref={
-														index === tab.rows.length - 1 ? inputRef : undefined
-													}
+												onDragStart={() => handleDragStart(row)}
+												draggable
+												type="text"
+												value={row.content}
+												onChange={(e) =>
+													handleRowChange(tab.label, index, e.target.value)
+												}
+												placeholder={`Enter ${tab.label}...`}
+												spellCheck
+												className="bg-white"
+												onKeyDown={(e) =>
+													handleKeyPress(
+													e as React.KeyboardEvent<HTMLInputElement>,
+													tab.label
+													)
+												}
+												onBlur={(event) =>
+													handleSave(row, event.target.value)
+												}
+												ref={index === tab.rows.length - 1 ? inputRef : undefined}
 												/>
-											</InputGroup>
-										</Col>
-										{tab.rows.length > 1 && (
-											<Col sm={1}>
+												{tab.rows.length > 1 && (
 												<Button
 													className={styles.deleteButton}
 													onClick={() => handleDeleteRow(tab.label, index, row)}
 												>
 													<img
-														src={DeleteIcon}
-														alt="Delete"
-														className={styles.deleteIcon}
+													src={DeleteIcon}
+													alt="Delete"
+													className={styles.deleteIcon}
 													/>
 												</Button>
-											</Col>
-										)}
-									</Form.Group>
-								))}
+												)}
+											</InputGroup>
+											</td>
+										</tr>
+										))}
+									</tbody>
+								</Table>
 								<div className="text-muted text-left mt-3">
 								<Button 
 									className="me-2" 
