@@ -38,6 +38,20 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		const inputRef = useRef<HTMLInputElement>(null);
 
+		// An index and handlers to track the state for the row being edited 
+		const [editedIndex, setEditedIndex] = useState<number | null>(null);
+
+		// Set index of the goal being edited
+		const handleEditedChange = (index: number) => {
+			setEditedIndex(index);
+		  };
+
+		// Only one goal can be in Edited state at the same time, change editedIndex from the last edited goal to new goal being edited
+		const handleBlurChange = (goalId: number, event: React.FocusEvent<HTMLInputElement>) => {
+			handleSave(tabData.find(tab => tab.label === activeKey)?.rows.find(row => row.id === goalId)!, (event.target as HTMLInputElement).value);
+			setEditedIndex(null);
+		  };
+
 		// Function to handle selecting a tab
 		const handleSelect = (selectedKey: string | null) => {
 			setActiveKey(selectedKey);
@@ -167,16 +181,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			);
 		};
 
-		// Check whether any goal is selected in the table (excluding undefined ones)
-		const isSomeSelected = () => {
-			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
-			return (
-			  allItemsInTab &&
-			  allItemsInTab.length > 0 &&
-			  allItemsInTab.filter(row => row.content.trim() !== "").some(row => groupSelected.some(item => item.id === row.id))
-			);
-		  };
-		
 		// Select all items in the goals tab
 		const handleSelectAll = () => {
 			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
@@ -213,7 +217,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			});
 
 			setTabData(newTabData);
-			setGroupSelected([]); // Clear selected group after deletion
+			setGroupSelected([]); 
     		}
 		};
 
@@ -312,15 +316,18 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												placeholder={`Enter ${tab.label}...`}
 												spellCheck
 												className="bg-white"
+												style={{
+													color: !(editedIndex === index) && !isChecked(row) ? 'gray' : 'black', 
+                      								opacity: !(editedIndex === index) && !isChecked(row) ? 0.6 : 1,      
+												  }}
 												onKeyDown={(e) =>
 													handleKeyPress(
 													e as React.KeyboardEvent<HTMLInputElement>,
 													tab.label
 													)
 												}
-												onBlur={(event) =>
-													handleSave(row, event.target.value)
-												}
+												onBlur={(event) => handleBlurChange(row.id, event as React.FocusEvent<HTMLInputElement>)}
+                    							onFocus={() => handleEditedChange(index)}
 												ref={index === tab.rows.length - 1 ? inputRef : undefined}
 												/>
 												{tab.rows.length > 1 && (
