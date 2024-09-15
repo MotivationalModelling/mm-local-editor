@@ -1,13 +1,12 @@
-import { useRef } from "react";
-import { Button } from "react-bootstrap";
+import { Dropdown, DropdownButton } from "react-bootstrap";
 import { useGraph } from "./context/GraphContext";
+import { Canvg } from 'canvg';
 
 const ExportFileButton = () => {
 	const { graph } = useGraph(); // Use the context to get the graph instance
-	const downloadRef = useRef<HTMLAnchorElement>(null);
 
 	// Function to export graph as an image
-	const exportGraph = async () => {
+	const exportGraphAsSVG = async () => {
 		if (!graph) {
 			return;
 		}
@@ -62,18 +61,84 @@ const ExportFileButton = () => {
 		}
 	};
 
-	const handleBtnClick = () => {
-		exportGraph();
+	// Function to export graph as PNG
+	const exportGraphAsPNG = async () => {
+		if (!graph) {
+			return;
+		}
+	
+		// Get the container holding the SVG
+		const svgElement = graph.getContainer().querySelector('svg');
+	
+		if (!svgElement) {
+			console.error('Failed to find SVG element in the graph container.');
+			return;
+		}
+	
+		// Serialize the SVG element to a string
+		const serializer = new XMLSerializer();
+		const svgString = serializer.serializeToString(svgElement);
+	
+		// Create a canvas element
+		const canvas = document.createElement('canvas');
+		const context = canvas.getContext('2d');
+	
+		if (!context) {
+			console.error('Failed to get canvas context.');
+			return;
+		}
+	
+		// Use Canvg to render SVG onto the canvas
+		const v = Canvg.fromString(context, svgString);
+	
+		// Set canvas dimensions to match the SVG size
+		canvas.width = svgElement.clientWidth;
+		canvas.height = svgElement.clientHeight;
+	
+		// Render SVG onto the canvas
+		await v.render();
+	
+		// Convert the canvas content to a Blob (PNG format)
+		canvas.toBlob(async (blob) => {
+			if (blob) {
+				try {
+				if ('showSaveFilePicker' in self) {
+					const options = {
+					id: 'exportImage',
+					suggestedName: 'Graph.png',
+					startIn: 'downloads',
+					types: [{
+						description: 'PNG Image',
+						accept: { 'image/png': ['.png'] }
+					}]
+					};
+					const handle = await self.showSaveFilePicker(options);
+					const writable = await handle.createWritable();
+					await writable.write(blob);
+					await writable.close();
+				} else {
+					// Fallback for non-Chromium browsers
+					const url = URL.createObjectURL(blob);
+					const link = document.createElement('a');
+					link.href = url;
+					link.download = 'graph.png';
+					link.click();
+					URL.revokeObjectURL(url);
+				}
+				} 
+				catch (error) {
+					console.error('Failed to save file: ', error);
+				}
+			}
+		}, 'image/png');
 	};
-	// className="me-3"
+
 	return (
 		<>
-			<Button variant="outline-primary" onClick={handleBtnClick}>
-				Export
-			</Button>
-			<a ref={downloadRef} style={{ display: "none" }}>
-				Download
-			</a>
+			<DropdownButton variant="outline-primary" title="Export" drop="start">
+				<Dropdown.Item onClick={exportGraphAsPNG}>Export as PNG</Dropdown.Item>
+				<Dropdown.Item onClick={exportGraphAsSVG}>Export as SVG</Dropdown.Item>
+			</DropdownButton>
 		</>
 	);
 };

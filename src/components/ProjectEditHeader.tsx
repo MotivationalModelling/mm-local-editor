@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Col, Container, Row, Button, ButtonGroup, Dropdown } from "react-bootstrap";
+import { Col, Container, Row, Button, ButtonGroup } from "react-bootstrap";
 
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
@@ -43,22 +43,29 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 						<strong style={{ fontSize: "35px" }}>AMMBER</strong>
 					</Col>
 					<Col className="text-end align-content-center">
-						<Button onClick={() => setShowGoalSection(!showGoalSection)}>
+						<Button variant="outline-primary" onClick={() => setShowGoalSection(!showGoalSection)}>
 							{showGoalSection ? "Hide Goal List" : "Show Goal List"}
 						</Button>
+						<ButtonGroup>
+							<ExportFileButton />
+							{isBrowserSupported && <SaveFileButton />}
+						</ButtonGroup>
+						<Button variant="outline-primary" onClick={handleBackBtnClick}>
+							Back
+						</Button>
 					</Col>
-					<Col className="text-end align-content-center" xs={8}>
+					{/* <Col className="text-end align-content-center" xs={8}>
 						<ButtonGroup>
 							<ExportFileButton />
 							{isBrowserSupported && <SaveFileButton />}
 						</ButtonGroup>
 						
-					</Col>		
-					<Col className="text-end align-content-center">
+					</Col>		 */}
+					{/* <Col className="text-end align-content-center">
 						<Button variant="primary" onClick={handleBackBtnClick}>
 							Back
 						</Button>
-					</Col>
+					</Col> */}
 				</Row>
 			</Container>
 		</header>
