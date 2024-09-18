@@ -1,5 +1,5 @@
 import { Dropdown, DropdownButton } from "react-bootstrap";
-import { useGraph } from "./context/GraphContext";
+import { useGraph } from "../context/GraphContext";
 import { Canvg } from 'canvg';
 
 const ExportFileButton = () => {

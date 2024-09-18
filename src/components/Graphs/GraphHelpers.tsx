@@ -92,7 +92,6 @@ export const renderFunction = (
  const arr = goal.GoalContent.split(" ");
  
  // Dynamically set size, based on source (parent) size
- const image = PARALLELOGRAM_PATH;
  let width = SYMBOL_WIDTH;
  let height = SYMBOL_HEIGHT;
  if (source) {
@@ -105,8 +104,8 @@ export const renderFunction = (
 
  // Get default style from the stylesheet
  const style = graph.getStylesheet().getDefaultVertexStyle();
- style.shape = "image";
- style.image = image;
+ // Make sure to specify what image we're drawing
+ style.image = PARALLELOGRAM_PATH;
 
  // insert new vertex and edge into graph
  const node = graph.insertVertex(
@@ -154,7 +153,6 @@ export const renderFunction = (
    qualitiesGlob,
    stakeholdersGlob
  );
-
 };
 
 /**
@@ -255,6 +253,8 @@ export const renderNonFunction = (
         let height = fHeight;
         let delimiter = "";
         let image = "";
+        // Clone to not change original style
+        const style = {...graph.getStylesheet().getDefaultVertexStyle()};
   
         switch (type) {
           case EMOTIONAL_TYPE: // Top Right (TR)
@@ -293,26 +293,17 @@ export const renderNonFunction = (
             delimiter = "\n";
             break;
         }
-  
-        // customize vertex style to center text
-        let style: CellStateStyle = {
-          fontSize: VERTEX_FONT_SIZE,
-          fontColor: "black",
-          shape: "image",
-          image: image,
-          align: "center",
-          verticalAlign: "middle", 
-          labelPosition: "center",
-          spacingTop: -10,           // Move text up slightly from center
-        };
-  
+
+        style.image = image;
+        style.align = "center";
+        style.verticalAlign = "middle";
+        style.labelPosition = "center";
+        style.spacingTop = -10;
+
         // If stakeholder, text goes at bottom
         if (type === STAKEHOLDER_TYPE) {
-          style = {
-            ...style,
-            verticalAlign: "top",
-            verticalLabelPosition: "bottom",
-          };
+          style.verticalAlign = "top";
+          style.verticalLabelPosition = "bottom";
         }
   
         // Insert the vertex
@@ -326,6 +317,15 @@ export const renderNonFunction = (
           height,
           style
         );
+
+        const node_geo = node.getGeometry();
+        const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
+        if (node_geo && preferred) {
+          // Adjust height based on the number of lines in the goal text and font size
+          node_geo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
+          node_geo.width = Math.max(node_geo.height, preferred.width * SW_PREFERRED, width);
+          node_geo.height = Math.max(node_geo.height, preferred.height * SH_PREFERRED, height);
+        }
   
         const edge = graph.insertEdge(null, null, "", source, node);
         edge.visible = false; // Make the edge invisible - used in auto layout

@@ -4,7 +4,7 @@ import { Col, Container, Row, Button, ButtonGroup } from "react-bootstrap";
 
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
-import { useFileContext } from "./context/FileProvider";
+import { useFileContext } from "../context/FileProvider";
 import { isChrome, isOpera, isEdge } from "react-device-detect";
 
 type ProjectEditHeaderProps = {
@@ -44,11 +44,11 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 						<Button variant="outline-primary" onClick={() => setShowGoalSection(!showGoalSection)}>
 							{showGoalSection ? "Hide Goal List" : "Show Goal List"}
 						</Button>
-						<ButtonGroup>
+						<ButtonGroup className="ms-3">
 							<ExportFileButton />
 							{isBrowserSupported && <SaveFileButton />}
 						</ButtonGroup>
-						<Button variant="outline-primary" onClick={handleBackBtnClick}>
+						<Button variant="outline-primary" onClick={handleBackBtnClick} className="ms-3">
 							Back
 						</Button>
 					</Col>
