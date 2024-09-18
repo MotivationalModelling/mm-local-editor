@@ -102,29 +102,29 @@ const ExportFileButton = () => {
 		canvas.toBlob(async (blob) => {
 			if (blob) {
 				try {
-				if ('showSaveFilePicker' in self) {
-					const options = {
-					id: 'exportImage',
-					suggestedName: 'Graph.png',
-					startIn: 'downloads',
-					types: [{
-						description: 'PNG Image',
-						accept: { 'image/png': ['.png'] }
-					}]
-					};
-					const handle = await self.showSaveFilePicker(options);
-					const writable = await handle.createWritable();
-					await writable.write(blob);
-					await writable.close();
-				} else {
-					// Fallback for non-Chromium browsers
-					const url = URL.createObjectURL(blob);
-					const link = document.createElement('a');
-					link.href = url;
-					link.download = 'graph.png';
-					link.click();
-					URL.revokeObjectURL(url);
-				}
+					if ('showSaveFilePicker' in self) {
+						const options = {
+							id: 'exportImage',
+							suggestedName: 'Graph.png',
+							startIn: 'downloads',
+							types: [{
+								description: 'PNG Image',
+								accept: {'image/png': ['.png']}
+							}]
+						};
+						const handle = await self.showSaveFilePicker(options);
+						const writable = await handle.createWritable();
+						await writable.write(blob);
+						await writable.close();
+					} else {
+						// Fallback for non-Chromium browsers
+						const url = URL.createObjectURL(blob);
+						const link = document.createElement('a');
+						link.href = url;
+						link.download = 'graph.png';
+						link.click();
+						URL.revokeObjectURL(url);
+					}
 				} 
 				catch (error) {
 					console.error('Failed to save file: ', error);
@@ -134,12 +134,10 @@ const ExportFileButton = () => {
 	};
 
 	return (
-		<>
-			<DropdownButton variant="outline-primary" title="Export" drop="start">
-				<Dropdown.Item onClick={exportGraphAsPNG}>Export as PNG</Dropdown.Item>
-				<Dropdown.Item onClick={exportGraphAsSVG}>Export as SVG</Dropdown.Item>
-			</DropdownButton>
-		</>
+		<DropdownButton variant="outline-primary" title="Export" drop="down">
+			<Dropdown.Item onClick={exportGraphAsPNG}>Export as PNG</Dropdown.Item>
+			<Dropdown.Item onClick={exportGraphAsSVG}>Export as SVG</Dropdown.Item>
+		</DropdownButton>
 	);
 };
 
