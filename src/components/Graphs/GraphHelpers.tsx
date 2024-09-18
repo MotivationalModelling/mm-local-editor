@@ -253,6 +253,8 @@ export const renderNonFunction = (
         let height = fHeight;
         let delimiter = "";
         let image = "";
+        // Clone to not change original style
+        const style = {...graph.getStylesheet().getDefaultVertexStyle()};
   
         switch (type) {
           case EMOTIONAL_TYPE: // Top Right (TR)
@@ -291,26 +293,17 @@ export const renderNonFunction = (
             delimiter = "\n";
             break;
         }
-  
-        // customize vertex style to center text
-        let style: CellStateStyle = {
-          fontSize: VERTEX_FONT_SIZE,
-          fontColor: "black",
-          shape: "image",
-          image: image,
-          align: "center",
-          verticalAlign: "middle", 
-          labelPosition: "center",
-          spacingTop: -10,           // Move text up slightly from center
-        };
-  
+
+        style.image = image;
+        style.align = "center";
+        style.verticalAlign = "middle";
+        style.labelPosition = "center";
+        style.spacingTop = -10;
+
         // If stakeholder, text goes at bottom
         if (type === STAKEHOLDER_TYPE) {
-          style = {
-            ...style,
-            verticalAlign: "top",
-            verticalLabelPosition: "bottom",
-          };
+          style.verticalAlign = "top";
+          style.verticalLabelPosition = "bottom";
         }
   
         // Insert the vertex
@@ -325,17 +318,13 @@ export const renderNonFunction = (
           style
         );
 
-        const preferredSize = graph.getPreferredSizeForCell(node);
-        if (preferredSize) {
-          console.log("preferred size: ", preferredSize, " for type: ", type);
-          const node_geo = node.getGeometry();
-          if (node_geo) {
-            // Adjust the width and height of the node based on the preferred size of the text
-            node_geo.width = Math.max(preferredSize.width, width);
-            node_geo.height = Math.max(preferredSize.height, height);
-            console.log("node width and height: ", node_geo.width, " ", node_geo.height);
-            graph.getDataModel().setGeometry(node, node_geo);
-          }
+        const node_geo = node.getGeometry();
+        const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
+        if (node_geo && preferred) {
+          // Adjust height based on the number of lines in the goal text and font size
+          node_geo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
+          node_geo.width = Math.max(node_geo.height, preferred.width * SW_PREFERRED, width);
+          node_geo.height = Math.max(node_geo.height, preferred.height * SH_PREFERRED, height);
         }
   
         const edge = graph.insertEdge(null, null, "", source, node);
