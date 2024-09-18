@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import ProjectEditHeader from "./ProjectEditHeader";
+import ProjectEditHeader from "./header/ProjectEditHeader";
 import "./ProjectEdit.css";
 import SectionPanel from "./SectionPanel";
 import ProgressBar from "./ProgressBar";

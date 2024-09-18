@@ -92,7 +92,6 @@ export const renderFunction = (
  const arr = goal.GoalContent.split(" ");
  
  // Dynamically set size, based on source (parent) size
- const image = PARALLELOGRAM_PATH;
  let width = SYMBOL_WIDTH;
  let height = SYMBOL_HEIGHT;
  if (source) {
@@ -105,8 +104,8 @@ export const renderFunction = (
 
  // Get default style from the stylesheet
  const style = graph.getStylesheet().getDefaultVertexStyle();
- style.shape = "image";
- style.image = image;
+ // Make sure to specify what image we're drawing
+ style.image = PARALLELOGRAM_PATH;
 
  // insert new vertex and edge into graph
  const node = graph.insertVertex(
@@ -154,7 +153,6 @@ export const renderFunction = (
    qualitiesGlob,
    stakeholdersGlob
  );
-
 };
 
 /**
@@ -326,6 +324,19 @@ export const renderNonFunction = (
           height,
           style
         );
+
+        const preferredSize = graph.getPreferredSizeForCell(node);
+        if (preferredSize) {
+          console.log("preferred size: ", preferredSize, " for type: ", type);
+          const node_geo = node.getGeometry();
+          if (node_geo) {
+            // Adjust the width and height of the node based on the preferred size of the text
+            node_geo.width = Math.max(preferredSize.width, width);
+            node_geo.height = Math.max(preferredSize.height, height);
+            console.log("node width and height: ", node_geo.width, " ", node_geo.height);
+            graph.getDataModel().setGeometry(node, node_geo);
+          }
+        }
   
         const edge = graph.insertEdge(null, null, "", source, node);
         edge.visible = false; // Make the edge invisible - used in auto layout

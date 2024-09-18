@@ -220,16 +220,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     // graph.dropEnabled = true
 
     // config: permit vertices to be connected by edges
-    graph.setConnectable(true);
+    //graph.setConnectable(true);
     graph.setCellsEditable(true);
     graph.setPanning(true);
     graph.setCellsResizable(true);
     graph.setCellsMovable(true); // Allow cells to be moved
     graph.setCellsSelectable(true); // Allow cells to be selected
 
-    // Ensure pointer events are enabled
-    graph.container.style.cursor = "default";
-    graph.container.style.pointerEvents = "all";
 
     // config: set default style for edges inserted into graph
     const edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
@@ -246,13 +243,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     nodeStyle.fillColor = "#ffffff";
     nodeStyle.strokeColor = "#000000";
     nodeStyle.strokeWidth = 2;
-    // nodeStyle.autoSize = true;
-    //nodeStyle.spacing = 10;
-    // nodeStyle.spacingLeft = 10;
-    // nodeStyle.spacingRight = 10;
+    nodeStyle.autoSize = false;
+    nodeStyle.resizable = true;
     nodeStyle.fontSize = VERTEX_FONT_SIZE;
     nodeStyle.fontColor = "black";
-    nodeStyle.editable = true;
+    nodeStyle.editable = false;
+    nodeStyle.shape = "image";
+    nodeStyle.imageAspect = true;
     graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
   };
 
