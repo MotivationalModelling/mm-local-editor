@@ -33,10 +33,8 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	};
 
 	return (
-		<header
-			className="bg-white mb-2 py-3 px-5 overflow-hidden"
-			style={{ width: "auto", minWidth: "1280px", maxWidth: "100%" }}
-		>
+		<header className="mb-2 py-3 px-5"
+				style={{width: "auto", minWidth: "1280px", maxWidth: "100%"}}>
 			<Container fluid>
 				<Row className="text-start align-content-center">
 					<Col>
