@@ -11,7 +11,9 @@ const ExportFileButton = () => {
 			return;
 		}
 	
-		// Get the container holding the SVG
+		// Clear all selection for no green bounding box
+		graph.clearSelection();
+		// Get the html holding the SVG
 		const svgElement = graph.getContainer().querySelector('svg');
 	
 		if (!svgElement) {
@@ -66,7 +68,9 @@ const ExportFileButton = () => {
 		if (!graph) {
 			return;
 		}
-	
+		
+		// Clear all selection for no green bounding box
+		graph.clearSelection();
 		// Get the container holding the SVG
 		const svgElement = graph.getContainer().querySelector('svg');
 	
