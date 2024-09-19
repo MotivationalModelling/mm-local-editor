@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ColorResult } from "react-color";
 import { Graph } from "@maxgraph/core";
-import ColorPicker from "./ColorPicker";
-import SidebarBody from "./SidebarBody";
+import ColorPicker from "./SidebarComponents/ColorPicker";
+import SidebarBody from "./SidebarComponents/SidebarBody";
 
 type recentreViewFunction = () => void;
 

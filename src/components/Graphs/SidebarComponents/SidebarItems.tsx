@@ -1,37 +1,17 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils } from "@maxgraph/core";
 import {
-  Graph,
-  MaxToolbar,
-  DomHelpers,
-  Cell,
-  CellStateStyle,
-  Geometry,
-  Point,
-  gestureUtils,
-} from "@maxgraph/core";
-import {
-    NEGATIVE_SHAPE,
-    PERSON_SHAPE,
-    CLOUD_SHAPE,
-    PARALLELOGRAM_SHAPE,
-    HEART_SHAPE,
-  } from "./GraphShapes";
-
-const SIDEBAR_DIV_ID = "sidebarContainer";
-
-// vertex default font size
-const VERTEX_FONT_SIZE = 16;
-// vertex default font colour
-const VERTEX_FONT_COLOUR = "black";
+  NEGATIVE_SHAPE,
+  PERSON_SHAPE,
+  CLOUD_SHAPE,
+  PARALLELOGRAM_SHAPE,
+  HEART_SHAPE,
+} from "../GraphShapes";
 
 const LINE_SIZE = 50;
-
-// default width/height of the root goal in the graph
 const SYMBOL_WIDTH = 145;
 const SYMBOL_HEIGHT = 110;
 
-// scale factors for non-functional goals; these scale factors are relative
-//   to the size of the associated functional goal
 const SW_FUNCTIONAL = 1.045;
 const SH_FUNCTIONAL = 0.8;
 const SW_EMOTIONAL = 0.9;
@@ -43,138 +23,29 @@ const SH_NEGATIVE = 0.96;
 const SW_STAKEHOLDER = 1;
 const SH_STAKEHOLDER = 1.2;
 
-// Colour set
-const COLOUR_SET = [
-  "#d54417",
-  "#edd954",
-  "#1a9850",
-  "#ffffff",
-];
+const VERTEX_FONT_SIZE = 16;
+const VERTEX_FONT_COLOUR = "black";
 
-const ZOOMIN_PATH = "img/zoomin.svg";
-const ZOOMOUT_PATH = "img/zoomout.svg";
-const CENTRE_PATH = "img/centre.svg";
-const LINE_PATH = "img/line.svg";
-const HEART_PATH = "img/Heart.png";
 const PARALLELOGRAM_PATH = "img/Function.png";
+const HEART_PATH = "img/Heart.png";
 const NEGATIVE_PATH = "img/Risk.png";
 const CLOUD_PATH = "img/Cloud.png";
 const PERSON_PATH = "img/Stakeholder.png";
+const LINE_PATH = "img/line.svg";
 
-const FUNCTIONAL_TYPE = "Functional";
-const EMOTIONAL_TYPE = "Emotional";
-const NEGATIVE_TYPE = "Negative";
-const QUALITY_TYPE = "Quality";
-const STAKEHOLDER_TYPE = "Stakeholder";
-
-const FUNCTIONAL_DATA = "functionaldata";
-const EMOTIONAL_DATA = "emotionaldata";
-const NEGATIVE_DATA = "negativedata";
-const QUALITY_DATA = "qualitydata";
-const STAKEHOLDER_DATA = "stakeholderdata";
-
-
-
-type recentreViewFunction = () => void;
-
-type SidebarProps = {
-  graph: Graph | null;
-  recentreView: recentreViewFunction;
+type SidebarItemsProps = {
+  graph: Graph;
 };
 
-type DropHandler = (
-    graph: Graph,
-    evt: MouseEvent,
-    cell: Cell | null,
-    x?: number,
-    y?: number
-  ) => void;
-
-const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
+const SidebarItems = ({ graph }: SidebarItemsProps) => {
   const divSidebar = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!divSidebar.current || !graph) return;
+    if (!divSidebar.current) return;
 
     let sidebar = new MaxToolbar(divSidebar.current);
     sidebar.enabled = false;
 
-    const label = document.createElement("label");
-
-    divSidebar.current.appendChild(label);
-
-    const addButton = (colour: string) => {
-      const btn = DomHelpers.button("", () => {
-        graph.getDataModel().beginUpdate();
-        try {
-          const cells = graph.getSelectionCells();
-          console.log("cells are: ", cells);
-          for (let i = 0; i < cells.length; i++) {
-            const style = graph.getCellStyle(cells[i]);
-            console.log("first style: ", style);
-            style.fillColor = colour;
-            console.log("Second style: ", style);
-            graph.getDataModel().setStyle(cells[i], style);
-            console.log("Third style: ", graph.getCellStyle(cells[i]));
-            console.log("default colours clicked");
-          }
-        } finally {
-          graph.getDataModel().endUpdate();
-        }
-      });
-      //Add Colour Buttons
-      btn.className = "ColorButton";
-      btn.style.width = "80px";
-      btn.style.height = "30px";
-      btn.style.backgroundColor = colour;
-      btn.style.border = "2px";
-
-      switch (colour) {
-        case "#d54417":
-          btn.ariaLabel = "HIGH";
-          btn.innerHTML = "HIGH";
-          btn.style.fontSize = "12px";
-          break;
-        case "#edd954":
-          btn.ariaLabel = "MEDIUM";
-          btn.innerHTML = "MEDIUM";
-          btn.style.fontSize = "12px";
-          break;
-        case "#1a9850":
-          btn.ariaLabel = "LOW";
-          btn.innerHTML = "LOW";
-          btn.style.fontSize = "12px";
-          break;
-      }
-      if (divSidebar.current)
-      divSidebar.current.appendChild(btn);
-    };
-
-    for (let i = 0; i < COLOUR_SET.length; i++) {
-      addButton(COLOUR_SET[i]);
-    }
-
-    sidebar.enabled = false; // turn off 'activated' aesthetic
-    // zoom-in and zoom-out buttons
-    sidebar.addLine(); // purely aesthetic
-    const zoomIn = sidebar.addItem("Zoom In", ZOOMIN_PATH, () => {
-      graph.zoomIn();
-    });
-    zoomIn.style.width = "20px"; // set width of the zoom icon
-
-    // centring graph button (svg not found)
-    const centre = sidebar.addItem("centre", CENTRE_PATH, () => {
-      recentreView();
-    });
-    centre.style.width = "20px";
-
-    const zoomOut = sidebar.addItem("Zoom Out", ZOOMOUT_PATH, () => {
-      graph.zoomOut();
-    });
-    zoomOut.style.width = "20px";
-    sidebar.addLine();
-
-    // Add sidebar items
     const addSidebarItem = (
       graph: Graph,
       sidebar: MaxToolbar,
@@ -184,7 +55,6 @@ const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
       isEdge: boolean
     ) => {
       let type = "";
-      let goalID: string | null;
       let data = "";
       let prototype: Cell;
 
@@ -193,28 +63,28 @@ const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
         switch (imagePath) {
           case PARALLELOGRAM_PATH:
             shape = PARALLELOGRAM_SHAPE;
-            type = FUNCTIONAL_TYPE;
-            data = FUNCTIONAL_DATA;
+            type = "Functional";
+            data = "functionaldata";
             break;
           case HEART_PATH:
             shape = HEART_SHAPE;
-            type = EMOTIONAL_TYPE;
-            data = EMOTIONAL_DATA;
+            type = "Emotional";
+            data = "emotionaldata";
             break;
           case NEGATIVE_PATH:
             shape = NEGATIVE_SHAPE;
-            type = NEGATIVE_TYPE;
-            data = NEGATIVE_DATA;
+            type = "Negative";
+            data = "negativedata";
             break;
           case CLOUD_PATH:
             shape = CLOUD_SHAPE;
-            type = QUALITY_TYPE;
-            data = QUALITY_DATA;
+            type = "Quality";
+            data = "qualitydata";
             break;
           case PERSON_PATH:
             shape = PERSON_SHAPE;
-            type = STAKEHOLDER_TYPE;
-            data = STAKEHOLDER_DATA;
+            type = "Stakeholder";
+            data = "stakeholderdata";
             break;
         }
 
@@ -250,7 +120,7 @@ const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
         }
       }
 
-      const dragAndDrop: DropHandler = (
+      const dragAndDrop = (
         graph: Graph,
         evt: MouseEvent,
         cell: Cell | null,
@@ -268,7 +138,7 @@ const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
         }
       };
 
-      const dragAndDropEdge: DropHandler = (
+      const dragAndDropEdge = (
         graph: Graph,
         evt: MouseEvent,
         cell: Cell | null,
@@ -307,7 +177,7 @@ const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
         sidebarItem.style.width = "50px";
       }
     };
-    // Add shapes to the sidebar
+
     addSidebarItem(
       graph,
       sidebar,
@@ -350,15 +220,9 @@ const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
     );
     addSidebarItem(graph, sidebar, LINE_PATH, LINE_SIZE, LINE_SIZE, true);
     sidebar.addLine();
-
-    return () => {
-      if (divSidebar.current) {
-        divSidebar.current.innerHTML = "";
-      }
-    };
   }, [graph]);
 
-  return <div id={SIDEBAR_DIV_ID} ref={divSidebar}></div>;
+  return <div ref={divSidebar}></div>;
 };
 
-export default SidebarBody;
+export default SidebarItems;
