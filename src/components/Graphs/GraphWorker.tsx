@@ -248,7 +248,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     nodeStyle.resizable = true;
     nodeStyle.fontSize = VERTEX_FONT_SIZE;
     nodeStyle.fontColor = "black";
-    nodeStyle.editable = false;
+    nodeStyle.editable = true;
     nodeStyle.shape = "image";
     nodeStyle.imageAspect = true;
     graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
