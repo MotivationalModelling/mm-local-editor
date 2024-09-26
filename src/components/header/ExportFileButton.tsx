@@ -27,13 +27,13 @@ const ExportFileButton = () => {
 		try {
 			// If chromium browser
 			if ('showSaveFilePicker' in self) {
-				const options = {
+				const options: SaveFilePickerOptions = {
 					id: 'exportImage',
 					suggestedName: 'Graph.svg',
 					startIn: 'downloads',
 					types: [{
 						description: 'SVG Image',
-						accept: { 'image/svg+xml': ['.svg']}
+						accept: {'image/svg+xml': ['.svg']}
 					}]
 				};
 				const handle = await self.showSaveFilePicker(options);
@@ -107,7 +107,7 @@ const ExportFileButton = () => {
 			if (blob) {
 				try {
 					if ('showSaveFilePicker' in self) {
-						const options = {
+						const options: SaveFilePickerOptions = {
 							id: 'exportImage',
 							suggestedName: 'Graph.png',
 							startIn: 'downloads',
