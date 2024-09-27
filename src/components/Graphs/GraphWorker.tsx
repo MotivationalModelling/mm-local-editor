@@ -32,7 +32,7 @@ import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "./ResetGraphButton.tsx";
 import ScaleTextButton from "./ScaleTextButton.tsx";
 import { useGraph } from "../context/GraphContext";
-import {Cluster} from "../types.ts";
+import { Cluster , ClusterGoal } from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -47,19 +47,13 @@ const DELETE_KEYBINDING2 = 46;
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
 
-// preferred vertical and horizontal spacing between functional goals; note
-//   the autolayout won't always accomodate these - it will depend on the
-//   topology of the model you are trying to render
-const VERTICAL_SPACING = 80;
-const HORIZONTAL_SPACING = 100;
-
 // Define shape type
-const FUNCTIONAL_TYPE = "Functional";
-const EMOTIONAL_TYPE = "Emotional";
-const NEGATIVE_TYPE = "Negative";
-const QUALITY_TYPE = "Quality";
-const STAKEHOLDER_TYPE = "Stakeholder";
-
+// paths to the image
+const HEART_PATH = "img/Heart.png";
+const PARALLELOGRAM_PATH = "img/Function.png";
+const NEGATIVE_PATH = "img/Risk.png";
+const CLOUD_PATH = "img/Cloud.png";
+const PERSON_PATH = "img/Stakeholder.png";
 
 // Predefined constant cluster to use for the example graph
 const defaultCluster: Cluster = {
@@ -117,8 +111,6 @@ const defaultCluster: Cluster = {
   ]
 };
 
-// random string, used to store unassociated non-functions in accumulators
-const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
 
 // ---------------------------------------------------------------------------
 
@@ -573,6 +565,124 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
       }
     }
   }, [cluster, graph, renderExampleGraph, isDefaultReset]);
+
+  const traverseClusterGoals = (graph: Graph, goals: ClusterGoal[], parentNode: Cell | null = null) => {
+    goals.forEach((goal) => {
+      // Check if the node already exists in the graph by its GoalID
+      let existingNode: Cell | null = null;
+      const allCells = graph.getChildVertices(graph.getDefaultParent());
+  
+      for (const cell of allCells) {
+        // need to add goal id attribute to cell
+        const cellGoalId = cell.getAttribute("GoalID");
+        if (cellGoalId && cellGoalId === goal.GoalID.toString()) {
+          existingNode = cell;
+          break;
+        }
+      }
+  
+      if (existingNode) {
+        // Node exists, update it if necessary (e.g., label, size, color)
+        updateNodeAttributes(existingNode, goal, graph);
+      } else {
+        // Node does not exist, create a new one
+        existingNode = createNode(graph, goal, parentNode);
+      }
+  
+      // Recursively handle subgoals
+      if (goal.SubGoals && goal.SubGoals.length > 0) {
+        traverseClusterGoals(graph, goal.SubGoals, existingNode);
+      }
+    });
+  };
+  
+  
+  const updateGraph = (graph: Graph, cluster: Cluster) => {
+    // Start the update transaction
+    graph.getDataModel().beginUpdate();
+  
+    try {
+      // Traverse the cluster to find or create nodes and edges
+      traverseClusterGoals(graph, cluster.ClusterGoals, null);
+  
+      // Remove any nodes that are no longer in the cluster
+      const allCells = graph.getChildVertices(graph.getDefaultParent());
+      allCells.forEach((cell) => {
+        const goalId = cell.getAttribute("GoalID");
+        if (!goalId || !cluster.ClusterGoals.some(goal => goal.GoalID.toString() === goalId)) {
+          graph.removeCells([cell]);
+        }
+      });
+    } 
+    finally {
+      // End the update transaction and refresh the graph
+      graph.getDataModel().endUpdate();
+      graph.refresh();
+    }
+  };
+  
+
+  // Helper function to update node attributes
+  const updateNodeAttributes = (node: Cell, goal: ClusterGoal, graph: Graph) => {
+    const geo = node.getGeometry();
+    if (geo) {
+      // Update position, size, etc.
+      const preferredSize = graph.getPreferredSizeForCell(node);
+      geo.width = preferredSize ? preferredSize.width : geo.width;
+      geo.height = preferredSize ? preferredSize.height : geo.height;
+    }
+  
+    // Update node label or any other attributes based on the goal
+    graph.getDataModel().setValue(node, goal.GoalContent);
+    
+    // Update color or any other specific styles
+    const style = graph.getCellStyle(node);
+    //style.fillColor = "black";
+    graph.getDataModel().setStyle(node, style);
+  };
+  
+  // Helper function to create a new node
+  const createNode = (graph: Graph, goal: ClusterGoal, parentNode: Cell | null) => {
+    const style = graph.getStylesheet().getDefaultVertexStyle();
+    style.image = getImageForGoalType(goal.GoalType); // Use a helper to get the correct image for each goal type
+  
+    const node = graph.insertVertex(
+      parentNode,
+      null,
+      goal.GoalContent,
+      0, // Use a default position, will be adjusted later
+      0,
+      SYMBOL_WIDTH,
+      SYMBOL_HEIGHT,
+      style
+    );
+  
+    // Create an edge between the parent and the new node if there's a parent
+    if (parentNode) {
+      graph.insertEdge(null, null, "", parentNode, node);
+    }
+  
+    return node;
+  };
+  
+  // Helper function to return the image path based on goal type
+  const getImageForGoalType = (goalType: string) => {
+    switch (goalType) {
+      case "Functional":
+        return PARALLELOGRAM_PATH;
+      case "Emotional":
+        return HEART_PATH;
+      case "Negative":
+        return NEGATIVE_PATH;
+      case "Quality":
+        return CLOUD_PATH;
+      case "Stakeholder":
+        return PERSON_PATH;
+      default:
+        return PARALLELOGRAM_PATH;
+    }
+  };
+  
 
   /**
    * Parses the graph to XML, to be saved/loaded in a differenct session.
