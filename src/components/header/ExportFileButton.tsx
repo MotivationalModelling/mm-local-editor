@@ -5,11 +5,21 @@ import { Canvg } from 'canvg';
 const ExportFileButton = () => {
 	const { graph } = useGraph(); // Use the context to get the graph instance
 
+	// Function to recentre the view
+	const recentreView = () => {
+		if (graph) {
+			graph.fit();
+			graph.center();
+		}
+	};
+
 	// Function to export graph as an image
 	const exportGraphAsSVG = async () => {
 		if (!graph) {
 			return;
 		}
+
+		recentreView();
 	
 		// Clear all selection for no green bounding box
 		graph.clearSelection();
@@ -69,6 +79,8 @@ const ExportFileButton = () => {
 			return;
 		}
 		
+		recentreView();
+
 		// Clear all selection for no green bounding box
 		graph.clearSelection();
 		// Get the container holding the SVG
