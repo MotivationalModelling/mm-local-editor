@@ -6,8 +6,6 @@ import {
   CellStateStyle,
   DragSource,
   Cell,
-  ConnectionHandler,
-  ImageBox,
   KeyHandler,
   UndoManager,
   EventObject,
@@ -17,21 +15,24 @@ import {
   Codec,
   ModelXmlSerializer,
 } from "@maxgraph/core";
-import { GoalModelLayout } from "./GoalModelLayout";
-
-import { useRef, useEffect, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import {GoalModelLayout} from "./GoalModelLayout";
+import React, {useRef, useEffect, useState, useMemo, useCallback} from "react";
+import {Container, Row, Col} from "react-bootstrap";
 import "./GraphWorker.css";
 import {
   registerCustomShapes,
-  NEGATIVE_SHAPE,
-  PERSON_SHAPE,
-  CLOUD_SHAPE,
-  PARALLELOGRAM_SHAPE,
-  HEART_SHAPE,
+  // NEGATIVE_SHAPE,
+  // PERSON_SHAPE,
+  // CLOUD_SHAPE,
+  // PARALLELOGRAM_SHAPE,
+  // HEART_SHAPE,
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
+import WarningMessage from "./WarningMessage";
+import ResetGraphButton from "../ResetGraphButton.tsx";
+import { useGraph } from "../context/GraphContext";
+import {Cluster, ClusterGoal} from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -46,19 +47,14 @@ const CLOUD_PATH = "img/Cloud.png";
 const PERSON_PATH = "img/Stakeholder.png";
 
 // some image path
-const PATH_EDGE_HANDLER_ICON = "img/link.png";
+// const PATH_EDGE_HANDLER_ICON = "img/link.png";
 
 // default width/height of the root goal in the graph
 const SYMBOL_WIDTH = 145;
 const SYMBOL_HEIGHT = 110;
 
-// size of the edge-creation icon
-const ICON_WIDTH = 14;
-const ICON_HEIGHT = 14;
-
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
-
 
 // default x,y coordinates of the root goal in the graph - (functional graph)
 const SYMBOL_X_COORD = 0;
@@ -66,7 +62,7 @@ const SYMBOL_Y_COORD = 0;
 
 // scale factor for sizing child goals in the functional hierarchy; functional
 //   goals at each layer should be slightly smaller than their parents
-const CHILD_SIZE_SCALE = 0.8;
+const CHILD_SIZE_SCALE = 0.9;
 
 // scale factor for sizing functional goals
 const SH_PREFERRED = 1.1;
@@ -92,9 +88,8 @@ const DELETE_KEYBINDING2 = 46;
 // preferred vertical and horizontal spacing between functional goals; note
 //   the autolayout won't always accomodate these - it will depend on the
 //   topology of the model you are trying to render
-const VERTICAL_SPACING = 60;
-const HORIZONTAL_SPACING = 60;
-
+const VERTICAL_SPACING = 80;
+const HORIZONTAL_SPACING = 100;
 
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
@@ -103,9 +98,62 @@ const NEGATIVE_TYPE = "Negative";
 const QUALITY_TYPE = "Quality";
 const STAKEHOLDER_TYPE = "Stakeholder";
 
-// Define shape data
-const FUNCTIONAL_DATA = "functionaldata";
 
+// Predefined constant cluster to use for the example graph
+const defaultCluster: Cluster = {
+  ClusterGoals: [{
+      GoalID: 1,
+      GoalType: "Functional",
+      GoalContent: "Functional Goal",
+      GoalNote: "",
+      SubGoals: [{
+          GoalID: 6,
+          GoalType: "Functional",
+          GoalContent: "Functional Goal",
+          GoalNote: "",
+          SubGoals: [{
+              GoalID: 7,
+              GoalType: "Functional",
+              GoalContent: "Functional Goal",
+              GoalNote: "",
+              SubGoals: []
+            }
+          ]
+        }, {
+          GoalID: 8,
+          GoalType: "Functional",
+          GoalContent: "Functional Goal",
+          GoalNote: "",
+          SubGoals: []
+        }
+      ]
+    }, {
+      GoalID: 2,
+      GoalType: "Quality",
+      GoalContent: "Quality Goals",
+      GoalNote: "",
+      SubGoals: []
+    }, {
+      GoalID: 3,
+      GoalType: "Emotional",
+      GoalContent: "Emotional Goals",
+      GoalNote: "",
+      SubGoals: []
+    }, {
+      GoalID: 4,
+      GoalType: "Stakeholder",
+      GoalContent: "Stakeholders ",
+      GoalNote: "",
+      SubGoals: []
+    }, {
+      GoalID: 5,
+      GoalType: "Negative",
+      GoalContent: "Negatives",
+      GoalNote: "",
+      SubGoals: []
+    }
+  ]
+};
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -120,67 +168,58 @@ interface GlobObject {
   [key: string]: string[];
 }
 
-// DropHandler from DragSource @maxgraph/core
-// type DropHandler = (
-//   graph: Graph,
-//   evt: MouseEvent,
-//   cell: Cell | null,
-//   x?: number,
-//   y?: number
-// ) => void;
+
+type GraphWorkerProps = {
+  cluster: Cluster;
+  onResetEmpty: () => void; // Function to reset the graph to empty
+};
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker = () => {
-  const divGraph = useRef<HTMLDivElement>(null);
+const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
   //   const divSidebar = useRef<HTMLDivElement>(null);
-  const [graphRef, setGraphRef] = useState<Graph | null>(null);
+  const divGraph = useRef<HTMLDivElement>(null);
+  const {graph, setGraph} = useGraph();
+  const [isDefaultReset, setIsDefaultReset] = useState(true);
 
-  /**
-   * Re-centre/Re-scale
-   * Function for resetting zoom and recentring the graph
-   *  This is necessary when "Export" is pressed to help export the graph to the
-   *    right resolution. to properly locate the canvas view for the export
-   *    function, we actually need to centre the view such that:
-   *      x = x coord of leftmost symbol; and
-   *      y = y coord of topmost symbol
-   */
-  const recentreView = () => {
-    const graph = graphRef;
+
+  const hasFunctionalGoal = (cluster: Cluster) => (
+      cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
+  );
+  const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
+
+   // Function to reset the graph to empty
+   const resetEmptyGraph = () => {
     if (graph) {
-      // get the list of all cells in the graph
-      const widthCanvas = graph.container.clientWidth;
-      const heightCanvas = graph.container.clientHeight;
-      const vertices = graph.getChildVertices();
-
-      // if no vertices, then just centre to (0,0)
-      if (vertices.length == 0) {
-        graph.view.setTranslate(0, 0);
-        graph.view.setScale(1);
-        return;
-      }
-
-      // if there are vertices, then find the leftmost x coord and upmost y coord
-      let horizontal = 0;
-      let vertical = 0;
-
-      for (let i = 0; i < vertices.length; i++) {
-        const curr = vertices[i].geometry;
-        if (curr) {
-          horizontal += curr?.x;
-          vertical += curr?.y;
-        }
-      }
-      const centroid_x = horizontal / vertices.length;
-      const centroid_y = vertical / vertices.length;
-
-      // recentres the view to its starting point (x = 0, y = 0)
-
-      graph.view.setTranslate(
-        -centroid_x + (widthCanvas - 100) / 2,
-        -centroid_y + heightCanvas / 2
-      );
+      graph.getDataModel().clear();
+      onResetEmpty();
+      setIsDefaultReset(false);
     }
+  };
+
+  // Function to reset the graph to the default set of goals
+  const resetDefaultGraph = () => {
+    if (graph) {
+      graph.getDataModel().clear();
+      onResetEmpty();
+      setIsDefaultReset(true);
+    }
+  };
+
+  const recentreView = () => {
+    if (graph) {
+      graph.fit();
+      graph.center();
+    }
+    console.log("center")
+  };
+  
+  const initRecentreView = () => {
+    if (graph) {
+      graph.view.setScale(1);
+      graph.center();
+    }
+    console.log("center")
   };
 
   const adjustFontSize = (
@@ -222,6 +261,14 @@ const GraphWorker = () => {
     // config: permit vertices to be connected by edges
     graph.setConnectable(true);
     graph.setCellsEditable(true);
+    graph.setPanning(true);
+    graph.setCellsResizable(true);
+    graph.setCellsMovable(true); // Allow cells to be moved
+    graph.setCellsSelectable(true); // Allow cells to be selected
+
+    // Ensure pointer events are enabled
+    graph.container.style.cursor = "default";
+    graph.container.style.pointerEvents = "all";
 
     // config: set default style for edges inserted into graph
     const edgeStyle = graph.getStylesheet().getDefaultEdgeStyle();
@@ -250,7 +297,7 @@ const GraphWorker = () => {
     const cellHistory: CellHistory = {};
     graph
       .getDataModel()
-      .addListener(InternalEvent.CHANGE, (sender: string, evt: EventObject) => {
+      .addListener(InternalEvent.CHANGE, (_sender: string, evt: EventObject) => {
         console.log("graph changed");
         graph.getDataModel().beginUpdate();
         evt.consume();
@@ -373,6 +420,7 @@ const GraphWorker = () => {
       return null;
     };
   };
+
   /**
    * Sidebar
    */
@@ -393,7 +441,7 @@ const GraphWorker = () => {
 
   const resetGraph = (
     graph: Graph,
-    rootGoal: Cell | null,
+    rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
@@ -402,13 +450,14 @@ const GraphWorker = () => {
     // reset - remove any existing graph if render is called
     graph.removeCells(graph.getChildVertices(graph.getDefaultParent()));
     graph.removeCells(graph.getChildEdges(graph.getDefaultParent()));
-    rootGoal = null;
+    rootGoalWrapper = { value: null};
 
     // reset the accumulators for non-functional goals
     emotionsGlob = {};
     negativesGlob = {};
     qualitiesGlob = {};
     stakeholdersGlob = {};
+
   };
 
   /**
@@ -419,19 +468,18 @@ const GraphWorker = () => {
    * : source, the parent of the goal
    */
   const renderFunction = (
-    goal,
+    goal: ClusterGoal,
     graph: Graph,
     source: Cell | null = null,
-    rootGoal: Cell | null,
+    rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    console.log("functionalllll");
-    console.log(goal.GoalContent);
+
     const arr = goal.GoalContent.split(" ");
-    console.log(arr);
+    
     // styling
     const image = PARALLELOGRAM_PATH;
     let width = SYMBOL_WIDTH;
@@ -460,11 +508,12 @@ const GraphWorker = () => {
         image: image,
       }
     );
-    const edge = graph.insertEdge(null, null, "", source, node);
+    graph.insertEdge(null, null, "", source, node);
 
     // if no root goal is registered, then store this as root
-    if (rootGoal === null) {
-      rootGoal = node;
+    if (rootGoalWrapper.value === null) {
+      rootGoalWrapper.value = node;
+      console.log("rootgoal registered", rootGoalWrapper.value);
     }
 
     //resize functional goal base on text length and number of lines
@@ -480,7 +529,7 @@ const GraphWorker = () => {
       node_geo.height = Math.max(
         node_geo.height,
         preferred.width * SH_PREFERRED,
-        height 
+        height
       );
     }
     // then recurse over the goal's children
@@ -488,12 +537,13 @@ const GraphWorker = () => {
       goal.SubGoals,
       graph,
       node,
-      rootGoal,
+      rootGoalWrapper,
       emotionsGlob,
       negativesGlob,
       qualitiesGlob,
       stakeholdersGlob
     );
+
   };
 
   /**
@@ -503,17 +553,17 @@ const GraphWorker = () => {
    * : source, the parent goal of the given array, defaults to null
    */
   const renderGoals = (
-    goals,
+    goals: ClusterGoal[],
     graph: Graph,
     source: Cell | null = null,
-    rootGoal: Cell | null,
+    // rootGoal: Cell | null,
+    rootGoalWrapper: { value: Cell | null },
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    console.log("Logging: renderGoals() called on list: " + goals);
-
+    console.log("Logging: renderGoals() called on list: ", goals);
     // accumulate non-functional goals to be rendered into a single symbol
     const emotions = [];
     const qualities = [];
@@ -526,12 +576,13 @@ const GraphWorker = () => {
       const type = goal.GoalType;
       const content = goal.GoalContent;
       // recurse over functional goals
-      if (type === FUNCTIONAL_DATA) {
+      console.log("Render goals type:", type);
+      if (type === FUNCTIONAL_TYPE) {
         renderFunction(
           goal,
           graph,
           source,
-          rootGoal,
+          rootGoalWrapper,
           emotionsGlob,
           negativesGlob,
           qualitiesGlob,
@@ -586,9 +637,10 @@ const GraphWorker = () => {
     source: Cell | null = null,
     type: string = "None"
   ) => {
-    console.log("nonfunctionalllll");
-    console.log(descriptions);
-    // fetch parent coordinates
+    
+    console.log("Rendering non-functional goal: ", descriptions);
+  
+    // Fetch parent coordinates
     if (source) {
       const geo = source.getGeometry();
       let x = 0;
@@ -602,50 +654,58 @@ const GraphWorker = () => {
         let height = fHeight;
         let delimiter = "";
         let image = "";
-
+  
         switch (type) {
-          case EMOTIONAL_TYPE:
+          case EMOTIONAL_TYPE: // Top Right (TR)
             image = HEART_PATH;
             width = fWidth * SW_EMOTIONAL;
             height = fHeight * SH_EMOTIONAL;
-            x = sourceX - width / 2 - fWidth / 4;
-            y = sourceY - height / 2 - fHeight / 4;
+            x = sourceX + fWidth * 1.3 - width / 2; // Move to the right
+            y = sourceY - fHeight / 4 - height / 2 ; // Move up
             delimiter = ",\n";
             break;
-          case NEGATIVE_TYPE:
+  
+          case NEGATIVE_TYPE: // Bottom Right (BR)
             image = NEGATIVE_PATH;
             width = fWidth * SW_NEGATIVE;
             height = fHeight * SH_NEGATIVE;
-            x = sourceX + fWidth * 1.15 - width / 2;
-            y = sourceY - height / 2 - fHeight / 4;
+            x = sourceX + fWidth * 1.3 - width / 2; // Move to the right
+            y = sourceY + fHeight * 0.9 - height / 2; // Move down
             delimiter = ",\n";
             break;
-          case QUALITY_TYPE:
+  
+          case QUALITY_TYPE: // Top Left (TL)
             image = CLOUD_PATH;
             width = fWidth * SW_QUALITY;
             height = fHeight * SH_QUALITY;
-            x = sourceX - width / 2 - fWidth / 4;
-            y = sourceY + fHeight * 1.15 - height / 2;
+            x = sourceX - fWidth / 4 - width / 2 ; // Move to the left
+            y = sourceY - fHeight / 4 - height / 2 ; // Move up
             delimiter = ",\n";
             break;
-          case STAKEHOLDER_TYPE:
-            image = descriptions.length > 1 ? PERSON_PATH : PERSON_PATH; // Need image for multiple stakholders ???????????
+  
+          case STAKEHOLDER_TYPE: // Bottom Left (BL)
+            image = PERSON_PATH;
             width = fWidth * SW_STAKEHOLDER;
             height = fHeight * SH_STAKEHOLDER;
-            x = sourceX + fWidth * 1.05 - width / 2;
-            y = sourceY + fHeight - height / 2;
+            x = sourceX - fWidth / 2 - width / 2; // Move to the left
+            y = sourceY + fHeight * 0.9 - height / 2; // Move down
             delimiter = "\n";
             break;
         }
-
-        // customize vertex style
+  
+        // customize vertex style to center text
         let style: CellStateStyle = {
           fontSize: VERTEX_FONT_SIZE,
           fontColor: "black",
           shape: "image",
           image: image,
+          align: "center",           // Center horizontally
+          verticalAlign: "middle",   // Center vertically
+          labelPosition: "center",
+          spacingTop: -10,
         };
-        // if stakeholder, text goes at bottom
+  
+        // If stakeholder, text goes at bottom
         if (type === STAKEHOLDER_TYPE) {
           style = {
             ...style,
@@ -653,8 +713,8 @@ const GraphWorker = () => {
             verticalLabelPosition: "bottom",
           };
         }
-
-        // insert the vertex
+  
+        // Insert the vertex
         const node = graph.insertVertex(
           null,
           null,
@@ -665,10 +725,9 @@ const GraphWorker = () => {
           height,
           style
         );
+  
         const edge = graph.insertEdge(null, null, "", source, node);
-        // make the edge invisible - we still want to create the edge
-        // the edge is needed when running the autolayout logic
-        edge.visible = false;
+        edge.visible = false; // Make the edge invisible - used in auto layout
       }
     }
   };
@@ -747,7 +806,7 @@ const GraphWorker = () => {
         }
       );
     });
-
+    
     return legend;
   };
 
@@ -794,7 +853,12 @@ const GraphWorker = () => {
 
       // render all qualities
       if (qualitiesGlob[value]) {
-        renderNonFunction(qualitiesGlob[goal.value], graph, goal, QUALITY_TYPE);
+        renderNonFunction(
+          qualitiesGlob[goal.value],
+          graph, 
+          goal, 
+          QUALITY_TYPE
+        );
       }
 
       // render all concerns
@@ -828,7 +892,12 @@ const GraphWorker = () => {
       );
     }
     if (qualitiesGlob[ROOT_KEY] && rootGoal != null) {
-      renderNonFunction(qualitiesGlob[ROOT_KEY], graph, rootGoal, QUALITY_TYPE);
+      renderNonFunction(
+        qualitiesGlob[ROOT_KEY], 
+        graph, 
+        rootGoal, 
+        QUALITY_TYPE
+      );
     }
     if (negativesGlob[ROOT_KEY] && rootGoal != null) {
       renderNonFunction(
@@ -848,412 +917,166 @@ const GraphWorker = () => {
     }
   };
 
-  useEffect(() => {  
-    //let graph: Graph;
-    if (divGraph.current) {
-      const graphContainer = divGraph.current
+  // Just renders an example graph
+  const renderExampleGraph = () => {
+    if (!graph) return;
+
+    console.log("Rendering Example Graph");
+
+    // Declare necessary variables
+    // Use rootGoalWrapper to be able to update its value
+    let rootGoal: Cell | null = null;
+    const rootGoalWrapper = { value: null as Cell | null };
+    const emotionsGlob: GlobObject = {};
+    const negativesGlob: GlobObject = {};
+    const qualitiesGlob: GlobObject = {};
+    const stakeholdersGlob: GlobObject = {};
+
+    resetGraph(
+      graph,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+
+    // Check if the browser is supported
+    if (!Client.isBrowserSupported()) {
+      console.log("Logging: browser not supported");
+      error("Browser not supported!", 200, false);
+      return;
+    }
+
+    // Start the transaction to render the graph
+    graph.getDataModel().beginUpdate();
+    renderGoals(
+      defaultCluster.ClusterGoals,
+      graph,
+      null,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    rootGoal = rootGoalWrapper.value;
+    layoutFunctions(graph, rootGoal);
+    associateNonFunctions(
+      graph,
+      rootGoal,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    graph.getDataModel().endUpdate();
+    initRecentreView();
+  };
+
+  const renderGraph = () => {
+    if (!graph) return;
+
+    console.log("Rendering Graph");
+
+    // Declare necessary variables
+    // Use rootGoalWrapper to be able to update its value
+    let rootGoal: Cell | null = null;
+    const rootGoalWrapper = { value: null as Cell | null };
+    const emotionsGlob: GlobObject = {};
+    const negativesGlob: GlobObject = {};
+    const qualitiesGlob: GlobObject = {};
+    const stakeholdersGlob: GlobObject = {};
+
+    resetGraph(
+      graph,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+
+    // Check if the browser is supported
+    if (!Client.isBrowserSupported()) {
+      console.log("Logging: browser not supported");
+      error("Browser not supported!", 200, false);
+      return;
+    }
+
+    // Start the transaction to render the graph
+    graph.getDataModel().beginUpdate();
+    renderGoals(
+      cluster.ClusterGoals,
+      graph,
+      null,
+      rootGoalWrapper,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    rootGoal = rootGoalWrapper.value;
+    layoutFunctions(graph, rootGoal);
+    associateNonFunctions(
+      graph,
+      rootGoal,
+      emotionsGlob,
+      negativesGlob,
+      qualitiesGlob,
+      stakeholdersGlob
+    );
+    graph.getDataModel().endUpdate();
+    initRecentreView();
+  };
+
+  // First useEffect to set up graph. Only run on mount.
+  useEffect(() => {
+    const graphContainer: HTMLElement | undefined =
+      divGraph.current || undefined;
+
+    if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
 
-      // config: allow drag-panning using left click on empty canvas space
-      let graph = new Graph(graphContainer);
-      setGraphRef(graph);
-      console.log(graph.getDataModel());
-      graph.getDataModel().beginUpdate();
+      const graphInstance = new Graph(graphContainer); // Create the graph
 
-      const layout = new GoalModelLayout(
-        graph,
-        VERTICAL_SPACING,
-        HORIZONTAL_SPACING
-      );
-      layout.execute(graph.getDefaultParent());
-      // const layout = new CompactTreeLayout(graph);
-      // layout.execute(graph.getDefaultParent());
+      setGraphStyle(graphInstance);
+      graphListener(graphInstance);
+      supportFunctions(graphInstance);
+      registerCustomShapes();
+      setGraph(graphInstance);
 
-      graph.setPanning(true); // Use mouse right button for panning
-      // set up graph default style of edges and vertices
-      setGraphStyle(graph);
-
-      // listen to graph changes and add item to graphs accordingly
-      graphListener(graph);
-
-      // Gets the default parent for inserting new cells. This
-      // is normally the first child of the root (ie. layer 0).
-      // const parent = graph.getDefaultParent();
-
-      // // keep the container focused
-      // const graphFireMouseEvent = Graph.prototype.fireMouseEvent;
-      // Graph.prototype.fireMouseEvent = (evtName: string, me: InternalMouseEvent, sender?: EventSource) => {
-      //     if (evtName === InternalEvent.MOUSE_DOWN){
-      //         graph.container.focus();
-      //     }
-      //     graphFireMouseEvent.apply(this,[evtName, me, sender]);
-      // }
-
-      /**
-       * Edge Handler
-       *
-       * This manifests an icon that appears in the middle of a vertex when you
-       * hover over it with the mouse; the icon can be used to create edges out
-       * of the vertex by click-and-drag.
-       */
-      const connectionHandler = graph.getPlugin(
-        "ConnectionHandler"
-      ) as ConnectionHandler;
-      connectionHandler.connectImage = new ImageBox(
-        PATH_EDGE_HANDLER_ICON,
-        ICON_WIDTH,
-        ICON_HEIGHT
-      );
-      // delete and undo action in graph
-      supportFunctions(graph);
-
-      /**
-       * Autolayout
-       *
-       * The following functions are used to run generate and autolayout the graph
-       * using the goal list provided by the editor.
-       */
-
-      // variable, stores the identity of the root function
-      let rootGoal: Cell | null = null;
-
-      // maps from function_id -> associated non-functional goals
-      //    A bug that arises from this implementation is that if a functional goal
-      //    of identical name appears in multiple places in the goal hierarchy, then
-      //    every instance of the goal will be rendered with non-functional goals
-      //    pertaining to all instances of the functional goal/
-
-      let emotionsGlob: GlobObject = {};
-      let negativesGlob: GlobObject = {};
-      let qualitiesGlob: GlobObject = {};
-      let stakeholdersGlob: GlobObject = {};
-
-      /**
-       * Renders window.jsonData into a motivational model into graphContainer.
-       */
-      const renderGraph = (container: HTMLElement) => {
-        // saveJSON(false);
-        console.log("Logging: renderGraph() called.");
-
-        resetGraph(
-          graph,
-          rootGoal,
-          emotionsGlob,
-          negativesGlob,
-          qualitiesGlob,
-          stakeholdersGlob
-        );
-
-        // check that browser is supported
-        if (!Client.isBrowserSupported()) {
-          console.log("Logging: browser not supported");
-          error("Browser not supported!", 200, false);
-          // utils.error("Browser not supported!", 200, false);
-          return;
-        }
-
-        // disable context menu
-        InternalEvent.disableContextMenu(container);
-        //--------------------------------this should change to render from xml file --------------------------
-        // grab the clusters from window.jsonData
-        if (window.jsonData) {
-          const clusters = window.jsonData.GoalModelProject.Clusters;
-
-          // render the graph
-          graph.getDataModel().beginUpdate(); // start transaction
-          for (let i = 0; i < clusters.length; i++) {
-            // grab goal hierarchy from the cluster
-            const goals = clusters[i].ClusterGoals;
-            // ... then call render
-            renderGoals(
-              goals,
-              graph,
-              null,
-              rootGoal,
-              emotionsGlob,
-              negativesGlob,
-              qualitiesGlob,
-              stakeholdersGlob
-            );
-          }
-          layoutFunctions(graph, rootGoal);
-          associateNonFunctions(
-            graph,
-            rootGoal,
-            emotionsGlob,
-            negativesGlob,
-            qualitiesGlob,
-            stakeholdersGlob
-          );
-          graph.getDataModel().endUpdate(); // end transaction
+      // Cleanup function to destroy graph
+      return () => {
+        if (graph) {
+          console.log("Destroy");
+          graph.destroy();
+          setGraph(null); // Reset state
         }
       };
-
-      graph.getDataModel().endUpdate();
     }
+  }, []);
 
-    registerCustomShapes();
-    const graph = graphRef;
-    if (!graph) return;
-    const parent = graph.getDefaultParent();
-    graph.batchUpdate(() => {
-      console.log("graphing batch update");
-      const vertex1 = graph.insertVertex(
-        parent,
-        null,
-        "person shape",
-        100,
-        40,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: PARALLELOGRAM_SHAPE, fontColor: "blue" }
-      );
-      const vertex2 = graph.insertVertex(
-        parent,
-        null,
-        "parallelogram shape",   
-        500,
-        100,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: CLOUD_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex1, vertex2);
-
-      const vertex3 = graph.insertVertex(
-        parent,
-        null,
-        "heart shape",
-        20,
-        200,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: NEGATIVE_SHAPE, fillColor: "grey", fontColor: "black" }
-      );
-      const vertex4 = graph.insertVertex(
-        parent,
-        null,
-        "negative shape",
-        150,
-        350,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: PERSON_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex3, vertex4);
-
-      const vertex5 = graph.insertVertex(
-        parent,
-        null,
-        "heart shape",
-        200,
-        200,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: HEART_SHAPE, fontColor: "black" }
-      );
-      const vertex6 = graph.insertVertex(
-        parent,
-        null,
-        "cloud shape",
-        350,
-        350,
-        SYMBOL_WIDTH,
-        SYMBOL_HEIGHT,
-        { shape: CLOUD_SHAPE, fontColor: "black" }
-      );
-      graph.insertEdge(parent, null, "", vertex5, vertex6);
-    });
-    // }
-
-    return () => {
-      graph.destroy();
-    };
-  }, [divGraph.current]);
-
-  // --------------------------------------------------------------------------------------------------------------------------------------------------
-  // graphXML content(should have a way to separate codes into another file)
-
-  interface Secret {
-    token: string;
-    uid: string;
-    uuid?: string;
-  }
-
-  interface ExportResponse {
-    png: {
-      data: number[];
-    };
-    version: string;
-  }
-
-  interface Navigator {
-    msSaveOrOpenBlob?: (blob: Blob, defaultName?: string) => boolean;
-  }
-
-  /* const exportModel = () => {
-    recentreView();
-
-    const payload = Cookies.get("LOKIDIED") ?? '{token: "", uid: "", uiid: ""}';
-    const SECRET: Secret = JSON.parse(payload);
-    const FILENAME = "MM_image";
-
-    const token = SECRET.token;
-    const userId = SECRET.uid;
-
-    const modelId = Cookies.get("CMID");
-    const exportURL = `/goal_model/exportToPng/${userId}/${modelId}`;
-
-    const svg = document.getElementsByTagName("svg")[0];
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-
-    const style = svg.getAttribute("style")?.split(";") ?? [];
-    const width = style[3]?.split(":")[1];
-    const height = style[4]?.split(":")[1];
-
-    if (width && height) {
-      svg.setAttribute("width", width);
-      svg.setAttribute("height", height);
+  // Separate useEffect to render / update the graph.
+  useEffect(() => {
+    if (graph) {
+      // If user has goals defined, draw the graph
+      if (cluster.ClusterGoals.length > 0) {
+        renderGraph();
+      } 
+      else if (isDefaultReset) {
+        renderExampleGraph();
+      }
     }
+  }, [cluster, graph, renderExampleGraph, isDefaultReset]);
 
-    const serializer = new XMLSerializer();
-    const ser = serializer.serializeToString(svg);
-
-    axios
-      .post<ExportResponse>(
-        exportURL,
-        { svg: ser },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "json",
-        }
-      )
-      .then((response) => {
-        const res = response.data;
-        console.log(res.png.data);
-        const data = new Uint8Array(res.png.data);
-        const pngFile = new Blob([data], { type: "image/png" });
-
-        const navigator = window.navigator as Navigator;
-        if (navigator.msSaveOrOpenBlob) {
-          // IE10+
-          navigator.msSaveOrOpenBlob(pngFile, FILENAME);
-        } else {
-          const a = document.createElement("a"),
-            url = URL.createObjectURL(pngFile);
-          a.href = url;
-          a.download = res.version + ".png";
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          }, 0);
-        }
-      })
-      .catch((error) => {
-        console.error("There was an error!", error);
-      });
-  };
- */
-
-  /**
-   * send XML to backend
-   * @param isTemplate
-   */
-  /* const sendXML = (isTemplate: boolean) => {
-    const graph = graphRef;
-    if (!graph) return;
-
-    const payload = Cookies.get("LOKIDIED") ?? '{token: "", uid: "", uiid: ""}';
-
-    const SECRET: Secret = JSON.parse(payload);
-
-    const token = SECRET.token;
-    const userId = SECRET.uid;
-
-    const modelId = Cookies.get("CMID");
-    let url = `/goal_model/xml/${userId}/${modelId}`;
-
-    if (isTemplate) {
-      const templateId = Cookies.get("TID");
-      url = `/template/${userId}/${templateId}`;
-    }
-
-    recentreView();
-
-    const xml = parseToXML(graph);
-    const svg = graph.container.firstElementChild as SVGSVGElement;
-
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-
-    const style = svg.getAttribute("style")?.split(";") ?? [];
-    const width = style[3]?.split(":")[1];
-    const height = style[4]?.split(":")[1];
-
-    if (width && height) {
-      svg.setAttribute("width", width);
-      svg.setAttribute("height", height);
-    }
-
-    const serializer = new XMLSerializer();
-    const ser = serializer.serializeToString(svg);
-
-    axios
-      .put(
-        url,
-        { xml: xml, svg: ser },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "json",
-        }
-      )
-      .then(() => {
-        // handle success
-      })
-      .catch((error) => {
-        // handle error
-      });
-  };
- */
-  /**
-   * get XML from backend
-   */
-  /* const getXML = () => {
-    const payload = Cookies.get("LOKIDIED") ?? '{token: "", uid: "", uiid: ""}';
-
-    const SECRET = JSON.parse(payload);
-
-    const token = SECRET.token;
-    const userId = SECRET.uid;
-
-    const modelId = Cookies.get("CMID");
-    const url = `/goal_model/xml/${userId}/${modelId}`;
-
-    // the API of upload pictures
-    axios
-      .get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        // handle success
-      })
-      .catch(() => {
-        // handle error
-      });
-  };
- */
   /**
    * Parses the graph to XML, to be saved/loaded in a differenct session.
    */
   const parseToXML = (graph: Graph) => {
     const encoder = new Codec();
     const node = encoder.encode(graph.getDataModel());
-    const xml = xmlUtils.getPrettyXml(node);
+    const xml = xmlUtils.getXml(node);    
     return xml;
   };
 
@@ -1291,19 +1114,26 @@ const GraphWorker = () => {
     graph.addCells(cells, parent, null, null, null);
   };
 
+
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 
   return (
-    <Container>
-      <Row className="row">
-        <Col md={11}>
-          <div id={GRAPH_DIV_ID} ref={divGraph} />
-        </Col>
-        <Col md={1}>
-          <GraphSidebar graph={graphRef} recentreView={recentreView} />
-        </Col>
-      </Row>
-    </Container>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <ResetGraphButton resetEmptyGraph={resetEmptyGraph} resetDefaultGraph={resetDefaultGraph}></ResetGraphButton>
+      <Container>
+        <Row className="row">
+          <Col md={11}>
+            <div id={GRAPH_DIV_ID} ref={divGraph}/>
+          </Col>
+          <Col md={1}>
+            <GraphSidebar graph={graph} recentreView={recentreView} />
+          </Col>
+        </Row>
+      {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
+          <WarningMessage message="No functional goals found"/>
+      )}
+      </Container>
+    </div>
   );
 };
 
