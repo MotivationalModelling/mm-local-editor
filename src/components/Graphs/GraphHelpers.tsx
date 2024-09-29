@@ -70,7 +70,106 @@ const STAKEHOLDER_TYPE = "Stakeholder";
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
 
-// Render a functional goal
+/**
+   * Recursively renders the goal hierarchy.
+   * : goals, the top-level array of goals
+   * : graph, the graph into which goals will be rendered
+   * : source, the parent goal of the given array, defaults to null
+   */
+export const renderGoals = (
+  goals: ClusterGoal[],
+  graph: Graph,
+  source: Cell | null = null,
+  // rootGoal: Cell | null,
+  rootGoalWrapper: { value: Cell | null },
+  emotionsGlob: GlobObject,
+  negativesGlob: GlobObject,
+  qualitiesGlob: GlobObject,
+  stakeholdersGlob: GlobObject
+) => {
+
+  console.log("Logging: renderGoals() called on list: ", goals);
+  // accumulate non-functional goals to be rendered into a single symbol
+  const emotions = [];
+  const qualities = [];
+  const concerns = [];
+  const stakeholders = [];
+
+  const rootKey = rootGoalWrapper.value;
+  console.log("in renderGoal: ", rootGoalWrapper.value, rootKey);
+
+  // run through each goal in the given array
+  for (let i = 0; i < goals.length; i++) {
+    const goal = goals[i];
+    const type = goal.GoalType;
+    const content = goal.GoalContent;
+    // recurse over functional goals
+    console.log("Render goals type:", type);
+    if (type === FUNCTIONAL_TYPE) {
+      renderFunction(
+        goal,
+        graph,
+        source,
+        rootGoalWrapper,
+        emotionsGlob,
+        negativesGlob,
+        qualitiesGlob,
+        stakeholdersGlob
+      );
+
+      // accumulate non-functional descriptions into buckets
+    } else if (type === EMOTIONAL_TYPE) {
+      emotions.push(content);
+    } else if (type === NEGATIVE_TYPE) {
+      concerns.push(content);
+    } else if (type === QUALITY_TYPE) {
+      qualities.push(content);
+    } else if (type === STAKEHOLDER_TYPE) {
+      stakeholders.push(content);
+    } else {
+      console.log("Logging: goal of unknown type received: " + type);
+    }
+  }
+
+  // Determine the key to use for non-functional goals
+  let key = source ? source.value : ROOT_KEY;
+
+  // If rootGoalWrapper.value exists and source is null, use its value as the key
+  if (!source && rootGoalWrapper.value) {
+    key = rootGoalWrapper.value.value;
+  }
+
+  // Store non-functional goals using the determined key
+  if (emotions.length) {
+    if (emotionsGlob[key]) {
+      emotionsGlob[key] = emotionsGlob[key].concat(emotions);
+    } else {
+      emotionsGlob[key] = emotions;
+    }
+  }
+  if (qualities.length) {
+    if (qualitiesGlob[key]) {
+      qualitiesGlob[key] = qualitiesGlob[key].concat(qualities);
+    } else {
+      qualitiesGlob[key] = qualities;
+    }
+  }
+  if (concerns.length) {
+    if (negativesGlob[key]) {
+      negativesGlob[key] = negativesGlob[key].concat(concerns);
+    } else {
+      negativesGlob[key] = concerns;
+    }
+  }
+  if (stakeholders.length) {
+    if (stakeholdersGlob[key]) {
+      stakeholdersGlob[key] = stakeholdersGlob[key].concat(stakeholders);
+    } else {
+      stakeholdersGlob[key] = stakeholders;
+    }
+  }
+};
+
 /**
 * Renders a functional goal. The most important thing that this
 * does is call renderGoals() over each of the goals children.
@@ -155,79 +254,6 @@ export const renderFunction = (
  );
 };
 
-/**
-   * Recursively renders the goal hierarchy.
-   * : goals, the top-level array of goals
-   * : graph, the graph into which goals will be rendered
-   * : source, the parent goal of the given array, defaults to null
-   */
-export const renderGoals = (
-    goals: ClusterGoal[],
-    graph: Graph,
-    source: Cell | null = null,
-    // rootGoal: Cell | null,
-    rootGoalWrapper: { value: Cell | null },
-    emotionsGlob: GlobObject,
-    negativesGlob: GlobObject,
-    qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
-  ) => {
-    console.log("Logging: renderGoals() called on list: ", goals);
-    // accumulate non-functional goals to be rendered into a single symbol
-    const emotions = [];
-    const qualities = [];
-    const concerns = [];
-    const stakeholders = [];
-
-    // run through each goal in the given array
-    for (let i = 0; i < goals.length; i++) {
-      const goal = goals[i];
-      const type = goal.GoalType;
-      const content = goal.GoalContent;
-      // recurse over functional goals
-      console.log("Render goals type:", type);
-      if (type === FUNCTIONAL_TYPE) {
-        renderFunction(
-          goal,
-          graph,
-          source,
-          rootGoalWrapper,
-          emotionsGlob,
-          negativesGlob,
-          qualitiesGlob,
-          stakeholdersGlob
-        );
-
-        // accumulate non-functional descriptions into buckets
-      } else if (type === EMOTIONAL_TYPE) {
-        emotions.push(content);
-      } else if (type === NEGATIVE_TYPE) {
-        concerns.push(content);
-      } else if (type === QUALITY_TYPE) {
-        qualities.push(content);
-      } else if (type === STAKEHOLDER_TYPE) {
-        stakeholders.push(content);
-      } else {
-        console.log("Logging: goal of unknown type received: " + type);
-      }
-    }
-
-    // render each of the non-functional goals
-    const key = source ? source.value : ROOT_KEY;
-
-    if (emotions.length) {
-      emotionsGlob[key] = emotions;
-    }
-    if (qualities.length) {
-      qualitiesGlob[key] = qualities;
-    }
-    if (concerns.length) {
-      negativesGlob[key] = concerns;
-    }
-    if (stakeholders.length) {
-      stakeholdersGlob[key] = stakeholders;
-    }
-  };
 
 // Helper function to check if two rectangles intersect
 const doRectanglesIntersect = (rect1: Rectangle, rect2: Rectangle) => {
@@ -496,7 +522,7 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
    * Adds non-functional goals into the hierarchy next to their associated
    * functional goals.
    */
-  export const associateNonFunctions = (
+export const associateNonFunctions = (
     graph: Graph,
     rootGoal: Cell | null,
     emotionsGlob: GlobObject,
@@ -507,9 +533,12 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
     // fetch all the functional goals
     const goals = graph.getChildVertices();
 
+    //console.log(stakeholdersGlob);
+
     for (let i = 0; i < goals.length; i++) {
       const goal = goals[i];
       const value = goal.value;
+      console.log("Associate: ", i, ", ", value);
 
       // render all emotions
       if (emotionsGlob[value]) {
@@ -578,6 +607,7 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
       );
     }
     if (stakeholdersGlob[ROOT_KEY] && rootGoal != null) {
+      console.log(stakeholdersGlob[ROOT_KEY]);
       renderNonFunction(
         stakeholdersGlob[ROOT_KEY],
         graph,
