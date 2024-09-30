@@ -2,6 +2,7 @@ import {
     Graph,
     Rectangle,
     Cell,
+    cellArrayUtils,
   } from "@maxgraph/core";
 import { ClusterGoal, GlobObject } from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
@@ -58,6 +59,10 @@ const SH_STAKEHOLDER = 1.2;
 //   topology of the model you are trying to render
 const VERTICAL_SPACING = 80;
 const HORIZONTAL_SPACING = 100;
+
+// Offset from functional goal with associated non-functional goal
+const OFFSET_X = 20;
+const OFFSET_Y = 20;
 
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
@@ -257,175 +262,210 @@ export const renderFunction = (
 
 // Helper function to check if two rectangles intersect
 const doRectanglesIntersect = (rect1: Rectangle, rect2: Rectangle) => {
-    return !(
-        rect1.x + rect1.width < rect2.x ||
-        rect1.x > rect2.x + rect2.width ||
-        rect1.y + rect1.height < rect2.y ||
-        rect1.y > rect2.y + rect2.height
-    );
+  return !(
+    rect1.x + rect1.width < rect2.x ||
+    rect1.x > rect2.x + rect2.width ||
+    rect1.y + rect1.height < rect2.y ||
+    rect1.y > rect2.y + rect2.height
+  );
 };
 
-// Adjust the position of a node to avoid overlap
-const adjustPosition = (node: Cell, graph: Graph, existingNodes: Cell[]) => {
-    const nodeGeo = node.getGeometry();
-    if (!nodeGeo) return;
+// Adjust vertical positions to avoid overlap among non-functional goals of the same parent
+const adjustVerticalPositions = (node: Cell, siblingNodes: Cell[], graph: Graph) => {
+  if (!node || !siblingNodes.length) return;
 
-    let adjusted = false;
-    let iterations = 0;
-    const maxIterations = 100; // Prevent infinite loops
-    const adjustmentStep = 10;
+  const nodeGeo = node.getGeometry();
+  if (!nodeGeo) return;
 
-    // Create a bounding box for the current node
-    const nodeBox = new Rectangle(nodeGeo.x, nodeGeo.y, nodeGeo.width, nodeGeo.height);
+  console.log("adjusting vertical position, ", node, siblingNodes);
+  let adjusted = false;
+  let iterations = 0;
+  const maxIterations = 100; // Prevent infinite loops
+  const adjustmentStep = 10;
 
-    // Check for overlaps and adjust positions
-    do {
-        adjusted = false;
-        for (const otherNode of existingNodes) {
-            if (node === otherNode) continue; // Skip itself
+  // Create a bounding box for the current node
+  const nodeBox = new Rectangle(nodeGeo.x, nodeGeo.y, nodeGeo.width, nodeGeo.height);
 
-            const otherGeo = otherNode.getGeometry();
-            if (!otherGeo) continue;
+  // Check for overlaps and adjust positions
+  do {
+    adjusted = false;
+    for (const sibling of siblingNodes) {
+      if (node === sibling) continue; // Skip itself
 
-            const otherBox = new Rectangle(otherGeo.x, otherGeo.y, otherGeo.width, otherGeo.height);
+      const siblingGeo = sibling.getGeometry();
+      if (!siblingGeo) continue;
 
-            if (doRectanglesIntersect(nodeBox, otherBox)) {
-                // Determine the direction to move the node to avoid overlap
-                const dx = nodeBox.x + nodeBox.width - otherBox.x;
-                const dy = nodeBox.y + nodeBox.height - otherBox.y;
+      const siblingBox = new Rectangle(siblingGeo.x, siblingGeo.y, siblingGeo.width, siblingGeo.height);
 
-                // Move to the right if overlap is more on the left side
-                // Prioritise moving horizontally first 
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    if (nodeBox.x < otherBox.x) {
-                        nodeGeo.x -= adjustmentStep; // Move left
-                    } else {
-                        nodeGeo.x += adjustmentStep; // Move right
-                    }
-                } 
-                else {
-                    // Move up or down based on the vertical overlap
-                    if (nodeBox.y < otherBox.y) {
-                        nodeGeo.y -= adjustmentStep; // Move up
-                    } else {
-                        nodeGeo.y += adjustmentStep; // Move down
-                    }
-                }
+      if (doRectanglesIntersect(nodeBox, siblingBox)) {
+        // Move the node upwards
+        nodeGeo.y -= adjustmentStep;
+        adjusted = true;
+        nodeBox.y = nodeGeo.y;
+      }
+    }
+    iterations++;
+  } while (adjusted && iterations < maxIterations);
 
-                adjusted = true;
-                nodeBox.x = nodeGeo.x;
-                nodeBox.y = nodeGeo.y;
-            }
-        }
-        iterations++;
-    } while (adjusted && iterations < maxIterations);
-
-    // Apply updated geometry
-    graph.getDataModel().setGeometry(node, nodeGeo);
+  // Apply updated geometry
+  graph.getDataModel().setGeometry(node, nodeGeo);
 };
+
+// Adjust horizontal positions to avoid overlap between non-functional and parent functional goals
+const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
+  if (!node || !source) return;
+
+  const nodeGeo = node.getGeometry();
+  const sourceGeo = source.getGeometry();
+  if (!nodeGeo || !sourceGeo) return;
+
+  console.log("Adjusting horizontal position:", node, source);
+  let adjusted = false;
+  let iterations = 0;
+  const maxIterations = 100;
+  const adjustmentStep = 10; 
+
+  // Create a bounding box for the current node
+  const nodeBox = new Rectangle(nodeGeo.x, nodeGeo.y, nodeGeo.width, nodeGeo.height);
+  const sourceBox = new Rectangle(sourceGeo.x, sourceGeo.y, sourceGeo.width, sourceGeo.height);
+
+  // Check for overlap with the parent functional goal
+  do {
+    adjusted = false;
+    if (doRectanglesIntersect(nodeBox, sourceBox)) {
+      // Determine the direction to move the node to avoid overlap
+      if (nodeBox.x < sourceBox.x) {
+        nodeGeo.x = sourceBox.x - nodeBox.width - adjustmentStep; // Move left
+      } 
+      else {
+        nodeGeo.x = sourceBox.x + sourceBox.width + adjustmentStep; // Move right
+      }
+
+      adjusted = true;
+      nodeBox.x = nodeGeo.x;
+    }
+
+    iterations++;
+  } while (adjusted && iterations < maxIterations);
+
+  // Apply updated geometry
+  graph.getDataModel().setGeometry(node, nodeGeo);
+};
+
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: string[],
-    graph: Graph,
-    source: Cell | null = null,
-    type: string = "None"
-  ) => {
+  descriptions: string[],
+  graph: Graph,
+  source: Cell | null = null,
+  type: string = "None"
+) => {
 
-    console.log("Rendering non-functional goal: ", descriptions);
+  console.log("Rendering non-functional goal: ", descriptions);
 
-    if (!source) return;
+  if (!source) return;
 
-    const geo = source.getGeometry();
-    if (!geo) return;
+  const geo = source.getGeometry();
+  if (!geo) return;
 
-    // Initial coordinates and dimensions
-    let x = 0;
-    let y = 0;
-    let width = geo.width;
-    let height = geo.height;
-    let delimiter = "";
-    let image = "";
+  // Initial coordinates and dimensions
+  let x = 0;
+  let y = 0;
+  let width = geo.width;
+  let height = geo.height;
+  let delimiter = "";
+  let image = "";
 
-    // Set the position and size based on the type of non-functional goal
-    switch (type) {
-      case EMOTIONAL_TYPE: // Top Right
-        image = HEART_PATH;
-        width *= SW_EMOTIONAL;
-        height *= SH_EMOTIONAL;
-        x = geo.x + geo.width * 1.3 - width / 4;
-        y = geo.y - geo.height / 4 - height / 2;
-        delimiter = ",\n";
-        break;
-      case NEGATIVE_TYPE: // Bottom Right
-        image = NEGATIVE_PATH;
-        width *= SW_NEGATIVE;
-        height *= SH_NEGATIVE;
-        x = geo.x + geo.width * 1.3 - width / 4;
-        y = geo.y + geo.height * 0.9 - height / 2;
-        delimiter = ",\n";
-        break;
-      case QUALITY_TYPE: // Top Left
-        image = CLOUD_PATH;
-        width *= SW_QUALITY;
-        height *= SH_QUALITY;
-        x = geo.x - geo.width / 4 - width / 4;
-        y = geo.y - geo.height / 4 - height / 2;
-        delimiter = ",\n";
-        break;
-      case STAKEHOLDER_TYPE: // Bottom Left
-        image = PERSON_PATH;
-        width *= SW_STAKEHOLDER;
-        height *= SH_STAKEHOLDER;
-        x = geo.x - geo.width / 2 - width / 4;
-        y = geo.y + geo.height * 0.9 - height / 2;
-        delimiter = "\n";
-        break;
-    }
+  // Set the position and size based on the type of non-functional goal
+  switch (type) {
+    case EMOTIONAL_TYPE: // Top Right
+      image = HEART_PATH;
+      width *= SW_EMOTIONAL;
+      height *= SH_EMOTIONAL;
+      x = geo.x + width + OFFSET_X;
+      y = geo.y - height - OFFSET_Y ;
+      delimiter = ",\n";
+      break;
+    case NEGATIVE_TYPE: // Bottom Right
+      image = NEGATIVE_PATH;
+      width *= SW_NEGATIVE;
+      height *= SH_NEGATIVE;
+      x = geo.x + width + OFFSET_X;
+      y = geo.y + OFFSET_Y;
+      delimiter = ",\n";
+      break;
+    case QUALITY_TYPE: // Top Left
+      image = CLOUD_PATH;
+      width *= SW_QUALITY;
+      height *= SH_QUALITY;
+      x = geo.x - width - OFFSET_X;
+      y = geo.y - height - OFFSET_Y;
+      delimiter = ",\n";
+      break;
+    case STAKEHOLDER_TYPE: // Bottom Left
+      image = PERSON_PATH;
+      width *= SW_STAKEHOLDER;
+      height *= SH_STAKEHOLDER;
+      x = geo.x - width - OFFSET_X;
+      y = geo.y + OFFSET_Y;
+      delimiter = "\n";
+      break;
+  }
 
-    // Clone style to avoid modifying the default
-    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
-    style.image = image;
-    style.align = "center";
-    style.verticalAlign = "middle";
-    style.labelPosition = "center";
-    style.spacingTop = -10;
+  // Clone style to avoid modifying the default
+  const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
+  style.image = image;
+  style.align = "center";
+  style.verticalAlign = "middle";
+  style.labelPosition = "center";
+  style.spacingTop = -10;
 
-    // Text goes at bottom for stakeholder
-    if (type === STAKEHOLDER_TYPE) {
-      style.verticalAlign = "top";
-      style.verticalLabelPosition = "bottom";
-    }
+  // Text goes at bottom for stakeholder
+  if (type === STAKEHOLDER_TYPE) {
+    style.verticalAlign = "top";
+    style.verticalLabelPosition = "bottom";
+  }
 
-    // Insert the vertex
-    const node = graph.insertVertex(
-      null,
-      null,
-      descriptions.join(delimiter),
-      x,
-      y,
-      width,
-      height,
-      style
-    );
+  // Insert the vertex
+  const node = graph.insertVertex(
+    null,
+    null,
+    descriptions.join(delimiter),
+    x,
+    y,
+    width,
+    height,
+    style
+  );
+  // Insert an invisible edge
+  const edge = graph.insertEdge(null, null, "", source, node);
+  edge.visible = false; // Make the edge invisible - used in auto layout
 
-    // Adjust node geometry based on text size
-    const nodeGeo = node.getGeometry();
-    const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
-    if (nodeGeo && preferred) {
-      // Adjust height based on the number of lines and font size
-      nodeGeo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
-      nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SW_PREFERRED, width);
-      nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SH_PREFERRED, height);
-    }
+  // Adjust node geometry based on text size
+  const nodeGeo = node.getGeometry();
+  const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
+  if (nodeGeo && preferred) {
+    // Adjust height based on the number of lines and font size
+    nodeGeo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
+    nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SW_PREFERRED, width);
+    nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SH_PREFERRED, height);
+  }
 
-    // Check for overlap with other nodes and adjust position
-    const existingNodes = graph.getChildVertices(graph.getDefaultParent());
-    adjustPosition(node, graph, existingNodes);
+  // Note for future: There must be some API that does this
+  // Get all vertices connected to the same source node (functional goal)
+  const siblingNodes = graph.getChildVertices(graph.getDefaultParent()).filter((sibling) => {
+    if (sibling === node) return false; // Skip the current node itself
 
-    // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node);
-    edge.visible = false; // Make the edge invisible - used in auto layout
+    // Find edges where the current node is the target
+    const edges = graph.getIncomingEdges(sibling, null);
+    return edges.some((edge) => edge.source === source);
+  })
+
+  //const siblingNodes = source.getConnections();
+  console.log("siblings: ", siblingNodes);
+  
+  adjustHorizontalPositions(node, source, graph);
+  adjustVerticalPositions(node, siblingNodes, graph);
 };
 
 /**
@@ -523,96 +563,60 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
    * functional goals.
    */
 export const associateNonFunctions = (
-    graph: Graph,
-    rootGoal: Cell | null,
-    emotionsGlob: GlobObject,
-    negativesGlob: GlobObject,
-    qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
-  ) => {
-    // fetch all the functional goals
-    const goals = graph.getChildVertices();
+  graph: Graph,
+  rootGoal: Cell | null,
+  emotionsGlob: GlobObject,
+  negativesGlob: GlobObject,
+  qualitiesGlob: GlobObject,
+  stakeholdersGlob: GlobObject
+) => {
 
-    //console.log(stakeholdersGlob);
+  // fetch all the functional goals
+  const goals = graph.getChildVertices();
 
-    for (let i = 0; i < goals.length; i++) {
-      const goal = goals[i];
-      const value = goal.value;
-      console.log("Associate: ", i, ", ", value);
+  for (let i = 0; i < goals.length; i++) {
+    const goal = goals[i];
+    const value = goal.value;
+    console.log("Associate: ", i, ", ", value);
 
-      // render all emotions
-      if (emotionsGlob[value]) {
-        renderNonFunction(
-          emotionsGlob[goal.value],
-          graph,
-          goal,
-          EMOTIONAL_TYPE
-        );
-      }
-
-      // render all qualities
-      if (qualitiesGlob[value]) {
-        renderNonFunction(
-          qualitiesGlob[goal.value],
-          graph, 
-          goal, 
-          QUALITY_TYPE
-        );
-      }
-
-      // render all concerns
-      if (negativesGlob[value]) {
-        renderNonFunction(
-          negativesGlob[goal.value],
-          graph,
-          goal,
-          NEGATIVE_TYPE
-        );
-      }
-
-      // render all stakeholders
-      if (stakeholdersGlob[value]) {
-        renderNonFunction(
-          stakeholdersGlob[goal.value],
-          graph,
-          goal,
-          STAKEHOLDER_TYPE
-        );
-      }
-    }
-
-    // render each of the non-functional goals at the root level
-    if (emotionsGlob[ROOT_KEY] && rootGoal != null) {
+    // render all concerns
+    if (negativesGlob[value]) {
       renderNonFunction(
-        emotionsGlob[ROOT_KEY],
+        negativesGlob[goal.value],
         graph,
-        rootGoal,
-        EMOTIONAL_TYPE
-      );
-    }
-    if (qualitiesGlob[ROOT_KEY] && rootGoal != null) {
-      renderNonFunction(
-        qualitiesGlob[ROOT_KEY], 
-        graph, 
-        rootGoal, 
-        QUALITY_TYPE
-      );
-    }
-    if (negativesGlob[ROOT_KEY] && rootGoal != null) {
-      renderNonFunction(
-        negativesGlob[ROOT_KEY],
-        graph,
-        rootGoal,
+        goal,
         NEGATIVE_TYPE
       );
     }
-    if (stakeholdersGlob[ROOT_KEY] && rootGoal != null) {
-      console.log(stakeholdersGlob[ROOT_KEY]);
+    // render all stakeholders
+    if (stakeholdersGlob[value]) {
       renderNonFunction(
-        stakeholdersGlob[ROOT_KEY],
+        stakeholdersGlob[goal.value],
         graph,
-        rootGoal,
+        goal,
         STAKEHOLDER_TYPE
       );
     }
-  };
+
+    // render all emotions
+    if (emotionsGlob[value]) {
+      renderNonFunction(
+        emotionsGlob[goal.value],
+        graph,
+        goal,
+        EMOTIONAL_TYPE
+      );
+    }
+
+    // render all qualities
+    if (qualitiesGlob[value]) {
+      renderNonFunction(
+        qualitiesGlob[goal.value],
+        graph, 
+        goal, 
+        QUALITY_TYPE
+      );
+    }
+  }
+
+};
