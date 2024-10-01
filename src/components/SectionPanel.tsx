@@ -412,7 +412,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     setExistingItemIds([]);
     setTreeIds([]);
     setExistingError(false);
-  }
+  };
 
   // // Function to reset treeData and tabData to the default set of goals
   // const resetTreeDataToDefault = () => {
