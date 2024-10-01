@@ -8,20 +8,6 @@ import { initialTabs, Label, TreeItem, useFileContext } from "./context/FileProv
 import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
-// use for testing xml validation only
-const xmlData = `
-  <root>
-    <mxCell id="2" value="Hello," vertex="1">
-      <mxGeometry x="20" y="20" width="80" height="30" as="geometry"/>
-    </mxCell>
-    <mxCell id="3" value="World!" vertex="1">
-      <mxGeometry x="200" y="150" width="80" height="30" as="geometry"/>
-    </mxCell>
-    <mxCell id="4" value="" edge="1" source="2" target="3">
-       <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-  </root>
-`;
 
 const defaultStyle = {
   display: "flex",
@@ -58,12 +44,12 @@ const defaultTreeData: TreeItem[] = [
     children: [
       {
         id: 6,
-        content: "Functional Goal",
+        content: "Functional Goal 2",
         type: "Do",
         children: [
           {
             id: 7,
-            content: "Functional Goal",
+            content: "Functional Goal 3",
             type: "Do",
             children: []
           }
@@ -71,7 +57,7 @@ const defaultTreeData: TreeItem[] = [
       },
       {
         id: 8,
-        content: "Functional Goal",
+        content: "Functional Goal 4",
         type: "Do",
         children: []
       }
@@ -102,6 +88,8 @@ const defaultTreeData: TreeItem[] = [
     children: []
   }
 ];
+
+//const defaultTreeIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 type SectionPanelProps = {
   showGoalSection: boolean;
@@ -404,48 +392,77 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     });
   }, [treeData]);
 
+  // Just for testing
+  useEffect(() => {
+    console.log("Tab data is:", tabData);
+    console.log("Tree data is: ", treeData);
+    console.log("Selected group is: ", groupSelected);
+    console.log("Tree ids is: ", treeIds);
+    console.log("Existing item ids is: ", existingItemIds);
+    console.log("Existing error is: ", existingError);
+
+  });
+
   // Reset tree data to empty, tab data to initial
-  const onResetEmpty = () => {
-    setTreeData([]);
-    //setTabData(initialTabs);
+  const resetGoalsToEmpty = () => {
+    console.log("Resetting goals to empty");
+
+    setTreeData([]);             // Clear the tree data (hierarchy)
+    setTabData(initialTabs);     // Set tab data to initial state
+    setGroupSelected([]);        // Clear the selected group of items
+    setExistingItemIds([]);      // Clear the existing item IDs
+    setTreeIds([]);              // Clear all stored IDs in the tree
+    setExistingError(false);     // Reset the error state
+  };
+
+  // Function to convert defaultTreeData to tabData format
+  const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
+    // Copy initialTabs to start with the default structure, but with no rows
+    const newTabData = initialTabs.map(tab => ({ ...tab, rows: [] as TreeItem[]}));
+
+    // Recursively traverse the treeData and populate the corresponding tab rows
+    const populateTabData = (item: TreeItem) => {
+      const correspondingTab = newTabData.find(tab => tab.label === item.type);
+      if (correspondingTab) {
+        correspondingTab.rows.push(item);
+      }
+
+      if (item.children && item.children.length > 0) {
+        item.children.forEach(child => populateTabData(child));
+      }
+    };
+
+    // Populate the new tab data from the provided tree data
+    treeData.forEach(item => populateTabData(item));
+
+    // Add an empty row at the end of each tab
+    newTabData.forEach(tab => {
+      tab.rows.push({
+        id: Date.now(),
+        type: tab.label,
+        content: '',
+      });
+    });
+
+    setTabData(newTabData); // Set the new tab data
+  };
+
+  // Function to reset treeData to the default set of goals
+  const resetGoalsToDefault = () => {
+    console.log("Resetting goals to default");
+
+    setTreeData(defaultTreeData);
+
+    const defaultTreeIds = defaultTreeData.map(item => item.id);
+    setTreeIds(defaultTreeIds);
+
+    updateTabDataFromTreeData(defaultTreeData);
+
     setGroupSelected([]);
-    setExistingItemIds([]);
-    setTreeIds([]);
+
+    setExistingItemIds([]); 
     setExistingError(false);
-  }
-
-  // // Function to reset treeData and tabData to the default set of goals
-  // const resetTreeDataToDefault = () => {
-  //   setTreeData(defaultTreeData);
-  //   updateTabDataFromTreeData(defaultTreeData); 
-  //   console.log("TREEDATA: ", defaultTreeData);
-  // };
-
-  // // Function to convert defaultTree to tabData format
-  // const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
-  //   // Initialize an empty structure for the new tab data
-  //   const newTabData: TabContent[] = tabs.map((tab) => ({ 
-  //     ...tab, 
-  //     rows: [] as TreeItem[]
-  //   }));
-
-  //   // Recursively traverse the treeData and populate the corresponding tab rows
-  //   const populateTabData = (item: TreeItem) => {
-  //     const correspondingTab = newTabData.find(tab => tab.label === item.type);
-  //     if (correspondingTab) {
-  //       correspondingTab.rows.push(item);
-  //     }
-
-  //     if (item.children && item.children.length > 0) {
-  //       item.children.forEach(child => populateTabData(child));
-  //     }
-  //   };
-
-  //   // Populate the new tab data from the provided tree data
-  //   treeData.forEach(item => populateTabData(item));
-
-  //   setTabData(newTabData); // Set the new tab data
-  // };
+  };
   
   return (
     <div
@@ -488,7 +505,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         <GoalList
           ref={goalListRef}
           setDraggedItem={setDraggedItem}
-          groupSelected={groupSelected}
+          groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
           handleSynTableTree={handleSynTableTree}
           handleDropGroupSelected={handleDropGroupSelected}
@@ -538,7 +555,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker cluster={cluster} onResetEmpty={onResetEmpty}/>
+        <GraphWorker cluster={cluster} onResetEmpty={resetGoalsToEmpty} onResetDefault={resetGoalsToDefault}/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>

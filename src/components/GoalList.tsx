@@ -189,26 +189,26 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		const isEmptyGoal = (goal: TreeItem): boolean => {
 			return !goal.content.trim();
-		  };
+		};
 
 		const handleDeleteSelected = () => {
 			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
     
-		if (confirmed) {
-			const newTabData = tabData.map((tab) => {
-				if (tab.label === activeKey) {
-					// Get selected goals
-					const newRows = tab.rows.filter(
-						(row) => !groupSelected.some((selected) => selected.id === row.id)
-					);
-					return { ...tab, rows: newRows };
-				}
-				return tab;
-			});
+			if (confirmed) {
+				const newTabData = tabData.map((tab) => {
+					if (tab.label === activeKey) {
+						// Get selected goals
+						const newRows = tab.rows.filter(
+							(row) => !groupSelected.some((selected) => selected.id === row.id)
+						);
+						return { ...tab, rows: newRows };
+					}
+					return tab;
+				});
 
-			setTabData(newTabData);
-			setGroupSelected([]); 
-    		}
+				setTabData(newTabData);
+				setGroupSelected([]); 
+			}
 		};
 
 		const GroupDropBtn = () => {
@@ -230,7 +230,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						onClick={handleDeleteSelected}
 					>
 						Delete Selected
-            		</Button>
+					</Button>
 				</div>
 			);
 		};
@@ -308,8 +308,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												className="bg-white"
 												style={{
 													color: isEmptyGoal(row) ? 'gray' : 'black', 
-                      								opacity: isEmptyGoal(row) ? 0.6 : 1,      
-												  }}
+													opacity: isEmptyGoal(row) ? 0.6 : 1,      
+												}}
 												onKeyDown={(e) =>
 													handleKeyPress(
 													e as React.KeyboardEvent<HTMLInputElement>,
