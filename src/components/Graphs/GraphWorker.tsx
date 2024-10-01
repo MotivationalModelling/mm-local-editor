@@ -10,11 +10,8 @@ import {
   EventObject,
   error,
   PanningHandler,
-  xmlUtils,
-  Codec,
-  ModelXmlSerializer,
 } from "@maxgraph/core";
-import {useRef, useEffect, useState, useMemo} from "react";
+import {useRef, useEffect, useMemo} from "react";
 import {Container, Row, Col} from "react-bootstrap";
 import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
 import "./GraphWorker.css";
@@ -47,79 +44,6 @@ const DELETE_KEYBINDING2 = 46;
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
 
-// preferred vertical and horizontal spacing between functional goals; note
-//   the autolayout won't always accomodate these - it will depend on the
-//   topology of the model you are trying to render
-const VERTICAL_SPACING = 80;
-const HORIZONTAL_SPACING = 100;
-
-// Define shape type
-const FUNCTIONAL_TYPE = "Functional";
-const EMOTIONAL_TYPE = "Emotional";
-const NEGATIVE_TYPE = "Negative";
-const QUALITY_TYPE = "Quality";
-const STAKEHOLDER_TYPE = "Stakeholder";
-
-
-// Predefined constant cluster to use for the example graph
-const defaultCluster: Cluster = {
-  ClusterGoals: [{
-      GoalID: 1,
-      GoalType: "Functional",
-      GoalContent: "Functional Goal",
-      GoalNote: "",
-      SubGoals: [{
-          GoalID: 6,
-          GoalType: "Functional",
-          GoalContent: "Functional Goal",
-          GoalNote: "",
-          SubGoals: [{
-              GoalID: 7,
-              GoalType: "Functional",
-              GoalContent: "Functional Goal",
-              GoalNote: "",
-              SubGoals: []
-            }
-          ]
-        }, {
-          GoalID: 8,
-          GoalType: "Functional",
-          GoalContent: "Functional Goal",
-          GoalNote: "",
-          SubGoals: []
-        }
-      ]
-    }, {
-      GoalID: 2,
-      GoalType: "Quality",
-      GoalContent: "Quality Goals",
-      GoalNote: "",
-      SubGoals: []
-    }, {
-      GoalID: 3,
-      GoalType: "Emotional",
-      GoalContent: "Emotional Goals",
-      GoalNote: "",
-      SubGoals: []
-    }, {
-      GoalID: 4,
-      GoalType: "Stakeholder",
-      GoalContent: "Stakeholders ",
-      GoalNote: "",
-      SubGoals: []
-    }, {
-      GoalID: 5,
-      GoalType: "Negative",
-      GoalContent: "Negatives",
-      GoalNote: "",
-      SubGoals: []
-    }
-  ]
-};
-
-// random string, used to store unassociated non-functions in accumulators
-const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
-
 // ---------------------------------------------------------------------------
 
 interface CellHistory {
@@ -134,16 +58,14 @@ interface GlobObject {
 type GraphWorkerProps = {
   cluster: Cluster;
   onResetEmpty: () => void; // Function to reset the graph to empty
+  onResetDefault: () => void;
 };
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
-  //   const divSidebar = useRef<HTMLDivElement>(null);
+const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onResetDefault }) => {
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
-  const [isDefaultReset, setIsDefaultReset] = useState(true);
-
 
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
@@ -153,18 +75,14 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
    // Function to reset the graph to empty
    const resetEmptyGraph = () => {
     if (graph) {
-      graph.getDataModel().clear();
       onResetEmpty();
-      setIsDefaultReset(false);
     }
   };
 
   // Function to reset the graph to the default set of goals
   const resetDefaultGraph = () => {
     if (graph) {
-      graph.getDataModel().clear();
-      onResetEmpty();
-      setIsDefaultReset(true);
+      onResetDefault();
     }
   };
 
@@ -421,63 +339,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
 
   };
 
-  // Just renders an example graph
-  const renderExampleGraph = () => {
-    if (!graph) return;
-
-    console.log("Rendering Example Graph");
-
-    // Declare necessary variables
-    // Use rootGoalWrapper to be able to update its value
-    let rootGoal: Cell | null = null;
-    const rootGoalWrapper = { value: null as Cell | null };
-    const emotionsGlob: GlobObject = {};
-    const negativesGlob: GlobObject = {};
-    const qualitiesGlob: GlobObject = {};
-    const stakeholdersGlob: GlobObject = {};
-
-    resetGraph(
-      graph,
-      rootGoalWrapper,
-      emotionsGlob,
-      negativesGlob,
-      qualitiesGlob,
-      stakeholdersGlob
-    );
-
-    // Check if the browser is supported
-    if (!Client.isBrowserSupported()) {
-      console.log("Logging: browser not supported");
-      error("Browser not supported!", 200, false);
-      return;
-    }
-
-    // Start the transaction to render the graph
-    graph.getDataModel().beginUpdate();
-    renderGoals(
-      defaultCluster.ClusterGoals,
-      graph,
-      null,
-      rootGoalWrapper,
-      emotionsGlob,
-      negativesGlob,
-      qualitiesGlob,
-      stakeholdersGlob
-    );
-    rootGoal = rootGoalWrapper.value;
-    layoutFunctions(graph, rootGoal);
-    associateNonFunctions(
-      graph,
-      rootGoal,
-      emotionsGlob,
-      negativesGlob,
-      qualitiesGlob,
-      stakeholdersGlob
-    );
-    graph.getDataModel().endUpdate();
-    initRecentreView();
-  };
-
   const renderGraph = () => {
     if (!graph) return;
 
@@ -566,58 +427,15 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     if (graph) {
       // If user has goals defined, draw the graph
       if (cluster.ClusterGoals.length > 0) {
+        console.log("re render");
         renderGraph();
       } 
-      else if (isDefaultReset) {
-        renderExampleGraph();
+      else {
+        graph.getDataModel().clear();
+        console.log("Graph is empty");
       }
     }
-  }, [cluster, graph, renderExampleGraph, isDefaultReset]);
-
-  /**
-   * Parses the graph to XML, to be saved/loaded in a differenct session.
-   */
-  const parseToXML = (graph: Graph) => {
-    const encoder = new Codec();
-    const node = encoder.encode(graph.getDataModel());
-    const xml = xmlUtils.getXml(node);    
-    return xml;
-  };
-
-  /**
-   * Renders the graph from a (saved) XML file.
-   */
-
-  const renderFromXML = (xml: string) => {
-    if (!divGraph.current || !xml) return;
-
-    const graph = new Graph(divGraph.current);
-    graph.setPanning(true); // Use mouse right button for panning
-
-    // Gets the default parent for inserting new cells. This
-    // is normally the first child of the root (ie. layer 0).
-    const parent = graph.getDefaultParent();
-
-    // WARN: this is an experimental feature that is subject to change (class and method names).
-    // see https://maxgraph.github.io/maxGraph/api-docs/classes/ModelXmlSerializer.html
-    new ModelXmlSerializer(graph.getDataModel()).import(xml);
-
-    const doc = xmlUtils.parseXml(xml);
-
-    const codec = new Codec(doc);
-    const cells = [];
-
-    for (let elt = doc.documentElement.firstChild; elt; elt = elt.nextSibling) {
-      if (elt.nodeType === Node.ELEMENT_NODE) {
-        const cell = codec.decode(elt as Element);
-
-        cells.push(cell);
-      }
-    }
-
-    graph.addCells(cells, parent, null, null, null);
-  };
-
+  }, [cluster, graph]);
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 

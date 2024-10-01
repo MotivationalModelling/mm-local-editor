@@ -2,17 +2,12 @@ import {
     Graph,
     Rectangle,
     Cell,
-    cellArrayUtils,
   } from "@maxgraph/core";
 import { ClusterGoal, GlobObject } from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 
 // ---------------------------------------------------------------------------
-
-//Graph id & Side bar id
-const GRAPH_DIV_ID = "graphContainer";
-
 // paths to the image
 const HEART_PATH = "img/Heart.png";
 const PARALLELOGRAM_PATH = "img/Function.png";
@@ -146,11 +141,15 @@ export const renderGoals = (
 
   // Store non-functional goals using the determined key
   if (emotions.length) {
+    console.log("emotions key value: ", key);
+    console.log("emotions length: ", emotions.length);
     if (emotionsGlob[key]) {
       emotionsGlob[key] = emotionsGlob[key].concat(emotions);
     } else {
       emotionsGlob[key] = emotions;
     }
+    console.log("emotions glob: ", emotionsGlob);
+    console.log("emotions glob key: ", emotionsGlob[key]);
   }
   if (qualities.length) {
     if (qualitiesGlob[key]) {
