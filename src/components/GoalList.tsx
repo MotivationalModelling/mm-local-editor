@@ -337,18 +337,18 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										))}
 									</tbody>
 								</Table>
-								<div className="text-muted text-left mt-3">
-								<Button 
-									className="me-2" 
-									onClick={() => handleAddRow(activeKey || "")} 
-									variant="primary"
-								>
-									+
-								</Button>
-								<div className="text-muted text-end mt-3">
+									<div className="d-flex justify-content-between align-items-center mt-3">
+									<Button 
+										className="me-2" 
+										onClick={() => handleAddRow(activeKey || "")} 
+										variant="primary"
+									>
+										+
+									</Button>
+									<div className="text-muted">
 									Drag goals to arrange hierarchy
+									</div>
 								</div>
-							</div>
 							</Tab.Pane>
 						))}
 					</Tab.Content>
