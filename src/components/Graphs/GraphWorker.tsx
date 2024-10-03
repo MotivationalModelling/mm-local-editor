@@ -11,7 +11,7 @@ import {
   error,
   PanningHandler,
 } from "@maxgraph/core";
-import {useRef, useEffect, useMemo} from "react";
+import {useRef, useEffect, useMemo, useCallback} from "react";
 import {Container, Row, Col} from "react-bootstrap";
 import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
 import "./GraphWorker.css";
@@ -94,13 +94,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     console.log("center")
   };
   
-  const initRecentreView = () => {
+  const initRecentreView = useCallback(() => {
     if (graph) {
       graph.view.setScale(1);
       graph.center();
     }
     console.log("center")
-  };
+  }, [graph]);
 
   const adjustFontSize = (
     theOldStyle: CellStyle,
@@ -172,7 +172,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
   };
 
-  const graphListener = (graph: Graph) => {
+  const graphListener = useCallback((graph: Graph) => {
     const cellHistory: CellHistory = {};
     graph
       .getDataModel()
@@ -229,7 +229,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
           graph.refresh();
         }
       });
-  };
+  }, []);
 
   /**
    * Support Functions
@@ -326,20 +326,21 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    // reset - remove any existing graph if render is called
+    // Reset - remove any existing graph if render is called
     graph.removeCells(graph.getChildVertices(graph.getDefaultParent()));
     graph.removeCells(graph.getChildEdges(graph.getDefaultParent()));
-    rootGoalWrapper = { value: null};
-
-    // reset the accumulators for non-functional goals
-    emotionsGlob = {};
-    negativesGlob = {};
-    qualitiesGlob = {};
-    stakeholdersGlob = {};
-
+  
+    // Reset the root goal
+    rootGoalWrapper.value = null;
+  
+    // Clear the accumulators for non-functional goals
+    Object.keys(emotionsGlob).forEach(key => delete emotionsGlob[key]);
+    Object.keys(negativesGlob).forEach(key => delete negativesGlob[key]);
+    Object.keys(qualitiesGlob).forEach(key => delete qualitiesGlob[key]);
+    Object.keys(stakeholdersGlob).forEach(key => delete stakeholdersGlob[key]);
   };
 
-  const renderGraph = () => {
+  const renderGraph = useCallback(() => {
     if (!graph) return;
 
     console.log("Rendering Graph");
@@ -393,7 +394,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     );
     graph.getDataModel().endUpdate();
     initRecentreView();
-  };
+  }, [cluster, graph, initRecentreView]);
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
@@ -420,7 +421,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
         }
       };
     }
-  }, []);
+  }, [graph, setGraph, graphListener]);
 
   // Separate useEffect to render / update the graph.
   useEffect(() => {
@@ -435,7 +436,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
         console.log("Graph is empty");
       }
     }
-  }, [cluster, graph]);
+  }, [cluster, graph, renderGraph]);
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 
