@@ -40,6 +40,10 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		// Function to handle selecting a tab
 		const handleSelect = (selectedKey: string | null) => {
+			if (selectedKey !== activeKey) {
+				// Deselect all goals when switching to a new tab
+				setGroupSelected([]);
+			}
 			setActiveKey(selectedKey);
 		};
 
