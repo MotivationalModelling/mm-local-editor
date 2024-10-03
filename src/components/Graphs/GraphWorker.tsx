@@ -394,7 +394,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     );
     graph.getDataModel().endUpdate();
     initRecentreView();
-  }, [cluster, initRecentreView]);
+  }, [graph, cluster, initRecentreView]);
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
