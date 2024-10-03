@@ -394,7 +394,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     );
     graph.getDataModel().endUpdate();
     initRecentreView();
-  }, [cluster, graph, initRecentreView]);
+  }, [cluster, initRecentreView]);
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
@@ -414,14 +414,14 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
 
       // Cleanup function to destroy graph
       return () => {
-        if (graph) {
+        if (graphInstance) {
           console.log("Destroy");
-          graph.destroy();
-          setGraph(null); // Reset state
+          graphInstance.destroy(); 
         }
+        setGraph(null); // Reset state
       };
     }
-  }, [graph, setGraph, graphListener]);
+  }, [graphListener, setGraph]);
 
   // Separate useEffect to render / update the graph.
   useEffect(() => {
