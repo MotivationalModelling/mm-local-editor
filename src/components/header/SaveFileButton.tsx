@@ -1,5 +1,5 @@
 import { Button } from "react-bootstrap";
-import { useFileContext, JSONData, DataType } from "./context/FileProvider";
+import { useFileContext, JSONData, DataType } from "../context/FileProvider";
 import { set, get } from "idb-keyval";
 
 const SaveFileButton = () => {
@@ -83,9 +83,10 @@ const SaveFileButton = () => {
 			await saveJson(jsonHandle);
 		}
 	};
+	// className="m-2"
 
 	return (
-		<Button onClick={handleBtnClick} className="m-2">
+		<Button variant="outline-primary" onClick={handleBtnClick}>
 			Save
 		</Button>
 	);
