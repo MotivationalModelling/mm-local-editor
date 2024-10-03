@@ -33,6 +33,7 @@ import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "../ResetGraphButton.tsx";
 import { useGraph } from "../context/GraphContext";
 import {Cluster, ClusterGoal} from "../types.ts";
+import Sidebar from "./sidebar/Sidebar.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -188,23 +189,23 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
   );
   const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
 
-   // Function to reset the graph to empty
-   const resetEmptyGraph = () => {
-    if (graph) {
-      graph.getDataModel().clear();
-      onResetEmpty();
-      setIsDefaultReset(false);
-    }
-  };
-
-  // Function to reset the graph to the default set of goals
-  const resetDefaultGraph = () => {
-    if (graph) {
-      graph.getDataModel().clear();
-      onResetEmpty();
-      setIsDefaultReset(true);
-    }
-  };
+  //  // Function to reset the graph to empty
+  //  const resetEmptyGraph = () => {
+  //   if (graph) {
+  //     graph.getDataModel().clear();
+  //     onResetEmpty();
+  //     setIsDefaultReset(false);
+  //   }
+  // };
+  //
+  // // Function to reset the graph to the default set of goals
+  // const resetDefaultGraph = () => {
+  //   if (graph) {
+  //     graph.getDataModel().clear();
+  //     onResetEmpty();
+  //     setIsDefaultReset(true);
+  //   }
+  // };
 
   const recentreView = () => {
     if (graph) {
@@ -599,7 +600,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
       } else if (type === STAKEHOLDER_TYPE) {
         stakeholders.push(content);
       } else {
-        console.log("Logging: goal of unknown type received: " + type);
+        console.log(`Logging: goal of unknown type received: "${type}"`);
       }
     }
 
@@ -1119,19 +1120,22 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <ResetGraphButton resetEmptyGraph={resetEmptyGraph} resetDefaultGraph={resetDefaultGraph}></ResetGraphButton>
+      {/*<ResetGraphButton resetEmptyGraph={resetEmptyGraph} resetDefaultGraph={resetDefaultGraph}></ResetGraphButton>*/}
       <Container>
         <Row className="row">
-          <Col md={11}>
+          <Col md={10}>
             <div id={GRAPH_DIV_ID} ref={divGraph}/>
           </Col>
-          <Col md={1}>
-            <GraphSidebar graph={graph} recentreView={recentreView} />
+          {/*<Col md={1}>*/}
+          {/*  <GraphSidebar graph={graph} recentreView={recentreView} />*/}
+          {/*</Col>*/}
+          <Col md={2}>
+            <Sidebar recentreView={recentreView} />
           </Col>
         </Row>
-      {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
-          <WarningMessage message="No functional goals found"/>
-      )}
+        {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
+            <WarningMessage message="No functional goals found"/>
+        )}
       </Container>
     </div>
   );

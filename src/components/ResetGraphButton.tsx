@@ -1,16 +1,38 @@
 import React from "react";
-import { Dropdown, DropdownButton } from "react-bootstrap";
+import {Dropdown, DropdownButton} from "react-bootstrap";
+import {useGraph} from "./context/GraphContext.tsx";
 
-type ResetGraphProps = {
-    resetEmptyGraph: () => void;
-    resetDefaultGraph: () => void;
-};
+const ResetGraphButton: React.FC  = () => {
+    const {graph} = useGraph();
+   // Function to reset the graph to empty
+    const resetEmptyGraph = () => {
+        if (graph) {
+            graph.getDataModel().clear();
+            onResetEmpty();
+            // setIsDefaultReset(false);
+        }
+    };
 
-const ResetGraphButton: React.FC<ResetGraphProps>  = ({ resetEmptyGraph, resetDefaultGraph }) => {
+    // Function to reset the graph to the default set of goals
+    const resetDefaultGraph = () => {
+        if (graph) {
+            graph.getDataModel().clear();
+            onResetEmpty();
+            // setIsDefaultReset(true);
+        }
+    };
+
     return (
-        <DropdownButton id="dropdown-basic-button" title="Reset">
-            <Dropdown.Item onClick={resetEmptyGraph}>Empty</Dropdown.Item>
-            <Dropdown.Item onClick={resetDefaultGraph}>Default</Dropdown.Item>
+        <DropdownButton id="reset-graph-button"
+                        title="Reset"
+                        size="sm"
+                        className="me-auto">
+            <Dropdown.Item onClick={resetEmptyGraph}>
+                Empty
+            </Dropdown.Item>
+            <Dropdown.Item onClick={resetDefaultGraph}>
+                Default
+            </Dropdown.Item>
         </DropdownButton>
     );
 };
