@@ -10,7 +10,9 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
 import Table from "react-bootstrap/Table";
-import { TreeItem, useFileContext, tabs } from "./context/FileProvider";
+import {BsPlus} from "react-icons/bs";
+
+import {TreeItem, useFileContext, tabs} from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
 
@@ -324,16 +326,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												ref={index === tab.rows.length - 1 ? inputRef : undefined}
 												/>
 												{tab.rows.length > 1 && (
-												<Button
-													className={styles.deleteButton}
-													onClick={() => handleDeleteRow(tab.label, index, row)}
-												>
-													<img
-													src={DeleteIcon}
-													alt="Delete"
-													className={styles.deleteIcon}
-													/>
-												</Button>
+													<Button className={styles.deleteButton}
+															onClick={() => handleDeleteRow(tab.label, index, row)}>
+														<img src={DeleteIcon}
+                                                             alt="Delete"
+                                                             className={styles.deleteIcon}/>
+                                                    </Button>
 												)}
 											</InputGroup>
 											</td>
@@ -341,16 +339,14 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										))}
 									</tbody>
 								</Table>
-									<div className="d-flex justify-content-between align-items-center mt-3">
-									<Button 
-										className="me-2" 
-										onClick={() => handleAddRow(activeKey || "")} 
-										variant="primary"
-									>
-										+
+								<div className="d-flex justify-content-between align-items-center mt-3">
+									<Button className="me-2"
+											onClick={() => handleAddRow(activeKey || "")}
+											variant="primary">
+										<BsPlus/>
 									</Button>
 									<div className="text-muted">
-									Drag goals to arrange hierarchy
+										Drag goals to arrange hierarchy
 									</div>
 								</div>
 							</Tab.Pane>
