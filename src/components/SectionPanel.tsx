@@ -1,29 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
 
-import Button from "react-bootstrap/Button";
-
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { Label, TreeItem, useFileContext } from "./context/FileProvider";
+import { initialTabs, Label, TreeItem, useFileContext } from "./context/FileProvider";
+import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
-import GraphRender from "./GraphRender";
 import GraphWorker from "./Graphs/GraphWorker";
-// use for testing xml validation only
-const xmlData = `
-  <root>
-    <mxCell id="2" value="Hello," vertex="1">
-      <mxGeometry x="20" y="20" width="80" height="30" as="geometry"/>
-    </mxCell>
-    <mxCell id="3" value="World!" vertex="1">
-      <mxGeometry x="200" y="150" width="80" height="30" as="geometry"/>
-    </mxCell>
-    <mxCell id="4" value="" edge="1" source="2" target="3">
-       <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-  </root>
-`;
+
 const defaultStyle = {
   display: "flex",
   alignItems: "flex-start",
@@ -41,7 +26,7 @@ const DEFINED_PROPORTIONS = {
 
 const INITIAL_PROPORTIONS = {
   sectionOne: 0.5,
-  sectionThree: 0.75,
+  sectionThree: 0.63,
   sectionsCombine: {
     sectionOne: 0.2,
     sectionThree: 0.5,
@@ -49,6 +34,62 @@ const INITIAL_PROPORTIONS = {
 };
 
 const DEFAULT_HEIGHT = "800px";
+
+// Predefined constant cluster to use for the example graph
+const defaultTreeData: TreeItem[] = [
+  {
+    id: 1,
+    content: "Functional Goal",
+    type: "Do",
+    children: [
+      {
+        id: 6,
+        content: "Functional Goal 2",
+        type: "Do",
+        children: [
+          {
+            id: 7,
+            content: "Functional Goal 3",
+            type: "Do",
+            children: []
+          }
+        ]
+      },
+      {
+        id: 8,
+        content: "Functional Goal 4",
+        type: "Do",
+        children: []
+      }
+    ]
+  },
+  {
+    id: 2,
+    content: "Quality Goals",
+    type: "Be",
+    children: []
+  },
+  {
+    id: 3,
+    content: "Emotional Goals",
+    type: "Feel",
+    children: []
+  },
+  {
+    id: 4,
+    content: "Stakeholders",
+    type: "Who",
+    children: []
+  },
+  {
+    id: 5,
+    content: "Negatives",
+    type: "Concern",
+    children: []
+  }
+];
+
+//const defaultTreeIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 type SectionPanelProps = {
   showGoalSection: boolean;
@@ -76,6 +117,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
   const [existingError, setExistingError] = useState<boolean>(false);
+
+  // Stores user defined goals (treeData) into a structure used in GraphWorker. Initialise as empty
+  const [cluster, setCluster] = useState<Cluster>({ ClusterGoals: []});
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
 
@@ -298,17 +342,128 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         setSectionThreeWidth(
           newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
         );
-      } else if (showGoalSection) {
+      } 
+      else if (showGoalSection) {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
-      } else if (showGraphSection) {
+      } 
+      else if (showGraphSection) {
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
-      } else {
+      } 
+      else {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
       }
     }
-  }, [paddingX, showGoalSection, showGraphSection]);
+  }, [paddingX, showGoalSection, showGraphSection]); 
 
+    // Mapping of old types to new types
+    const typeMapping: Record<string, GoalType> = {
+      Who: "Stakeholder",
+      Do: "Functional",
+      Be: "Quality",
+      Feel: "Emotional",
+      Concern: "Negative",
+    };
+
+  // Function to convert TreeItem to ClusterGoal
+  const convertTreeItemToGoal = (item: TreeItem): ClusterGoal => {
+    console.log("Converting type: ", item.type, " to ", typeMapping[item.type]);
+    return {
+      GoalID: item.id,
+      GoalType: typeMapping[item.type],
+      GoalContent: item.content,
+      GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
+      SubGoals: item.children ? item.children.map(convertTreeItemToGoal) : [],
+    };
+  };
+  
+  // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
+  const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster => {
+    return {
+      ClusterGoals: treeData.map(convertTreeItemToGoal),
+    };
+  };
+
+  useEffect(() => {
+    setCluster((prevCluster) => {
+      const newCluster = convertTreeDataToClusters(treeData);
+      console.log("Cluster changed ", newCluster);
+      return newCluster;
+    });
+  }, [treeData]);
+
+  // Just for testing
+  useEffect(() => {
+    console.log("Tab data is:", tabData);
+    console.log("Tree data is: ", treeData);
+    console.log("Selected group is: ", groupSelected);
+    console.log("Tree ids is: ", treeIds);
+    console.log("Existing item ids is: ", existingItemIds);
+    console.log("Existing error is: ", existingError);
+
+  });
+
+  // Reset tree data to empty, tab data to initial
+  const resetGoalsToEmpty = () => {
+    console.log("Resetting goals to empty");
+
+    setTreeData([]);             // Clear the tree data (hierarchy)
+    setTabData(initialTabs);     // Set tab data to initial state
+    setGroupSelected([]);        // Clear the selected group of items
+    setExistingItemIds([]);      // Clear the existing item IDs
+    setTreeIds([]);              // Clear all stored IDs in the tree
+    setExistingError(false);     // Reset the error state
+  };
+
+  // Function to convert defaultTreeData to tabData format
+  const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
+    // Copy initialTabs to start with the default structure, but with no rows
+    const newTabData = initialTabs.map(tab => ({ ...tab, rows: [] as TreeItem[]}));
+
+    // Recursively traverse the treeData and populate the corresponding tab rows
+    const populateTabData = (item: TreeItem) => {
+      const correspondingTab = newTabData.find(tab => tab.label === item.type);
+      if (correspondingTab) {
+        correspondingTab.rows.push(item);
+      }
+
+      if (item.children && item.children.length > 0) {
+        item.children.forEach(child => populateTabData(child));
+      }
+    };
+
+    // Populate the new tab data from the provided tree data
+    treeData.forEach(item => populateTabData(item));
+
+    // Add an empty row at the end of each tab
+    newTabData.forEach(tab => {
+      tab.rows.push({
+        id: Date.now(),
+        type: tab.label,
+        content: '',
+      });
+    });
+
+    setTabData(newTabData); // Set the new tab data
+  };
+
+  // Function to reset treeData to the default set of goals
+  const resetGoalsToDefault = () => {
+    console.log("Resetting goals to default");
+
+    setTreeData(defaultTreeData);
+
+    const defaultTreeIds = defaultTreeData.map(item => item.id);
+    setTreeIds(defaultTreeIds);
+
+    updateTabDataFromTreeData(defaultTreeData);
+
+    setGroupSelected([]);
+
+    setExistingItemIds([]); 
+    setExistingError(false);
+  };
+  
   return (
     <div
       style={{
@@ -350,7 +505,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         <GoalList
           ref={goalListRef}
           setDraggedItem={setDraggedItem}
-          groupSelected={groupSelected}
+          groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
           handleSynTableTree={handleSynTableTree}
           handleDropGroupSelected={handleDropGroupSelected}
@@ -399,17 +554,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         onResize={handleResizeSectionThree}
       >
         {/* Third Panel Content */}
-        Section 3
-        <GraphWorker />
+        
+        <GraphWorker cluster={cluster} onResetEmpty={resetGoalsToEmpty} onResetDefault={resetGoalsToDefault}/>
         {/*  <GraphRender xml={xmlData} /> */}
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={() => setShowGoalSection(!showGoalSection)}
-          style={{ marginLeft: "20px" }}
-        >
-          {showGoalSection ? "Hide section 1" : "Show section 1"}
-        </Button>
       </Resizable>
     </div>
   );

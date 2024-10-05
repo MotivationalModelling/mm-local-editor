@@ -1,7 +1,6 @@
 import DeleteIcon from "/img/trash-alt-solid.svg";
 
 import React, { useState, useRef } from "react";
-// import { saveAs } from "file-saver";
 
 import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
@@ -10,6 +9,7 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
+import Table from "react-bootstrap/Table";
 import { TreeItem, useFileContext, tabs } from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
@@ -40,6 +40,10 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		// Function to handle selecting a tab
 		const handleSelect = (selectedKey: string | null) => {
+			if (selectedKey !== activeKey) {
+				// Deselect all goals when switching to a new tab
+				setGroupSelected([]);
+			}
 			setActiveKey(selectedKey);
 		};
 
@@ -56,11 +60,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		// Function to add a new row to the active tab
 		const handleAddRow = (label: string) => {
 			const newTabData = tabData.map((tab) => {
-				if (
-					tab.label === label &&
-					(tab.rows.length === 0 ||
-						tab.rows[tab.rows.length - 1].content !== "")
-				) {
+				if (tab.label === label) {
 					return {
 						...tab,
 						rows: [
@@ -126,43 +126,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setGroupSelected(filteredGroupSelected);
 		};
 
-		// Get the last row of the active tab
-		// const activeTab = tabData.find(tab => tab.label === activeKey);
-		// Check if the last row is not empty (it also checks if activeTab is defined)
-		// const canAddRow = activeTab && activeTab.rows[activeTab.rows.length - 1] !== '';
 
 		const handleDragStart = (row: TreeItem) => {
 			console.log("drag start");
 			setDraggedItem(row);
 		};
 
-		// const handleConvert = () => {
-		// 	// Check if there is data here.
-		// 	const hasNonEmptyRows = tabData
-		// 		.find((tab) => tab.label === activeKey)
-		// 		?.rows.some((row) => row.content !== "");
-		// 	if (!hasNonEmptyRows) {
-		// 		alert("Failed: Nothing to convert.");
-		// 		return;
-		// 	}
-
-		// 	const dataToConvert = tabData
-		// 		.map((tab) => ({
-		// 			type: tab.label,
-		// 			items: tab.rows.filter((row) => row.content.trim() !== ""),
-		// 		}))
-		// 		.filter((tab) => tab.items.length > 0);
-
-		// 	if (dataToConvert.length > 0) {
-		// 		const jsonBlob = new Blob([JSON.stringify(dataToConvert, null, 2)], {
-		// 			type: "application/json",
-		// 		});
-		// 		saveAs(jsonBlob, "GoalList.json");
-		// 	} else {
-		// 		alert("Failed to convert: No data to convert.");
-		// 	}
-		// };
-		//-------------------------------------------------------------------------------------
 		const handleCheckboxToggle = (row: TreeItem) => {
 			// Ignore the item if the content is empty
 			if (row.content.trim() === "") {
@@ -182,22 +151,68 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			setGroupSelected(newGroupSelected);
 		};
 
-		const handleAddAll = () => {
-			// Collect all unique, non-empty items across all tabs
-			const allItems = tabData.flatMap((tab) =>
-				tab.rows.filter((row) => row.content.trim() !== "")
-			);
 
-			// Filter out items already in groupSelected to avoid duplicates
-			const newItems = allItems.filter(
-				(item) => !groupSelected.some((selected) => selected.id === item.id)
-			);
-
-			setGroupSelected([...groupSelected, ...newItems]);
-		};
 
 		const isChecked = (row: TreeItem): boolean | undefined => {
 			return groupSelected.some((item) => item.id === row.id);
+		};
+		
+		// Check whether all goals are selected in the table (excluding undefined ones)
+		const isAllSelected = () => {
+			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
+			// Return true if all items in goal list are selected and list is not empty
+			return (
+				allItemsInTab &&
+				allItemsInTab.length > 0 &&
+				allItemsInTab.filter(row => row.content.trim() !== "").length > 0 && 
+				allItemsInTab
+					.filter(row => row.content.trim() !== "") 
+					.every(row => groupSelected.some(item => item.id === row.id))
+			);
+		};
+
+		// Select all items in the goals tab
+		const handleSelectAll = () => {
+			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
+			if (!allItemsInTab) return;
+
+			if (allItemsInTab
+				.filter(row => row.content.trim() !== "") // Exclude empty goals
+				.every(row => groupSelected.some(item => item.id === row.id))) {
+				const filteredGroupSelected = groupSelected.filter(
+					item => !allItemsInTab.some(row => row.id === item.id)
+				);
+				setGroupSelected(filteredGroupSelected);
+			} else {
+				const newItems = allItemsInTab.filter(
+					row => !groupSelected.some(item => item.id === row.id) && row.content.trim() !== ""
+				);
+				setGroupSelected([...groupSelected, ...newItems]);
+			}
+		};
+
+		const isEmptyGoal = (goal: TreeItem): boolean => {
+			return !goal.content.trim();
+		};
+
+		const handleDeleteSelected = () => {
+			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
+    
+			if (confirmed) {
+				const newTabData = tabData.map((tab) => {
+					if (tab.label === activeKey) {
+						// Get selected goals
+						const newRows = tab.rows.filter(
+							(row) => !groupSelected.some((selected) => selected.id === row.id)
+						);
+						return { ...tab, rows: newRows };
+					}
+					return tab;
+				});
+
+				setTabData(newTabData);
+				setGroupSelected([]); 
+			}
 		};
 
 		const GroupDropBtn = () => {
@@ -206,24 +221,19 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					<Button
 						variant="primary"
 						className="me-2"
-						// style={{ display: groupSelected.length > 0 ? "flex" : "none" }}
 						disabled={groupSelected.length <= 0}
 						onClick={handleDropGroupSelected}
 					>
 						{/* Click to Drop To Right Panel */}
 						Add Group
 					</Button>
-
 					<Button
-						variant="primary"
-						style={{
-							display: tabData.some((tab) => tab.rows.length > 0)
-								? "flex"
-								: "none",
-						}}
-						onClick={handleAddAll}
+						variant="danger"
+						className="me-2"
+						disabled={groupSelected.length <= 0}
+						onClick={handleDeleteSelected}
 					>
-						Select All
+						Delete Selected
 					</Button>
 				</div>
 			);
@@ -259,67 +269,92 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 					<Tab.Content className={styles.contentArea}>
 						{tabData.map((tab) => (
 							<Tab.Pane key={tab.label} eventKey={tab.label}>
-								{tab.rows.map((row, index) => (
-									<Form.Group
-										key={`${tab.label}-${index}`}
-										as={Row}
-										className={styles.formGroup}
-									>
-										<Col sm={11}>
+								<Table striped bordered hover>
+									<thead>
+										<tr>
+											<th style={{ width: '1px', whiteSpace: 'nowrap' }}>
+											<Form.Group as={Row} className="mb-2">
+													<Col sm={11}>
+														<Form.Check
+														type="checkbox"
+														onChange={handleSelectAll}
+														checked={isAllSelected()}
+														/>
+													</Col>
+													</Form.Group>
+											</th>
+											<th style={{ display: 'flex' }}>Goal Name</th>
+										</tr>
+									</thead>
+									<tbody>
+									{tab.rows.map((row, index) => (
+										<tr key={`${tab.label}-${index}`}>
+											<td>
+											<Form.Check
+												type="checkbox"
+												onChange={() => handleCheckboxToggle(row)}
+												checked={isChecked(row)}
+												disabled={!row.content.trim()} 
+											/>
+											</td>
+											<td>
 											<InputGroup>
-												{row.content && (
-													<InputGroup.Checkbox
-														onChange={() => handleCheckboxToggle(row)}
-														checked={isChecked(row)}
-													/>
-												)}
 												<Form.Control
-													onDragStart={() => handleDragStart(row)}
-													draggable
-													type="text"
-													value={row.content}
-													onChange={(e) =>
-														handleRowChange(tab.label, index, e.target.value)
-													}
-													placeholder={`Enter ${tab.label}...`}
-													spellCheck
-													className="bg-white"
-													onKeyDown={(e) =>
-														handleKeyPress(
-															e as React.KeyboardEvent<HTMLInputElement>,
-															tab.label
-														)
-													}
-													onBlur={(event) =>
-														handleSave(row, event.target.value)
-													}
-													ref={
-														index === tab.rows.length - 1 ? inputRef : undefined
-													}
+												onDragStart={() => handleDragStart(row)}
+												draggable
+												type="text"
+												value={row.content}
+												onChange={(e) =>
+													handleRowChange(tab.label, index, e.target.value)
+												}
+												placeholder={`Enter ${tab.label}...`}
+												spellCheck
+												className="bg-white"
+												style={{
+													color: isEmptyGoal(row) ? 'gray' : 'black', 
+													opacity: isEmptyGoal(row) ? 0.6 : 1,      
+												}}
+												onKeyDown={(e) =>
+													handleKeyPress(
+													e as React.KeyboardEvent<HTMLInputElement>,
+													tab.label
+													)
+												}
+												onBlur={(event) => handleSave(row, event.target.value)}
+												ref={index === tab.rows.length - 1 ? inputRef : undefined}
 												/>
-											</InputGroup>
-										</Col>
-										{tab.rows.length > 1 && (
-											<Col sm={1}>
+												{tab.rows.length > 1 && (
 												<Button
 													className={styles.deleteButton}
 													onClick={() => handleDeleteRow(tab.label, index, row)}
 												>
 													<img
-														src={DeleteIcon}
-														alt="Delete"
-														className={styles.deleteIcon}
+													src={DeleteIcon}
+													alt="Delete"
+													className={styles.deleteIcon}
 													/>
 												</Button>
-											</Col>
-										)}
-									</Form.Group>
-								))}
+												)}
+											</InputGroup>
+											</td>
+										</tr>
+										))}
+									</tbody>
+								</Table>
+									<div className="d-flex justify-content-between align-items-center mt-3">
+									<Button 
+										className="me-2" 
+										onClick={() => handleAddRow(activeKey || "")} 
+										variant="primary"
+									>
+										+
+									</Button>
+									<div className="text-muted">
+									Drag goals to arrange hierarchy
+									</div>
+								</div>
 							</Tab.Pane>
 						))}
-						<div className="text-muted text-end mt-3">
-							Drag goals to arrange hierarchy
-						</div>
 					</Tab.Content>
 				</Tab.Container>
 				<GroupDropBtn />
