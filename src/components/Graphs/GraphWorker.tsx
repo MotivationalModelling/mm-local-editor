@@ -10,11 +10,8 @@ import {
   EventObject,
   error,
   PanningHandler,
-  xmlUtils,
-  Codec,
-  ModelXmlSerializer,
 } from "@maxgraph/core";
-import {useRef, useEffect, useState, useMemo} from "react";
+import {useRef, useEffect, useMemo, useCallback} from "react";
 import {Container, Row, Col} from "react-bootstrap";
 import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
 import "./GraphWorker.css";
@@ -32,7 +29,7 @@ import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "./ResetGraphButton.tsx";
 import ScaleTextButton from "./ScaleTextButton.tsx";
 import { useGraph } from "../context/GraphContext";
-import { Cluster , ClusterGoal } from "../types.ts";
+import {Cluster} from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -46,71 +43,6 @@ const DELETE_KEYBINDING2 = 46;
 
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
-
-// Define shape type
-// paths to the image
-const HEART_PATH = "img/Heart.png";
-const PARALLELOGRAM_PATH = "img/Function.png";
-const NEGATIVE_PATH = "img/Risk.png";
-const CLOUD_PATH = "img/Cloud.png";
-const PERSON_PATH = "img/Stakeholder.png";
-
-// Predefined constant cluster to use for the example graph
-const defaultCluster: Cluster = {
-  ClusterGoals: [{
-      GoalID: 1,
-      GoalType: "Functional",
-      GoalContent: "Functional Goal",
-      GoalNote: "",
-      SubGoals: [{
-          GoalID: 6,
-          GoalType: "Functional",
-          GoalContent: "Functional Goal",
-          GoalNote: "",
-          SubGoals: [{
-              GoalID: 7,
-              GoalType: "Functional",
-              GoalContent: "Functional Goal",
-              GoalNote: "",
-              SubGoals: []
-            }
-          ]
-        }, {
-          GoalID: 8,
-          GoalType: "Functional",
-          GoalContent: "Functional Goal",
-          GoalNote: "",
-          SubGoals: []
-        }
-      ]
-    }, {
-      GoalID: 2,
-      GoalType: "Quality",
-      GoalContent: "Quality Goals",
-      GoalNote: "",
-      SubGoals: []
-    }, {
-      GoalID: 3,
-      GoalType: "Emotional",
-      GoalContent: "Emotional Goals",
-      GoalNote: "",
-      SubGoals: []
-    }, {
-      GoalID: 4,
-      GoalType: "Stakeholder",
-      GoalContent: "Stakeholders ",
-      GoalNote: "",
-      SubGoals: []
-    }, {
-      GoalID: 5,
-      GoalType: "Negative",
-      GoalContent: "Negatives",
-      GoalNote: "",
-      SubGoals: []
-    }
-  ]
-};
-
 
 // ---------------------------------------------------------------------------
 
@@ -126,16 +58,14 @@ interface GlobObject {
 type GraphWorkerProps = {
   cluster: Cluster;
   onResetEmpty: () => void; // Function to reset the graph to empty
+  onResetDefault: () => void;
 };
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
-  //   const divSidebar = useRef<HTMLDivElement>(null);
+const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onResetDefault }) => {
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
-  const [isDefaultReset, setIsDefaultReset] = useState(true);
-
 
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
@@ -145,18 +75,14 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
    // Function to reset the graph to empty
    const resetEmptyGraph = () => {
     if (graph) {
-      graph.getDataModel().clear();
       onResetEmpty();
-      setIsDefaultReset(false);
     }
   };
 
   // Function to reset the graph to the default set of goals
   const resetDefaultGraph = () => {
     if (graph) {
-      graph.getDataModel().clear();
-      onResetEmpty();
-      setIsDefaultReset(true);
+      onResetDefault();
     }
   };
 
@@ -168,13 +94,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     console.log("center")
   };
   
-  const initRecentreView = () => {
+  const initRecentreView = useCallback(() => {
     if (graph) {
       graph.view.setScale(1);
       graph.center();
     }
     console.log("center")
-  };
+  }, [graph]);
 
   const adjustFontSize = (
     theOldStyle: CellStyle,
@@ -240,13 +166,13 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     nodeStyle.resizable = true;
     nodeStyle.fontSize = VERTEX_FONT_SIZE;
     nodeStyle.fontColor = "black";
-    nodeStyle.editable = false;
+    nodeStyle.editable = true;
     nodeStyle.shape = "image";
     nodeStyle.imageAspect = true;
     graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
   };
 
-  const graphListener = (graph: Graph) => {
+  const graphListener = useCallback((graph: Graph) => {
     const cellHistory: CellHistory = {};
     graph
       .getDataModel()
@@ -303,7 +229,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
           graph.refresh();
         }
       });
-  };
+  }, []);
 
   /**
    * Support Functions
@@ -400,77 +326,21 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
   ) => {
-    // reset - remove any existing graph if render is called
+    // Reset - remove any existing graph if render is called
     graph.removeCells(graph.getChildVertices(graph.getDefaultParent()));
     graph.removeCells(graph.getChildEdges(graph.getDefaultParent()));
-    rootGoalWrapper = { value: null};
-
-    // reset the accumulators for non-functional goals
-    emotionsGlob = {};
-    negativesGlob = {};
-    qualitiesGlob = {};
-    stakeholdersGlob = {};
-
+  
+    // Reset the root goal
+    rootGoalWrapper.value = null;
+  
+    // Clear the accumulators for non-functional goals
+    Object.keys(emotionsGlob).forEach(key => delete emotionsGlob[key]);
+    Object.keys(negativesGlob).forEach(key => delete negativesGlob[key]);
+    Object.keys(qualitiesGlob).forEach(key => delete qualitiesGlob[key]);
+    Object.keys(stakeholdersGlob).forEach(key => delete stakeholdersGlob[key]);
   };
 
-  // Just renders an example graph
-  const renderExampleGraph = () => {
-    if (!graph) return;
-
-    console.log("Rendering Example Graph");
-
-    // Declare necessary variables
-    // Use rootGoalWrapper to be able to update its value
-    let rootGoal: Cell | null = null;
-    const rootGoalWrapper = { value: null as Cell | null };
-    const emotionsGlob: GlobObject = {};
-    const negativesGlob: GlobObject = {};
-    const qualitiesGlob: GlobObject = {};
-    const stakeholdersGlob: GlobObject = {};
-
-    resetGraph(
-      graph,
-      rootGoalWrapper,
-      emotionsGlob,
-      negativesGlob,
-      qualitiesGlob,
-      stakeholdersGlob
-    );
-
-    // Check if the browser is supported
-    if (!Client.isBrowserSupported()) {
-      console.log("Logging: browser not supported");
-      error("Browser not supported!", 200, false);
-      return;
-    }
-
-    // Start the transaction to render the graph
-    graph.getDataModel().beginUpdate();
-    renderGoals(
-      defaultCluster.ClusterGoals,
-      graph,
-      null,
-      rootGoalWrapper,
-      emotionsGlob,
-      negativesGlob,
-      qualitiesGlob,
-      stakeholdersGlob
-    );
-    rootGoal = rootGoalWrapper.value;
-    layoutFunctions(graph, rootGoal);
-    associateNonFunctions(
-      graph,
-      rootGoal,
-      emotionsGlob,
-      negativesGlob,
-      qualitiesGlob,
-      stakeholdersGlob
-    );
-    graph.getDataModel().endUpdate();
-    initRecentreView();
-  };
-
-  const renderGraph = () => {
+  const renderGraph = useCallback(() => {
     if (!graph) return;
 
     console.log("Rendering Graph");
@@ -524,7 +394,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
     );
     graph.getDataModel().endUpdate();
     initRecentreView();
-  };
+  }, [graph, cluster, initRecentreView]);
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
@@ -544,190 +414,29 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty }) => {
 
       // Cleanup function to destroy graph
       return () => {
-        if (graph) {
+        if (graphInstance) {
           console.log("Destroy");
-          graph.destroy();
-          setGraph(null); // Reset state
+          graphInstance.destroy(); 
         }
+        setGraph(null); // Reset state
       };
     }
-  }, []);
+  }, [graphListener, setGraph]);
 
   // Separate useEffect to render / update the graph.
   useEffect(() => {
     if (graph) {
       // If user has goals defined, draw the graph
       if (cluster.ClusterGoals.length > 0) {
+        console.log("re render");
         renderGraph();
       } 
-      else if (isDefaultReset) {
-        renderExampleGraph();
+      else {
+        graph.getDataModel().clear();
+        console.log("Graph is empty");
       }
     }
-  }, [cluster, graph, renderExampleGraph, isDefaultReset]);
-
-  const traverseClusterGoals = (graph: Graph, goals: ClusterGoal[], parentNode: Cell | null = null) => {
-    goals.forEach((goal) => {
-      // Check if the node already exists in the graph by its GoalID
-      let existingNode: Cell | null = null;
-      const allCells = graph.getChildVertices(graph.getDefaultParent());
-  
-      for (const cell of allCells) {
-        // need to add goal id attribute to cell
-        const cellGoalId = cell.getAttribute("GoalID");
-        if (cellGoalId && cellGoalId === goal.GoalID.toString()) {
-          existingNode = cell;
-          break;
-        }
-      }
-  
-      if (existingNode) {
-        // Node exists, update it if necessary (e.g., label, size, color)
-        updateNodeAttributes(existingNode, goal, graph);
-      } else {
-        // Node does not exist, create a new one
-        existingNode = createNode(graph, goal, parentNode);
-      }
-  
-      // Recursively handle subgoals
-      if (goal.SubGoals && goal.SubGoals.length > 0) {
-        traverseClusterGoals(graph, goal.SubGoals, existingNode);
-      }
-    });
-  };
-  
-  
-  const updateGraph = (graph: Graph, cluster: Cluster) => {
-    // Start the update transaction
-    graph.getDataModel().beginUpdate();
-  
-    try {
-      // Traverse the cluster to find or create nodes and edges
-      traverseClusterGoals(graph, cluster.ClusterGoals, null);
-  
-      // Remove any nodes that are no longer in the cluster
-      const allCells = graph.getChildVertices(graph.getDefaultParent());
-      allCells.forEach((cell) => {
-        const goalId = cell.getAttribute("GoalID");
-        if (!goalId || !cluster.ClusterGoals.some(goal => goal.GoalID.toString() === goalId)) {
-          graph.removeCells([cell]);
-        }
-      });
-    } 
-    finally {
-      // End the update transaction and refresh the graph
-      graph.getDataModel().endUpdate();
-      graph.refresh();
-    }
-  };
-  
-
-  // Helper function to update node attributes
-  const updateNodeAttributes = (node: Cell, goal: ClusterGoal, graph: Graph) => {
-    const geo = node.getGeometry();
-    if (geo) {
-      // Update position, size, etc.
-      const preferredSize = graph.getPreferredSizeForCell(node);
-      geo.width = preferredSize ? preferredSize.width : geo.width;
-      geo.height = preferredSize ? preferredSize.height : geo.height;
-    }
-  
-    // Update node label or any other attributes based on the goal
-    graph.getDataModel().setValue(node, goal.GoalContent);
-    
-    // Update color or any other specific styles
-    const style = graph.getCellStyle(node);
-    //style.fillColor = "black";
-    graph.getDataModel().setStyle(node, style);
-  };
-  
-  // Helper function to create a new node
-  const createNode = (graph: Graph, goal: ClusterGoal, parentNode: Cell | null) => {
-    const style = graph.getStylesheet().getDefaultVertexStyle();
-    style.image = getImageForGoalType(goal.GoalType); // Use a helper to get the correct image for each goal type
-  
-    const node = graph.insertVertex(
-      parentNode,
-      null,
-      goal.GoalContent,
-      0, // Use a default position, will be adjusted later
-      0,
-      SYMBOL_WIDTH,
-      SYMBOL_HEIGHT,
-      style
-    );
-  
-    // Create an edge between the parent and the new node if there's a parent
-    if (parentNode) {
-      graph.insertEdge(null, null, "", parentNode, node);
-    }
-  
-    return node;
-  };
-  
-  // Helper function to return the image path based on goal type
-  const getImageForGoalType = (goalType: string) => {
-    switch (goalType) {
-      case "Functional":
-        return PARALLELOGRAM_PATH;
-      case "Emotional":
-        return HEART_PATH;
-      case "Negative":
-        return NEGATIVE_PATH;
-      case "Quality":
-        return CLOUD_PATH;
-      case "Stakeholder":
-        return PERSON_PATH;
-      default:
-        return PARALLELOGRAM_PATH;
-    }
-  };
-  
-
-  /**
-   * Parses the graph to XML, to be saved/loaded in a differenct session.
-   */
-  const parseToXML = (graph: Graph) => {
-    const encoder = new Codec();
-    const node = encoder.encode(graph.getDataModel());
-    const xml = xmlUtils.getXml(node);    
-    return xml;
-  };
-
-  /**
-   * Renders the graph from a (saved) XML file.
-   */
-
-  const renderFromXML = (xml: string) => {
-    if (!divGraph.current || !xml) return;
-
-    const graph = new Graph(divGraph.current);
-    graph.setPanning(true); // Use mouse right button for panning
-
-    // Gets the default parent for inserting new cells. This
-    // is normally the first child of the root (ie. layer 0).
-    const parent = graph.getDefaultParent();
-
-    // WARN: this is an experimental feature that is subject to change (class and method names).
-    // see https://maxgraph.github.io/maxGraph/api-docs/classes/ModelXmlSerializer.html
-    new ModelXmlSerializer(graph.getDataModel()).import(xml);
-
-    const doc = xmlUtils.parseXml(xml);
-
-    const codec = new Codec(doc);
-    const cells = [];
-
-    for (let elt = doc.documentElement.firstChild; elt; elt = elt.nextSibling) {
-      if (elt.nodeType === Node.ELEMENT_NODE) {
-        const cell = codec.decode(elt as Element);
-
-        cells.push(cell);
-      }
-    }
-
-    graph.addCells(cells, parent, null, null, null);
-  };
-
+  }, [cluster, graph, renderGraph]);
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 

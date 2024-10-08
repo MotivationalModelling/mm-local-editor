@@ -1,6 +1,6 @@
 import {
     Graph,
-    CellStateStyle,
+    Rectangle,
     Cell,
   } from "@maxgraph/core";
 import { ClusterGoal, GlobObject } from "../types.ts";
@@ -8,10 +8,6 @@ import {GoalModelLayout} from "./GoalModelLayout";
 
 
 // ---------------------------------------------------------------------------
-
-//Graph id & Side bar id
-const GRAPH_DIV_ID = "graphContainer";
-
 // paths to the image
 const HEART_PATH = "img/Heart.png";
 const PARALLELOGRAM_PATH = "img/Function.png";
@@ -59,6 +55,10 @@ const SH_STAKEHOLDER = 1.2;
 const VERTICAL_SPACING = 80;
 const HORIZONTAL_SPACING = 100;
 
+// Offset from functional goal with associated non-functional goal
+const OFFSET_X = 20;
+const OFFSET_Y = 20;
+
 // Define shape type
 const FUNCTIONAL_TYPE = "Functional";
 const EMOTIONAL_TYPE = "Emotional";
@@ -70,7 +70,110 @@ const STAKEHOLDER_TYPE = "Stakeholder";
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
 
-// Render a functional goal
+/**
+   * Recursively renders the goal hierarchy.
+   * : goals, the top-level array of goals
+   * : graph, the graph into which goals will be rendered
+   * : source, the parent goal of the given array, defaults to null
+   */
+export const renderGoals = (
+  goals: ClusterGoal[],
+  graph: Graph,
+  source: Cell | null = null,
+  // rootGoal: Cell | null,
+  rootGoalWrapper: { value: Cell | null },
+  emotionsGlob: GlobObject,
+  negativesGlob: GlobObject,
+  qualitiesGlob: GlobObject,
+  stakeholdersGlob: GlobObject
+) => {
+
+  console.log("Logging: renderGoals() called on list: ", goals);
+  // accumulate non-functional goals to be rendered into a single symbol
+  const emotions = [];
+  const qualities = [];
+  const concerns = [];
+  const stakeholders = [];
+
+  const rootKey = rootGoalWrapper.value;
+  console.log("in renderGoal: ", rootGoalWrapper.value, rootKey);
+
+  // run through each goal in the given array
+  for (let i = 0; i < goals.length; i++) {
+    const goal = goals[i];
+    const type = goal.GoalType;
+    const content = goal.GoalContent;
+    // recurse over functional goals
+    console.log("Render goals type:", type);
+    if (type === FUNCTIONAL_TYPE) {
+      renderFunction(
+        goal,
+        graph,
+        source,
+        rootGoalWrapper,
+        emotionsGlob,
+        negativesGlob,
+        qualitiesGlob,
+        stakeholdersGlob
+      );
+
+      // accumulate non-functional descriptions into buckets
+    } else if (type === EMOTIONAL_TYPE) {
+      emotions.push(content);
+    } else if (type === NEGATIVE_TYPE) {
+      concerns.push(content);
+    } else if (type === QUALITY_TYPE) {
+      qualities.push(content);
+    } else if (type === STAKEHOLDER_TYPE) {
+      stakeholders.push(content);
+    } else {
+      console.log("Logging: goal of unknown type received: " + type);
+    }
+  }
+
+  // Determine the key to use for non-functional goals
+  let key = source ? source.value : ROOT_KEY;
+
+  // If rootGoalWrapper.value exists and source is null, use its value as the key
+  if (!source && rootGoalWrapper.value) {
+    key = rootGoalWrapper.value.value;
+  }
+
+  // Store non-functional goals using the determined key
+  if (emotions.length) {
+    console.log("emotions key value: ", key);
+    console.log("emotions length: ", emotions.length);
+    if (emotionsGlob[key]) {
+      emotionsGlob[key] = emotionsGlob[key].concat(emotions);
+    } else {
+      emotionsGlob[key] = emotions;
+    }
+    console.log("emotions glob: ", emotionsGlob);
+    console.log("emotions glob key: ", emotionsGlob[key]);
+  }
+  if (qualities.length) {
+    if (qualitiesGlob[key]) {
+      qualitiesGlob[key] = qualitiesGlob[key].concat(qualities);
+    } else {
+      qualitiesGlob[key] = qualities;
+    }
+  }
+  if (concerns.length) {
+    if (negativesGlob[key]) {
+      negativesGlob[key] = negativesGlob[key].concat(concerns);
+    } else {
+      negativesGlob[key] = concerns;
+    }
+  }
+  if (stakeholders.length) {
+    if (stakeholdersGlob[key]) {
+      stakeholdersGlob[key] = stakeholdersGlob[key].concat(stakeholders);
+    } else {
+      stakeholdersGlob[key] = stakeholders;
+    }
+  }
+};
+
 /**
 * Renders a functional goal. The most important thing that this
 * does is call renderGoals() over each of the goals children.
@@ -155,183 +258,214 @@ export const renderFunction = (
  );
 };
 
-/**
-   * Recursively renders the goal hierarchy.
-   * : goals, the top-level array of goals
-   * : graph, the graph into which goals will be rendered
-   * : source, the parent goal of the given array, defaults to null
-   */
-export const renderGoals = (
-    goals: ClusterGoal[],
-    graph: Graph,
-    source: Cell | null = null,
-    // rootGoal: Cell | null,
-    rootGoalWrapper: { value: Cell | null },
-    emotionsGlob: GlobObject,
-    negativesGlob: GlobObject,
-    qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
-  ) => {
-    console.log("Logging: renderGoals() called on list: ", goals);
-    // accumulate non-functional goals to be rendered into a single symbol
-    const emotions = [];
-    const qualities = [];
-    const concerns = [];
-    const stakeholders = [];
 
-    // run through each goal in the given array
-    for (let i = 0; i < goals.length; i++) {
-      const goal = goals[i];
-      const type = goal.GoalType;
-      const content = goal.GoalContent;
-      // recurse over functional goals
-      console.log("Render goals type:", type);
-      if (type === FUNCTIONAL_TYPE) {
-        renderFunction(
-          goal,
-          graph,
-          source,
-          rootGoalWrapper,
-          emotionsGlob,
-          negativesGlob,
-          qualitiesGlob,
-          stakeholdersGlob
-        );
+// Helper function to check if two rectangles intersect
+const doRectanglesIntersect = (rect1: Rectangle, rect2: Rectangle) => {
+  return !(
+    rect1.x + rect1.width < rect2.x ||
+    rect1.x > rect2.x + rect2.width ||
+    rect1.y + rect1.height < rect2.y ||
+    rect1.y > rect2.y + rect2.height
+  );
+};
 
-        // accumulate non-functional descriptions into buckets
-      } else if (type === EMOTIONAL_TYPE) {
-        emotions.push(content);
-      } else if (type === NEGATIVE_TYPE) {
-        concerns.push(content);
-      } else if (type === QUALITY_TYPE) {
-        qualities.push(content);
-      } else if (type === STAKEHOLDER_TYPE) {
-        stakeholders.push(content);
-      } else {
-        console.log("Logging: goal of unknown type received: " + type);
+// Adjust vertical positions to avoid overlap among non-functional goals of the same parent
+const adjustVerticalPositions = (node: Cell, siblingNodes: Cell[], graph: Graph) => {
+  if (!node || !siblingNodes.length) return;
+
+  const nodeGeo = node.getGeometry();
+  if (!nodeGeo) return;
+
+  console.log("adjusting vertical position, ", node, siblingNodes);
+  let adjusted = false;
+  let iterations = 0;
+  const maxIterations = 100; // Prevent infinite loops
+  const adjustmentStep = 10;
+
+  // Create a bounding box for the current node
+  const nodeBox = new Rectangle(nodeGeo.x, nodeGeo.y, nodeGeo.width, nodeGeo.height);
+
+  // Check for overlaps and adjust positions
+  do {
+    adjusted = false;
+    for (const sibling of siblingNodes) {
+      if (node === sibling) continue; // Skip itself
+
+      const siblingGeo = sibling.getGeometry();
+      if (!siblingGeo) continue;
+
+      const siblingBox = new Rectangle(siblingGeo.x, siblingGeo.y, siblingGeo.width, siblingGeo.height);
+
+      if (doRectanglesIntersect(nodeBox, siblingBox)) {
+        // Move the node upwards
+        nodeGeo.y -= adjustmentStep;
+        adjusted = true;
+        nodeBox.y = nodeGeo.y;
       }
     }
+    iterations++;
+  } while (adjusted && iterations < maxIterations);
 
-    // render each of the non-functional goals
-    const key = source ? source.value : ROOT_KEY;
+  // Apply updated geometry
+  graph.getDataModel().setGeometry(node, nodeGeo);
+};
 
-    if (emotions.length) {
-      emotionsGlob[key] = emotions;
+// Adjust horizontal positions to avoid overlap between non-functional and parent functional goals
+const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
+  if (!node || !source) return;
+
+  const nodeGeo = node.getGeometry();
+  const sourceGeo = source.getGeometry();
+  if (!nodeGeo || !sourceGeo) return;
+
+  console.log("Adjusting horizontal position:", node, source);
+  let adjusted = false;
+  let iterations = 0;
+  const maxIterations = 100;
+  const adjustmentStep = 10; 
+
+  // Create a bounding box for the current node
+  const nodeBox = new Rectangle(nodeGeo.x, nodeGeo.y, nodeGeo.width, nodeGeo.height);
+  const sourceBox = new Rectangle(sourceGeo.x, sourceGeo.y, sourceGeo.width, sourceGeo.height);
+
+  // Check for overlap with the parent functional goal
+  do {
+    adjusted = false;
+    if (doRectanglesIntersect(nodeBox, sourceBox)) {
+      // Determine the direction to move the node to avoid overlap
+      if (nodeBox.x < sourceBox.x) {
+        nodeGeo.x = sourceBox.x - nodeBox.width - adjustmentStep; // Move left
+      } 
+      else {
+        nodeGeo.x = sourceBox.x + sourceBox.width + adjustmentStep; // Move right
+      }
+
+      adjusted = true;
+      nodeBox.x = nodeGeo.x;
     }
-    if (qualities.length) {
-      qualitiesGlob[key] = qualities;
-    }
-    if (concerns.length) {
-      negativesGlob[key] = concerns;
-    }
-    if (stakeholders.length) {
-      stakeholdersGlob[key] = stakeholders;
-    }
-  };
+
+    iterations++;
+  } while (adjusted && iterations < maxIterations);
+
+  // Apply updated geometry
+  graph.getDataModel().setGeometry(node, nodeGeo);
+};
+
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: string[],
-    graph: Graph,
-    source: Cell | null = null,
-    type: string = "None"
-  ) => {
-    
-    console.log("Rendering non-functional goal: ", descriptions);
-  
-    // Fetch parent coordinates
-    if (source) {
-      const geo = source.getGeometry();
-      let x = 0;
-      let y = 0;
-      if (geo) {
-        const sourceX = geo.x;
-        const sourceY = geo.y;
-        const fWidth = geo.width;
-        const fHeight = geo.height;
-        let width = fWidth;
-        let height = fHeight;
-        let delimiter = "";
-        let image = "";
-        // Clone to not change original style
-        const style = {...graph.getStylesheet().getDefaultVertexStyle()};
-  
-        switch (type) {
-          case EMOTIONAL_TYPE: // Top Right (TR)
-            image = HEART_PATH;
-            width = fWidth * SW_EMOTIONAL;
-            height = fHeight * SH_EMOTIONAL;
-            x = sourceX + fWidth * 1.3 - width / 2; // Move to the right
-            y = sourceY - fHeight / 4 - height / 2 ; // Move up
-            delimiter = ",\n";
-            break;
-  
-          case NEGATIVE_TYPE: // Bottom Right (BR)
-            image = NEGATIVE_PATH;
-            width = fWidth * SW_NEGATIVE;
-            height = fHeight * SH_NEGATIVE;
-            x = sourceX + fWidth * 1.3 - width / 2; // Move to the right
-            y = sourceY + fHeight * 0.9 - height / 2; // Move down
-            delimiter = ",\n";
-            break;
-  
-          case QUALITY_TYPE: // Top Left (TL)
-            image = CLOUD_PATH;
-            width = fWidth * SW_QUALITY;
-            height = fHeight * SH_QUALITY;
-            x = sourceX - fWidth / 4 - width / 2 ; // Move to the left
-            y = sourceY - fHeight / 4 - height / 2 ; // Move up
-            delimiter = ",\n";
-            break;
-  
-          case STAKEHOLDER_TYPE: // Bottom Left (BL)
-            image = PERSON_PATH;
-            width = fWidth * SW_STAKEHOLDER;
-            height = fHeight * SH_STAKEHOLDER;
-            x = sourceX - fWidth / 2 - width / 2; // Move to the left
-            y = sourceY + fHeight * 0.9 - height / 2; // Move down
-            delimiter = "\n";
-            break;
-        }
+  descriptions: string[],
+  graph: Graph,
+  source: Cell | null = null,
+  type: string = "None"
+) => {
 
-        style.image = image;
-        style.align = "center";
-        style.verticalAlign = "middle";
-        style.labelPosition = "center";
-        style.spacingTop = -10;
+  console.log("Rendering non-functional goal: ", descriptions);
 
-        // If stakeholder, text goes at bottom
-        if (type === STAKEHOLDER_TYPE) {
-          style.verticalAlign = "top";
-          style.verticalLabelPosition = "bottom";
-        }
-  
-        // Insert the vertex
-        const node = graph.insertVertex(
-          null,
-          null,
-          descriptions.join(delimiter),
-          x,
-          y,
-          width,
-          height,
-          style
-        );
+  if (!source) return;
 
-        const node_geo = node.getGeometry();
-        const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
-        if (node_geo && preferred) {
-          // Adjust height based on the number of lines in the goal text and font size
-          node_geo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
-          node_geo.width = Math.max(node_geo.height, preferred.width * SW_PREFERRED, width);
-          node_geo.height = Math.max(node_geo.height, preferred.height * SH_PREFERRED, height);
-        }
+  const geo = source.getGeometry();
+  if (!geo) return;
+
+  // Initial coordinates and dimensions
+  let x = 0;
+  let y = 0;
+  let width = geo.width;
+  let height = geo.height;
+  let delimiter = "";
+  let image = "";
+
+  // Set the position and size based on the type of non-functional goal
+  switch (type) {
+    case EMOTIONAL_TYPE: // Top Right
+      image = HEART_PATH;
+      width *= SW_EMOTIONAL;
+      height *= SH_EMOTIONAL;
+      x = geo.x + width + OFFSET_X;
+      y = geo.y - height - OFFSET_Y ;
+      delimiter = ",\n";
+      break;
+    case NEGATIVE_TYPE: // Bottom Right
+      image = NEGATIVE_PATH;
+      width *= SW_NEGATIVE;
+      height *= SH_NEGATIVE;
+      x = geo.x + width + OFFSET_X;
+      y = geo.y + OFFSET_Y;
+      delimiter = ",\n";
+      break;
+    case QUALITY_TYPE: // Top Left
+      image = CLOUD_PATH;
+      width *= SW_QUALITY;
+      height *= SH_QUALITY;
+      x = geo.x - width - OFFSET_X;
+      y = geo.y - height - OFFSET_Y;
+      delimiter = ",\n";
+      break;
+    case STAKEHOLDER_TYPE: // Bottom Left
+      image = PERSON_PATH;
+      width *= SW_STAKEHOLDER;
+      height *= SH_STAKEHOLDER;
+      x = geo.x - width - OFFSET_X;
+      y = geo.y + OFFSET_Y;
+      delimiter = "\n";
+      break;
+  }
+
+  // Clone style to avoid modifying the default
+  const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
+  style.image = image;
+  style.align = "center";
+  style.verticalAlign = "middle";
+  style.labelPosition = "center";
+  style.spacingTop = -10;
+
+  // Text goes at bottom for stakeholder
+  if (type === STAKEHOLDER_TYPE) {
+    style.verticalAlign = "top";
+    style.verticalLabelPosition = "bottom";
+  }
+
+  // Insert the vertex
+  const node = graph.insertVertex(
+    null,
+    null,
+    descriptions.join(delimiter),
+    x,
+    y,
+    width,
+    height,
+    style
+  );
+  // Insert an invisible edge
+  const edge = graph.insertEdge(null, null, "", source, node);
+  edge.visible = false; // Make the edge invisible - used in auto layout
+
+  // Adjust node geometry based on text size
+  const nodeGeo = node.getGeometry();
+  const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
+  if (nodeGeo && preferred) {
+    // Adjust height based on the number of lines and font size
+    nodeGeo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
+    nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SW_PREFERRED, width);
+    nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SH_PREFERRED, height);
+  }
+
+  // Note for future: There must be some API that does this
+  // Get all vertices connected to the same source node (functional goal)
+  const siblingNodes = graph.getChildVertices(graph.getDefaultParent()).filter((sibling) => {
+    if (sibling === node) return false; // Skip the current node itself
+
+    // Find edges where the current node is the target
+    const edges = graph.getIncomingEdges(sibling, null);
+    return edges.some((edge) => edge.source === source);
+  })
+
+  //const siblingNodes = source.getConnections();
+  console.log("siblings: ", siblingNodes);
   
-        const edge = graph.insertEdge(null, null, "", source, node);
-        edge.visible = false; // Make the edge invisible - used in auto layout
-      }
-    }
-  };
+  adjustHorizontalPositions(node, source, graph);
+  adjustVerticalPositions(node, siblingNodes, graph);
+};
 
 /**
    * Render Legend for the graph at the top right corner
@@ -427,93 +561,61 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
    * Adds non-functional goals into the hierarchy next to their associated
    * functional goals.
    */
-  export const associateNonFunctions = (
-    graph: Graph,
-    rootGoal: Cell | null,
-    emotionsGlob: GlobObject,
-    negativesGlob: GlobObject,
-    qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
-  ) => {
-    // fetch all the functional goals
-    const goals = graph.getChildVertices();
+export const associateNonFunctions = (
+  graph: Graph,
+  rootGoal: Cell | null,
+  emotionsGlob: GlobObject,
+  negativesGlob: GlobObject,
+  qualitiesGlob: GlobObject,
+  stakeholdersGlob: GlobObject
+) => {
 
-    for (let i = 0; i < goals.length; i++) {
-      const goal = goals[i];
-      const value = goal.value;
+  // fetch all the functional goals
+  const goals = graph.getChildVertices();
 
-      // render all emotions
-      if (emotionsGlob[value]) {
-        renderNonFunction(
-          emotionsGlob[goal.value],
-          graph,
-          goal,
-          EMOTIONAL_TYPE
-        );
-      }
+  for (let i = 0; i < goals.length; i++) {
+    const goal = goals[i];
+    const value = goal.value;
+    console.log("Associate: ", i, ", ", value);
 
-      // render all qualities
-      if (qualitiesGlob[value]) {
-        renderNonFunction(
-          qualitiesGlob[goal.value],
-          graph, 
-          goal, 
-          QUALITY_TYPE
-        );
-      }
-
-      // render all concerns
-      if (negativesGlob[value]) {
-        renderNonFunction(
-          negativesGlob[goal.value],
-          graph,
-          goal,
-          NEGATIVE_TYPE
-        );
-      }
-
-      // render all stakeholders
-      if (stakeholdersGlob[value]) {
-        renderNonFunction(
-          stakeholdersGlob[goal.value],
-          graph,
-          goal,
-          STAKEHOLDER_TYPE
-        );
-      }
-    }
-
-    // render each of the non-functional goals at the root level
-    if (emotionsGlob[ROOT_KEY] && rootGoal != null) {
+    // render all concerns
+    if (negativesGlob[value]) {
       renderNonFunction(
-        emotionsGlob[ROOT_KEY],
+        negativesGlob[goal.value],
         graph,
-        rootGoal,
-        EMOTIONAL_TYPE
-      );
-    }
-    if (qualitiesGlob[ROOT_KEY] && rootGoal != null) {
-      renderNonFunction(
-        qualitiesGlob[ROOT_KEY], 
-        graph, 
-        rootGoal, 
-        QUALITY_TYPE
-      );
-    }
-    if (negativesGlob[ROOT_KEY] && rootGoal != null) {
-      renderNonFunction(
-        negativesGlob[ROOT_KEY],
-        graph,
-        rootGoal,
+        goal,
         NEGATIVE_TYPE
       );
     }
-    if (stakeholdersGlob[ROOT_KEY] && rootGoal != null) {
+    // render all stakeholders
+    if (stakeholdersGlob[value]) {
       renderNonFunction(
-        stakeholdersGlob[ROOT_KEY],
+        stakeholdersGlob[goal.value],
         graph,
-        rootGoal,
+        goal,
         STAKEHOLDER_TYPE
       );
     }
-  };
+
+    // render all emotions
+    if (emotionsGlob[value]) {
+      renderNonFunction(
+        emotionsGlob[goal.value],
+        graph,
+        goal,
+        EMOTIONAL_TYPE
+      );
+    }
+
+    // render all qualities
+    if (qualitiesGlob[value]) {
+      renderNonFunction(
+        qualitiesGlob[goal.value],
+        graph, 
+        goal, 
+        QUALITY_TYPE
+      );
+    }
+  }
+
+};

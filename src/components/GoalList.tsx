@@ -38,22 +38,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		const inputRef = useRef<HTMLInputElement>(null);
 
-		// An index and handlers to track the state for the row being edited 
-		const [editedIndex, setEditedIndex] = useState<number | null>(null);
-
-		// Set index of the goal being edited
-		const handleEditedChange = (index: number) => {
-			setEditedIndex(index);
-		  };
-
-		// Only one goal can be in Edited state at the same time, change editedIndex from the last edited goal to new goal being edited
-		const handleBlurChange = (goalId: number, event: React.FocusEvent<HTMLInputElement>) => {
-			handleSave(tabData.find(tab => tab.label === activeKey)?.rows.find(row => row.id === goalId)!, (event.target as HTMLInputElement).value);
-			setEditedIndex(null);
-		  };
-
 		// Function to handle selecting a tab
 		const handleSelect = (selectedKey: string | null) => {
+			if (selectedKey !== activeKey) {
+				// Deselect all goals when switching to a new tab
+				setGroupSelected([]);
+			}
 			setActiveKey(selectedKey);
 		};
 
@@ -201,24 +191,28 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 
+		const isEmptyGoal = (goal: TreeItem): boolean => {
+			return !goal.content.trim();
+		};
+
 		const handleDeleteSelected = () => {
 			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
     
-		if (confirmed) {
-			const newTabData = tabData.map((tab) => {
-				if (tab.label === activeKey) {
-					// Get selected goals
-					const newRows = tab.rows.filter(
-						(row) => !groupSelected.some((selected) => selected.id === row.id)
-					);
-					return { ...tab, rows: newRows };
-				}
-				return tab;
-			});
+			if (confirmed) {
+				const newTabData = tabData.map((tab) => {
+					if (tab.label === activeKey) {
+						// Get selected goals
+						const newRows = tab.rows.filter(
+							(row) => !groupSelected.some((selected) => selected.id === row.id)
+						);
+						return { ...tab, rows: newRows };
+					}
+					return tab;
+				});
 
-			setTabData(newTabData);
-			setGroupSelected([]); 
-    		}
+				setTabData(newTabData);
+				setGroupSelected([]); 
+			}
 		};
 
 		const GroupDropBtn = () => {
@@ -240,7 +234,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						onClick={handleDeleteSelected}
 					>
 						Delete Selected
-            		</Button>
+					</Button>
 				</div>
 			);
 		};
@@ -317,17 +311,16 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												spellCheck
 												className="bg-white"
 												style={{
-													color: !(editedIndex === index) && !isChecked(row) ? 'gray' : 'black', 
-                      								opacity: !(editedIndex === index) && !isChecked(row) ? 0.6 : 1,      
-												  }}
+													color: isEmptyGoal(row) ? 'gray' : 'black', 
+													opacity: isEmptyGoal(row) ? 0.6 : 1,      
+												}}
 												onKeyDown={(e) =>
 													handleKeyPress(
 													e as React.KeyboardEvent<HTMLInputElement>,
 													tab.label
 													)
 												}
-												onBlur={(event) => handleBlurChange(row.id, event as React.FocusEvent<HTMLInputElement>)}
-                    							onFocus={() => handleEditedChange(index)}
+												onBlur={(event) => handleSave(row, event.target.value)}
 												ref={index === tab.rows.length - 1 ? inputRef : undefined}
 												/>
 												{tab.rows.length > 1 && (
@@ -348,18 +341,18 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										))}
 									</tbody>
 								</Table>
-								<div className="text-muted text-left mt-3">
-								<Button 
-									className="me-2" 
-									onClick={() => handleAddRow(activeKey || "")} 
-									variant="primary"
-								>
-									+
-								</Button>
-								<div className="text-muted text-end mt-3">
+									<div className="d-flex justify-content-between align-items-center mt-3">
+									<Button 
+										className="me-2" 
+										onClick={() => handleAddRow(activeKey || "")} 
+										variant="primary"
+									>
+										+
+									</Button>
+									<div className="text-muted">
 									Drag goals to arrange hierarchy
+									</div>
 								</div>
-							</div>
 							</Tab.Pane>
 						))}
 					</Tab.Content>
