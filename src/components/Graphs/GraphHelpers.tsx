@@ -205,10 +205,11 @@ export const renderFunction = (
     }
   }
 
-  // Get default style from the stylesheet
-  const style = graph.getStylesheet().getDefaultVertexStyle();
-  // Make sure to specify what image we're drawing
+  // Get default style from the stylesheet and clone
+  // If not cloned, will affect all nodes instead.
+  const style = {...graph.getStylesheet().getDefaultVertexStyle()};
 
+  // Make sure to specify what image we're drawing
   style.image = PARALLELOGRAM_PATH;
 
   // insert new vertex and edge into graph
@@ -239,7 +240,7 @@ export const renderFunction = (
       node_geo.height,
       preferred.width * SW_PREFERRED,
       width
-    ); //image size is rendered base on min(height, width)
+    );
     node_geo.height = Math.max(
       node_geo.height,
       preferred.width * SH_PREFERRED,
