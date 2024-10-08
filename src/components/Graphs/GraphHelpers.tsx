@@ -182,80 +182,81 @@ export const renderGoals = (
 * : source, the parent of the goal
 */
 export const renderFunction = (
- goal: ClusterGoal,
- graph: Graph,
- source: Cell | null = null,
- rootGoalWrapper: { value: Cell | null },
- emotionsGlob: GlobObject,
- negativesGlob: GlobObject,
- qualitiesGlob: GlobObject,
- stakeholdersGlob: GlobObject
+  goal: ClusterGoal,
+  graph: Graph,
+  source: Cell | null = null,
+  rootGoalWrapper: { value: Cell | null },
+  emotionsGlob: GlobObject,
+  negativesGlob: GlobObject,
+  qualitiesGlob: GlobObject,
+  stakeholdersGlob: GlobObject
 ) => {
 
- const arr = goal.GoalContent.split(" ");
- 
- // Dynamically set size, based on source (parent) size
- let width = SYMBOL_WIDTH;
- let height = SYMBOL_HEIGHT;
- if (source) {
-   const geo = source.getGeometry();
-   if (geo) {
-     width = geo.width * CHILD_SIZE_SCALE;
-     height = geo.height * CHILD_SIZE_SCALE;
-   }
- }
+  const arr = goal.GoalContent.split(" ");
+  
+  // Dynamically set size, based on source (parent) size
+  let width = SYMBOL_WIDTH;
+  let height = SYMBOL_HEIGHT;
+  if (source) {
+    const geo = source.getGeometry();
+    if (geo) {
+      width = geo.width * CHILD_SIZE_SCALE;
+      height = geo.height * CHILD_SIZE_SCALE;
+    }
+  }
 
- // Get default style from the stylesheet
- const style = graph.getStylesheet().getDefaultVertexStyle();
- // Make sure to specify what image we're drawing
- style.image = PARALLELOGRAM_PATH;
+  // Get default style from the stylesheet
+  const style = graph.getStylesheet().getDefaultVertexStyle();
+  // Make sure to specify what image we're drawing
 
- // insert new vertex and edge into graph
- const node = graph.insertVertex(
-   null,
-   null,
-   arr.join("\n"),
-   SYMBOL_X_COORD,
-   SYMBOL_Y_COORD,
-   width,
-   height,
-   style
- );
- graph.insertEdge(null, null, "", source, node);
+  style.image = PARALLELOGRAM_PATH;
 
- // if no root goal is registered, then store this as root
- if (rootGoalWrapper.value === null) {
-   rootGoalWrapper.value = node;
-   console.log("rootgoal registered", rootGoalWrapper.value);
- }
+  // insert new vertex and edge into graph
+  const node = graph.insertVertex(
+    null,
+    null,
+    arr.join("\n"),
+    SYMBOL_X_COORD,
+    SYMBOL_Y_COORD,
+    width,
+    height,
+    style
+  );
+  graph.insertEdge(null, null, "", source, node);
 
- //resize functional goal base on text length and number of lines
- const node_geo = node.getGeometry();
- const preferred = graph.getPreferredSizeForCell(node); //getPreferredSizeForCell only works for width
- if (node_geo && preferred) {
-   node_geo.height = arr.length * VERTEX_FONT_SIZE * SH_FONT; //get height base on the number of lines in goal text and font size
-   node_geo.width = Math.max(
-     node_geo.height,
-     preferred.width * SW_PREFERRED,
-     width
-   ); //image size is rendered base on min(height, width)
-   node_geo.height = Math.max(
-     node_geo.height,
-     preferred.width * SH_PREFERRED,
-     height
-   );
- }
- // then recurse over the goal's children
- renderGoals(
-   goal.SubGoals,
-   graph,
-   node,
-   rootGoalWrapper,
-   emotionsGlob,
-   negativesGlob,
-   qualitiesGlob,
-   stakeholdersGlob
- );
+  // if no root goal is registered, then store this as root
+  if (rootGoalWrapper.value === null) {
+    rootGoalWrapper.value = node;
+    console.log("rootgoal registered", rootGoalWrapper.value);
+  }
+
+  //resize functional goal base on text length and number of lines
+  const node_geo = node.getGeometry();
+  const preferred = graph.getPreferredSizeForCell(node); //getPreferredSizeForCell only works for width
+  if (node_geo && preferred) {
+    node_geo.height = arr.length * VERTEX_FONT_SIZE * SH_FONT; //get height base on the number of lines in goal text and font size
+    node_geo.width = Math.max(
+      node_geo.height,
+      preferred.width * SW_PREFERRED,
+      width
+    ); //image size is rendered base on min(height, width)
+    node_geo.height = Math.max(
+      node_geo.height,
+      preferred.width * SH_PREFERRED,
+      height
+    );
+  }
+  // then recurse over the goal's children
+  renderGoals(
+    goal.SubGoals,
+    graph,
+    node,
+    rootGoalWrapper,
+    emotionsGlob,
+    negativesGlob,
+    qualitiesGlob,
+    stakeholdersGlob
+  );
 };
 
 
