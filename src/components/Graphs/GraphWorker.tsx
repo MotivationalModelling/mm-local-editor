@@ -168,7 +168,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     nodeStyle.fontColor = "black";
     nodeStyle.editable = true;
     nodeStyle.shape = "image";
-    nodeStyle.imageAspect = true;
+    nodeStyle.imageAspect = false;
     graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
   };
 
