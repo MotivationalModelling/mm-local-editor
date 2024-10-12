@@ -393,15 +393,15 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   }, [treeData]);
 
   // Just for testing
-  useEffect(() => {
-    console.log("Tab data is:", tabData);
-    console.log("Tree data is: ", treeData);
-    console.log("Selected group is: ", groupSelected);
-    console.log("Tree ids is: ", treeIds);
-    console.log("Existing item ids is: ", existingItemIds);
-    console.log("Existing error is: ", existingError);
+  // useEffect(() => {
+  //   console.log("Tab data is:", tabData);
+  //   console.log("Tree data is: ", treeData);
+  //   console.log("Selected group is: ", groupSelected);
+  //   console.log("Tree ids is: ", treeIds);
+  //   console.log("Existing item ids is: ", existingItemIds);
+  //   console.log("Existing error is: ", existingError);
 
-  });
+  // });
 
   // Reset tree data to empty, tab data to initial
   const resetGoalsToEmpty = () => {
