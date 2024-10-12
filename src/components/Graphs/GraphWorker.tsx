@@ -10,7 +10,11 @@ import {
   EventObject,
   error,
   PanningHandler,
+  RubberBandHandler,
+  getDefaultPlugins,
 } from "@maxgraph/core";
+import '@maxgraph/core/css/common.css';
+
 import {useRef, useEffect, useMemo, useCallback} from "react";
 import {Container, Row, Col} from "react-bootstrap";
 import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
@@ -132,14 +136,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
   };
 
   const setGraphStyle = (graph: Graph) => {
-    const panningHandler = graph.getPlugin("PanningHandler") as PanningHandler;
-    panningHandler.useLeftButtonForPanning = true;
-
-    // config: allow symbols to be dropped into the graph (used for sidebar) (automatically enabled in @maxgraph/core)
-    // graph.dropEnabled = true
-
     // config: permit vertices to be connected by edges
-    //graph.setConnectable(true);
+    graph.setConnectable(true);
     graph.setCellsEditable(true);
     graph.setPanning(true);
     graph.setCellsResizable(true);
@@ -403,8 +401,14 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
 
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
-
-      const graphInstance = new Graph(graphContainer); // Create the graph
+  
+      const plugins = [
+        ...getDefaultPlugins(), 
+        RubberBandHandler,
+      ];
+      
+      // Creates the graph with the custom plugins
+      const graphInstance = new Graph(graphContainer, undefined, plugins);
 
       setGraphStyle(graphInstance);
       graphListener(graphInstance);
