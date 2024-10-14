@@ -31,7 +31,6 @@ import {
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "./ResetGraphButton.tsx";
-import ScaleTextButton from "./ScaleTextButton.tsx";
 import { useGraph } from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 
@@ -447,7 +446,6 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <ResetGraphButton resetEmptyGraph={resetEmptyGraph} resetDefaultGraph={resetDefaultGraph}></ResetGraphButton>
-      <ScaleTextButton></ScaleTextButton>
       <Container>
         <Row className="row">
           <Col md={11}>
