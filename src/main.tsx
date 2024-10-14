@@ -7,9 +7,13 @@ import "react-nestable/dist/styles/index.css";
 import App from "./App.tsx";
 import "./index.css";
 import FileProvider from "./components/context/FileProvider.tsx";
+import {Provider} from "react-redux";
+import {store} from "./app/store.ts";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <FileProvider>
-    <App />
-  </FileProvider>
+    <Provider store={store}>
+        <FileProvider>
+            <App/>
+        </FileProvider>
+    </Provider>
 );

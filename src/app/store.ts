@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit'
-import clusterReducer from "../components/features/clusterReducer.ts";
+import treeReducer from "../components/features/treeReducer.ts";
 
 export const store = configureStore({
     reducer: {
-        cluster: clusterReducer
+        tree: treeReducer
     }
 });
 

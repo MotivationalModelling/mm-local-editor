@@ -21,6 +21,12 @@ export type TreeItem = {
   children?: TreeItem[];
 };
 
+// require id and type fields, others optional.
+export const newTreeItem = (initFields: Pick<TreeItem, "id" | "type"> & Partial<TreeItem>) => ({
+    content: "",
+    ...initFields
+});
+
 // Define the structure for the content of each tab
 export type TabContent = {
   label: Label;
@@ -30,24 +36,25 @@ export type TabContent = {
 
 // Define the initial tabs with labels and corresponding icons
 export const tabs: TabContent[] = [
-  { label: "Do", icon: DoIcon, rows: [] },
-  { label: "Be", icon: BeIcon, rows: [] },
-  { label: "Feel", icon: FeelIcon, rows: [] },
-  { label: "Concern", icon: ConcernIcon, rows: [] },
-  { label: "Who", icon: WhoIcon, rows: [] },
+    {label: "Do", icon: DoIcon, rows: [newTreeItem({id: -1, type: "Do"})]},
+    {label: "Be", icon: BeIcon, rows: [newTreeItem({id: -1, type: "Be"})]},
+    {label: "Feel", icon: FeelIcon, rows: [newTreeItem({id: -1, type: "Feel"})]},
+    {label: "Concern", icon: ConcernIcon, rows: [newTreeItem({id: -1, type: "Concern"})]},
+    {label: "Who", icon: WhoIcon, rows: [newTreeItem({id: -1, type: "Who"})]},
 ];
 
-export const initialTabs = tabs.map((tab, index) => ({
-  ...tab,
-  rows: [
-    ...tab.rows,
-    {
-      id: Date.now() + index,
-      type: tab.label,
-      content: "",
-    },
-  ],
-}));
+export const initialTabs = tabs;
+// export const initialTabs = tabs.map((tab, index) => ({
+//   ...tab,
+//   rows: [
+//     ...tab.rows,
+//     {
+//       id: Date.now() + index,
+//       type: tab.label,
+//       content: "",
+//     },
+//   ],
+// }));
 
 export type Label =  "Do" | "Be" | "Feel" | "Concern" | "Who";
 

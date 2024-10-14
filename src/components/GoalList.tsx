@@ -15,6 +15,7 @@ import {BsPlus} from "react-icons/bs";
 import {TreeItem, useFileContext, tabs} from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
+import {useAppDispatch} from "../app/hooks.ts";
 
 type GoalListProps = {
 	setDraggedItem: (item: TreeItem | null) => void;
@@ -35,6 +36,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		},
 		ref
 	) => {
+		const dispatch = useAppDispatch();
 		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
 		const { tabData, setTabData } = useFileContext();
 
@@ -269,18 +271,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 								<Table striped bordered hover>
 									<thead>
 										<tr>
-											<th style={{ width: '1px', whiteSpace: 'nowrap' }}>
-											<Form.Group as={Row} className="mb-2">
-													<Col sm={11}>
-														<Form.Check
-														type="checkbox"
-														onChange={handleSelectAll}
-														checked={isAllSelected()}
-														/>
-													</Col>
-													</Form.Group>
+											<th>
+												<Form.Check type="checkbox"
+															onChange={handleSelectAll}
+															checked={isAllSelected()}/>
 											</th>
-											<th style={{ display: 'flex' }}>Goal Name</th>
+											<th>Goal Name</th>
 										</tr>
 									</thead>
 									<tbody>
