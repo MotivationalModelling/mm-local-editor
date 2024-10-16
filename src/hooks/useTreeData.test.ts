@@ -11,7 +11,7 @@ describe('useTreeData', () => {
         expect(tabData.length).toEqual(5);
         expect(treeData.length).toEqual(5);
     });
-    test('test adding a goal to the tree', () => {
+    test('add a goal to the tree', () => {
         const {result} = renderHook(() => useTreeData());
         const {addGoal} = result.current;
 
@@ -20,5 +20,26 @@ describe('useTreeData', () => {
         act(() => addGoal(newTreeItem({id: 7, type: "Do", content: "test"})));
 
         expect(result.current.treeData.length).toEqual(6);
-    })
+    });
+    test('remove a goal from the tree', () => {
+        const {result} = renderHook(() => useTreeData());
+        const {addGoal, deleteGoalWithId} = result.current;
+
+        expect(result.current.treeData.length).toEqual(5);
+
+        act(() => addGoal(newTreeItem({id: 7, type: "Do", content: "test"})));
+
+        expect(result.current.treeData.length).toEqual(6);
+
+        act(() => deleteGoalWithId(7));
+        expect(result.current.treeData.length).toEqual(5);
+    });
+    test('removing an nx goal from the tree makes no change', () => {
+        const {result} = renderHook(() => useTreeData());
+        const {deleteGoalWithId} = result.current;
+
+        expect(result.current.treeData.length).toEqual(5);
+        act(() => deleteGoalWithId(7));
+        expect(result.current.treeData.length).toEqual(5);
+    });
 });
