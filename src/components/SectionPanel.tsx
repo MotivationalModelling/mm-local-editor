@@ -8,6 +8,7 @@ import { initialTabs, Label, TreeItem, useFileContext } from "./context/FileProv
 import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
+import useTreeData from "../hooks/useTreeData.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -110,7 +111,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const { treeData, setTreeData, tabData, setTabData } = useFileContext();
+  // const { treeData, setTreeData, tabData, setTabData } = useFileContext();
+  const { treeData, deleteGoalWithId, tabData, setTabData, setTreeData } = useTreeData();
   const [treeIds, setTreeIds] = useState<number[]>([]);
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
