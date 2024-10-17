@@ -46,6 +46,14 @@ const createTreeDataSlice = (tabContent: TabContent[]) => {
             addGoal: (state, action: PayloadAction<TreeItem>) => {
                 state.treeData.push(action.payload);
             },
+            addGoalToTab: (state, action: PayloadAction<TreeItem>) => {
+                for (const tab of state.tabData) {
+                    if (tab.label === action.payload.type) {
+                        tab.rows.push(action.payload);
+                    }
+                }
+                state.treeData.push(action.payload);
+            },
             deleteGoalWithId: (state, action: PayloadAction<TreeItem["id"]>) => {
                 state.treeData = removeItemIdFromTree(state.treeData, action.payload);
                 state.tabData = removeItemIdFromTabs(state.tabData, action.payload);
@@ -55,9 +63,9 @@ const createTreeDataSlice = (tabContent: TabContent[]) => {
                 text: string
             }>) => {
                 state.treeData = state.treeData.map((item) => (
-                    (item.id === action.payload.id) ? item : {
+                    (item.id !== action.payload.id) ? item : {
                         ...item,
-                        label: action.payload.text
+                        content: action.payload.text
                     })
                 );
             },
@@ -79,9 +87,9 @@ const createTreeDataSlice = (tabContent: TabContent[]) => {
 
 type AnyFunction = (...args: any[]) => UnknownAction;
 
-function useTreeData() {
-    const selectionSlice = useMemo(() => createTreeDataSlice(initialTabs), []);
-    const [state, dispatch] = useReducer(selectionSlice.reducer, {tabData: initialTabs, treeData: flattenTabContent(initialTabs)});
+function useTreeData(tabs: TabContent[] = initialTabs) {
+    const selectionSlice = useMemo(() => createTreeDataSlice(tabs), [tabs]);
+    const [state, dispatch] = useReducer(selectionSlice.reducer, {tabData: tabs, treeData: flattenTabContent(tabs)});
     // wrap each of the slice actions in a call to dispatch so that the caller doesn't
     // need to do that manually
     // XXX While this works I think it's a bit clumsy and heavy-handed with types.
