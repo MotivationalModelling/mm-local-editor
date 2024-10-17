@@ -110,18 +110,19 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
+  // treeData stores the tree (the hierarchy on the right)
+  // tabData stores the goal entries under each tab (the table on the left)
   const { treeData, setTreeData, tabData, setTabData } = useFileContext();
   const [treeIds, setTreeIds] = useState<number[]>([]);
-
+  // Store the items of the currently selected goals
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
-
+  // For errors: Shows which item ids are already existing in the tree
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
+  // For errors: Flag to show if error when adding goal to tree
   const [existingError, setExistingError] = useState<boolean>(false);
 
-  // Stores user defined goals (treeData) into a structure used in GraphWorker. Initialise as empty
+  // Stores treeData into a structure used in GraphWorker
   const [cluster, setCluster] = useState<Cluster>({ ClusterGoals: []});
-
-  // const [isHintVisible, setIsHintVisible] = useState(true);
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);

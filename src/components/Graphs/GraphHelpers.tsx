@@ -80,7 +80,6 @@ export const renderGoals = (
   goals: ClusterGoal[],
   graph: Graph,
   source: Cell | null = null,
-  // rootGoal: Cell | null,
   rootGoalWrapper: { value: Cell | null },
   emotionsGlob: GlobObject,
   negativesGlob: GlobObject,
@@ -331,6 +330,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
   const sourceBox = new Rectangle(sourceGeo.x, sourceGeo.y, sourceGeo.width, sourceGeo.height);
 
   // Check for overlap with the parent functional goal
+  // Done iteratively, maximum 100 times
   do {
     adjusted = false;
     if (doRectanglesIntersect(nodeBox, sourceBox)) {
@@ -352,7 +352,6 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
   // Apply updated geometry
   graph.getDataModel().setGeometry(node, nodeGeo);
 };
-
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
@@ -470,7 +469,7 @@ export const renderNonFunction = (
 };
 
 /**
-   * Render Legend for the graph at the top right corner
+   * Render Legend for the graph at the top right corner, unused
    */
 export const renderLegend = (graph: Graph): Cell => {
     const legendItems: string[] = [
@@ -548,7 +547,7 @@ export const renderLegend = (graph: Graph): Cell => {
   };
 
  /**
-   * Automatically lays-out the functional hierarchy of the graph.
+   * Automatically lays-out the functional goals hierarchy of the graph.
    */
 export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
     const layout = new GoalModelLayout(

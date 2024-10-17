@@ -9,7 +9,6 @@ import {
   UndoManager,
   EventObject,
   error,
-  PanningHandler,
   RubberBandHandler,
   getDefaultPlugins,
 } from "@maxgraph/core";
@@ -61,7 +60,7 @@ interface GlobObject {
 
 type GraphWorkerProps = {
   cluster: Cluster;
-  onResetEmpty: () => void; // Function to reset the graph to empty
+  onResetEmpty: () => void;
   onResetDefault: () => void;
 };
 
@@ -71,6 +70,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
   const divGraph = useRef<HTMLDivElement>(null);
   const {graph, setGraph} = useGraph();
 
+  // Check if clusters has any functional goals
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
   );
@@ -90,6 +90,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     }
   };
 
+  // Recentre graph view, making sure to fit the graph inside
   const recentreView = () => {
     if (graph) {
       graph.fit();
@@ -98,6 +99,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     console.log("center")
   };
   
+  // Initial recentre graph view, only setting viewing scale to 1
   const initRecentreView = useCallback(() => {
     if (graph) {
       graph.view.setScale(1);
@@ -316,6 +318,7 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     return cell && !graph.isValidDropTarget(cell) ? cell : null;
   };
 
+  // Function to reset variables
   const resetGraph = (
     graph: Graph,
     rootGoalWrapper: { value: Cell | null },
@@ -338,6 +341,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
     Object.keys(stakeholdersGlob).forEach(key => delete stakeholdersGlob[key]);
   };
 
+
+  // Function to render the graph
   const renderGraph = useCallback(() => {
     if (!graph) return;
 
@@ -401,7 +406,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
 
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
-  
+      
+      // RubberBandHandler adds multiple selected cells feature
       const plugins = [
         ...getDefaultPlugins(), 
         RubberBandHandler,

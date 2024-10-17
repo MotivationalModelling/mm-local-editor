@@ -9,7 +9,7 @@ const ScaleTextButton = () => {
   useEffect(() => {
     if (!graph) return;
 
-    // Function to update font size from selected cells - update font size state to show current selected vertex's font size
+    // Function to update displayed font size using selected cells font size value
     const updateFontSize = () => {
       if (!graph) return;
       const cells = graph.getSelectionCells();
@@ -20,7 +20,7 @@ const ScaleTextButton = () => {
       }
     };
 
-    // Listener to update font size whenever the selection changes
+    // Listener to update font size whenever the cell selection changes
     const selectionListener = () => {
       updateFontSize();
     };
@@ -35,17 +35,19 @@ const ScaleTextButton = () => {
   }, [graph]);
 
 
-  // Function to handle input changes for font size - update vertices font sizes
+  // Function to update selected cells' font size values
   const handleFontSizeChange = (e) => {
+    // Parse input value
     const newFontSize = parseInt(e.target.value, 10);
     if (isNaN(newFontSize)) {
       setFontSize(12); 
       return;
     }
     setFontSize(newFontSize);
-
+    // Currently font size is set to never be smaller than 8, or bigger than 40
     if (!graph || newFontSize < 8 || newFontSize > 40) return; 
 
+    // Update font sizes of each selected cells
     const cells = graph.getSelectionCells();
     graph.getDataModel().beginUpdate();
     try {
