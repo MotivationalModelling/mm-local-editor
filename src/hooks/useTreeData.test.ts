@@ -42,4 +42,17 @@ describe('useTreeData', () => {
         act(() => deleteGoalWithId(7));
         expect(result.current.treeData.length).toEqual(5);
     });
+    test('reset reverts to original tree', () => {
+        const {result} = renderHook(() => useTreeData());
+        const {addGoal, reset} = result.current;
+
+        expect(result.current.treeData.length).toEqual(5);
+
+        act(() => addGoal(newTreeItem({id: 7, type: "Do", content: "test"})));
+        expect(result.current.treeData.length).toEqual(6);
+
+        act(() => reset());
+
+        expect(result.current.treeData.length).toEqual(5);
+    });
 });
