@@ -58,16 +58,16 @@ const createTreeDataSlice = (tabContent: TabContent[]) => {
                 state.treeData = removeItemIdFromTree(state.treeData, action.payload);
                 state.tabData = removeItemIdFromTabs(state.tabData, action.payload);
             },
-            updateTextForTreeId: (state, action: PayloadAction<{
+            updateTextForGoalId: (state, action: PayloadAction<{
                 id: TreeItem["id"],
                 text: string
             }>) => {
-                state.treeData = state.treeData.map((item) => (
-                    (item.id !== action.payload.id) ? item : {
-                        ...item,
-                        content: action.payload.text
-                    })
-                );
+                for (const item of state.treeData) {
+                    if (item.id === action.payload.id) {
+                        item.content = action.payload.text;
+                        break;
+                    }
+                }
             },
             reset: (state) => {
                 state.tabData = tabContent;
