@@ -68,11 +68,11 @@ export const LocalStorageType = {
 type FileContextProps = {
   jsonFileHandle: FileSystemFileHandle | null;
   setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void;
-  tabData: TabContent[];
-  treeData: TreeItem[];
+  // tabData: TabContent[];
+  // treeData: TreeItem[];
   xmlData: string;
-  setTabData: (tabData: TabContent[]) => void;
-  setTreeData: (jsonData: TreeItem[]) => void;
+  // setTabData: (tabData: TabContent[]) => void;
+  // setTreeData: (jsonData: TreeItem[]) => void;
   setXmlData: (xmlData: string) => void;
   resetData: () => void;
 };
@@ -81,11 +81,11 @@ type FileContextProps = {
 const FileContext = createContext<FileContextProps>({
   jsonFileHandle: null,
   setJsonFileHandle: () => {},
-  tabData: [],
-  treeData: [],
+  // tabData: [],
+  // treeData: [],
   xmlData: "",
-  setTabData: () => {},
-  setTreeData: () => {},
+  // setTabData: () => {},
+  // setTreeData: () => {},
   setXmlData: () => {},
   resetData: () => {},
 });
@@ -121,11 +121,11 @@ const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
   return (
     <FileContext.Provider
       value={{
-        tabData,
-        treeData,
+        // tabData,
+        // treeData,
         xmlData,
-        setTabData,
-        setTreeData,
+        // setTabData,
+        // setTreeData,
         setXmlData,
         jsonFileHandle,
         setJsonFileHandle,

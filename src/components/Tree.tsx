@@ -5,7 +5,6 @@ import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, { NestableProps } from "react-nestable";
-import { FaPlus, FaMinus } from "react-icons/fa";
 import { TreeItem } from "./context/FileProvider";
 import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
 import { Label } from "./context/FileProvider";
@@ -14,6 +13,7 @@ import ConfirmModal from "./ConfirmModal";
 
 import "./Tree.css";
 import useTreeData from "../hooks/useTreeData.ts";
+import {BsDash, BsPlus} from "react-icons/bs";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -87,7 +87,7 @@ const Tree: React.FC<TreeProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
   // const { treeData, setTreeData } = useFileContext();
-  const {treeData, setTreeData, deleteGoalWithId} = useTreeData();
+  const {treeData, setTreeData, deleteGoal} = useTreeData();
 
   // Remove item recursively from tree data
   // const removeItemFromTree = (
@@ -111,7 +111,9 @@ const Tree: React.FC<TreeProps> = ({
 
   // Delete item by its id
   const deleteItem = () => {
-    deleteGoalWithId(deletingItemRef.current.id);
+    if (deletingItemRef.current) {
+      deleteGoalWithId(deletingItemRef.current);
+    }
     // if (deletingItemRef && deletingItemRef.current) {
     //   const updatedTreeData = removeItemFromTree(
     //     treeData,
@@ -292,7 +294,7 @@ const Tree: React.FC<TreeProps> = ({
           cursor: "pointer",
         }}
       >
-        {isCollapsed ? <FaPlus size={iconSize} /> : <FaMinus size={iconSize} />}
+        {isCollapsed ? <BsPlus size={iconSize} /> : <BsDash size={iconSize} />}
       </div>
     );
   };

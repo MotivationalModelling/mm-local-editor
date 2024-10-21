@@ -112,8 +112,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
   // const { treeData, setTreeData, tabData, setTabData } = useFileContext();
-  const { treeData, deleteGoalWithId, tabData, setTabData, setTreeData } = useTreeData();
-  const [treeIds, setTreeIds] = useState<number[]>([]);
+  const {treeData, tabData, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
+  const [treeIds, setTreeIds] = useState<TreeItem["id"][]>([]);
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
@@ -275,60 +275,61 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   };
 
   // Update the tab data if exist while the tree data changed
-  const updateTabDataContent = (label: Label, id: number, newText: string) => {
-    const updatedTabData = tabData.map((tabContent) => {
-      if (tabContent.label === label) {
-        return {
-          ...tabContent,
-          rows: tabContent.rows.map((row) => {
-            if (row.id === id) {
-              return {
-                ...row,
-                content: newText,
-              };
-            }
-            return row;
-          }),
-        };
-      }
-      return tabContent;
-    });
-
-    setTabData(updatedTabData);
-  };
+  // const updateTabDataContent = (label: Label, id: number, newText: string) => {
+  //   const updatedTabData = tabData.map((tabContent) => {
+  //     if (tabContent.label === label) {
+  //       return {
+  //         ...tabContent,
+  //         rows: tabContent.rows.map((row) => {
+  //           if (row.id === id) {
+  //             return {
+  //               ...row,
+  //               content: newText,
+  //             };
+  //           }
+  //           return row;
+  //         }),
+  //       };
+  //     }
+  //     return tabContent;
+  //   });
+  //
+  //   setTabData(updatedTabData);
+  // };
 
   // Update the tree recursively
-  const updateItemTextInTree = (
-    items: TreeItem[],
-    idToUpdate: number,
-    newText: string
-  ): TreeItem[] => {
-    if (!treeIds.includes(idToUpdate)) return items;
-
-    return items.map((currentItem) => {
-      if (currentItem.id === idToUpdate) {
-        return { ...currentItem, content: newText }; // Update text of this item
-      }
-      if (currentItem.children) {
-        currentItem.children = updateItemTextInTree(
-          currentItem.children,
-          idToUpdate,
-          newText
-        );
-      }
-      return currentItem;
-    });
-  };
+  // const updateItemTextInTree = (
+  //   items: TreeItem[],
+  //   idToUpdate: number,
+  //   newText: string
+  // ): TreeItem[] => {
+  //   if (!treeIds.includes(idToUpdate)) return items;
+  //
+  //   return items.map((currentItem) => {
+  //     if (currentItem.id === idToUpdate) {
+  //       return { ...currentItem, content: newText }; // Update text of this item
+  //     }
+  //     if (currentItem.children) {
+  //       currentItem.children = updateItemTextInTree(
+  //         currentItem.children,
+  //         idToUpdate,
+  //         newText
+  //       );
+  //     }
+  //     return currentItem;
+  //   });
+  // };
 
   // Handle synchronize data in table data and tree data
   const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
-    const updatedTreeData = updateItemTextInTree(
-      treeData,
-      treeItem.id,
-      editedText
-    );
-    setTreeData(updatedTreeData);
-    updateTabDataContent(treeItem.type, treeItem.id, editedText);
+    // const updatedTreeData = updateItemTextInTree(
+    //   treeData,
+    //   treeItem.id,
+    //   editedText
+    // );
+    // setTreeData(updatedTreeData);
+    updateTextForGoalId({id: treeItem.id, text: editedText});
+    // updateTabDataContent(treeItem.type, treeItem.id, editedText);
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -359,7 +360,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   }, [paddingX, showGoalSection, showGraphSection]); 
 
     // Mapping of old types to new types
-    const typeMapping: Record<string, GoalType> = {
+    const typeMapping: Record<Label, GoalType> = {
       Who: "Stakeholder",
       Do: "Functional",
       Be: "Quality",
@@ -509,7 +510,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={handleSynTableTree}
+          handleSynTableTree={(treeItem: TreeItem, text: string) => updateTextForGoalId({id: treeItem.id, text: text})}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
@@ -557,7 +558,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker cluster={cluster} onResetEmpty={resetGoalsToEmpty} onResetDefault={resetGoalsToDefault}/>
+        <GraphWorker cluster={cluster}
+                     onResetEmpty={resetGoalsToEmpty}
+                     onResetDefault={resetGoalsToDefault}/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>

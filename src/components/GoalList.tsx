@@ -1,4 +1,3 @@
-import DeleteIcon from "/img/trash-alt-solid.svg";
 
 import React, { useState, useRef } from "react";
 
@@ -10,9 +9,11 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
 import Table from "react-bootstrap/Table";
-import { TreeItem, useFileContext, tabs } from "./context/FileProvider";
+import {TreeItem, useFileContext, tabs, newTreeItem, Label} from "./context/FileProvider";
 
 import styles from "./TabButtons.module.css";
+import useTreeData from "../hooks/useTreeData.ts";
+import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
 
 type GoalListProps = {
 	setDraggedItem: (item: TreeItem | null) => void;
@@ -33,23 +34,24 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		},
 		ref
 	) => {
-		const [activeKey, setActiveKey] = useState<string | null>(tabs[0].label);
-		const { tabData, setTabData } = useFileContext();
+		const [activeKey, setActiveKey] = useState<Label>(tabs[0].label);
+		// const { tabData, setTabData } = useFileContext();
+		const {tabData, deleteGoalWithId, addGoalToTab, updateTextForGoalId} = useTreeData();
 
 		const inputRef = useRef<HTMLInputElement>(null);
 
 		// Function to handle selecting a tab
-		const handleSelect = (selectedKey: string | null) => {
+		const handleSelect = (selectedKey: Label) => {
 			if (selectedKey !== activeKey) {
 				// Deselect all goals when switching to a new tab
 				setGroupSelected([]);
+				setActiveKey(selectedKey);
 			}
-			setActiveKey(selectedKey);
 		};
 
 		const handleKeyPress = (
 			e: React.KeyboardEvent<HTMLInputElement>,
-			label: string
+			label: Label
 		) => {
 			if (e.key === "Enter") {
 				e.preventDefault(); // Prevent default Enter key behavior
@@ -58,24 +60,25 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		};
 
 		// Function to add a new row to the active tab
-		const handleAddRow = (label: string) => {
-			const newTabData = tabData.map((tab) => {
-				if (tab.label === label) {
-					return {
-						...tab,
-						rows: [
-							...tab.rows,
-							{
-								id: Date.now(),
-								type: tab.label,
-								content: "",
-							},
-						],
-					};
-				}
-				return tab;
-			});
-			setTabData(newTabData);
+		const handleAddRow = (type: Label) => {
+			addGoalToTab(newTreeItem({id: Date.now(), type}));
+			// const newTabData = tabData.map((tab) => {
+			// 	if (tab.label === label) {
+			// 		return {
+			// 			...tab,
+			// 			rows: [
+			// 				...tab.rows,
+			// 				{
+			// 					id: Date.now(),
+			// 					type: tab.label,
+			// 					content: "",
+			// 				},
+			// 			],
+			// 		};
+			// 	}
+			// 	return tab;
+			// });
+			// setTabData(newTabData);
 
 			// Defer code execution until after the browser has finished rendering updates to the DOM.
 			requestAnimationFrame(() => {
@@ -86,39 +89,40 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		};
 
 		// Function to handle changes to input fields (rows) within a tab
-		const handleRowChange = (label: string, index: number, value: string) => {
-			const newTabData = tabData.map((tab) => {
-				if (tab.label === label) {
-					const newRows = [...tab.rows];
-					newRows[index].content = value;
-					console.log(
-						"id" + newRows[index].id + "content" + newRows[index].content
-					); // Debug log
-					return { ...tab, rows: newRows };
-				}
-				return tab;
-			});
-			setTabData(newTabData);
-		};
+		// const handleRowChange = (label: string, index: number, value: string) => {
+		// 	const newTabData = tabData.map((tab) => {
+		// 		if (tab.label === label) {
+		// 			const newRows = [...tab.rows];
+		// 			newRows[index].content = value;
+		// 			console.log(
+		// 				"id" + newRows[index].id + "content" + newRows[index].content
+		// 			); // Debug log
+		// 			return { ...tab, rows: newRows };
+		// 		}
+		// 		return tab;
+		// 	});
+		// 	setTabData(newTabData);
+		// };
 
 		// Function to update tree data while user finish input changes
 		const handleSave = (treeItem: TreeItem, text: string) => {
 			handleSynTableTree(treeItem, text);
 		};
 
-		const handleDeleteRow = (label: string, index: number, row: TreeItem) => {
-			const newTabData = tabData.map((tab) => {
-				if (tab.label === label) {
-					if (tab.rows.length > 1) {
-						const newRows = tab.rows.filter(
-							(_, rowIndex) => rowIndex !== index
-						);
-						return { ...tab, rows: newRows };
-					}
-				}
-				return tab;
-			});
-			setTabData(newTabData);
+		const handleDeleteRow = (label: Label, index: number, row: TreeItem) => {
+			deleteGoal(row);
+			// const newTabData = tabData.map((tab) => {
+			// 	if (tab.label === label) {
+			// 		if (tab.rows.length > 1) {
+			// 			const newRows = tab.rows.filter(
+			// 				(_, rowIndex) => rowIndex !== index
+			// 			);
+			// 			return { ...tab, rows: newRows };
+			// 		}
+			// 	}
+			// 	return tab;
+			// });
+			// setTabData(newTabData);
 			const filteredGroupSelected = groupSelected.filter(
 				(item) => item.id !== row.id
 			);
@@ -197,20 +201,21 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		const handleDeleteSelected = () => {
 			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
-    
-			if (confirmed) {
-				const newTabData = tabData.map((tab) => {
-					if (tab.label === activeKey) {
-						// Get selected goals
-						const newRows = tab.rows.filter(
-							(row) => !groupSelected.some((selected) => selected.id === row.id)
-						);
-						return { ...tab, rows: newRows };
-					}
-					return tab;
-				});
 
-				setTabData(newTabData);
+			if (confirmed) {
+			// 	const newTabData = tabData.map((tab) => {
+			// 		if (tab.label === activeKey) {
+			// 			// Get selected goals
+			// 			const newRows = tab.rows.filter(
+			// 				(row) => !groupSelected.some((selected) => selected.id === row.id)
+			// 			);
+			// 			return { ...tab, rows: newRows };
+			// 		}
+			// 		return tab;
+			// 	});
+			//
+			// 	setTabData(newTabData);
+				groupSelected.forEach((item: TreeItem) => deleteGoal(item));
 				setGroupSelected([]); 
 			}
 		};
@@ -242,10 +247,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		return (
 			<div className={styles.tabContainer} ref={ref}>
-				<Tab.Container
-					activeKey={activeKey ?? undefined}
-					onSelect={handleSelect}
-				>
+				<Tab.Container activeKey={activeKey ?? undefined}
+                               onSelect={(label: string | null) => handleSelect(label as Label ?? "Be")}>
 					<Nav variant="tabs" className="flex-row">
 						{tabData.map((tab) => (
 							<Nav.Item key={tab.label} className={styles.navItem}>
@@ -305,15 +308,15 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												type="text"
 												value={row.content}
 												onChange={(e) =>
-													handleRowChange(tab.label, index, e.target.value)
+													updateTextForGoalId({id: row.id, text: e.target.value})
 												}
 												placeholder={`Enter ${tab.label}...`}
 												spellCheck
-												className="bg-white"
-												style={{
-													color: isEmptyGoal(row) ? 'gray' : 'black', 
-													opacity: isEmptyGoal(row) ? 0.6 : 1,      
-												}}
+												className={(isEmptyGoal(row)) ? "text-body-secondary" : undefined}
+												// style={{
+												// 	color: isEmptyGoal(row) ? 'gray' : 'black',
+												// 	opacity: isEmptyGoal(row) ? 0.6 : 1,
+												// }}
 												onKeyDown={(e) =>
 													handleKeyPress(
 													e as React.KeyboardEvent<HTMLInputElement>,
@@ -324,15 +327,14 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												ref={index === tab.rows.length - 1 ? inputRef : undefined}
 												/>
 												{tab.rows.length > 1 && (
-												<Button
-													className={styles.deleteButton}
-													onClick={() => handleDeleteRow(tab.label, index, row)}
-												>
-													<img
-													src={DeleteIcon}
-													alt="Delete"
-													className={styles.deleteIcon}
-													/>
+												<Button className={styles.deleteButton}
+														onClick={() => handleDeleteRow(tab.label, index, row)}>
+													<BsFillTrash3Fill />
+													{/*<img*/}
+													{/*src={DeleteIcon}*/}
+													{/*alt="Delete"*/}
+													{/*className={styles.deleteIcon}*/}
+													{/*/>*/}
 												</Button>
 												)}
 											</InputGroup>
@@ -341,16 +343,14 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										))}
 									</tbody>
 								</Table>
-									<div className="d-flex justify-content-between align-items-center mt-3">
-									<Button 
-										className="me-2" 
-										onClick={() => handleAddRow(activeKey || "")} 
-										variant="primary"
-									>
-										+
+								<div className="d-flex justify-content-between align-items-center mt-3">
+									<Button className="me-2"
+											onClick={() => handleAddRow(activeKey)}
+											variant="primary">
+										<BsPlus/>
 									</Button>
 									<div className="text-muted">
-									Drag goals to arrange hierarchy
+										Drag goals to arrange hierarchy
 									</div>
 								</div>
 							</Tab.Pane>
