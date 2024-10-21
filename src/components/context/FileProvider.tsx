@@ -22,8 +22,9 @@ export type TreeItem = {
 };
 
 // require id and type fields, others optional.
-export const newTreeItem = (initFields: Pick<TreeItem, "id" | "type"> & Partial<TreeItem>) => ({
+export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
     content: "",
+    id: initFields.id ?? Date.now(),
     ...initFields
 });
 
