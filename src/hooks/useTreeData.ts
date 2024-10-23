@@ -1,10 +1,7 @@
 import {useMemo, useReducer} from "react";
 import {createSlice, PayloadAction, UnknownAction} from "@reduxjs/toolkit";
-import {
-    initialTabs, Label,
-    TabContent,
-    TreeItem
-} from "../components/context/FileProvider.tsx";
+import {Label, TreeItem} from "../components/context/FileProvider.tsx";
+import {InitialTab, initialTabs} from "../data/initialTabs.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -20,19 +17,20 @@ import {
 // Previously the code to manage and update these data structures was all done
 // in-line and it was very hard to maintain and harder to test.
 
-interface TreeNode {
-    treeId: TreeItem["id"]
+export interface TreeNode {
+    goalId: TreeItem["id"]
     children?: TreeNode[]
 }
 
-interface TabNode {
-    type: Label
-    treeIds: TreeItem["id"][]
-}
+export type TabContent = {
+  label: Label
+  icon: string
+  goalIds: TreeItem["id"][]
+};
 
-export const removeItemIdFromTree = (items: TreeItem[], id: TreeItem["id"]): TreeItem[] => {
+export const removeItemIdFromTree = (items: TreeNode[], id: TreeItem["id"]): TreeNode[] => {
     return items.reduce((acc, item) => {
-        if (item.id === id) {
+        if (item.goalId === id) {
             return acc; // Skip this item
         }
         if (item.children) {
@@ -40,59 +38,39 @@ export const removeItemIdFromTree = (items: TreeItem[], id: TreeItem["id"]): Tre
         }
         acc.push(item);
         return acc;
-    }, [] as TreeItem[]);
-};
-
-export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): TabContent[] => {
-    return tabs.map((tab) => ({
-        ...tab,
-        rows: tab.rows.filter((row) => (row.id !== id))
-    }));
-};
-const flattenTabContent = (tabContent: TabContent[]): TreeItem[] => {
-    return tabContent.map((tab) => tab.rows).flat();
+    }, [] as TreeNode[]);
 };
 
 const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
     return treeData.map((ti) => ({
-        treeId: ti.id,
+        goalId: ti.id,
         children: createTreeFromTreeData(ti.children ?? [])
     }));
 };
 
-const createTabsFromTabContent = (tabContent: TabContent[]) => {
-    const tabs: Record<Label, TreeItem["id"][]> = {
-        Do: [],
-        Be: [],
-        Feel: [],
-        Concern: [],
-        Who: []
-    };
+const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
+    label,
+    icon,
+    goalIds: rows.map((goal) => goal.id)
+});
 
-    tabContent.forEach((tab) => {
-        tabs[tab.label] = tab.rows.map((item) => item.id);
-    });
-    return tabs;
+const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]) => {
+    const tabs: Map<Label, TabContent> = new Map(initialTabs.map((tab) => [tab.label, createTabContentFromInitialTab(tab)]));
+    const allGoals = initialTabs.map((tab) => tab.rows).flat();
+    const goals = Object.fromEntries(allGoals.map((goal) => [goal.id, goal]));
+
+    return {goals, tabs};
 };
 
-const createGoalsFromTabContent = (tabContent: TabContent[]) => {
-    const goals: Record<TreeItem["id"], TreeItem> = {};
-
-    tabContent.forEach((tab) => {
-        tab.rows.forEach((goal) => {
-            goals[goal.id] = goal;
-        })
-    });
-
-    return goals;
-};
+// Note: we are using a Map here for the tabs because it preserves the order that the
+// items were added in.
 
 const createTreeDataSlice = () => {
     return createSlice({
         name: "treeData",
         initialState: {
             tree: [] as TreeNode[],
-            tabs: {} as Record<Label, TreeItem["id"][]>,
+            tabs: {} as Map<Label, TabContent>,
             goals: {} as Record<TreeItem["id"], TreeItem>
         },
         reducers: {
@@ -104,15 +82,18 @@ const createTreeDataSlice = () => {
             // },
             addGoal: (state, action: PayloadAction<TreeItem>) => {
                 state.goals[action.payload.id] = action.payload;
-                state.tabs[action.payload.type].push(action.payload.id);
+                state.tabs.get(action.payload.type)?.goalIds.push(action.payload.id);
             },
             addGoalToTab: (state, action: PayloadAction<TreeItem>) => {
-                state.tabs[action.payload.type].push(action.payload.id);
+                state.tabs.get(action.payload.type)?.goalIds.push(action.payload.id);
                 state.goals[action.payload.id] = action.payload;
             },
             deleteGoal: (state, action: PayloadAction<TreeItem>) => {
-                state.tabs[action.payload.type] = state.tabs[action.payload.type].filter((id) => id !== action.payload.id);
-                state.tree = removeItemFromTree(state.tree, action.payload);
+                const tabContent = state.tabs.get(action.payload.type);
+                if (tabContent) {
+                    tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.id);
+                }
+                state.tree = removeItemIdFromTree(state.tree, action.payload.id);
                 delete state.goals[action.payload.id];
             },
             updateTextForGoalId: (state, action: PayloadAction<{id: TreeItem["id"], text: string            }>) => {
@@ -139,12 +120,13 @@ const createTreeDataSlice = () => {
 
 type AnyFunction = (...args: any[]) => UnknownAction;
 
-function useTreeData(tabContent: TabContent[] = initialTabs, treeData: TreeItem[] = []) {
+function useTreeData(tabContent: InitialTab[] = initialTabs, treeData: TreeItem[] = []) {
     const treeDataSlice = useMemo(() => createTreeDataSlice(), []);
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabContent);
     const initialState = {
         tree: createTreeFromTreeData(treeData),
-        tabs: createTabsFromTabContent(tabContent),
-        goals: createGoalsFromTabContent(tabContent)
+        tabs,
+        goals
     };
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     // wrap each of the slice actions in a call to dispatch so that the caller doesn't
@@ -168,7 +150,7 @@ function useTreeData(tabContent: TabContent[] = initialTabs, treeData: TreeItem[
     return {
         ...state,
         ...actions,
-        goalsForLabel: (label: Label) => state.tabs[label].map((goalId) => state.goals[goalId])
+        goalsForLabel: (label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
         // tabData: makeTabData(),
         // tree
     } as const;
