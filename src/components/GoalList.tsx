@@ -34,9 +34,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		},
 		ref
 	) => {
-		const [activeKey, setActiveKey] = useState<Label>(tabs[0].label);
 		// const { tabData, setTabData } = useFileContext();
-		const {tabData, deleteGoalWithId, addGoalToTab, updateTextForGoalId} = useTreeData();
+		const {tabs, goalsForLabel, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
+		const [activeKey, setActiveKey] = useState<Label>(tabs.keys().next().value ?? "Do");
 
 		const inputRef = useRef<HTMLInputElement>(null);
 
@@ -163,7 +163,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		
 		// Check whether all goals are selected in the table (excluding undefined ones)
 		const isAllSelected = () => {
-			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
+			const allItemsInTab = goalsForLabel(activeKey);
 			// Return true if all items in goal list are selected and list is not empty
 			return (
 				allItemsInTab &&
@@ -177,7 +177,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		// Select all items in the goals tab
 		const handleSelectAll = () => {
-			const allItemsInTab = tabData.find(tab => tab.label === activeKey)?.rows;
+			const allItemsInTab = goalsForLabel(activeKey);
 			if (!allItemsInTab) return;
 
 			if (allItemsInTab
@@ -250,7 +250,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				<Tab.Container activeKey={activeKey ?? undefined}
                                onSelect={(label: string | null) => handleSelect(label as Label ?? "Be")}>
 					<Nav variant="tabs" className="flex-row">
-						{tabData.map((tab) => (
+						{[...tabs.values()].map((tab) => (
 							<Nav.Item key={tab.label} className={styles.navItem}>
 								<Nav.Link eventKey={tab.label}
 									active={activeKey === tab.label}
@@ -270,8 +270,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 						))}
 					</Nav>
 					<Tab.Content className={styles.contentArea}>
-						{tabData.map((tab) => (
-							<Tab.Pane key={tab.label} eventKey={tab.label}>
+						{[...tabs.keys()].map((label) => (
+							<Tab.Pane key={label} eventKey={label}>
 								<Table striped bordered hover>
 									<thead>
 										<tr>
@@ -290,8 +290,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										</tr>
 									</thead>
 									<tbody>
-									{tab.rows.map((row, index) => (
-										<tr key={`${tab.label}-${index}`}>
+									{goalsForLabel(label).map((row, index) => (
+										<tr key={`${label}-${index}`}>
 											<td>
 											<Form.Check
 												type="checkbox"
@@ -310,7 +310,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												onChange={(e) =>
 													updateTextForGoalId({id: row.id, text: e.target.value})
 												}
-												placeholder={`Enter ${tab.label}...`}
+												placeholder={`Enter ${label}...`}
 												spellCheck
 												className={(isEmptyGoal(row)) ? "text-body-secondary" : undefined}
 												// style={{
@@ -320,15 +320,15 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												onKeyDown={(e) =>
 													handleKeyPress(
 													e as React.KeyboardEvent<HTMLInputElement>,
-													tab.label
+													label
 													)
 												}
 												onBlur={(event) => handleSave(row, event.target.value)}
-												ref={index === tab.rows.length - 1 ? inputRef : undefined}
+												ref={index === goalsForLabel(label).length - 1 ? inputRef : undefined}
 												/>
-												{tab.rows.length > 1 && (
+												{goalsForLabel(label).length > 1 && (
 												<Button className={styles.deleteButton}
-														onClick={() => handleDeleteRow(tab.label, index, row)}>
+														onClick={() => handleDeleteRow(label, index, row)}>
 													<BsFillTrash3Fill />
 													{/*<img*/}
 													{/*src={DeleteIcon}*/}

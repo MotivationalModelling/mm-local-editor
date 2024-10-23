@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Resizable, ResizeCallback } from "re-resizable";
+import React, {useEffect, useRef, useState} from "react";
+import {Resizable, ResizeCallback} from "re-resizable";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { initialTabs, Label, TreeItem, useFileContext } from "./context/FileProvider";
+import {initialTabs, Label, TreeItem, useFileContext} from "./context/FileProvider";
 import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import useTreeData from "../hooks/useTreeData.ts";
+import useTreeData, {TreeNode} from "../hooks/useTreeData.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -112,7 +112,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
   // const { treeData, setTreeData, tabData, setTabData } = useFileContext();
-  const {treeData, tabData, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
+  const {tabs, tree, goals, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
   const [treeIds, setTreeIds] = useState<TreeItem["id"][]>([]);
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
@@ -154,19 +154,19 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    if (treeData.length) {
-      const ids = getIds(treeData);
+    if (tree.length) {
+      const ids = getIds(tree);
       setTreeIds(ids);
     }
-  }, []);
+  }, [tree]);
 
   // Initialize the tree ids from the created/selected json file
-  const getIds = (treeData: TreeItem[]) => {
+  const getIds = (treeData: TreeNode[]) => {
     const ids: number[] = [];
     // Recursively get all the ids from the tree data
-    const traverse = (arr: TreeItem[]) => {
+    const traverse = (arr: TreeNode[]) => {
       arr.forEach((item) => {
-        ids.push(item.id);
+        ids.push(item.goalId);
 
         if (item.children && item.children.length > 0) {
           traverse(item.children);
@@ -369,19 +369,20 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     };
 
   // Function to convert TreeItem to ClusterGoal
-  const convertTreeItemToGoal = (item: TreeItem): ClusterGoal => {
-    console.log("Converting type: ", item.type, " to ", typeMapping[item.type]);
+  const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
+    const goal = goals[item.goalId];
+    console.log("Converting type: ", goal.type, " to ", typeMapping[goal.type]);
     return {
-      GoalID: item.id,
-      GoalType: typeMapping[item.type],
-      GoalContent: item.content,
+      GoalID: item.goalId,
+      GoalType: typeMapping[goal.type],
+      GoalContent: goal.content,
       GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
       SubGoals: item.children ? item.children.map(convertTreeItemToGoal) : [],
     };
   };
   
   // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-  const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster => {
+  const convertTreeDataToClusters = (treeData: TreeNode[]): Cluster => {
     return {
       ClusterGoals: treeData.map(convertTreeItemToGoal),
     };
@@ -389,11 +390,11 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   useEffect(() => {
     setCluster((prevCluster) => {
-      const newCluster = convertTreeDataToClusters(treeData);
+      const newCluster = convertTreeDataToClusters(tree);
       console.log("Cluster changed ", newCluster);
       return newCluster;
     });
-  }, [treeData]);
+  }, [tree]);
 
   // Just for testing
   // useEffect(() => {
