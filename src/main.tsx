@@ -7,9 +7,12 @@ import "react-nestable/dist/styles/index.css";
 import App from "./App.tsx";
 import "./index.css";
 import FileProvider from "./components/context/FileProvider.tsx";
+import {enableMapSet} from "immer";
+
+enableMapSet();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <FileProvider>
-    <App />
-  </FileProvider>
+    <FileProvider>
+        <App/>
+    </FileProvider>
 );
