@@ -1,9 +1,10 @@
-import DoIcon from "*.png";
-import BeIcon from "*.png";
-import FeelIcon from "*.png";
-import ConcernIcon from "*.png";
-import WhoIcon from "*.png";
 import {Label, newTreeItem, TreeItem} from "../components/context/FileProvider.tsx";
+
+import WhoIcon from "/img/Stakeholder.png";
+import DoIcon from "/img/Function.png";
+import BeIcon from "/img/Cloud.png";
+import FeelIcon from "/img/Heart.png";
+import ConcernIcon from "/img/Risk.png";
 
 export interface InitialTab {
     label: Label
@@ -12,6 +13,7 @@ export interface InitialTab {
 }
 
 // Define the initial tabs with labels and corresponding icons
+// Note that the order here defines the order that the tabs appear
 export const initialTabs: InitialTab[] = [
     {label: "Do", icon: DoIcon, rows: [newTreeItem({id: -1, type: "Do"})]},
     {label: "Be", icon: BeIcon, rows: [newTreeItem({id: -2, type: "Be"})]},
