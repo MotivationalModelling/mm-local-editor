@@ -48,6 +48,15 @@ const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
     }));
 };
 
+export const createTreeIdsFromTreeData = (treeData: TreeItem[]): TreeItem["id"][] => {
+    const treeIds = treeData.map((td) => [
+            td.id,
+            ...createTreeIdsFromTreeData(td.children ?? [])
+        ]
+    ).flat();
+    return treeIds;
+};
+
 const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
     label,
     icon,
@@ -71,7 +80,8 @@ const createTreeDataSlice = () => {
         initialState: {
             tree: [] as TreeNode[],
             tabs: {} as Map<Label, TabContent>,
-            goals: {} as Record<TreeItem["id"], TreeItem>
+            goals: {} as Record<TreeItem["id"], TreeItem>,
+            treeIds: [] as TreeItem["id"][]
         },
         reducers: {
             // setTreeData: (state, action: PayloadAction<TreeItem[]>) => {
@@ -87,6 +97,10 @@ const createTreeDataSlice = () => {
             addGoalToTab: (state, action: PayloadAction<TreeItem>) => {
                 state.tabs.get(action.payload.type)?.goalIds.push(action.payload.id);
                 state.goals[action.payload.id] = action.payload;
+            },
+            addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
+                state.tree.push(newTreeNode(action.payload));
+                state.treeIds.push(action.payload.id);
             },
             deleteGoal: (state, action: PayloadAction<TreeItem>) => {
                 const tabContent = state.tabs.get(action.payload.type);
@@ -123,8 +137,12 @@ type AnyFunction = (...args: any[]) => UnknownAction;
 function useTreeData(tabContent: InitialTab[] = initialTabs, treeData: TreeItem[] = []) {
     const treeDataSlice = useMemo(() => createTreeDataSlice(), []);
     const {goals, tabs} = createGoalsAndTabsFromTabContent(tabContent);
+    const tree = createTreeFromTreeData(treeData);
+    const treeIds = createTreeIdsFromTreeData(treeData);
+
     const initialState = {
-        tree: createTreeFromTreeData(treeData),
+        tree,
+        treeIds,
         tabs,
         goals
     };

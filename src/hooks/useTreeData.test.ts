@@ -1,6 +1,6 @@
 import {renderHook, act} from '@testing-library/react';
 import {describe, it, expect, beforeAll} from "vitest";
-import useTreeData from "./useTreeData";
+import useTreeData, {createTreeIdsFromTreeData} from "./useTreeData";
 import {newTreeItem} from "../components/context/FileProvider.tsx";
 import {enableMapSet} from "immer";
 
@@ -12,7 +12,7 @@ describe('useTreeData', () => {
 
         expect(tabs.size).toEqual(5);
     });
-    it('should add a goal to the tree', () => {
+    it('should add a goal', () => {
         const {result} = renderHook(() => useTreeData());
         const {addGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
@@ -23,7 +23,7 @@ describe('useTreeData', () => {
         act(() => addGoal(goal));
         expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeTruthy();
     });
-    it('removes a goal from the tree', () => {
+    it('removes a goal', () => {
         const {result} = renderHook(() => useTreeData());
         const {addGoal, deleteGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
@@ -36,7 +36,7 @@ describe('useTreeData', () => {
         act(() => deleteGoal(goal));
         expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
     });
-    it('ignores removing an nx goal from the tree', () => {
+    it('ignores removing an nx goal', () => {
         const {result} = renderHook(() => useTreeData());
         const {deleteGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
@@ -45,7 +45,7 @@ describe('useTreeData', () => {
         act(() => deleteGoal(goal));
         expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
     });
-    it('should reverts to original tree on reset', () => {
+    it('should revert on reset', () => {
         const {result} = renderHook(() => useTreeData());
         const {addGoal, reset} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
@@ -99,5 +99,42 @@ describe('useTreeData', () => {
     it('should allow the goals to be reset', () => {
 
     });
+    it('should add a goal to the tree', () => {
+        const {result} = renderHook(() => useTreeData());
+        const {addGoalToTree} = result.current;
+        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+
+        expect(goal.id in result.current.goals).toBeTruthy();
+        act(() => addGoalToTree(goal));
+
+        expect(result.current.treeIds.includes(goal.id)).toBeTruthy();
+    })
 });
 
+describe('#createTreeIdsFromTreeData', () => {
+    it('should handle a single node', () => {
+        const treeData = [newTreeItem({type: "Do", id: 1})];
+        const treeIds = createTreeIdsFromTreeData(treeData);
+
+        expect(treeIds).toEqual([1]);
+    });
+    it('should handle a pair of nodes', () => {
+        const treeData = [
+            newTreeItem({type: "Do", id: 1}),
+            newTreeItem({type: "Do", id: 2})
+        ];
+        const treeIds = createTreeIdsFromTreeData(treeData);
+
+        expect(treeIds).toEqual([1, 2]);
+    });
+    it('should handle nested nodes', () => {
+        const treeData = [
+            newTreeItem({type: "Do", id: 1, children: [
+                newTreeItem({type: "Do", id: 2})
+            ]})
+        ];
+        const treeIds = createTreeIdsFromTreeData(treeData);
+
+        expect(treeIds).toEqual([1, 2]);
+    });
+});
