@@ -18,46 +18,46 @@ describe('useTreeData', () => {
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.size).toEqual(5);
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
         act(() => addGoal(goal));
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeTruthy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
     });
     it('removes a goal', () => {
         const {result} = renderHook(() => useTreeData());
         const {addGoal, deleteGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
         act(() => addGoal(goal));
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeTruthy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
 
         act(() => deleteGoal(goal));
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
     });
     it('ignores removing an nx goal', () => {
         const {result} = renderHook(() => useTreeData());
         const {deleteGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
         act(() => deleteGoal(goal));
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
     });
     it('should revert on reset', () => {
         const {result} = renderHook(() => useTreeData());
         const {addGoal, reset} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
         act(() => addGoal(goal));
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeTruthy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
 
         act(() => reset());
 
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeFalsy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
     });
     it('should update text of the goal', () => {
         const {result} = renderHook(() => useTreeData());
@@ -80,12 +80,12 @@ describe('useTreeData', () => {
 
         act(() => addGoalToTab(goal));
 
-        // check added to tree
+        // check added to tab
         expect(result.current.tabs.get(goal.type)?.goalIds.length).toEqual(2);
         // check added to correct tab
-        expect(result.current.tabs.get(goal.type)?.goalIds.includes(goal.id)).toBeTruthy();
+        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
         // check added to goals
-        expect(goal.id in result.current.goals).toBeTruthy();
+        expect(result.current.goals).toContain(goal.id);
     });
     it('should list the goals for a label', () => {
         const {result} = renderHook(() => useTreeData());
@@ -104,10 +104,10 @@ describe('useTreeData', () => {
         const {addGoalToTree} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        expect(goal.id in result.current.goals).toBeTruthy();
+        expect(result.current.goals).not.toContain(goal.id);
         act(() => addGoalToTree(goal));
 
-        expect(result.current.treeIds.includes(goal.id)).toBeTruthy();
+        expect(result.current.treeIds).toContain(goal.id);
     })
 });
 
