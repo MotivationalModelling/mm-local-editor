@@ -22,6 +22,11 @@ export interface TreeNode {
     children?: TreeNode[]
 }
 
+const newTreeNode = ({goalId, children = []}: {goalId: TreeItem["id"], children: TreeNode[]}) => ({
+    goalId,
+    children
+});
+
 export type TabContent = {
   label: Label
   icon: string
