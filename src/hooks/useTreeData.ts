@@ -22,7 +22,7 @@ export interface TreeNode {
     children?: TreeNode[]
 }
 
-const newTreeNode = ({goalId, children = []}: {goalId: TreeItem["id"], children: TreeNode[]}) => ({
+const newTreeNode = ({goalId, children = []}: {goalId: TreeItem["id"], children?: TreeNode[]}) => ({
     goalId,
     children
 });
@@ -53,6 +53,7 @@ const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
     }));
 };
 
+// XXX this should be a Set
 export const createTreeIdsFromTreeData = (treeData: TreeItem[]): TreeItem["id"][] => {
     const treeIds = treeData.map((td) => [
             td.id,
@@ -104,7 +105,7 @@ const createTreeDataSlice = () => {
                 state.goals[action.payload.id] = action.payload;
             },
             addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
-                state.tree.push(newTreeNode(action.payload));
+                state.tree.push(newTreeNode({goalId: action.payload.id}));
                 state.treeIds.push(action.payload.id);
             },
             deleteGoal: (state, action: PayloadAction<TreeItem>) => {
