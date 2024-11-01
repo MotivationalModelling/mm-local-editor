@@ -76,12 +76,12 @@ describe('useTreeData', () => {
         const {addGoalToTab} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        expect(result.current.tabs.get(goal.type)?.goalIds.length).toEqual(1);
+        expect(result.current.tabs.get(goal.type)?.goalIds).toHaveLength(1);
 
         act(() => addGoalToTab(goal));
 
         // check added to tab
-        expect(result.current.tabs.get(goal.type)?.goalIds.length).toEqual(2);
+        expect(result.current.tabs.get(goal.type)?.goalIds).toHaveLength(2);
         // check added to correct tab
         expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
         // check added to goals
