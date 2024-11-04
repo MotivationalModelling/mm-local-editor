@@ -85,7 +85,7 @@ describe('useTreeData', () => {
         // check added to correct tab
         expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
         // check added to goals
-        expect(result.current.goals).toContain(goal.id);
+        expect(result.current.goals).toHaveProperty(String(goal.id));
     });
     it('should list the goals for a label', () => {
         const {result} = renderHook(() => useTreeData());
