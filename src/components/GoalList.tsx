@@ -35,7 +35,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		ref
 	) => {
 		// const { tabData, setTabData } = useFileContext();
-		const {tabs, goalsForLabel, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
+		const {tabs, goalsForLabel, dispatch, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
 		const [activeKey, setActiveKey] = useState<Label>(tabs.keys().next().value ?? "Do");
 
 		const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +61,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 		// Function to add a new row to the active tab
 		const handleAddRow = (type: Label) => {
-			addGoalToTab(newTreeItem({id: Date.now(), type}));
+			dispatch(addGoalToTab(newTreeItem({type})));
 			// const newTabData = tabData.map((tab) => {
 			// 	if (tab.label === label) {
 			// 		return {
@@ -110,7 +110,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		};
 
 		const handleDeleteRow = (label: Label, index: number, row: TreeItem) => {
-			deleteGoal(row);
+			dispatch(deleteGoal(row));
 			// const newTabData = tabData.map((tab) => {
 			// 	if (tab.label === label) {
 			// 		if (tab.rows.length > 1) {
@@ -215,7 +215,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			// 	});
 			//
 			// 	setTabData(newTabData);
-				groupSelected.forEach((item: TreeItem) => deleteGoal(item));
+				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoal(item)));
 				setGroupSelected([]); 
 			}
 		};
@@ -276,14 +276,12 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 									<thead>
 										<tr>
 											<th style={{ width: '1px', whiteSpace: 'nowrap' }}>
-											<Form.Group as={Row} className="mb-2">
-													<Col sm={11}>
+											<Form.Group as={Row}>
 														<Form.Check
 														type="checkbox"
 														onChange={handleSelectAll}
 														checked={isAllSelected()}
 														/>
-													</Col>
 													</Form.Group>
 											</th>
 											<th style={{ display: 'flex' }}>Goal Name</th>
@@ -308,7 +306,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												type="text"
 												value={row.content}
 												onChange={(e) =>
-													updateTextForGoalId({id: row.id, text: e.target.value})
+													dispatch(updateTextForGoalId({id: row.id, text: e.target.value}))
 												}
 												placeholder={`Enter ${label}...`}
 												spellCheck

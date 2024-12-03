@@ -87,7 +87,7 @@ const Tree: React.FC<TreeProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
   // const { treeData, setTreeData } = useFileContext();
-  const {treeData, setTreeData, deleteGoal} = useTreeData();
+  const {treeData, setTreeData, dispatch, deleteGoal} = useTreeData();
 
   // Remove item recursively from tree data
   // const removeItemFromTree = (
@@ -112,7 +112,7 @@ const Tree: React.FC<TreeProps> = ({
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef.current) {
-      deleteGoalWithId(deletingItemRef.current);
+      dispatch(deleteGoal(deletingItemRef.current));
     }
     // if (deletingItemRef && deletingItemRef.current) {
     //   const updatedTreeData = removeItemFromTree(

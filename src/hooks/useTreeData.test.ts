@@ -14,71 +14,72 @@ describe('useTreeData', () => {
     });
     it('should add a goal', () => {
         const {result} = renderHook(() => useTreeData());
-        const {addGoal} = result.current;
+        const {dispatch, addGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.size).toEqual(5);
         expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
-        act(() => addGoal(goal));
+        act(() => dispatch(addGoal(goal)));
         expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
     });
     it('removes a goal', () => {
         const {result} = renderHook(() => useTreeData());
-        const {addGoal, deleteGoal} = result.current;
+        const {dispatch, addGoal, deleteGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
-        act(() => addGoal(goal));
+        act(() => dispatch(addGoal(goal)));
         expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
 
-        act(() => deleteGoal(goal));
+        act(() => dispatch(deleteGoal(goal)));
         expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
     });
     it('ignores removing an nx goal', () => {
         const {result} = renderHook(() => useTreeData());
-        const {deleteGoal} = result.current;
+        const {dispatch, deleteGoal} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
-        act(() => deleteGoal(goal));
+        act(() => dispatch(deleteGoal(goal)));
         expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
     });
     it('should revert on reset', () => {
         const {result} = renderHook(() => useTreeData());
-        const {addGoal, reset} = result.current;
+        const {dispatch, addGoal, reset} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
-        act(() => addGoal(goal));
+        act(() => dispatch(addGoal(goal)));
         expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
 
-        act(() => reset());
+        act(() => dispatch(reset()));
 
-        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
+        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
+        expect(result.current.tabs.size).toEqual(5);
     });
     it('should update text of the goal', () => {
         const {result} = renderHook(() => useTreeData());
-        const {updateTextForGoalId} = result.current;
+        const {dispatch, updateTextForGoalId} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
         const text = "Hello, world!";
 
         expect(goal.content).not.toEqual(text);
 
-        act(() => updateTextForGoalId({id: goal.id, text}));
+        act(() => dispatch(updateTextForGoalId({id: goal.id, text})));
 
         expect(result.current.goals[goal.id].content).toEqual(text);
     });
     it('should add a goal to correct tab', () => {
         const {result} = renderHook(() => useTreeData());
-        const {addGoalToTab} = result.current;
+        const {dispatch, addGoalToTab} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.get(goal.type)?.goalIds).toHaveLength(1);
 
-        act(() => addGoalToTab(goal));
+        act(() => dispatch(addGoalToTab(goal)));
 
         // check added to tab
         expect(result.current.tabs.get(goal.type)?.goalIds).toHaveLength(2);
@@ -89,10 +90,10 @@ describe('useTreeData', () => {
     });
     it('should list the goals for a label', () => {
         const {result} = renderHook(() => useTreeData());
-        const {addGoalToTab} = result.current;
+        const {dispatch, addGoalToTab} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        act(() => addGoalToTab(goal));
+        act(() => dispatch(addGoalToTab(goal)));
 
         expect(result.current.goalsForLabel(goal.type)?.some((g) => g.id === goal.id)).toBeTruthy();
     });
@@ -101,11 +102,11 @@ describe('useTreeData', () => {
     });
     it('should add a goal to the tree', () => {
         const {result} = renderHook(() => useTreeData());
-        const {addGoalToTree} = result.current;
+        const {dispatch, addGoalToTree} = result.current;
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.goals).not.toContain(goal.id);
-        act(() => addGoalToTree(goal));
+        act(() => dispatch(addGoalToTree(goal)));
 
         expect(result.current.treeIds).toContain(goal.id);
     })

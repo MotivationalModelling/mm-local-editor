@@ -1,5 +1,5 @@
 import {useMemo, useReducer} from "react";
-import {createSlice, PayloadAction, UnknownAction} from "@reduxjs/toolkit";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {Label, TreeItem} from "../components/context/FileProvider.tsx";
 import {InitialTab, initialTabs} from "../data/initialTabs.ts";
 
@@ -69,7 +69,7 @@ const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabCon
     goalIds: rows.map((goal) => goal.id)
 });
 
-const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]) => {
+const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {tabs: Map<Label, TabContent>, goals: Record<TreeItem["id"], TreeItem>} => {
     const tabs: Map<Label, TabContent> = new Map(initialTabs.map((tab) => [tab.label, createTabContentFromInitialTab(tab)]));
     const allGoals = initialTabs.map((tab) => tab.rows).flat();
     const goals = Object.fromEntries(allGoals.map((goal) => [goal.id, goal]));
@@ -122,9 +122,10 @@ const createTreeDataSlice = () => {
                     content: action.payload.text
                 };
             },
-            reset: (state) => {
-                state.tabData = tabContent;
-                state.treeData = flattenTabContent(tabContent);
+            reset: (state, action: PayloadAction<{tabContent: InitialTab[], treeData: TreeItem[]} | undefined>) => {
+                const initialState = (action.payload) ? createInitialState(action.payload.tabContent, action.payload.treeData)
+                                                      : createInitialState(initialTabs, []);
+                Object.assign(state, initialState);
             }
         },
         extraReducers: (builder) => {
@@ -138,45 +139,28 @@ const createTreeDataSlice = () => {
 };
 
 
-type AnyFunction = (...args: any[]) => UnknownAction;
+const createInitialState = (tabContent: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabContent);
+
+    return {
+        tabs,
+        goals,
+        tree: createTreeFromTreeData(treeData),
+        treeIds: createTreeIdsFromTreeData(treeData),
+    };
+};
+
 
 function useTreeData(tabContent: InitialTab[] = initialTabs, treeData: TreeItem[] = []) {
     const treeDataSlice = useMemo(() => createTreeDataSlice(), []);
-    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabContent);
-    const tree = createTreeFromTreeData(treeData);
-    const treeIds = createTreeIdsFromTreeData(treeData);
-
-    const initialState = {
-        tree,
-        treeIds,
-        tabs,
-        goals
-    };
+    const initialState = createInitialState(tabContent, treeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
-    // wrap each of the slice actions in a call to dispatch so that the caller doesn't
-    // need to do that manually
-    // XXX While this works I think it's a bit clumsy and heavy-handed with types.
-    const actions = useMemo(() => {
-            const wrapInDispatch = <Func extends AnyFunction>(fn: Func,): ((...args: Parameters<Func>) => void) => {
-                const wrappedFn = (...args: Parameters<Func>): void => {
-                    dispatch(fn(...args));
-                };
-                return wrappedFn;
-            };
-            return Object.fromEntries(
-                Object.entries(treeDataSlice.actions)
-                    .map(([key, actionFn]) => [key, wrapInDispatch(actionFn)])
-            ) as typeof treeDataSlice.actions
-        },
-        [treeDataSlice, dispatch]
-    );
 
     return {
         ...state,
-        ...actions,
+        ...treeDataSlice.actions,
+        dispatch,
         goalsForLabel: (label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
-        // tabData: makeTabData(),
-        // tree
     } as const;
 }
 

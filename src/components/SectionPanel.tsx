@@ -112,7 +112,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
   // const { treeData, setTreeData, tabData, setTabData } = useFileContext();
-  const {tabs, tree, goals, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
+  const {tabs, tree, goals, dispatch, deleteGoal, addGoalToTab, updateTextForGoalId} = useTreeData();
   const [treeIds, setTreeIds] = useState<TreeItem["id"][]>([]);
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
@@ -328,7 +328,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     //   editedText
     // );
     // setTreeData(updatedTreeData);
-    updateTextForGoalId({id: treeItem.id, text: editedText});
+    dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
     // updateTabDataContent(treeItem.type, treeItem.id, editedText);
   };
 
@@ -511,7 +511,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeItem, text: string) => updateTextForGoalId({id: treeItem.id, text: text})}
+          handleSynTableTree={(treeItem: TreeItem, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
