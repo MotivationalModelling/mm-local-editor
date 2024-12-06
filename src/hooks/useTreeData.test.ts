@@ -109,6 +109,19 @@ describe('useTreeData', () => {
         act(() => dispatch(addGoalToTree(goal)));
 
         expect(result.current.treeIds).toContain(goal.id);
+    });
+    it('should remove a goal and goal id from the tree', () => {
+        const {result} = renderHook(() => useTreeData());
+        const {dispatch, addGoalToTree, deleteGoal} = result.current;
+        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+
+        expect(result.current.goals).not.toContain(goal.id);
+        act(() => dispatch(addGoalToTree(goal)));
+
+        expect(result.current.treeIds).toContain(goal.id);
+
+        act(() => dispatch(deleteGoal(goal)));
+        expect(result.current.treeIds).not.toContain(goal.id);
     })
 });
 

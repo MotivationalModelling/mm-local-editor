@@ -114,6 +114,7 @@ const createTreeDataSlice = () => {
                     tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.id);
                 }
                 state.tree = removeItemIdFromTree(state.tree, action.payload.id);
+                state.treeIds = state.treeIds.filter((treeId) => treeId !== action.payload.id);
                 delete state.goals[action.payload.id];
             },
             updateTextForGoalId: (state, action: PayloadAction<{id: TreeItem["id"], text: string            }>) => {
