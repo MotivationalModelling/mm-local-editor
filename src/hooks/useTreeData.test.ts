@@ -1,7 +1,7 @@
 import {renderHook, act} from '@testing-library/react';
 import {describe, it, expect, beforeAll} from "vitest";
 import useTreeData, {createTreeIdsFromTreeData} from "./useTreeData";
-import {newTreeItem} from "../components/context/FileProvider.tsx";
+import {newTreeItem, TreeItem} from "../components/context/FileProvider.tsx";
 import {enableMapSet} from "immer";
 
 describe('useTreeData', () => {
@@ -122,7 +122,14 @@ describe('useTreeData', () => {
 
         act(() => dispatch(deleteGoal(goal)));
         expect(result.current.treeIds).not.toContain(goal.id);
-    })
+    });
+    it('should have tree as type TreeItem[]', () => {
+        const {result} = renderHook(() => useTreeData());
+        const {tree} = result.current;
+        const testTree: TreeItem[] = tree;
+
+        expect(testTree).toBeTruthy();
+    });
 });
 
 describe('#createTreeIdsFromTreeData', () => {
