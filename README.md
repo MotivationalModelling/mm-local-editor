@@ -87,7 +87,7 @@ npm run dev
 to start the server. Then the server will be running on port 5173
 
 ```
-https://localhost:5173
+http://localhost:5173
 ```
 Alternatively, if you choose [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/#windows-stable) as your package manager, you can run
 ```
