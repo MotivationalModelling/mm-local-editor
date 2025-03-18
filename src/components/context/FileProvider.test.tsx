@@ -30,7 +30,7 @@ const TestFileProviderContext = () => {
     )
 };
 
-describe('useFileContext', () => {
+describe('FileProvider', () => {
     beforeAll(() => enableMapSet());
     it("should render with default tabs", () => {
         const {container, getByText} = render(
