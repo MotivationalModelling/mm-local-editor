@@ -16,7 +16,7 @@ import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {newTreeItem, TreeItem} from "./FileProvider.tsx";
 
-describe('useFileContext', () => {
+describe('treeDataSlice', () => {
     beforeAll(() => {
         enableMapSet();
     });
