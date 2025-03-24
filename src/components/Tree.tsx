@@ -13,6 +13,7 @@ import { useFileContext } from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 
 import "./Tree.css";
+import {deleteGoal} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -85,41 +86,42 @@ const Tree: React.FC<TreeProps> = ({
   const deletingItemRef = useRef<TreeItem | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const { treeData, setTreeData } = useFileContext();
+  const {treeData, dispatch} = useFileContext();
 
   // Remove item recursively from tree data
-  const removeItemFromTree = (
-    items: TreeItem[],
-    idToRemove: number
-  ): TreeItem[] => {
-    return items.reduce((acc, currentItem) => {
-      if (currentItem.id === idToRemove) {
-        return acc; // Skip this item
-      }
-      if (currentItem.children) {
-        currentItem.children = removeItemFromTree(
-          currentItem.children,
-          idToRemove
-        );
-      }
-      acc.push(currentItem);
-      return acc;
-    }, [] as TreeItem[]);
-  };
+  // const removeItemFromTree = (
+  //   items: TreeItem[],
+  //   idToRemove: number
+  // ): TreeItem[] => {
+  //   return items.reduce((acc, currentItem) => {
+  //     if (currentItem.id === idToRemove) {
+  //       return acc; // Skip this item
+  //     }
+  //     if (currentItem.children) {
+  //       currentItem.children = removeItemFromTree(
+  //         currentItem.children,
+  //         idToRemove
+  //       );
+  //     }
+  //     acc.push(currentItem);
+  //     return acc;
+  //   }, [] as TreeItem[]);
+  // };
 
   // Delete item by its id
   const deleteItem = () => {
-    if (deletingItemRef && deletingItemRef.current) {
-      const updatedTreeData = removeItemFromTree(
-        treeData,
-        deletingItemRef.current.id
-      );
-      setTreeData(updatedTreeData);
-      setTreeIds((prevIds) =>
-        prevIds.filter((id) => id !== deletingItemRef.current?.id)
-      );
-    } else {
-      console.log("Deleting item not found.");
+    if (deletingItemRef?.current) {
+      dispatch(deleteGoal(deletingItemRef.current));
+    //   const updatedTreeData = removeItemFromTree(
+    //     treeData,
+    //     deletingItemRef.current.id
+    //   );
+    //   setTreeData(updatedTreeData);
+    //   setTreeIds((prevIds) =>
+    //     prevIds.filter((id) => id !== deletingItemRef.current?.id)
+    //   );
+    // } else {
+    //   console.log("Deleting item not found.");
     }
     setShowDeleteWarning(false);
   };
