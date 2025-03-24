@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
+import {Cluster} from "../types.ts";
+import {convertTreeDataToClusters} from "../SectionPanel.tsx";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -125,10 +127,11 @@ type SliceActions<T, Name extends string> = {
 type DispatchActions = SliceActions<typeof treeDataSlice.actions, "treeData">
 
 interface FileContextProps {
-    jsonFileHandle: FileSystemFileHandle | null;
-    setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void;
-    tabData: TabContent[];
-    treeData: TreeItem[];
+    jsonFileHandle: FileSystemFileHandle | null
+    setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void
+    tabData: TabContent[]
+    treeData: TreeItem[]
+    cluster: Cluster
     xmlData: string
     dispatch: React.Dispatch<DispatchActions>
     // setTabData: (tabData: TabContent[]) => void;
@@ -147,6 +150,7 @@ const FileContext = createContext<FileContextProps>({
     setJsonFileHandle: () => {},
     tabData: [],
     treeData: [],
+    cluster: {ClusterGoals: []},
     xmlData: "",
     dispatch: null,
     // setTabData: () => {},
@@ -187,6 +191,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
           dispatch,
           treeData: createTreeDataFromTreeNode(state.goals, state.tree),
           tabData: createTabDataFromTabs(state.goals, state.tabs),
+          cluster: convertTreeDataToClusters(state.goals, state.tree),
           xmlData,
           // setTabData,
           // setTreeData,
