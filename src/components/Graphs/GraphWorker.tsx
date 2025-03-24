@@ -34,6 +34,9 @@ import ResetGraphButton from "./ResetGraphButton.tsx";
 import ScaleTextButton from "./ScaleTextButton.tsx";
 import { useGraph } from "../context/GraphContext";
 import {Cluster} from "../types.ts";
+import {useFileContext} from "../context/FileProvider.tsx";
+import {reset} from "../context/treeDataSlice.ts";
+import {initialTabs} from "../../data/initialTabs.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -58,17 +61,11 @@ interface GlobObject {
   [key: string]: string[];
 }
 
-
-type GraphWorkerProps = {
-  cluster: Cluster;
-  onResetEmpty: () => void; // Function to reset the graph to empty
-  onResetDefault: () => void;
-};
-
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onResetDefault }) => {
+const GraphWorker: React.FC = () => {
   const divGraph = useRef<HTMLDivElement>(null);
+  const {cluster, dispatch} = useFileContext();
   const {graph, setGraph} = useGraph();
 
   const hasFunctionalGoal = (cluster: Cluster) => (
@@ -77,18 +74,18 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
   const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
 
    // Function to reset the graph to empty
-   const resetEmptyGraph = () => {
-    if (graph) {
-      onResetEmpty();
-    }
-  };
+  //  const resetEmptyGraph = () => {
+  //   if (graph) {
+  //     onResetEmpty();
+  //   }
+  // };
 
   // Function to reset the graph to the default set of goals
-  const resetDefaultGraph = () => {
-    if (graph) {
-      onResetDefault();
-    }
-  };
+  // const resetDefaultGraph = () => {
+  //   if (graph) {
+  //     onResetDefault();
+  //   }
+  // };
 
   const recentreView = () => {
     if (graph) {
@@ -446,7 +443,8 @@ const GraphWorker: React.FC<GraphWorkerProps> = ({ cluster, onResetEmpty, onRese
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <ResetGraphButton resetEmptyGraph={resetEmptyGraph} resetDefaultGraph={resetDefaultGraph}></ResetGraphButton>
+      <ResetGraphButton resetEmptyGraph={() => dispatch(reset())}
+                        resetDefaultGraph={() => dispatch(reset({treeData: [], tabContent: initialTabs}))}/>
       <ScaleTextButton></ScaleTextButton>
       <Container>
         <Row className="row">
