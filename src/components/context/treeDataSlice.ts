@@ -140,7 +140,7 @@ export const treeDataSlice = createSlice({
     selectors: {
         selectTabData: (state) => createTabDataFromTabs(state.goals, state.tabs),
         selectTreeData: (state) => createTreeDataFromTreeNode(state.goals, state.tree),
-        selectGoalsForLabel: (state, label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId])
+        selectGoalsForLabel: (state, label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
     }
 });
 
