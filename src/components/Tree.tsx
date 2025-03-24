@@ -54,7 +54,6 @@ const iconFromType = (type: Label) => {
 
 type TreeProps = {
   existingItemIds: number[];
-  setTreeIds: (value: React.SetStateAction<number[]>) => void;
   handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
   setExistingItemIds: (existingItemIds: number[]) => void;
 };
@@ -75,7 +74,6 @@ const IconComponent = ({ type }: { type: Label }) => {
 
 const Tree: React.FC<TreeProps> = ({
   existingItemIds,
-  setTreeIds,
   handleSynTableTree,
   setExistingItemIds,
 }) => {
