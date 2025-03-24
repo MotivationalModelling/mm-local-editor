@@ -4,10 +4,12 @@ import { Resizable, ResizeCallback } from "re-resizable";
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { initialTabs, Label, TreeItem, useFileContext } from "./context/FileProvider";
+import {Label, TreeItem, TreeNode, useFileContext} from "./context/FileProvider";
 import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
+import {initialTabs} from "../data/initialTabs.ts";
+import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -89,6 +91,35 @@ const defaultTreeData: TreeItem[] = [
   }
 ];
 
+// Mapping of old types to new types
+const typeMapping: Record<Label, GoalType> = {
+  Who: "Stakeholder",
+  Do: "Functional",
+  Be: "Quality",
+  Feel: "Emotional",
+  Concern: "Negative",
+};
+
+
+// Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
+export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
+  const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
+    const goal = goals[item.goalId];
+    console.log("Converting type: ", goal.type, " to ", typeMapping[goal.type]);
+    return {
+      GoalID: item.goalId,
+      GoalType: typeMapping[goal.type],
+      GoalContent: goal.content,
+      GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
+      SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
+    };
+  };
+
+  return {
+    ClusterGoals: treeData.map(convertTreeItemToGoal),
+  };
+};
+
 //const defaultTreeIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 type SectionPanelProps = {
@@ -110,23 +141,19 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const { treeData, setTreeData, tabData, setTabData } = useFileContext();
-  const [treeIds, setTreeIds] = useState<number[]>([]);
+  const {treeData, dispatch, treeIds} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
   const [existingError, setExistingError] = useState<boolean>(false);
 
-  // Stores user defined goals (treeData) into a structure used in GraphWorker. Initialise as empty
-  const [cluster, setCluster] = useState<Cluster>({ ClusterGoals: []});
-
   // const [isHintVisible, setIsHintVisible] = useState(true);
 
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<number | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
@@ -151,29 +178,22 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (treeData.length) {
-      const ids = getIds(treeData);
-      setTreeIds(ids);
-    }
-  }, []);
-
   // Initialize the tree ids from the created/selected json file
-  const getIds = (treeData: TreeItem[]) => {
-    const ids: number[] = [];
-    // Recursively get all the ids from the tree data
-    const traverse = (arr: TreeItem[]) => {
-      arr.forEach((item) => {
-        ids.push(item.id);
-
-        if (item.children && item.children.length > 0) {
-          traverse(item.children);
-        }
-      });
-    };
-    traverse(treeData);
-    return ids;
-  };
+  // const getIds = (treeData: TreeNode[]) => {
+  //   const ids: number[] = [];
+  //   // Recursively get all the ids from the tree data
+  //   const traverse = (arr: TreeNode[]) => {
+  //     arr.forEach((item) => {
+  //       ids.push(item.goalId);
+  //
+  //       if (item.children && item.children.length > 0) {
+  //         traverse(item.children);
+  //       }
+  //     });
+  //   };
+  //   traverse(treeData);
+  //   return ids;
+  // };
 
   // Handle section three resize and section one auto resize
   const handleResizeSectionThree: ResizeCallback = (
@@ -223,9 +243,10 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
     if (draggedItem && draggedItem.content) {
       if (!treeIds.includes(draggedItem.id)) {
-        const newData: TreeItem[] = [...treeData, draggedItem];
-        setTreeData(newData);
-        setTreeIds([...treeIds, draggedItem.id]);
+        dispatch(addGoalToTree(draggedItem));
+        // const newData: TreeItem[] = [...treeData, draggedItem];
+        // setTreeData(newData);
+        // setTreeIds([...treeIds, draggedItem.id]);
         console.log("drop successful");
       } else {
         setExistingItemIds([...existingItemIds, draggedItem.id]);
@@ -255,14 +276,15 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       ...treeData,
       ...newItemsToAdd.filter((item) => item.content.trim() !== ""),
     ];
-    setTreeData(filteredTreeData);
+    dispatch(setTreeData(filteredTreeData));
+    // setTreeData(filteredTreeData);
     // Update Ids with new items, filter out the empjty items
-    setTreeIds((prevIds) => [
-      ...prevIds,
-      ...newItemsToAdd
-        .filter((item) => item.content.trim() !== "")
-        .map((item) => item.id),
-    ]);
+    // setTreeIds((prevIds) => [
+    //   ...prevIds,
+    //   ...newItemsToAdd
+    //     .filter((item) => item.content.trim() !== "")
+    //     .map((item) => item.id),
+    // ]);
     setGroupSelected([]);
   };
 
@@ -273,60 +295,61 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   };
 
   // Update the tab data if exist while the tree data changed
-  const updateTabDataContent = (label: Label, id: number, newText: string) => {
-    const updatedTabData = tabData.map((tabContent) => {
-      if (tabContent.label === label) {
-        return {
-          ...tabContent,
-          rows: tabContent.rows.map((row) => {
-            if (row.id === id) {
-              return {
-                ...row,
-                content: newText,
-              };
-            }
-            return row;
-          }),
-        };
-      }
-      return tabContent;
-    });
-
-    setTabData(updatedTabData);
-  };
+  // const updateTabDataContent = (label: Label, id: number, newText: string) => {
+  //   const updatedTabData = tabData.map((tabContent) => {
+  //     if (tabContent.label === label) {
+  //       return {
+  //         ...tabContent,
+  //         rows: tabContent.rows.map((row) => {
+  //           if (row.id === id) {
+  //             return {
+  //               ...row,
+  //               content: newText,
+  //             };
+  //           }
+  //           return row;
+  //         }),
+  //       };
+  //     }
+  //     return tabContent;
+  //   });
+  //
+  //   setTabData(updatedTabData);
+  // };
 
   // Update the tree recursively
-  const updateItemTextInTree = (
-    items: TreeItem[],
-    idToUpdate: number,
-    newText: string
-  ): TreeItem[] => {
-    if (!treeIds.includes(idToUpdate)) return items;
-
-    return items.map((currentItem) => {
-      if (currentItem.id === idToUpdate) {
-        return { ...currentItem, content: newText }; // Update text of this item
-      }
-      if (currentItem.children) {
-        currentItem.children = updateItemTextInTree(
-          currentItem.children,
-          idToUpdate,
-          newText
-        );
-      }
-      return currentItem;
-    });
-  };
+  // const updateItemTextInTree = (
+  //   items: TreeItem[],
+  //   idToUpdate: number,
+  //   newText: string
+  // ): TreeItem[] => {
+  //   if (!treeIds.includes(idToUpdate)) return items;
+  //
+  //   return items.map((currentItem) => {
+  //     if (currentItem.id === idToUpdate) {
+  //       return { ...currentItem, content: newText }; // Update text of this item
+  //     }
+  //     if (currentItem.children) {
+  //       currentItem.children = updateItemTextInTree(
+  //         currentItem.children,
+  //         idToUpdate,
+  //         newText
+  //       );
+  //     }
+  //     return currentItem;
+  //   });
+  // };
 
   // Handle synchronize data in table data and tree data
   const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
-    const updatedTreeData = updateItemTextInTree(
-      treeData,
-      treeItem.id,
-      editedText
-    );
-    setTreeData(updatedTreeData);
-    updateTabDataContent(treeItem.type, treeItem.id, editedText);
+    // const updatedTreeData = updateItemTextInTree(
+    //   treeData,
+    //   treeItem.id,
+    //   editedText
+    // );
+    // setTreeData(updatedTreeData);
+    dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
+    // updateTabDataContent(treeItem.type, treeItem.id, editedText);
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -356,41 +379,13 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }
   }, [paddingX, showGoalSection, showGraphSection]); 
 
-    // Mapping of old types to new types
-    const typeMapping: Record<string, GoalType> = {
-      Who: "Stakeholder",
-      Do: "Functional",
-      Be: "Quality",
-      Feel: "Emotional",
-      Concern: "Negative",
-    };
-
-  // Function to convert TreeItem to ClusterGoal
-  const convertTreeItemToGoal = (item: TreeItem): ClusterGoal => {
-    console.log("Converting type: ", item.type, " to ", typeMapping[item.type]);
-    return {
-      GoalID: item.id,
-      GoalType: typeMapping[item.type],
-      GoalContent: item.content,
-      GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
-      SubGoals: item.children ? item.children.map(convertTreeItemToGoal) : [],
-    };
-  };
-  
-  // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-  const convertTreeDataToClusters = (treeData: TreeItem[]): Cluster => {
-    return {
-      ClusterGoals: treeData.map(convertTreeItemToGoal),
-    };
-  };
-
-  useEffect(() => {
-    setCluster((prevCluster) => {
-      const newCluster = convertTreeDataToClusters(treeData);
-      console.log("Cluster changed ", newCluster);
-      return newCluster;
-    });
-  }, [treeData]);
+  // useEffect(() => {
+  //   setCluster((prevCluster) => {
+  //     const newCluster = convertTreeDataToClusters(goals, tree);
+  //     console.log("Cluster changed ", newCluster);
+  //     return newCluster;
+  //   });
+  // }, [treeData]);
 
   // Just for testing
   // useEffect(() => {
@@ -403,17 +398,17 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   // });
 
-  // Reset tree data to empty, tab data to initial
-  const resetGoalsToEmpty = () => {
-    console.log("Resetting goals to empty");
-
-    setTreeData([]);             // Clear the tree data (hierarchy)
-    setTabData(initialTabs);     // Set tab data to initial state
-    setGroupSelected([]);        // Clear the selected group of items
-    setExistingItemIds([]);      // Clear the existing item IDs
-    setTreeIds([]);              // Clear all stored IDs in the tree
-    setExistingError(false);     // Reset the error state
-  };
+  // // Reset tree data to empty, tab data to initial
+  // const resetGoalsToEmpty = () => {
+  //   console.log("Resetting goals to empty");
+  // dispatch(reset());
+  //   // setTreeData([]);             // Clear the tree data (hierarchy)
+  //   // setTabData(initialTabs);     // Set tab data to initial state
+  //   // setGroupSelected([]);        // Clear the selected group of items
+  //   // setExistingItemIds([]);      // Clear the existing item IDs
+  //   // setTreeIds([]);              // Clear all stored IDs in the tree
+  //   // setExistingError(false);     // Reset the error state
+  // };
 
   // Function to convert defaultTreeData to tabData format
   const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
@@ -432,37 +427,37 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
     };
 
-    // Populate the new tab data from the provided tree data
-    treeData.forEach(item => populateTabData(item));
-
-    // Add an empty row at the end of each tab
-    newTabData.forEach(tab => {
-      tab.rows.push({
-        id: Date.now(),
-        type: tab.label,
-        content: '',
-      });
-    });
-
-    setTabData(newTabData); // Set the new tab data
+    // // Populate the new tab data from the provided tree data
+    // treeData.forEach(item => populateTabData(item));
+    //
+    // // Add an empty row at the end of each tab
+    // newTabData.forEach(tab => {
+    //   tab.rows.push({
+    //     id: Date.now(),
+    //     type: tab.label,
+    //     content: '',
+    //   });
+    // });
+    //
+    // setTabData(newTabData); // Set the new tab data
   };
 
-  // Function to reset treeData to the default set of goals
-  const resetGoalsToDefault = () => {
-    console.log("Resetting goals to default");
-
-    setTreeData(defaultTreeData);
-
-    const defaultTreeIds = defaultTreeData.map(item => item.id);
-    setTreeIds(defaultTreeIds);
-
-    updateTabDataFromTreeData(defaultTreeData);
-
-    setGroupSelected([]);
-
-    setExistingItemIds([]); 
-    setExistingError(false);
-  };
+  // // Function to reset treeData to the default set of goals
+  // const resetGoalsToDefault = () => {
+  //   console.log("Resetting goals to default");
+  //
+  //   dispatch(setTreeData(defaultTreeData));
+  //
+  //   // const defaultTreeIds = defaultTreeData.map(item => item.id);
+  //   // setTreeIds(defaultTreeIds);
+  //
+  //   updateTabDataFromTreeData(defaultTreeData);
+  //
+  //   setGroupSelected([]);
+  //
+  //   setExistingItemIds([]);
+  //   setExistingError(false);
+  // };
   
   return (
     <div
@@ -480,7 +475,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         show={existingError}
         title="Drop Failed"
         message={`The selected ${
-          groupSelected.length > 1 ? "goals" : "goal"
+          (groupSelected.length > 1) ? "goals" : "goal"
         } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />
@@ -507,12 +502,12 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={handleSynTableTree}
+          handleSynTableTree={(treeItem: TreeItem, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
 
-      {/* Cluster Hierachy Section */}
+      {/* Cluster Hierarchy Section */}
       <div
         style={{
           ...defaultStyle,
@@ -529,7 +524,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         <Tree
           existingItemIds={existingItemIds}
-          setTreeIds={setTreeIds}
+          // setTreeIds={setTreeIds}
           handleSynTableTree={handleSynTableTree}
           setExistingItemIds={setExistingItemIds}
         />
@@ -555,7 +550,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker cluster={cluster} onResetEmpty={resetGoalsToEmpty} onResetDefault={resetGoalsToDefault}/>
+        <GraphWorker/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>
