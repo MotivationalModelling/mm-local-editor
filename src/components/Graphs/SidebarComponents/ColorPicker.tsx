@@ -16,11 +16,8 @@ const ColorPicker = ({ selectedColor, onColorChange }: ColorPickerProps) => {
   return (
     <div>
       {showPicker && (
-        <div
-
-          style={{ position: "absolute", top: "10px", right: "250px" }}
-        >
-          <CompactPicker color={selectedColor} onChangeComplete={onColorChange} />
+        <div style={{ position: "absolute", top: "10px", right: "250px" }}>
+          <CompactPicker color={selectedColor} onChangeComplete={onColorChange}/>
         </div>
       )}
       <button onClick={handleButtonClick}>Select Colour</button>
