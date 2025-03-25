@@ -36,8 +36,8 @@ const ScaleTextButton = () => {
 
 
   // Function to handle input changes for font size - update vertices font sizes
-  const handleFontSizeChange = (e) => {
-    const newFontSize = parseInt(e.target.value, 10);
+  const handleFontSizeChange = (fontSize: string) => {
+    const newFontSize = parseInt(fontSize, 10);
     if (isNaN(newFontSize)) {
       setFontSize(12); 
       return;
@@ -65,7 +65,7 @@ const ScaleTextButton = () => {
       <FormControl
         type="number"
         value={fontSize || ""} 
-        onChange={handleFontSizeChange}
+        onChange={(e) => handleFontSizeChange(e.target.value)}
         style={{ width: "60px", textAlign: "center" }}
         className="mx-2"
         min={8}
