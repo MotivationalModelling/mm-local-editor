@@ -8,7 +8,6 @@ import {Label, TreeItem, TreeNode, useFileContext} from "./context/FileProvider"
 import {Cluster, ClusterGoal, GoalType} from "./types.ts";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import {initialTabs} from "../data/initialTabs.ts";
 import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
 const defaultStyle = {
@@ -411,21 +410,21 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   // };
 
   // Function to convert defaultTreeData to tabData format
-  const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
-    // Copy initialTabs to start with the default structure, but with no rows
-    const newTabData = initialTabs.map(tab => ({ ...tab, rows: [] as TreeItem[]}));
-
-    // Recursively traverse the treeData and populate the corresponding tab rows
-    const populateTabData = (item: TreeItem) => {
-      const correspondingTab = newTabData.find(tab => tab.label === item.type);
-      if (correspondingTab) {
-        correspondingTab.rows.push(item);
-      }
-
-      if (item.children && item.children.length > 0) {
-        item.children.forEach(child => populateTabData(child));
-      }
-    };
+  // const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
+  //   // Copy initialTabs to start with the default structure, but with no rows
+  //   const newTabData = initialTabs.map(tab => ({ ...tab, rows: [] as TreeItem[]}));
+  //
+  //   // Recursively traverse the treeData and populate the corresponding tab rows
+  //   const populateTabData = (item: TreeItem) => {
+  //     const correspondingTab = newTabData.find(tab => tab.label === item.type);
+  //     if (correspondingTab) {
+  //       correspondingTab.rows.push(item);
+  //     }
+  //
+  //     if (item.children && item.children.length > 0) {
+  //       item.children.forEach(child => populateTabData(child));
+  //     }
+  //   };
 
     // // Populate the new tab data from the provided tree data
     // treeData.forEach(item => populateTabData(item));
@@ -440,7 +439,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     // });
     //
     // setTabData(newTabData); // Set the new tab data
-  };
+  // };
 
   // // Function to reset treeData to the default set of goals
   // const resetGoalsToDefault = () => {
