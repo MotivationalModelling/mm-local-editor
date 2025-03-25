@@ -13,7 +13,7 @@ import { useFileContext } from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 
 import "./Tree.css";
-import {deleteGoal} from "./context/treeDataSlice.ts";
+import {deleteGoal, setTreeData} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -304,7 +304,7 @@ const Tree: React.FC<TreeProps> = ({
         onConfirm={deleteItem}
       />
       <Nestable
-        onChange={({ items }) => setTreeData(items as TreeItem[])}
+        onChange={({ items }) => dispatch(setTreeData(items as TreeItem[]))}
         items={treeData}
         renderItem={renderItem}
         renderCollapseIcon={({ isCollapsed }) => (
