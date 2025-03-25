@@ -129,7 +129,7 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
       ): void => {
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
-        const goal = graph.getDataModel().cloneCell(prototype);
+        const goal = graph.cloneCell(prototype);
 
         if (goal && goal.geometry) {
           goal.geometry.x = point.x;
@@ -147,7 +147,7 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
       ) => {
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
-        const goal = graph.getDataModel().cloneCell(prototype);
+        const goal = graph.cloneCell(prototype);
 
         if (goal && goal.geometry) {
           goal.geometry.setTerminalPoint(new Point(point.x, point.y), true);
