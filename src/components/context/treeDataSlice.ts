@@ -57,12 +57,12 @@ export const removeItemIdFromTree = (items: TreeItem[], id: TreeItem["id"]): Tre
 export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): TabContent[] => {
     return tabs.map((tab) => ({
         ...tab,
-        rows: tab.rows.filter((row) => (row.id !== id))
+        goalIds: tab.goalIds.filter((goalId) => (goalId !== id))
     }));
 };
 
-export const createInitialState = (tabContent: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
-    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabContent);
+export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
     return {
@@ -122,7 +122,7 @@ export const treeDataSlice = createSlice({
             };
         },
         reset: (state, action: PayloadAction<{
-            tabContent: InitialTab[],
+            tabData: InitialTab[],
             treeData: TreeItem[]
         } | undefined>) => {
             const initialState = (action.payload) ? createInitialState(action.payload.tabContent, action.payload.treeData)
