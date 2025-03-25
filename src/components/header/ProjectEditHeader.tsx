@@ -30,7 +30,7 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	}, []);
   
 	const handleBackBtnClick = () => {
-		dispatch(reset({tabContent: initialTabs, treeData: []}));
+		dispatch(reset({tabData: initialTabs, treeData: []}));
 		navigate("/", { replace: true });
 	};
 

@@ -444,7 +444,7 @@ const GraphWorker: React.FC = () => {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <ResetGraphButton resetEmptyGraph={() => dispatch(reset())}
-                        resetDefaultGraph={() => dispatch(reset({treeData: [], tabContent: initialTabs}))}/>
+                        resetDefaultGraph={() => dispatch(reset({treeData: [], tabData: initialTabs}))}/>
       <ScaleTextButton></ScaleTextButton>
       <Container>
         <Row className="row">
