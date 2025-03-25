@@ -6,6 +6,8 @@ import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
 import { useFileContext } from "../context/FileProvider";
 import { isChrome, isOpera, isEdge } from "react-device-detect";
+import {reset} from "../context/treeDataSlice.ts";
+import {initialTabs} from "../../data/initialTabs.ts";
 
 type ProjectEditHeaderProps = {
 	showGoalSection: boolean;
@@ -17,7 +19,7 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	showGoalSection,
 	setShowGoalSection,
   }) => {
-	const { resetData } = useFileContext();
+	const {dispatch} = useFileContext();
 	const navigate = useNavigate();
 	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
   
@@ -28,7 +30,7 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	}, []);
   
 	const handleBackBtnClick = () => {
-		resetData();
+		dispatch(reset({tabContent: initialTabs, treeData: []}));
 		navigate("/", { replace: true });
 	};
 
