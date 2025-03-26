@@ -97,9 +97,11 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): TreeItem["id"][
     return treeIds;
 };
 
-// XXX move to treeDataSlice
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
-    return treeNode.map((tn) => goals[tn.goalId]);
+    return treeNode.map((tn) => {
+        const goal = goals[tn.goalId];
+        return newTreeItem({...goal, ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
+    });
 };
 
 export const createTabDataFromTabs = (goals: Record<TreeItem["id"], TreeItem>, tabs: Map<Label, TabContent>): TabContent[] => {
