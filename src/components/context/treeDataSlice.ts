@@ -17,7 +17,7 @@ const newTreeNode = ({goalId, children = []}: {
     children
 });
 
-const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
+export const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
     return treeData.map((ti) => ({
         goalId: ti.id,
         children: createTreeFromTreeData(ti.children ?? [])
