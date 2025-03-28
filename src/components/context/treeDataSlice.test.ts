@@ -131,9 +131,9 @@ describe('treeDataSlice', () => {
         const state2 = treeDataSlice.reducer(initialState, deleteGoal(goal));
         expect(state2.treeIds).not.toContain(goal.id);
     });
-    it('should have tree as type TreeItem[]', () => {
+    it('should have tree as type TreeNode[]', () => {
         const {tree} = initialState;
-        const testTree: TreeItem[] = tree;
+        const testTree: TreeNode[] = tree;
 
         expect(testTree).toBeTruthy();
     });
