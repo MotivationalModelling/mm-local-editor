@@ -1,14 +1,7 @@
-import React, {
-    createContext,
-    PropsWithChildren,
-    useContext,
-    useReducer,
-    useState
-} from "react";
+import React, {createContext, PropsWithChildren, useContext, useReducer, useState} from "react";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster} from "../types.ts";
-import {convertTreeDataToClusters} from "../SectionPanel.tsx";
+import {Cluster, ClusterGoal, GoalType} from "../types.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -160,6 +153,34 @@ const FileContext = createContext<FileContextProps>({
     setXmlData: () => {},
     // resetData: () => {},
 });
+
+// Mapping of old types to new types
+const typeMapping: Record<Label, GoalType> = {
+    Who: "Stakeholder",
+    Do: "Functional",
+    Be: "Quality",
+    Feel: "Emotional",
+    Concern: "Negative",
+};
+
+// Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
+export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
+    const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
+        const goal = goals[item.goalId];
+        console.log("Converting type: ", goal.type, " to ", typeMapping[goal.type]);
+        return {
+            GoalID: item.goalId,
+            GoalType: typeMapping[goal.type],
+            GoalContent: goal.content,
+            GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
+            SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
+        };
+    };
+
+    return {
+        ClusterGoals: treeData.map(convertTreeItemToGoal),
+    };
+};
 
 const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     // const treeDataSlice = createTreeDataSlice();

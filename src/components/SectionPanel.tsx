@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Resizable, ResizeCallback } from "re-resizable";
+import React, {useEffect, useRef, useState} from "react";
+import {Resizable, ResizeCallback} from "re-resizable";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import {Label, TreeItem, TreeNode, useFileContext} from "./context/FileProvider";
-import {Cluster, ClusterGoal, GoalType} from "./types.ts";
+import {TreeItem, useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
@@ -90,34 +89,6 @@ const defaultTreeData: TreeItem[] = [
   }
 ];
 
-// Mapping of old types to new types
-const typeMapping: Record<Label, GoalType> = {
-  Who: "Stakeholder",
-  Do: "Functional",
-  Be: "Quality",
-  Feel: "Emotional",
-  Concern: "Negative",
-};
-
-
-// Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
-  const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
-    const goal = goals[item.goalId];
-    console.log("Converting type: ", goal.type, " to ", typeMapping[goal.type]);
-    return {
-      GoalID: item.goalId,
-      GoalType: typeMapping[goal.type],
-      GoalContent: goal.content,
-      GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
-      SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
-    };
-  };
-
-  return {
-    ClusterGoals: treeData.map(convertTreeItemToGoal),
-  };
-};
 
 //const defaultTreeIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
