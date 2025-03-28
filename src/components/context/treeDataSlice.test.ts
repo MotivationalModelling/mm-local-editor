@@ -7,14 +7,14 @@ import {describe, it, expect, beforeEach, beforeAll} from "vitest";
 import {
     addGoal,
     addGoalToTab, addGoalToTree,
-    createInitialState,
-    deleteGoal, reset, selectGoalsForLabel,
+    createInitialState, createTreeFromTreeData,
+    deleteGoal, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
     treeDataSlice,
     updateTextForGoalId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeItem, TreeItem} from "./FileProvider.tsx";
+import {newTreeItem, TreeItem, TreeNode} from "./FileProvider.tsx";
 
 describe('treeDataSlice', () => {
     beforeAll(() => {
@@ -136,5 +136,44 @@ describe('treeDataSlice', () => {
         const testTree: TreeItem[] = tree;
 
         expect(testTree).toBeTruthy();
+    });
+});
+
+describe('removeItemIdFromTree', () => {
+    beforeAll(() => {
+        enableMapSet();
+    });
+    it('should handle an empty tree', () => {
+        const tree = [] as TreeNode[];
+        const newTree = removeItemIdFromTree(tree, 99);
+        expect(tree.length).toEqual(newTree.length);
+    });
+    it('should remove a node from the top level', () => {
+        const goalId = 1;
+        const tree = [newTreeNode({goalId})] as TreeNode[];
+        const newTree = removeItemIdFromTree(tree, goalId);
+
+        expect(newTree.length).toEqual(0);
+    });
+    it('should remove a node from the second level', () => {
+        const goalId = 1;
+        const tree = [newTreeNode({goalId: 0, children: [newTreeNode({goalId})]})] as TreeNode[];
+        expect(tree.length).toEqual(1);
+        expect(tree[0].children?.length).toEqual(1);
+        const newTree = removeItemIdFromTree(tree, goalId);
+
+        expect(newTree.length).toEqual(1);
+        expect(tree[0].children?.length).toEqual(0);
+    });
+});
+
+describe('createTreeFromTreeData', () => {
+    beforeAll(() => {
+        enableMapSet();
+    });
+    it('should handle an empty tree', () => {
+        const treeData = [] as TreeItem[];
+        const tree = createTreeFromTreeData(treeData);
+        expect(tree.length).toEqual(treeData.length);
     });
 });

@@ -9,7 +9,7 @@ import {
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 
-const newTreeNode = ({goalId, children = []}: {
+export const newTreeNode = ({goalId, children = []}: {
     goalId: TreeItem["id"],
     children?: TreeNode[]
 }) => ({
@@ -41,9 +41,9 @@ const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
     return {goals, tabs};
 };
 
-export const removeItemIdFromTree = (items: TreeItem[], id: TreeItem["id"]): TreeItem[] => {
+export const removeItemIdFromTree = (items: TreeNode[], id: TreeNode["goalId"]): TreeNode[] => {
     return items.reduce((acc, item) => {
-        if (item.id === id) {
+        if (item.goalId === id) {
             return acc; // Skip this item
         }
         if (item.children) {
@@ -51,7 +51,7 @@ export const removeItemIdFromTree = (items: TreeItem[], id: TreeItem["id"]): Tre
         }
         acc.push(item);
         return acc;
-    }, [] as TreeItem[]);
+    }, [] as TreeNode[]);
 };
 
 export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): TabContent[] => {
