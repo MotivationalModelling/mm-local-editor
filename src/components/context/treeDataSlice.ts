@@ -125,7 +125,7 @@ export const treeDataSlice = createSlice({
             tabData: InitialTab[],
             treeData: TreeItem[]
         } | undefined>) => {
-            const initialState = (action.payload) ? createInitialState(action.payload.tabContent, action.payload.treeData)
+            const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData)
                 : createInitialState(initialTabs, []);
             Object.assign(state, initialState);
         }
