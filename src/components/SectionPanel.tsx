@@ -8,6 +8,7 @@ import {TreeItem, useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import { isEmptyGoal } from "../components/utils/GoalHint.tsx";
 
 const defaultStyle = {
   display: "flex",
@@ -213,22 +214,25 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
     if (draggedItem && draggedItem.content) {
       if (!treeIds.includes(draggedItem.id)) {
+       
         dispatch(addGoalToTree(draggedItem));
         // const newData: TreeItem[] = [...treeData, draggedItem];
         // setTreeData(newData);
         // setTreeIds([...treeIds, draggedItem.id]);
-        console.log("drop successful");
+       
       } else {
+
         setExistingItemIds([...existingItemIds, draggedItem.id]);
         setExistingError(true);
         hideErrorModalTimeout();
-        console.log("drop failed");
+
       }
     }
   };
 
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
+    
     // Filter groupSelected to get only objects whose IDs are not in treeData
     const newItemsToAdd = groupSelected.filter(
       (item) => !treeIds.includes(item.id)
@@ -239,14 +243,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       setExistingItemIds([...groupSelected.map((item) => item.id)]);
       setExistingError(true);
       hideErrorModalTimeout();
+     
       return;
     }
-    // Update treeData with new items, filter out the empty items
-    const filteredTreeData = [
-      ...treeData,
-      ...newItemsToAdd.filter((item) => item.content.trim() !== ""),
-    ];
-    dispatch(setTreeData(filteredTreeData));
+
+     // Update treeData with new items, filter out the empty items
+    const filteredNewItems = newItemsToAdd.filter((item) => !isEmptyGoal(item));
+    filteredNewItems.forEach(item => {
+      dispatch(addGoalToTree(item)); // Add each item individually
+    });
+
     // setTreeData(filteredTreeData);
     // Update Ids with new items, filter out the empjty items
     // setTreeIds((prevIds) => [
