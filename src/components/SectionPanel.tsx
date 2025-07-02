@@ -8,6 +8,7 @@ import {TreeItem, useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import { isEmptyGoal } from "../components/utils/GoalHint.tsx";
 
 const defaultStyle = {
   display: "flex",
@@ -207,62 +208,47 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
     // Temporary Group drop
     if (groupSelected.length > 1) {
-      console.log("🔄 REDIRECTING TO GROUP DROP");
       handleDropGroupSelected();
       return;
     }
 
     if (draggedItem && draggedItem.content) {
-        // ADD CONSOLE LOGS HERE ↓
-      console.log("=== SINGLE DRAG DEBUG ===");
-      console.log("Current treeIds:", treeIds);
-      console.log("Dragged item ID:", draggedItem.id);
-      console.log("Already exists?", treeIds.includes(draggedItem.id));
       if (!treeIds.includes(draggedItem.id)) {
-        console.log("✅ SINGLE DRAG - Adding new item");
+       
         dispatch(addGoalToTree(draggedItem));
         // const newData: TreeItem[] = [...treeData, draggedItem];
         // setTreeData(newData);
         // setTreeIds([...treeIds, draggedItem.id]);
-        console.log("drop successful");
+       
       } else {
-        console.log("🚨 SINGLE DRAG - Showing warning for existing item");
+
         setExistingItemIds([...existingItemIds, draggedItem.id]);
         setExistingError(true);
         hideErrorModalTimeout();
-        console.log("drop failed");
+
       }
     }
   };
 
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
-    // ADD CONSOLE LOGS HERE ↓
-    console.log("=== ADD GROUP BUTTON DEBUG ===");
-    console.log("existing treeIds before Add Group:", treeIds);
-    console.log("GroupSelected items:", groupSelected);
-    console.log("GroupSelected IDs:", groupSelected.map(item => item.id));
+    
     // Filter groupSelected to get only objects whose IDs are not in treeData
     const newItemsToAdd = groupSelected.filter(
       (item) => !treeIds.includes(item.id)
     );
 
-    // ADD MORE LOGS HERE ↓
-    console.log("Items after filtering:", newItemsToAdd);
-    console.log("Filtered IDs:", newItemsToAdd.map(item => item.id));
-    console.log("Should show warning?", newItemsToAdd.length === 0);
     // If all items are in the tree, then show the warning
     if (newItemsToAdd.length === 0) {
       setExistingItemIds([...groupSelected.map((item) => item.id)]);
       setExistingError(true);
       hideErrorModalTimeout();
-      console.log("✅ Existing ITEMS - no new items found");
+     
       return;
     }
 
-    console.log("✅ ADDING ITEMS - Some new items found");
      // Update treeData with new items, filter out the empty items
-    const filteredNewItems = newItemsToAdd.filter((item) => item.content.trim() !== "");
+    const filteredNewItems = newItemsToAdd.filter((item) => !isEmptyGoal(item));
     filteredNewItems.forEach(item => {
       dispatch(addGoalToTree(item)); // Add each item individually
     });
