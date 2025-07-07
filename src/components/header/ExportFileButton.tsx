@@ -70,7 +70,7 @@ const ExportFileButton = () => {
 		}
 
 		catch (error) {
-			console.error('Failed to sive file: ', error);
+			console.error('Failed to save file: ', error);
 		}
 	};
 
