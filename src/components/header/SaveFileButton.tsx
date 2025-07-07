@@ -1,9 +1,33 @@
+import { get, set } from "idb-keyval";
+import { useState } from "react";
 import { Button } from "react-bootstrap";
-import { useFileContext, JSONData, DataType } from "../context/FileProvider";
-import { set, get } from "idb-keyval";
+import { DataType, JSONData, useFileContext } from "../context/FileProvider";
+import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 
 const SaveFileButton = () => {
-	const { setJsonFileHandle, treeData, tabData } = useFileContext();
+	const { setJsonFileHandle, treeData, tabData, goals } = useFileContext();
+	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
+		show: false,
+		title: "",
+		message: "",
+		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+	});
+
+	// Function to check if there are any goals with content
+	const hasGoalsWithContent = (): boolean => {
+		// Check if any goal in the goals object has non-empty content
+		return Object.values(goals).some(goal => goal.content.trim() !== "");
+	};
+
+	// Function to show error message when no goals are present
+	const showNoGoalsError = () => {
+		setErrorModal({
+			show: true,
+			title: "Cannot Save Model",
+			message: "No goals have been added. Please add at least one goal before saving.",
+			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+		});
+	};
 
 	async function triggerFileSave(
 		fileName: string,
@@ -66,6 +90,12 @@ const SaveFileButton = () => {
 		}
 	};
 	const handleBtnClick = async () => {
+		// Check if there are any goals with content before proceeding
+		if (!hasGoalsWithContent()) {
+			showNoGoalsError();
+			return;
+		}
+
 		const jsonHandle = await get(DataType.JSON);
 		console.log(jsonHandle);
 		if (!jsonHandle) {
@@ -86,9 +116,12 @@ const SaveFileButton = () => {
 	// className="m-2"
 
 	return (
-		<Button variant="outline-primary" onClick={handleBtnClick}>
-			Save
-		</Button>
+		<>
+			<Button variant="outline-primary" onClick={handleBtnClick}>
+				Save
+			</Button>
+			<ErrorModal {...errorModal} />
+		</>
 	);
 };
 
