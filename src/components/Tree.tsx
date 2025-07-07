@@ -11,7 +11,13 @@ import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
 import { Label } from "./context/FileProvider";
 import { useFileContext } from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
-import {isEmptyGoal,isTextEmpty} from "../components/utils/GoalHint.tsx"
+import {
+  isEmptyGoal,
+  isTextEmpty,
+  handleContentSave,
+  handleGoalKeyPress,
+  handleGoalBlur
+} from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
 import {deleteGoal, setTreeData} from "./context/treeDataSlice.ts";
@@ -87,40 +93,10 @@ const Tree: React.FC<TreeProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const {treeData, dispatch} = useFileContext();
 
-  // Remove item recursively from tree data
-  // const removeItemFromTree = (
-  //   items: TreeItem[],
-  //   idToRemove: number
-  // ): TreeItem[] => {
-  //   return items.reduce((acc, currentItem) => {
-  //     if (currentItem.id === idToRemove) {
-  //       return acc; // Skip this item
-  //     }
-  //     if (currentItem.children) {
-  //       currentItem.children = removeItemFromTree(
-  //         currentItem.children,
-  //         idToRemove
-  //       );
-  //     }
-  //     acc.push(currentItem);
-  //     return acc;
-  //   }, [] as TreeItem[]);
-  // };
-
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
       dispatch(deleteGoal(deletingItemRef.current));
-    //   const updatedTreeData = removeItemFromTree(
-    //     treeData,
-    //     deletingItemRef.current.id
-    //   );
-    //   setTreeData(updatedTreeData);
-    //   setTreeIds((prevIds) =>
-    //     prevIds.filter((id) => id !== deletingItemRef.current?.id)
-    //   );
-    // } else {
-    //   console.log("Deleting item not found.");
     }
     setShowDeleteWarning(false);
   };
@@ -164,11 +140,11 @@ const Tree: React.FC<TreeProps> = ({
 
     // Handle when edit button clicked
     const handleEdit = () => {
-
-      // Handle when edit content is empty
-      if (isEmptyGoal(treeItem)){
-        return
+      // Allow editing for any goal with content (same as original logic)
+      if (isEmptyGoal(treeItem)) {
+        return;
       }
+      
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -186,16 +162,21 @@ const Tree: React.FC<TreeProps> = ({
       }
     };
 
-    // Handle saving edited text
-    // Update the edited text in both the tree data and tab data
+    // Handle saving edited text using GoalHint
     const handleSave = () => {
-       if (isTextEmpty(editedText)) {
-        // Don't save empty content, just cancel editing
-        handleCancel();
-        return;
-      }
-      handleSynTableTree(treeItem, editedText);
-      setEditingItemId(null);
+      handleContentSave(
+        treeItem.content, // original content
+        editedText, // new content
+        (content) => {
+          // On save callback
+          handleSynTableTree(treeItem, content);
+          setEditingItemId(null);
+        },
+        () => {
+          // On cancel callback
+          handleCancel();
+        }
+      );
     };
 
     // Handle cancel edited text
@@ -208,19 +189,41 @@ const Tree: React.FC<TreeProps> = ({
       });
     };
 
-    // Handle saving edited text when lost focus
+    // Handle saving edited text when lost focus using GoalHint
     const handleBlur = () => {
-      // Save changes only if cancel button was not clicked
-      if (!disableOnBlur) {
-        handleSave();
-      }
+      handleGoalBlur(
+        treeItem.content, // original content
+        editedText, // current content
+        (content) => {
+          // On save callback
+          handleSynTableTree(treeItem, content);
+          setEditingItemId(null);
+        },
+        () => {
+          // On cancel callback
+          handleCancel();
+        },
+        disableOnBlur // should prevent blur
+      );
       setDisableOnBlur(false);
     };
 
-    // Handle save and cancel edited text when key pressed
+    // Handle save and cancel edited text when key pressed using GoalHint
     const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") handleSave();
-      else if (e.key === "Escape") handleCancel();
+      handleGoalKeyPress(
+        e,
+        treeItem.content, // original content
+        editedText, // current content
+        (content) => {
+          // On save callback
+          handleSynTableTree(treeItem, content);
+          setEditingItemId(null);
+        },
+        () => {
+          // On cancel callback
+          handleCancel();
+        }
+      );
     };
 
     const ICON_SIZE = 25;
@@ -254,7 +257,7 @@ const Tree: React.FC<TreeProps> = ({
               onChange={(event) => setEditedText(event.target.value)}
               onBlur={handleBlur}
               onKeyDown={handleEditKeyDown}
-              className="tree-input"
+              className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
               style={treeInputStyle}
             />
           ) : (
@@ -262,11 +265,22 @@ const Tree: React.FC<TreeProps> = ({
           )}
         </div>
 
+        {/* Visual feedback for empty content */}
+        {isEditing && isTextEmpty(editedText) && (
+          <div className="invalid-feedback d-block small">
+            Content cannot be empty
+          </div>
+        )}
+
         {/* The hover effect can only created with pure css, onMouseEnter will 
             replace the Nestable onMouseEnter code and break the dragging functionality */}
         <div
           className="edit-icon"
           onClick={isEditing ? handleSave : handleEdit}
+          style={{
+            opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
+            cursor: !isEditing && isEmptyGoal(treeItem) ? 'not-allowed' : 'pointer'
+          }}
         >
           {isEditing ? (
             <MdCheckCircle size={ICON_SIZE} />
