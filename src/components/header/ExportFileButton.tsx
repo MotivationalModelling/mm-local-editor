@@ -1,10 +1,36 @@
-import { Dropdown, DropdownButton } from "react-bootstrap";
-import { useGraph } from "../context/GraphContext";
 import { Canvg } from 'canvg';
 import * as d3 from 'd3';
+import { useState } from "react";
+import { Dropdown, DropdownButton } from "react-bootstrap";
+import ErrorModal, { ErrorModalProps } from "../ErrorModal";
+import { useFileContext } from "../context/FileProvider";
+import { useGraph } from "../context/GraphContext";
 
 const ExportFileButton = () => {
 	const { graph } = useGraph(); // Use the context to get the graph instance
+	const { goals } = useFileContext(); // Get goals from file context
+	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
+		show: false,
+		title: "",
+		message: "",
+		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+	});
+
+	// Function to check if there are any goals with content
+	const hasGoalsWithContent = (): boolean => {
+		// Check if any goal in the goals object has non-empty content
+		return Object.values(goals).some(goal => goal.content.trim() !== "");
+	};
+
+	// Function to show error message when no goals are present
+	const showNoGoalsError = () => {
+		setErrorModal({
+			show: true,
+			title: "Cannot Export Model",
+			message: "No goals have been added. Please add at least one goal before exporting.",
+			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+		});
+	};
 
 	// Function to recentre the view
 	const recentreView = () => {
@@ -16,6 +42,12 @@ const ExportFileButton = () => {
 
 	// Function to export graph as an image
 	const exportGraphAsSVG = async () => {
+		// Check if there are any goals with content before proceeding
+		if (!hasGoalsWithContent()) {
+			showNoGoalsError();
+			return;
+		}
+
 		if (!graph) {
 			return;
 		}
@@ -76,6 +108,12 @@ const ExportFileButton = () => {
 
 	// Function to export graph as PNG
 	const exportGraphAsPNG = async () => {
+		// Check if there are any goals with content before proceeding
+		if (!hasGoalsWithContent()) {
+			showNoGoalsError();
+			return;
+		}
+
 		if (!graph) {
 			return;
 		}
@@ -160,10 +198,13 @@ const ExportFileButton = () => {
 	
 
 	return (
-		<DropdownButton variant="outline-primary" title="Export" drop="down">
-			<Dropdown.Item onClick={exportGraphAsPNG}>Export as PNG</Dropdown.Item>
-			<Dropdown.Item onClick={exportGraphAsSVG}>Export as SVG</Dropdown.Item>
-		</DropdownButton>
+		<>
+			<DropdownButton variant="outline-primary" title="Export" drop="down">
+				<Dropdown.Item onClick={exportGraphAsPNG}>Export as PNG</Dropdown.Item>
+				<Dropdown.Item onClick={exportGraphAsSVG}>Export as SVG</Dropdown.Item>
+			</DropdownButton>
+			<ErrorModal {...errorModal} />
+		</>
 	);
 };
 
