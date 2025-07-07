@@ -29,6 +29,16 @@ const SaveFileButton = () => {
 		});
 	};
 
+	// Function to show error message when file name is empty
+	const showEmptyFileNameError = () => {
+		setErrorModal({
+			show: true,
+			title: "Invalid File Name",
+			message: "Please enter the file name",
+			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+		});
+	};
+
 	async function triggerFileSave(
 		fileName: string,
 		fileType: "json"
@@ -102,7 +112,12 @@ const SaveFileButton = () => {
 			try {
 				// Pop-up for user to input file name
 				const fileName = prompt("Enter file name:");
-				if (!fileName) return;
+				
+				// Check if fileName is null, undefined, empty string, or only whitespace
+				if (!fileName || fileName.trim() === "") {
+					showEmptyFileNameError();
+					return;
+				}
 
 				// Create JSON file handle
 				await triggerFileSave(fileName, "json");
