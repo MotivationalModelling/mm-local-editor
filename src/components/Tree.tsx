@@ -11,6 +11,7 @@ import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
 import { Label } from "./context/FileProvider";
 import { useFileContext } from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
+import {isEmptyGoal,isTextEmpty} from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
 import {deleteGoal, setTreeData} from "./context/treeDataSlice.ts";
@@ -163,6 +164,11 @@ const Tree: React.FC<TreeProps> = ({
 
     // Handle when edit button clicked
     const handleEdit = () => {
+
+      // Handle when edit content is empty
+      if (isEmptyGoal(treeItem)){
+        return
+      }
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -175,7 +181,7 @@ const Tree: React.FC<TreeProps> = ({
 
     // Handle double click to start editing
     const handleDoubleClick = () => {
-      if (!isEditing) {
+      if (!isEditing && !isEmptyGoal(treeItem)) {
         handleEdit();
       }
     };
@@ -183,6 +189,11 @@ const Tree: React.FC<TreeProps> = ({
     // Handle saving edited text
     // Update the edited text in both the tree data and tab data
     const handleSave = () => {
+       if (isTextEmpty(editedText)) {
+        // Don't save empty content, just cancel editing
+        handleCancel();
+        return;
+      }
       handleSynTableTree(treeItem, editedText);
       setEditingItemId(null);
     };
