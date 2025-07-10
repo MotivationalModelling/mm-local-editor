@@ -53,7 +53,6 @@ const SaveFileButton = () => {
 						},
 					},
 				],
-				suggestedName: `${fileName}.json`,
 			});
 			const writable = await handle.createWritable();
 			await handleJSONFileInit(handle, writable);
