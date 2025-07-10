@@ -6,11 +6,14 @@ import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 
 const SaveFileButton = () => {
 	const { setJsonFileHandle, treeData, tabData, goals } = useFileContext();
+
+	const handleHideErrorModal = () => setErrorModal(prev => ({ ...prev, show: false }));
+
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
 		title: "",
 		message: "",
-		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+		onHide: handleHideErrorModal
 	});
 
 	// Function to check if there are any goals with content
