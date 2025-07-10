@@ -40,7 +40,7 @@ const SaveFileButton = () => {
 	};
 
 	async function triggerFileSave(
-		fileName: string,
+		_fileName: string,
 		fileType: "json"
 	): Promise<void> {
 		try {
@@ -87,13 +87,8 @@ const SaveFileButton = () => {
 		}
 
 		try {
-			const fileName = prompt("Enter file name:");
-			if (!fileName || fileName.trim() === "") {
-				showEmptyFileNameError();
-				return;
-			}
 			// Always show the save dialog, never reuse file handle
-			await triggerFileSave(fileName, "json");
+			await triggerFileSave("", "json");
 		} catch (error) {
 			console.error(`Error creating files: ${error}`);
 		}
