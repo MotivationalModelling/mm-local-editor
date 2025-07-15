@@ -310,7 +310,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 												onBlur={(event) => handleSave(row, event.target.value)}
 												ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
 												/>
-												{selectGoalsForLabel({treeData}, label).length > 1 && (
+												{selectGoalsForLabel({treeData}, label).length >= 1 && (
 												<Button className={styles.deleteButton}
 														onClick={() => handleDeleteRow(label, index, row)}>
 													<BsFillTrash3Fill />
