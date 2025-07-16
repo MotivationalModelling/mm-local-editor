@@ -1,7 +1,8 @@
-import React, {createContext, PropsWithChildren, useContext, useReducer, useState} from "react";
-import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import {createInitialState, treeDataSlice,createTabContentFromInitialTab} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType} from "../types.ts";
+import useLocalStorage from "../utils/useLocalStorage.tsx"
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -165,6 +166,8 @@ const typeMapping: Record<Label, GoalType> = {
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
 export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
+    console.log("goals: ",goals)
+    console.log("treeData: ",treeData)
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
         console.log("Converting type: ", goal.type, " to ", typeMapping[goal.type]);
@@ -185,17 +188,41 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
 const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     // const treeDataSlice = createTreeDataSlice();
     // XXX note: we should pass in initialTabs and tree if they exist in localStorage
-    const initialState = createInitialState(initialTabs, []);
+
+    const [treeData, setTreeData] = useLocalStorage<TreeItem[]>(
+        LocalStorageType.TREE,
+        []
+    );
+    const [tabData, setTabData] = useLocalStorage<typeof initialTabs>(
+        LocalStorageType.TAB,
+        initialTabs
+    );
+
+    const initialState = createInitialState(tabData, treeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
-  // const [treeData, setTreeData] = useLocalStorage<TreeItem[]>(
-  //   LocalStorageType.TREE,
-  //   []
-  // );
-  // const [tabData, setTabData] = useLocalStorage<TabContent[]>(
-  //   LocalStorageType.TAB,
-  //   initialTabs
-  // );
+
+    // // Listen to changes in redux state and write back to localStorage
+    useEffect(() => {
+        // Convert TreeNode[] to TreeItem[] for storage
+        // Here we map TreeNode.goalId to TreeItem from state.goals
+        const treeItems = state.tree.map(treeNode => {
+        return state.goals[treeNode.goalId];
+        }).filter(Boolean); // Remove undefined if any
+
+        setTreeData(treeItems);
+
+        // Convert Map<Label, TabContent> to InitialTab[] for storage
+        const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
+        label,
+        icon: tabContent.icon,
+        rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
+        }));
+
+        setTabData(tabsArray);
+    }, [state.tree, state.tabs, state.goals, setTreeData, setTabData]);
+
+
 
   const [xmlData, setXmlData] = useState("");
 

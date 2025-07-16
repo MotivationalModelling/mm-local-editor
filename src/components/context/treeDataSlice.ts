@@ -24,7 +24,7 @@ export const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
     }));
 };
 
-const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
+export const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
     label,
     icon,
     goalIds: rows.map((goal) => goal.id)
@@ -62,6 +62,8 @@ export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): Ta
 };
 
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
+    console.log("tabData: ",tabData)
+    console.log("treeData: ",treeData)
     const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);

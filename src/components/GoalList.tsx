@@ -11,6 +11,7 @@ import {TreeItem, useFileContext, newTreeItem, Label} from "./context/FileProvid
 
 import styles from "./TabButtons.module.css";
 import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
+import {isEmptyGoal,isGoalDraggable,isTextEmpty,handleGoalKeyPress,handleGoalBlur} from "../components/utils/GoalHint.tsx"
 import {addGoalToTab, deleteGoal, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
 type GoalListProps = {
@@ -36,6 +37,10 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		const {dispatch, tabs} = treeData;
 		const [activeKey, setActiveKey] = useState<Label>(tabs.keys().next().value ?? "Do");
 
+		// Add editing state for the input fields
+		const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
+		const [editedText, setEditedText] = useState<string>("");
+        const [newRowAllowed, setNewRowAllowed] = useState<boolean>(false);
 		const inputRef = useRef<HTMLInputElement>(null);
 
 		// Function to handle selecting a tab
@@ -47,6 +52,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 
+		// add new row 
 		const handleKeyPress = (
 			e: React.KeyboardEvent<HTMLInputElement>,
 			label: Label
@@ -106,7 +112,64 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		const handleSave = (treeItem: TreeItem, text: string) => {
 			handleSynTableTree(treeItem, text);
 		};
+		
+		// Handle key press with GoalHint functions
+		const handleTableKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, row: TreeItem, label: Label) => {
+			
+			// If we're editing this specific goal
+			if (editingGoalId === row.id && newRowAllowed === false) {
+				handleGoalKeyPress(
+					e,
+					row.content, // original content
+					editedText, // current content
+					(content) => {
+						// On save callback
+						dispatch(updateTextForGoalId({id: row.id, text: content}));
+						handleSave(row, content);
+						// allow creating a new roll after current roll is saved
+						setNewRowAllowed(true);
 
+					},
+					() => {
+						// On cancel callback
+						// empty or press esc will keep origjal item and stay on current row
+						setEditedText(row.content);
+						setNewRowAllowed(false);
+					}
+				);
+			} 
+			// enter to create new row
+			else if (newRowAllowed === true && e.key === "Enter") {
+				// Second Enter after completing edit - only create new row if current row is not empty
+				handleKeyPress(e, label);
+				setNewRowAllowed(false);
+				// setEditingGoalId(null); // Exit editing mode
+			} 
+		};
+
+		// Handle blur with GoalHint functions
+		const handleTableBlur = (row: TreeItem) => {
+			if (editingGoalId === row.id) {
+				handleGoalBlur(
+					row.content, // original content
+					editedText, // current content
+					(content) => {
+						// On save callback
+						dispatch(updateTextForGoalId({id: row.id, text: content}));
+						handleSave(row, content);
+						setEditingGoalId(null);
+					},
+					() => {
+						// On cancel callback
+						setEditingGoalId(null);
+						setEditedText(row.content);
+					}
+				);
+			} else {
+				// Fallback to original save behavior
+				handleSave(row, row.content);
+			}
+		};
 		const handleDeleteRow = (label: Label, index: number, row: TreeItem) => {
 			dispatch(deleteGoal(row));
 			// const newTabData = tabData.map((tab) => {
@@ -181,9 +244,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 
-		const isEmptyGoal = (goal: TreeItem): boolean => {
-			return !goal.content.trim();
-		};
+		// const isEmptyGoal = (goal: TreeItem): boolean => {
+		// 	return !goal.content.trim();
+		// };
 
 		const handleDeleteSelected = () => {
 			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
@@ -285,43 +348,48 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 											/>
 											</td>
 											<td>
-											<InputGroup>
-												<Form.Control
-												onDragStart={() => handleDragStart(row)}
-												draggable
-												type="text"
-												value={row.content}
-												onChange={(e) =>
-													dispatch(updateTextForGoalId({id: row.id, text: e.target.value}))
+										<InputGroup>
+										<Form.Control
+											onDragStart={() => handleDragStart(row)}
+											draggable={isGoalDraggable(row)} // Only draggable if not empty
+											type="text"
+											value={editingGoalId === row.id ? editedText : row.content} // Show edited text when editing
+											onChange={(e) => {
+												if (editingGoalId === row.id) {
+													setEditedText(e.target.value); // Allow free typing
 												}
-												placeholder={`Enter ${label}...`}
-												spellCheck
-												className={(isEmptyGoal(row)) ? "text-muted" : undefined}
-												// style={{
-												// 	color: isEmptyGoal(row) ? 'gray' : 'black',
-												// 	opacity: isEmptyGoal(row) ? 0.6 : 1,
-												// }}
-												onKeyDown={(e) =>
-													handleKeyPress(
-													e as React.KeyboardEvent<HTMLInputElement>,
-													label
-													)
+											}}
+											onFocus={() => {
+												// Start editing when focused
+												if (editingGoalId !== row.id) {
+													setEditingGoalId(row.id);
+													setEditedText(row.content);
 												}
-												onBlur={(event) => handleSave(row, event.target.value)}
-												ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
-												/>
-												{selectGoalsForLabel({treeData}, label).length >= 1 && (
-												<Button className={styles.deleteButton}
-														onClick={() => handleDeleteRow(label, index, row)}>
-													<BsFillTrash3Fill />
-													{/*<img*/}
-													{/*src={DeleteIcon}*/}
-													{/*alt="Delete"*/}
-													{/*className={styles.deleteIcon}*/}
-													{/*/>*/}
-												</Button>
-												)}
-											</InputGroup>
+											}}
+											placeholder={`Enter ${label}...`}
+											spellCheck
+											className={`
+												${isEmptyGoal(row) ? "text-muted" : ""}
+												${editingGoalId === row.id && isTextEmpty(editedText) ? "is-invalid" : ""}
+											`.trim()}
+											onKeyDown={(e) => handleTableKeyPress(e as React.KeyboardEvent<HTMLInputElement>, row, label)}
+											onBlur={() => handleTableBlur(row)}
+											ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
+										/>
+
+										{selectGoalsForLabel({treeData}, label).length > 1 && (
+											<Button className={styles.deleteButton}
+													onClick={() => handleDeleteRow(label, index, row)}>
+												<BsFillTrash3Fill />
+											</Button>
+										)}
+										
+										{editingGoalId === row.id && isTextEmpty(editedText) && (
+											<div className="invalid-feedback d-block">
+												Content cannot be empty
+											</div>
+										)}
+									</InputGroup>
 											</td>
 										</tr>
 										))}
