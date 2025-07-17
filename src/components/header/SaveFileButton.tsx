@@ -1,11 +1,11 @@
-import { get, set } from "idb-keyval";
 import { useState } from "react";
 import { Button } from "react-bootstrap";
-import { DataType, JSONData, useFileContext } from "../context/FileProvider";
+import { JSONData, useFileContext } from "../context/FileProvider";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 
 const SaveFileButton = () => {
 	const { setJsonFileHandle, treeData, tabData, goals } = useFileContext();
+
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
 		title: "",
@@ -40,7 +40,7 @@ const SaveFileButton = () => {
 	};
 
 	async function triggerFileSave(
-		fileName: string,
+		_fileName: string,
 		fileType: "json"
 	): Promise<void> {
 		try {
@@ -53,7 +53,7 @@ const SaveFileButton = () => {
 						},
 					},
 				],
-				suggestedName: `${fileName}.json`,
+				suggestedName: `Model.json`
 			});
 			const writable = await handle.createWritable();
 			await handleJSONFileInit(handle, writable);
@@ -68,7 +68,6 @@ const SaveFileButton = () => {
 		writable: FileSystemWritableFileStream
 	) => {
 		try {
-			console.log(handle);
 			const jsonData: JSONData = {
 				tabData: tabData,
 				treeData: treeData || [],
@@ -76,56 +75,23 @@ const SaveFileButton = () => {
 			const json = JSON.stringify(jsonData);
 			await writable.write(json);
 			await writable.close();
-			// Save JSON file handle to IndexedDB
-			set(DataType.JSON, handle);
 			setJsonFileHandle(handle);
 		} catch (error) {
 			console.log(`Error initialize JSON File: ${error}`);
 		}
 	};
 
-	const saveJson = async (handle: FileSystemFileHandle) => {
-		// Use the created/selected file handle to have write access to the local file
-		try {
-			const writable = await handle.createWritable();
-			const jsonData: JSONData = {
-				tabData: tabData,
-				treeData: treeData,
-			};
-			const json = JSON.stringify(jsonData);
-			await writable.write(json);
-			await writable.close();
-		} catch (error) {
-			console.error("Error saving content to file:", error);
-		}
-	};
 	const handleBtnClick = async () => {
-		// Check if there are any goals with content before proceeding
 		if (!hasGoalsWithContent()) {
 			showNoGoalsError();
 			return;
 		}
 
-		const jsonHandle = await get(DataType.JSON);
-		console.log(jsonHandle);
-		if (!jsonHandle) {
-			try {
-				// Pop-up for user to input file name
-				const fileName = prompt("Enter file name:");
-				
-				// Check if fileName is null, undefined, empty string, or only whitespace
-				if (!fileName || fileName.trim() === "") {
-					showEmptyFileNameError();
-					return;
-				}
-
-				// Create JSON file handle
-				await triggerFileSave(fileName, "json");
-			} catch (error) {
-				console.error(`Error creating files: ${error}`);
-			}
-		} else {
-			await saveJson(jsonHandle);
+		try {
+			// Always show the save dialog, never reuse file handle
+			await triggerFileSave("", "json");
+		} catch (error) {
+			console.error(`Error creating files: ${error}`);
 		}
 	};
 	// className="m-2"
