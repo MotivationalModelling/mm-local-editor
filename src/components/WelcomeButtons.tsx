@@ -26,6 +26,27 @@ const defaultModalState: ErrorModalProps = {
 // File handle preserve on page refresh
 // https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
 
+// Helper to convert TabContent[] to InitialTab[] using all goals from treeData
+function convertTabContentToInitialTab(tabData, treeData) {
+	// Build a map of all goals by id
+	const allGoals = {};
+	(treeData || []).forEach(goal => {
+		allGoals[goal.id] = goal;
+		const addChildren = (children) => {
+			(children || []).forEach(child => {
+				allGoals[child.id] = child;
+				addChildren(child.children);
+			});
+		};
+		addChildren(goal.children);
+	});
+	return (tabData || []).map(tab => ({
+		label: tab.label,
+		icon: tab.icon,
+		rows: (tab.goalIds || []).map(id => allGoals[id]).filter(Boolean),
+	}));
+}
+
 const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
 	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
@@ -36,9 +57,8 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	const navigate = useNavigate();
 
-	const { setJsonFileHandle, setTabData, setTreeData } = useFileContext();
+	const { setJsonFileHandle, dispatch } = useFileContext();
 
-	// Handle after select JSON file
 	const handleJSONFileSetup = async (handle: FileSystemFileHandle) => {
 		try {
 			await handle.createWritable();
@@ -46,16 +66,20 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			const fileContent = await file.text();
 			if (fileContent) {
 				const convertedJsonData: JSONData = JSON.parse(fileContent);
-				setTabData(convertedJsonData.tabData);
-				setTreeData(convertedJsonData.treeData);
+				const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
+				dispatch({
+					type: "treeData/reset",
+					payload: {
+						tabData: initialTabs,
+						treeData: convertedJsonData.treeData,
+					},
+				});
 			} else {
 				console.log("File can't be read and parsed");
 			}
-			// Save JSON file handle to IndexedDB
 			set(DataType.JSON, handle);
 			setJsonFileHandle(handle);
 		} catch (error) {
-			// If user cancel the permission of writing files, remove the uploaded file
 			if (error instanceof DOMException) {
 				setJsonFile(null);
 			}
@@ -63,7 +87,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		}
 	};
 
-	// Handle JSON file drop
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		try {
@@ -125,8 +148,14 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				const fileContent = await file.text();
 				if (fileContent) {
 					const convertedJsonData: JSONData = JSON.parse(fileContent);
-					setTabData(convertedJsonData.tabData);
-					setTreeData(convertedJsonData.treeData);
+					const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
+					dispatch({
+						type: "treeData/reset",
+						payload: {
+							tabData: initialTabs,
+							treeData: convertedJsonData.treeData,
+						},
+					});
 				} else {
 					console.log("File can't be read and parsed");
 				}
