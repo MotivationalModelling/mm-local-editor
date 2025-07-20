@@ -130,6 +130,32 @@ export const treeDataSlice = createSlice({
             const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData)
                 : createInitialState(initialTabs, []);
             Object.assign(state, initialState);
+        },
+        loadFromFile: (state, action: PayloadAction<any>) => {
+            const fileContent = action.payload;
+            if (!fileContent) return;
+
+            let { tabData, treeData } = fileContent;
+            if (tabData && tabData.length > 0 && tabData[0].goalIds) {
+                const allGoals: Record<number, TreeItem> = {};
+                (treeData || []).forEach((goal: TreeItem) => {
+                    allGoals[goal.id] = goal;
+                    const addChildren = (children?: TreeItem[]) => {
+                        (children || []).forEach((child: TreeItem) => {
+                            allGoals[child.id] = child;
+                            addChildren(child.children);
+                        });
+                    };
+                    addChildren(goal.children);
+                });
+                tabData = tabData.map((tab: any) => ({
+                    label: tab.label,
+                    icon: tab.icon,
+                    rows: (tab.goalIds || []).map((id: number) => allGoals[id]).filter(Boolean),
+                }));
+            }
+            const initialState = createInitialState(tabData || initialTabs, treeData || []);
+            Object.assign(state, initialState);
         }
     },
     extraReducers: (builder) => {
@@ -146,6 +172,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset, loadFromFile} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

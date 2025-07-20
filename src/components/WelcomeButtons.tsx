@@ -36,9 +36,8 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	const navigate = useNavigate();
 
-	const { setJsonFileHandle, setTabData, setTreeData } = useFileContext();
+	const { setJsonFileHandle, dispatch } = useFileContext();
 
-	// Handle after select JSON file
 	const handleJSONFileSetup = async (handle: FileSystemFileHandle) => {
 		try {
 			await handle.createWritable();
@@ -46,16 +45,16 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 			const fileContent = await file.text();
 			if (fileContent) {
 				const convertedJsonData: JSONData = JSON.parse(fileContent);
-				setTabData(convertedJsonData.tabData);
-				setTreeData(convertedJsonData.treeData);
+				dispatch({
+					type: "treeData/loadFromFile",
+					payload: convertedJsonData,
+				});
 			} else {
 				console.log("File can't be read and parsed");
 			}
-			// Save JSON file handle to IndexedDB
 			set(DataType.JSON, handle);
 			setJsonFileHandle(handle);
 		} catch (error) {
-			// If user cancel the permission of writing files, remove the uploaded file
 			if (error instanceof DOMException) {
 				setJsonFile(null);
 			}
@@ -125,8 +124,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				const fileContent = await file.text();
 				if (fileContent) {
 					const convertedJsonData: JSONData = JSON.parse(fileContent);
-					setTabData(convertedJsonData.tabData);
-					setTreeData(convertedJsonData.treeData);
+					dispatch({
+						type: "treeData/loadFromFile",
+						payload: convertedJsonData,
+					});
 				} else {
 					console.log("File can't be read and parsed");
 				}
