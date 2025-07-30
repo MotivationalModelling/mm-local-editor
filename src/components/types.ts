@@ -14,8 +14,9 @@ export interface Goal extends GoalBase {
 }
 
 export interface GlobObject {
-    [key: string]: string[];
-  }
+  [key: string]: Array<{ id: number; content: string }>;
+}
+
 
 export interface ClusterGoal extends GoalBase {
     SubGoals: ClusterGoal[]

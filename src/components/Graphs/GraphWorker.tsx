@@ -15,8 +15,9 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import {useRef, useEffect, useMemo, useCallback} from "react";
+import {useRef, useEffect, useMemo, useCallback,useState} from "react";
 import {Container, Row, Col} from "react-bootstrap";
+import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
 import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
 import "./GraphWorker.css";
 import {
@@ -73,6 +74,12 @@ const GraphWorker: React.FC = () => {
   );
   const hasFunctionalGoalInCluster = useMemo<boolean>(() => hasFunctionalGoal(cluster), [cluster]);
 
+  const [errorModal, setErrorModal] = useState<ErrorModalProps>({
+    show: false,
+    title: "",
+    message: "",
+    onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
+  });
    // Function to reset the graph to empty
   //  const resetEmptyGraph = () => {
   //   if (graph) {
@@ -178,7 +185,8 @@ const GraphWorker: React.FC = () => {
         try {
           const changes = evt.getProperty("edit").changes;
           for (let i = 0; i < changes.length; i++) {
-            if (changes[i].constructor.name == "GeometryChange") {
+            const change = changes[i];
+            if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
 
@@ -218,13 +226,52 @@ const GraphWorker: React.FC = () => {
                 cellHistory[cellID] = [newWidth, newHeight];
               }
             }
+            else if (change.constructor.name == "ValueChange") {
+              const cell: Cell = change.cell;
+              // goal id
+              const cellID = cell.getId()?.split(",") ?? [];
+              // goal value
+              const newContent = change.value.split(",");
+
+              const lengthUpdated = cellID.length
+              // Check if the number of items matches
+              if (lengthUpdated !== newContent.length) {
+                graph.getDataModel().setValue(cell, change.previous);
+                setErrorModal({
+                  show: true,
+                  title: "Input Error",
+                  message: `Please provide ${lengthUpdated} items split by comma`,
+                  onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+                });
+              } else {
+                for (let i = 0; i < lengthUpdated; i++) {
+                  const id = Number(cellID[i]);
+                  const text = newContent[i].trim("");
+
+                  console.log("FileProvider state updated: cellid: ", id);
+                  console.log("FileProvider state updated: content: ", text);
+
+                  dispatch({
+                    type: "treeData/updateTextForGoalId",
+                    payload: {
+                      id,
+                      text,
+                    },
+                  });
+                }
+              }
+
+
+            }
           }
+
         } finally {
+          console.log("no")
           graph.getDataModel().endUpdate();
           graph.refresh();
         }
       });
-  }, []);
+  }, [dispatch]);
 
   /**
    * Support Functions
@@ -446,6 +493,7 @@ const GraphWorker: React.FC = () => {
       <ResetGraphButton resetEmptyGraph={() => dispatch(reset())}
                         resetDefaultGraph={() => dispatch(reset({treeData: [], tabData: initialTabs}))}/>
       <ScaleTextButton></ScaleTextButton>
+      <ErrorModal {...errorModal} />
       <Container>
         <Row className="row">
           <Col md={11}>
