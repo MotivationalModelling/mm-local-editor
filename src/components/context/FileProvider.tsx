@@ -166,11 +166,10 @@ const typeMapping: Record<Label, GoalType> = {
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
 export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
-    console.log("goals: ",goals)
-    console.log("treeData: ",treeData)
+
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
-        console.log("Converting type: ", goal.type, " to ", typeMapping[goal.type]);
+
         return {
             GoalID: item.goalId,
             GoalType: typeMapping[goal.type],
@@ -201,6 +200,10 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const initialState = createInitialState(tabData, treeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
+
+    useEffect(() => {
+        console.log("FileProvider state updated:", state);
+        }, [state]);
 
     // // Listen to changes in redux state and write back to localStorage
     useEffect(() => {

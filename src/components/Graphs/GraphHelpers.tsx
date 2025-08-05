@@ -1,10 +1,10 @@
 import {
-    Graph,
-    Rectangle,
-    Cell,
-  } from "@maxgraph/core";
+  Graph,
+  Rectangle,
+  Cell,
+} from "@maxgraph/core";
 import { ClusterGoal, GlobObject } from "../types.ts";
-import {GoalModelLayout} from "./GoalModelLayout";
+import { GoalModelLayout } from "./GoalModelLayout";
 
 
 // ---------------------------------------------------------------------------
@@ -102,6 +102,7 @@ export const renderGoals = (
   for (let i = 0; i < goals.length; i++) {
     const goal = goals[i];
     const type = goal.GoalType;
+    const id = goal.GoalID
     const content = goal.GoalContent;
     // recurse over functional goals
     console.log("Render goals type:", type);
@@ -119,13 +120,13 @@ export const renderGoals = (
 
       // accumulate non-functional descriptions into buckets
     } else if (type === EMOTIONAL_TYPE) {
-      emotions.push(content);
+      emotions.push({id,content});
     } else if (type === NEGATIVE_TYPE) {
-      concerns.push(content);
+      concerns.push({id,content});
     } else if (type === QUALITY_TYPE) {
-      qualities.push(content);
+      qualities.push({id,content});
     } else if (type === STAKEHOLDER_TYPE) {
-      stakeholders.push(content);
+      stakeholders.push({id,content});
     } else {
       console.log("Logging: goal of unknown type received: " + type);
     }
@@ -142,7 +143,7 @@ export const renderGoals = (
   // Store non-functional goals using the determined key
   if (emotions.length) {
     console.log("emotions key value: ", key);
-    console.log("emotions length: ", emotions.length);
+    console.log("emotions length: ", emotions);
     if (emotionsGlob[key]) {
       emotionsGlob[key] = emotionsGlob[key].concat(emotions);
     } else {
@@ -193,7 +194,7 @@ export const renderFunction = (
 ) => {
 
   const arr = goal.GoalContent.split(" ");
-  
+
   // Dynamically set size, based on source (parent) size
   let width = SYMBOL_WIDTH;
   let height = SYMBOL_HEIGHT;
@@ -207,7 +208,7 @@ export const renderFunction = (
 
   // Get default style from the stylesheet and clone
   // If not cloned, will affect all nodes instead.
-  const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+  const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
 
   // Make sure to specify what image we're drawing
   style.image = PARALLELOGRAM_PATH;
@@ -215,7 +216,7 @@ export const renderFunction = (
   // insert new vertex and edge into graph
   const node = graph.insertVertex(
     null,
-    null,
+    String(goal.GoalID), // give goal id
     arr.join("\n"),
     SYMBOL_X_COORD,
     SYMBOL_Y_COORD,
@@ -324,7 +325,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
   let adjusted = false;
   let iterations = 0;
   const maxIterations = 100;
-  const adjustmentStep = 10; 
+  const adjustmentStep = 10;
 
   // Create a bounding box for the current node
   const nodeBox = new Rectangle(nodeGeo.x, nodeGeo.y, nodeGeo.width, nodeGeo.height);
@@ -337,7 +338,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
       // Determine the direction to move the node to avoid overlap
       if (nodeBox.x < sourceBox.x) {
         nodeGeo.x = sourceBox.x - nodeBox.width - adjustmentStep; // Move left
-      } 
+      }
       else {
         nodeGeo.x = sourceBox.x + sourceBox.width + adjustmentStep; // Move right
       }
@@ -356,7 +357,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-  descriptions: string[],
+  descriptions: Array<{ id: number; content: string }>,
   graph: Graph,
   source: Cell | null = null,
   type: string = "None"
@@ -384,7 +385,7 @@ export const renderNonFunction = (
       width *= SW_EMOTIONAL;
       height *= SH_EMOTIONAL;
       x = geo.x + width + OFFSET_X;
-      y = geo.y - height - OFFSET_Y ;
+      y = geo.y - height - OFFSET_Y;
       delimiter = ",\n";
       break;
     case NEGATIVE_TYPE: // Bottom Right
@@ -427,11 +428,12 @@ export const renderNonFunction = (
     style.verticalLabelPosition = "bottom";
   }
 
+  console.log("description: ", descriptions)
   // Insert the vertex
   const node = graph.insertVertex(
     null,
-    null,
-    descriptions.join(delimiter),
+    descriptions.map(x => x.id).join(delimiter),
+    descriptions.map(x => x.content).join(delimiter),
     x,
     y,
     width,
@@ -464,7 +466,7 @@ export const renderNonFunction = (
 
   //const siblingNodes = source.getConnections();
   console.log("siblings: ", siblingNodes);
-  
+
   adjustHorizontalPositions(node, source, graph);
   adjustVerticalPositions(node, siblingNodes, graph);
 };
@@ -473,96 +475,96 @@ export const renderNonFunction = (
    * Render Legend for the graph at the top right corner
    */
 export const renderLegend = (graph: Graph): Cell => {
-    const legendItems: string[] = [
-      STAKEHOLDER_TYPE,
-      FUNCTIONAL_TYPE,
-      QUALITY_TYPE,
-      EMOTIONAL_TYPE,
-      NEGATIVE_TYPE,
-    ];
-    const fWidth = SYMBOL_WIDTH * 0.4;
-    const fHeight = SYMBOL_HEIGHT * 0.4;
-    const startX = -graph.view.translate.x + graph.view.graphBounds.width + 30;
-    const startY = -graph.view.translate.y;
+  const legendItems: string[] = [
+    STAKEHOLDER_TYPE,
+    FUNCTIONAL_TYPE,
+    QUALITY_TYPE,
+    EMOTIONAL_TYPE,
+    NEGATIVE_TYPE,
+  ];
+  const fWidth = SYMBOL_WIDTH * 0.4;
+  const fHeight = SYMBOL_HEIGHT * 0.4;
+  const startX = -graph.view.translate.x + graph.view.graphBounds.width + 30;
+  const startY = -graph.view.translate.y;
 
-    const legend = graph.insertVertex(
-      null,
-      null,
-      null,
-      startX,
-      startY,
-      fWidth * 1.5,
-      fHeight * legendItems.length * 1.5,
-      { shape: "rect", strokeColor: "black", fillColor: "transparent" }
-    );
+  const legend = graph.insertVertex(
+    null,
+    null,
+    null,
+    startX,
+    startY,
+    fWidth * 1.5,
+    fHeight * legendItems.length * 1.5,
+    { shape: "rect", strokeColor: "black", fillColor: "transparent" }
+  );
 
-    legendItems.forEach((type, index) => {
-      let desc;
-      let image;
-      const width = fWidth;
-      const height = fHeight;
+  legendItems.forEach((type, index) => {
+    let desc;
+    let image;
+    const width = fWidth;
+    const height = fHeight;
 
-      switch (type) {
-        case FUNCTIONAL_TYPE:
-          desc = "Do";
-          image = PARALLELOGRAM_PATH;
-          break;
-        case EMOTIONAL_TYPE:
-          desc = "Feel";
-          image = HEART_PATH;
-          break;
-        case NEGATIVE_TYPE:
-          desc = "Concern";
-          image = NEGATIVE_PATH;
-          break;
-        case QUALITY_TYPE:
-          desc = "Be";
-          image = CLOUD_PATH;
-          break;
-        case STAKEHOLDER_TYPE:
-          desc = "Who";
-          image = PERSON_PATH;
-          break;
+    switch (type) {
+      case FUNCTIONAL_TYPE:
+        desc = "Do";
+        image = PARALLELOGRAM_PATH;
+        break;
+      case EMOTIONAL_TYPE:
+        desc = "Feel";
+        image = HEART_PATH;
+        break;
+      case NEGATIVE_TYPE:
+        desc = "Concern";
+        image = NEGATIVE_PATH;
+        break;
+      case QUALITY_TYPE:
+        desc = "Be";
+        image = CLOUD_PATH;
+        break;
+      case STAKEHOLDER_TYPE:
+        desc = "Who";
+        image = PERSON_PATH;
+        break;
+    }
+
+    graph.insertVertex(
+      legend,
+      null,
+      desc,
+      fWidth * 0.25,
+      fHeight * 1.5 * index,
+      width,
+      height,
+      {
+        fontSize: VERTEX_FONT_SIZE,
+        fontColor: "black",
+        shape: "image",
+        image: image,
+        verticalAlign: "top",
+        verticalLabelPosition: "bottom",
       }
-
-      graph.insertVertex(
-        legend,
-        null,
-        desc,
-        fWidth * 0.25,
-        fHeight * 1.5 * index,
-        width,
-        height,
-        {
-          fontSize: VERTEX_FONT_SIZE,
-          fontColor: "black",
-          shape: "image",
-          image: image,
-          verticalAlign: "top",
-          verticalLabelPosition: "bottom",
-        }
-      );
-    });
-    
-    return legend;
-  };
-
- /**
-   * Automatically lays-out the functional hierarchy of the graph.
-   */
-export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
-    const layout = new GoalModelLayout(
-      graph,
-      VERTICAL_SPACING,
-      HORIZONTAL_SPACING
     );
-    layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
-  };
+  });
 
-  /**
-   * Adds non-functional goals into the hierarchy next to their associated
-   * functional goals.
-   */
+  return legend;
+};
+
+/**
+  * Automatically lays-out the functional hierarchy of the graph.
+  */
+export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
+  const layout = new GoalModelLayout(
+    graph,
+    VERTICAL_SPACING,
+    HORIZONTAL_SPACING
+  );
+  layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
+};
+
+/**
+ * Adds non-functional goals into the hierarchy next to their associated
+ * functional goals.
+ */
 export const associateNonFunctions = (
   graph: Graph,
   rootGoal: Cell | null,
@@ -576,6 +578,7 @@ export const associateNonFunctions = (
   const goals = graph.getChildVertices();
 
   for (let i = 0; i < goals.length; i++) {
+
     const goal = goals[i];
     const value = goal.value;
     console.log("Associate: ", i, ", ", value);
@@ -613,8 +616,8 @@ export const associateNonFunctions = (
     if (qualitiesGlob[value]) {
       renderNonFunction(
         qualitiesGlob[goal.value],
-        graph, 
-        goal, 
+        graph,
+        goal,
         QUALITY_TYPE
       );
     }
