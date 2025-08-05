@@ -6,27 +6,19 @@ import {
 import { ClusterGoal, GlobObject } from "../types.ts";
 import { GoalModelLayout } from "./GoalModelLayout";
 
+import {
+  VERTEX_FONT,
+  SYMBOL_WIDTH,
+  SYMBOL_HEIGHT,
+  SYMBOL_CONFIGS,
+  SymbolKey
+} from "../utils/GraghConstants";
+
+import { getSymbolKeyByType } from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
-// paths to the image
-const HEART_PATH = "img/Heart.png";
-const PARALLELOGRAM_PATH = "img/Function.png";
-const NEGATIVE_PATH = "img/Risk.png";
-const CLOUD_PATH = "img/Cloud.png";
-const PERSON_PATH = "img/Stakeholder.png";
-
 // some image path
 // const PATH_EDGE_HANDLER_ICON = "img/link.png";
-
-// default width/height of the root goal in the graph
-const SYMBOL_WIDTH = 145;
-const SYMBOL_HEIGHT = 110;
-
-// default 
-const SH_FUNCTIONAL = 0.8;
-
-// vertex default font size
-const VERTEX_FONT_SIZE = 16;
 
 // default x,y coordinates of the root goal in the graph - (functional graph)
 const SYMBOL_X_COORD = 0;
@@ -35,22 +27,6 @@ const SYMBOL_Y_COORD = 0;
 // scale factor for sizing child goals in the functional hierarchy; functional
 //   goals at each layer should be slightly smaller than their parents
 const CHILD_SIZE_SCALE = 0.9;
-
-// scale factor for sizing functional goals
-const SH_PREFERRED = 1.1;
-const SW_PREFERRED = 1.4;
-const SH_FONT = 2.375; //scale factor for height base on font size
-
-// scale factors for non-functional goals; these scale factors are relative
-//   to the size of the associated functional goal
-const SW_EMOTIONAL = 0.9;
-const SH_EMOTIONAL = 0.96;
-const SW_QUALITY = 1;
-const SH_QUALITY = 0.8;
-const SW_NEGATIVE = 0.9;
-const SH_NEGATIVE = 0.96;
-const SW_STAKEHOLDER = 1;
-const SH_STAKEHOLDER = 1.2;
 
 // preferred vertical and horizontal spacing between functional goals; note
 //   the autolayout won't always accomodate these - it will depend on the
@@ -61,23 +37,6 @@ const HORIZONTAL_SPACING = 100;
 // Offset from functional goal with associated non-functional goal
 const OFFSET_X = 20;
 const OFFSET_Y = 20;
-
-// Define shape type
-const FUNCTIONAL_TYPE = "Functional";
-const EMOTIONAL_TYPE = "Emotional";
-const NEGATIVE_TYPE = "Negative";
-const QUALITY_TYPE = "Quality";
-const STAKEHOLDER_TYPE = "Stakeholder";
-
-// Define shapes
-import {
-  NEGATIVE_SHAPE,
-  PERSON_SHAPE,
-  CLOUD_SHAPE,
-  PARALLELOGRAM_SHAPE,
-  HEART_SHAPE,
-} from "./GraphShapes";
-
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -118,7 +77,7 @@ export const renderGoals = (
     const content = goal.GoalContent;
     // recurse over functional goals
     console.log("Render goals type:", type);
-    if (type === FUNCTIONAL_TYPE) {
+    if (type === SYMBOL_CONFIGS.FUNCTIONAL.type) {
       renderFunction(
         goal,
         graph,
@@ -131,13 +90,13 @@ export const renderGoals = (
       );
 
       // accumulate non-functional descriptions into buckets
-    } else if (type === EMOTIONAL_TYPE) {
+    } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
       emotions.push({id,content});
-    } else if (type === NEGATIVE_TYPE) {
+    } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
       concerns.push({id,content});
-    } else if (type === QUALITY_TYPE) {
+    } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
       qualities.push({id,content});
-    } else if (type === STAKEHOLDER_TYPE) {
+    } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
       stakeholders.push({id,content});
     } else {
       console.log("Logging: goal of unknown type received: " + type);
@@ -204,6 +163,7 @@ export const renderFunction = (
   qualitiesGlob: GlobObject,
   stakeholdersGlob: GlobObject
 ) => {
+  const config = SYMBOL_CONFIGS.FUNCTIONAL;
 
   const arr = goal.GoalContent.split(" ");
 
@@ -223,7 +183,7 @@ export const renderFunction = (
   const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
 
   // Make sure to specify what shape we're drawing
-  style.shape = PARALLELOGRAM_SHAPE;
+  style.shape = config.shape;
 
   // insert new vertex and edge into graph
   const node = graph.insertVertex(
@@ -248,15 +208,15 @@ export const renderFunction = (
   const node_geo = node.getGeometry();
   const preferred = graph.getPreferredSizeForCell(node); //getPreferredSizeForCell only works for width
   if (node_geo && preferred) {
-    node_geo.height = arr.length * VERTEX_FONT_SIZE * SH_FONT; //get height base on the number of lines in goal text and font size
+    node_geo.height = arr.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight; //get height base on the number of lines in goal text and font size
     node_geo.width = Math.max(
       node_geo.height,
-      preferred.width * SW_PREFERRED,
+      preferred.width * config.scale.width,
       width
     );
     node_geo.height = Math.max(
       node_geo.height,
-      preferred.width * SH_PREFERRED,
+      preferred.height * config.scale.height,
       height
     );
   }
@@ -391,39 +351,40 @@ export const renderNonFunction = (
   let shape = "";
 
   // Set the position and size based on the type of non-functional goal
-  switch (type) {
-    case EMOTIONAL_TYPE: // Top Right
-      shape = HEART_SHAPE;
-      width *= SW_EMOTIONAL;
-      height *= SH_EMOTIONAL;
-      x = geo.x + width + OFFSET_X;
-      y = geo.y - height - OFFSET_Y;
-      delimiter = ",\n";
-      break;
-    case NEGATIVE_TYPE: // Bottom Right
-      shape = NEGATIVE_SHAPE;
-      width *= SW_NEGATIVE;
-      height *= SH_NEGATIVE;
-      x = geo.x + width + OFFSET_X;
-      y = geo.y + OFFSET_Y;
-      delimiter = ",\n";
-      break;
-    case QUALITY_TYPE: // Top Left
-      shape = CLOUD_SHAPE;
-      width *= SW_QUALITY;
-      height *= SH_QUALITY;
-      x = geo.x - width - OFFSET_X;
-      y = geo.y - height - OFFSET_Y;
-      delimiter = ",\n";
-      break;
-    case STAKEHOLDER_TYPE: // Bottom Left
-      shape = PERSON_SHAPE;
-      width *= SW_STAKEHOLDER;
-      height *= SH_STAKEHOLDER;
-      x = geo.x - width - OFFSET_X;
-      y = geo.y + OFFSET_Y;
-      delimiter = "\n";
-      break;
+  // Get symbol key and config
+  const symbolKey = getSymbolKeyByType(type);
+
+  if (symbolKey) {
+    const config = SYMBOL_CONFIGS[symbolKey];
+    shape = config.shape;
+    width *= config.scale.width;
+    height *= config.scale.height;
+
+    // Set the position and delimiter based on symbol type
+    switch (symbolKey) {
+      case "EMOTIONAL": // Top Right
+        x = geo.x + width + OFFSET_X;
+        y = geo.y - height - OFFSET_Y;
+        delimiter = ",\n";
+        break;
+      case "NEGATIVE": // Bottom Right
+        x = geo.x + width + OFFSET_X;
+        y = geo.y + OFFSET_Y;
+        delimiter = ",\n";
+        break;
+      case "QUALITY": // Top Left
+        x = geo.x - width - OFFSET_X;
+        y = geo.y - height - OFFSET_Y;
+        delimiter = ",\n";
+        break;
+      case "STAKEHOLDER": // Bottom Left
+        x = geo.x - width - OFFSET_X;
+        y = geo.y + OFFSET_Y;
+        delimiter = "\n";
+        break;
+    }
+  } else {
+    console.warn(`Unknown type "${type}" — no matching symbol config found.`);
   }
 
   // Clone style to avoid modifying the default
@@ -435,7 +396,7 @@ export const renderNonFunction = (
   style.spacingTop = -10;
 
   // Text goes at bottom for stakeholder
-  if (type === STAKEHOLDER_TYPE) {
+  if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
     style.verticalAlign = "top";
     style.verticalLabelPosition = "bottom";
   }
@@ -461,9 +422,9 @@ export const renderNonFunction = (
   const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
   if (nodeGeo && preferred) {
     // Adjust height based on the number of lines and font size
-    nodeGeo.height = descriptions.length * VERTEX_FONT_SIZE * SH_FONT;
-    nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SW_PREFERRED, width);
-    nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SH_PREFERRED, height);
+    nodeGeo.height = descriptions.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;;
+    nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
+    nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
   }
 
   // Note for future: There must be some API that does this
@@ -487,12 +448,12 @@ export const renderNonFunction = (
    * Render Legend for the graph at the top right corner
    */
 export const renderLegend = (graph: Graph): Cell => {
-  const legendItems: string[] = [
-    STAKEHOLDER_TYPE,
-    FUNCTIONAL_TYPE,
-    QUALITY_TYPE,
-    EMOTIONAL_TYPE,
-    NEGATIVE_TYPE,
+  const legendTypes: SymbolKey[] = [
+    "STAKEHOLDER",
+    "FUNCTIONAL",
+    "QUALITY",
+    "EMOTIONAL",
+    "NEGATIVE",
   ];
   const fWidth = SYMBOL_WIDTH * 0.4;
   const fHeight = SYMBOL_HEIGHT * 0.4;
@@ -506,52 +467,29 @@ export const renderLegend = (graph: Graph): Cell => {
     startX,
     startY,
     fWidth * 1.5,
-    fHeight * legendItems.length * 1.5,
+    fHeight * legendTypes.length * 1.5,
     { shape: "rect", strokeColor: "black", fillColor: "transparent" }
   );
 
-  legendItems.forEach((type, index) => {
-    let desc;
-    let image;
+  legendTypes.forEach((symbolKey, index) => {
     const width = fWidth;
     const height = fHeight;
 
-    switch (type) {
-      case FUNCTIONAL_TYPE:
-        desc = "Do";
-        image = PARALLELOGRAM_PATH;
-        break;
-      case EMOTIONAL_TYPE:
-        desc = "Feel";
-        image = HEART_PATH;
-        break;
-      case NEGATIVE_TYPE:
-        desc = "Concern";
-        image = NEGATIVE_PATH;
-        break;
-      case QUALITY_TYPE:
-        desc = "Be";
-        image = CLOUD_PATH;
-        break;
-      case STAKEHOLDER_TYPE:
-        desc = "Who";
-        image = PERSON_PATH;
-        break;
-    }
+    const config = SYMBOL_CONFIGS[symbolKey];
 
     graph.insertVertex(
       legend,
       null,
-      desc,
+      config.label,
       fWidth * 0.25,
       fHeight * 1.5 * index,
       width,
       height,
       {
-        fontSize: VERTEX_FONT_SIZE,
-        fontColor: "black",
+        fontSize: VERTEX_FONT.size,
+        fontColor: VERTEX_FONT.color,
         shape: "image",
-        image: image,
+        image: config.imagePath,
         verticalAlign: "top",
         verticalLabelPosition: "bottom",
       }
@@ -601,7 +539,7 @@ export const associateNonFunctions = (
         negativesGlob[goal.value],
         graph,
         goal,
-        NEGATIVE_TYPE
+        SYMBOL_CONFIGS.NEGATIVE.type
       );
     }
     // render all stakeholders
@@ -610,7 +548,7 @@ export const associateNonFunctions = (
         stakeholdersGlob[goal.value],
         graph,
         goal,
-        STAKEHOLDER_TYPE
+        SYMBOL_CONFIGS.STAKEHOLDER.type
       );
     }
 
@@ -620,7 +558,7 @@ export const associateNonFunctions = (
         emotionsGlob[goal.value],
         graph,
         goal,
-        EMOTIONAL_TYPE
+        SYMBOL_CONFIGS.EMOTIONAL.type
       );
     }
 
@@ -630,7 +568,7 @@ export const associateNonFunctions = (
         qualitiesGlob[goal.value],
         graph,
         goal,
-        QUALITY_TYPE
+        SYMBOL_CONFIGS.QUALITY.type
       );
     }
   }

@@ -22,11 +22,6 @@ import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelp
 import "./GraphWorker.css";
 import {
   registerCustomShapes,
-  // NEGATIVE_SHAPE,
-  // PERSON_SHAPE,
-  // CLOUD_SHAPE,
-  // PARALLELOGRAM_SHAPE,
-  // HEART_SHAPE,
 } from "./GraphShapes";
 
 import GraphSidebar from "./GraphSidebar";
@@ -39,6 +34,8 @@ import {useFileContext} from "../context/FileProvider.tsx";
 import {reset} from "../context/treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 
+import {VERTEX_FONT} from "../utils/GraghConstants.tsx"
+
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -48,9 +45,6 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
-
-// vertex default font size
-const VERTEX_FONT_SIZE = 16;
 
 // ---------------------------------------------------------------------------
 
@@ -166,8 +160,8 @@ const GraphWorker: React.FC = () => {
     nodeStyle.strokeWidth = 2;
     nodeStyle.autoSize = false;
     nodeStyle.resizable = true;
-    nodeStyle.fontSize = VERTEX_FONT_SIZE;
-    nodeStyle.fontColor = "black";
+    nodeStyle.fontSize = VERTEX_FONT.size;
+    nodeStyle.fontColor = VERTEX_FONT.color;
     nodeStyle.editable = true;
     nodeStyle.shape = "image";
     nodeStyle.imageAspect = false;
@@ -187,7 +181,7 @@ const GraphWorker: React.FC = () => {
           for (let i = 0; i < changes.length; i++) {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
-              const cell: Cell = changes[i].cell;
+              const cell: Cell = changes[i].cell;            
               const cellID = cell.getId();
 
               const oldStyle = cell.getStyle();
@@ -266,7 +260,6 @@ const GraphWorker: React.FC = () => {
           }
 
         } finally {
-          console.log("no")
           graph.getDataModel().endUpdate();
           graph.refresh();
         }

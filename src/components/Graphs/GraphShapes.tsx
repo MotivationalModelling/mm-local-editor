@@ -15,27 +15,16 @@ import {
   Shape,
 } from "@maxgraph/core";
 
-// custom shape name
-const HEART_SHAPE = "heartShape";
-const PARALLELOGRAM_SHAPE = "parallelogramShape";
-const CLOUD_SHAPE = "cloudShape";
-const NEGATIVE_SHAPE = "negativeShape";
-const PERSON_SHAPE = "personShape";
-
-export {
-  HEART_SHAPE,
-  PARALLELOGRAM_SHAPE,
-  CLOUD_SHAPE,
-  NEGATIVE_SHAPE,
-  PERSON_SHAPE,
-};
+import {
+  SYMBOL_CONFIGS,
+} from "../utils/GraghConstants";
 
 export const registerCustomShapes = (): void => {
-  CellRenderer.registerShape(PARALLELOGRAM_SHAPE, ParallelogramShape);
-  CellRenderer.registerShape(HEART_SHAPE, HeartShape);
-  CellRenderer.registerShape(NEGATIVE_SHAPE, NegativeShape);
-  CellRenderer.registerShape(PERSON_SHAPE, PersonShape);
-  CellRenderer.registerShape(CLOUD_SHAPE, MMCloudShape);
+  CellRenderer.registerShape(SYMBOL_CONFIGS.FUNCTIONAL.shape, ParallelogramShape);
+  CellRenderer.registerShape(SYMBOL_CONFIGS.EMOTIONAL.shape, HeartShape);
+  CellRenderer.registerShape(SYMBOL_CONFIGS.NEGATIVE.shape, NegativeShape);
+  CellRenderer.registerShape(SYMBOL_CONFIGS.STAKEHOLDER.shape, PersonShape);
+  CellRenderer.registerShape(SYMBOL_CONFIGS.QUALITY.shape, MMCloudShape);
   console.log("Custom shapes registered");
 };
 
