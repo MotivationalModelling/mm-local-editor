@@ -22,6 +22,9 @@ const PERSON_PATH = "img/Stakeholder.png";
 const SYMBOL_WIDTH = 145;
 const SYMBOL_HEIGHT = 110;
 
+// default 
+const SH_FUNCTIONAL = 0.8;
+
 // vertex default font size
 const VERTEX_FONT_SIZE = 16;
 
@@ -65,6 +68,15 @@ const EMOTIONAL_TYPE = "Emotional";
 const NEGATIVE_TYPE = "Negative";
 const QUALITY_TYPE = "Quality";
 const STAKEHOLDER_TYPE = "Stakeholder";
+
+// Define shapes
+import {
+  NEGATIVE_SHAPE,
+  PERSON_SHAPE,
+  CLOUD_SHAPE,
+  PARALLELOGRAM_SHAPE,
+  HEART_SHAPE,
+} from "./GraphShapes";
 
 
 // random string, used to store unassociated non-functions in accumulators
@@ -210,8 +222,8 @@ export const renderFunction = (
   // If not cloned, will affect all nodes instead.
   const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
 
-  // Make sure to specify what image we're drawing
-  style.image = PARALLELOGRAM_PATH;
+  // Make sure to specify what shape we're drawing
+  style.shape = PARALLELOGRAM_SHAPE;
 
   // insert new vertex and edge into graph
   const node = graph.insertVertex(
@@ -376,12 +388,12 @@ export const renderNonFunction = (
   let width = geo.width;
   let height = geo.height;
   let delimiter = "";
-  let image = "";
+  let shape = "";
 
   // Set the position and size based on the type of non-functional goal
   switch (type) {
     case EMOTIONAL_TYPE: // Top Right
-      image = HEART_PATH;
+      shape = HEART_SHAPE;
       width *= SW_EMOTIONAL;
       height *= SH_EMOTIONAL;
       x = geo.x + width + OFFSET_X;
@@ -389,7 +401,7 @@ export const renderNonFunction = (
       delimiter = ",\n";
       break;
     case NEGATIVE_TYPE: // Bottom Right
-      image = NEGATIVE_PATH;
+      shape = NEGATIVE_SHAPE;
       width *= SW_NEGATIVE;
       height *= SH_NEGATIVE;
       x = geo.x + width + OFFSET_X;
@@ -397,7 +409,7 @@ export const renderNonFunction = (
       delimiter = ",\n";
       break;
     case QUALITY_TYPE: // Top Left
-      image = CLOUD_PATH;
+      shape = CLOUD_SHAPE;
       width *= SW_QUALITY;
       height *= SH_QUALITY;
       x = geo.x - width - OFFSET_X;
@@ -405,7 +417,7 @@ export const renderNonFunction = (
       delimiter = ",\n";
       break;
     case STAKEHOLDER_TYPE: // Bottom Left
-      image = PERSON_PATH;
+      shape = PERSON_SHAPE;
       width *= SW_STAKEHOLDER;
       height *= SH_STAKEHOLDER;
       x = geo.x - width - OFFSET_X;
@@ -416,7 +428,7 @@ export const renderNonFunction = (
 
   // Clone style to avoid modifying the default
   const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
-  style.image = image;
+  style.shape = shape;
   style.align = "center";
   style.verticalAlign = "middle";
   style.labelPosition = "center";
