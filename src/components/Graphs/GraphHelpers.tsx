@@ -12,7 +12,7 @@ import {
   SYMBOL_HEIGHT,
   SYMBOL_CONFIGS,
   SymbolKey
-} from "../utils/GraghConstants";
+} from "../utils/GraphConstants.tsx";
 
 import { getSymbolKeyByType } from "../utils/GraphUtils";
 

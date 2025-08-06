@@ -8,7 +8,7 @@ import {
   SYMBOL_WIDTH,
   SYMBOL_HEIGHT,
   SYMBOL_CONFIGS,
-} from "../../utils/GraghConstants";
+} from "../../utils/GraphConstants";
 
 type SidebarItemsProps = {
   graph: Graph;

@@ -34,7 +34,7 @@ import {useFileContext} from "../context/FileProvider.tsx";
 import {reset} from "../context/treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 
-import {VERTEX_FONT} from "../utils/GraghConstants.tsx"
+import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 
 // ---------------------------------------------------------------------------
 

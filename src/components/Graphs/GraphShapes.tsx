@@ -17,7 +17,7 @@ import {
 
 import {
   SYMBOL_CONFIGS,
-} from "../utils/GraghConstants";
+} from "../utils/GraphConstants";
 
 export const registerCustomShapes = (): void => {
   CellRenderer.registerShape(SYMBOL_CONFIGS.FUNCTIONAL.shape, ParallelogramShape);

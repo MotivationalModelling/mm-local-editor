@@ -1,4 +1,4 @@
-import { SYMBOL_CONFIGS, SymbolKey } from './GraghConstants';
+import { SYMBOL_CONFIGS, SymbolKey } from './GraphConstants';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
