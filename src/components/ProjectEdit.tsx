@@ -16,6 +16,7 @@ const ProjectEdit: React.FC = () => {
         <ProjectEditHeader
           showGoalSection={showGoalSection}
           setShowGoalSection={setShowGoalSection}
+          showGraphSection={showGraphSection}
         />
         <ProgressBar
           setShowGoalSection={setShowGoalSection}

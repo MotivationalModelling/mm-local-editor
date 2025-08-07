@@ -1,14 +1,16 @@
 import { Canvg } from 'canvg';
 import * as d3 from 'd3';
 import { useState } from "react";
-import { Dropdown, DropdownButton } from "react-bootstrap";
+import { Dropdown, DropdownButton, OverlayTrigger, Tooltip } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 import { useFileContext } from "../context/FileProvider";
 import { useGraph } from "../context/GraphContext";
 
-const ExportFileButton = () => {
+// Add showGraphSection prop to control Export button enablement
+// This ensures Export is only available when user is in "Render Model" interface
+const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) => {
 	const { graph } = useGraph(); // Use the context to get the graph instance
-	const { goals } = useFileContext(); // Get goals from file context
+	const { goals, cluster } = useFileContext(); // Get goals and cluster from file context
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
 		title: "",
@@ -16,10 +18,26 @@ const ExportFileButton = () => {
 		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
 	});
 
-	// Function to check if there are any goals with content
-	const hasGoalsWithContent = (): boolean => {
-		// Check if any goal in the goals object has non-empty content
-		return Object.values(goals).some(goal => goal.content.trim() !== "");
+	// Simplified logic: Export is only available when showGraphSection is true
+	// This means user must be in "Render Model" interface (after clicking "Arrange Hierarchy / Render Model")
+	const isModelReadyForExport = (): boolean => {
+		// Only enable export when user is in Render Model interface
+		// AND there are functional goals in the cluster
+		return showGraphSection && cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional");
+	};
+
+	// Function to get tooltip message based on current state
+	const getTooltipMessage = (): string => {
+		if (!showGraphSection) {
+			return "Please click 'Arrange Hierarchy / Render Model' to enable export.";
+		}
+		if (cluster.ClusterGoals.length === 0) {
+			return "Please add goals to the hierarchy before exporting.";
+		}
+		if (!cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")) {
+			return "Please add at least one functional goal (Do type) to the hierarchy before exporting.";
+		}
+		return "Export is ready.";
 	};
 
 	// Function to show error message when no goals are present
@@ -42,9 +60,14 @@ const ExportFileButton = () => {
 
 	// Function to export graph as an image
 	const exportGraphAsSVG = async () => {
-		// Check if there are any goals with content before proceeding
-		if (!hasGoalsWithContent()) {
-			showNoGoalsError();
+		// Check if the model is ready before proceeding
+		if (!isModelReadyForExport()) {
+			setErrorModal({
+				show: true,
+				title: "Cannot Export Model",
+				message: getTooltipMessage(),
+				onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+			});
 			return;
 		}
 
@@ -108,9 +131,14 @@ const ExportFileButton = () => {
 
 	// Function to export graph as PNG
 	const exportGraphAsPNG = async () => {
-		// Check if there are any goals with content before proceeding
-		if (!hasGoalsWithContent()) {
-			showNoGoalsError();
+		// Check if the model is ready before proceeding
+		if (!isModelReadyForExport()) {
+			setErrorModal({
+				show: true,
+				title: "Cannot Export Model",
+				message: getTooltipMessage(),
+				onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+			});
 			return;
 		}
 
@@ -195,14 +223,46 @@ const ExportFileButton = () => {
 		}, 'image/png');
 	};
 
-	
+	// Check if the model is ready for export
+	const isReady = isModelReadyForExport();
+	const tooltipMessage = getTooltipMessage();
+
+	// Create tooltip overlay for disabled state
+	const tooltip = (
+		<Tooltip id="export-tooltip">
+			{tooltipMessage}
+		</Tooltip>
+	);
 
 	return (
 		<>
-			<DropdownButton variant="outline-primary" title="Export" drop="down">
-				<Dropdown.Item onClick={exportGraphAsPNG}>Export as PNG</Dropdown.Item>
-				<Dropdown.Item onClick={exportGraphAsSVG}>Export as SVG</Dropdown.Item>
-			</DropdownButton>
+			<OverlayTrigger
+				placement="bottom"
+				overlay={tooltip}
+				trigger={!isReady ? ['hover', 'focus'] : []}
+			>
+				<span className="d-inline-block">
+					<DropdownButton 
+						variant="outline-primary" 
+						title="Export" 
+						drop="down"
+						disabled={!isReady}
+					>
+						<Dropdown.Item 
+							onClick={exportGraphAsPNG}
+							disabled={!isReady}
+						>
+							Export as PNG
+						</Dropdown.Item>
+						<Dropdown.Item 
+							onClick={exportGraphAsSVG}
+							disabled={!isReady}
+						>
+							Export as SVG
+						</Dropdown.Item>
+					</DropdownButton>
+				</span>
+			</OverlayTrigger>
 			<ErrorModal {...errorModal} />
 		</>
 	);

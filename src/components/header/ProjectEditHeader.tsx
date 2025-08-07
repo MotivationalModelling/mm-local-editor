@@ -12,12 +12,15 @@ import {initialTabs} from "../../data/initialTabs.ts";
 type ProjectEditHeaderProps = {
 	showGoalSection: boolean;
 	setShowGoalSection: (showGoalSection: boolean) => void;
+	// Add showGraphSection prop to control Export button enablement
+	showGraphSection: boolean;
 };
 
 
 const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	showGoalSection,
 	setShowGoalSection,
+	showGraphSection,
   }) => {
 	const {dispatch} = useFileContext();
 	const navigate = useNavigate();
@@ -47,7 +50,8 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 							{showGoalSection ? "Hide Goal List" : "Show Goal List"}
 						</Button>
 						<ButtonGroup className="ms-3">
-							<ExportFileButton />
+							{/* Pass showGraphSection to ExportFileButton to control enablement */}
+							<ExportFileButton showGraphSection={showGraphSection} />
 							{isBrowserSupported && <SaveFileButton />}
 						</ButtonGroup>
 						<Button variant="outline-primary" onClick={handleBackBtnClick} className="ms-3">
