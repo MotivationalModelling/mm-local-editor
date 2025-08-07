@@ -62,7 +62,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	const handleJSONFileSetup = async (handle: FileSystemFileHandle) => {
 		try {
-			await handle.createWritable();
 			const file = await handle.getFile();
 			const fileContent = await file.text();
 			if (fileContent) {
@@ -75,9 +74,13 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 						treeData: convertedJsonData.treeData,
 					},
 				});
+				
+				// File imported successfully, user can now click Upload button to navigate
+				console.log("File imported successfully");
 			} else {
 				console.log("File can't be read and parsed");
 			}
+			// Store the file handle for potential future use (like save functionality)
 			set(DataType.JSON, handle);
 			setJsonFileHandle(handle);
 		} catch (error) {
@@ -90,20 +93,82 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
+		setIsJsonDragOver(false); // Reset drag state
+		
 		try {
 			const items = event.dataTransfer.items;
 			if (items.length > 0) {
 				const item = items[0];
 				if (item.kind === "file") {
-					const fileHandle =
-						(await item.getAsFileSystemHandle()) as FileSystemFileHandle;
-					if (fileHandle) {
-						await handleJSONFileInputChange(fileHandle);
+					// Try to get FileSystemHandle first (for modern browsers)
+					if ('getAsFileSystemHandle' in item) {
+						try {
+							const fileHandle = await item.getAsFileSystemHandle() as FileSystemFileHandle;
+							if (fileHandle) {
+								// Get the file to set jsonFile state for UI display
+								const file = await fileHandle.getFile();
+								setJsonFile(file);
+								await handleJSONFileInputChange(fileHandle);
+								return;
+							}
+						} catch (fsError) {
+							console.log("FileSystemHandle not supported, falling back to File API");
+						}
+					}
+					
+					// Fallback to File API for older browsers
+					const file = item.getAsFile();
+					if (file) {
+						// Validate file type
+						if (file.type !== "application/json" && !file.name.endsWith('.json')) {
+							setErrorModal({
+								...defaultModalState,
+								show: true,
+								title: "Incorrect File Type",
+								message: JSON_FILE_ALERT,
+								onHide: () => setErrorModal(defaultModalState),
+							});
+							return;
+						}
+						
+						setJsonFile(file);
+						
+						// Parse and process the file
+						const fileContent = await file.text();
+						if (fileContent) {
+							const convertedJsonData: JSONData = JSON.parse(fileContent);
+							const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
+							dispatch({
+								type: "treeData/reset",
+								payload: {
+									tabData: initialTabs,
+									treeData: convertedJsonData.treeData,
+								},
+							});
+							
+							// File imported successfully, user can now click Upload button to navigate
+							console.log("File imported successfully (fallback)");
+						} else {
+							setErrorModal({
+								...defaultModalState,
+								show: true,
+								title: "File Upload Failed",
+								message: "File is empty or cannot be read.",
+								onHide: () => setErrorModal(defaultModalState),
+							});
+						}
 					}
 				}
 			}
 		} catch (error) {
 			console.error("Error handling dropped JSON file:", error);
+			setErrorModal({
+				...defaultModalState,
+				show: true,
+				title: "File Upload Failed",
+				message: "Failed to process the dropped file. Please try again.",
+				onHide: () => setErrorModal(defaultModalState),
+			});
 		}
 	};
 
@@ -157,6 +222,9 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 							treeData: convertedJsonData.treeData,
 						},
 					});
+					
+					// File imported successfully, user can now click Upload button to navigate
+					console.log("File imported successfully (file input)");
 				} else {
 					console.log("File can't be read and parsed");
 				}
