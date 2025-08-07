@@ -4,7 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
-import { useFileContext, JSONData, DataType } from "./context/FileProvider";
+import { useFileContext, JSONData, DataType, TabContent, TreeItem } from "./context/FileProvider";
+import { InitialTab } from "../data/initialTabs";
 import { set } from "idb-keyval";
 import { isChrome, isOpera, isEdge } from "react-device-detect";
 
@@ -27,23 +28,23 @@ const defaultModalState: ErrorModalProps = {
 // https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
 
 // Helper to convert TabContent[] to InitialTab[] using all goals from treeData
-function convertTabContentToInitialTab(tabData, treeData) {
+function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeItem[]): InitialTab[] {
 	// Build a map of all goals by id
-	const allGoals = {};
-	(treeData || []).forEach(goal => {
+	const allGoals: Record<number, TreeItem> = {};
+	(treeData || []).forEach((goal: TreeItem) => {
 		allGoals[goal.id] = goal;
-		const addChildren = (children) => {
-			(children || []).forEach(child => {
+		const addChildren = (children: TreeItem[]) => {
+			(children || []).forEach((child: TreeItem) => {
 				allGoals[child.id] = child;
-				addChildren(child.children);
+				addChildren(child.children || []);
 			});
 		};
-		addChildren(goal.children);
+		addChildren(goal.children || []);
 	});
-	return (tabData || []).map(tab => ({
+	return (tabData || []).map((tab: TabContent) => ({
 		label: tab.label,
 		icon: tab.icon,
-		rows: (tab.goalIds || []).map(id => allGoals[id]).filter(Boolean),
+		rows: (tab.goalIds || []).map((id: number) => allGoals[id]).filter(Boolean),
 	}));
 }
 
