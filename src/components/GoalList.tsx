@@ -333,7 +333,9 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 														/>
 													</Form.Group>
 											</th>
-											<th style={{ display: 'flex' }}>Goal Name</th>
+											<th style={{ display: 'flex' }}>
+											{label=="Who" ? `Stakeholder name` : 'Goal Name'}
+											</th>
 										</tr>
 									</thead>
 									<tbody>
