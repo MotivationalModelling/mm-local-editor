@@ -181,7 +181,7 @@ const GraphWorker: React.FC = () => {
           for (let i = 0; i < changes.length; i++) {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
-              const cell: Cell = changes[i].cell;            
+              const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
 
               const oldStyle = cell.getStyle();

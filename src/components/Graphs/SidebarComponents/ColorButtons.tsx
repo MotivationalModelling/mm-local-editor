@@ -29,7 +29,7 @@ const ColorButtons = ({ graph }: ColorButtonsProps) => {
       });
 
       btn.className = "ColorButton";
-      btn.style.width = "80px";
+      btn.style.width = "60px";
       btn.style.height = "30px";
       btn.style.backgroundColor = colour;
       btn.style.border = "2px";

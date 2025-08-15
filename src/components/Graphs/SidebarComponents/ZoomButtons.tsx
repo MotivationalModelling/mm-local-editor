@@ -19,7 +19,6 @@ const ZoomButtons = ({ graph, recentreView }: ZoomButtonsProps) => {
     let sidebar = new MaxToolbar(divSidebar.current);
     sidebar.enabled = false;
 
-    sidebar.addLine();
     const zoomIn = sidebar.addItem("Zoom In", ZOOMIN_PATH, () => {
       graph.zoomIn();
     });
@@ -34,7 +33,6 @@ const ZoomButtons = ({ graph, recentreView }: ZoomButtonsProps) => {
       graph.zoomOut();
     });
     zoomOut.style.width = "20px";
-    sidebar.addLine();
 
     return () => {
       if (divSidebar.current) {

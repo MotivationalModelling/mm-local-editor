@@ -34,7 +34,7 @@ const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
   };
 
   return (
-    <div>
+    <div style={{ width: "100px", padding: "10px" }}>
       <ColorPicker selectedColor={selectedColor} onColorChange={handleColorChange} />
       <SidebarBody graph={graph} recentreView={recentreView} />
     </div>
