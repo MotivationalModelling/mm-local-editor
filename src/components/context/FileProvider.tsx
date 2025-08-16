@@ -1,5 +1,5 @@
 import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
-import {createInitialState, treeDataSlice,createTabContentFromInitialTab} from "./treeDataSlice.ts";
+import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
