@@ -20,19 +20,6 @@
   cursor: default;
 }
 
-#sidebarContainer {
-  position: relative;
-  float: right;
-  padding: 0px;
-  left: 0px;
-  top: 0px;
-  bottom: 0px;
-  background-color: lightgrey;
-  text-align: center;
-  width: 80px;
-  outline: thin solid black;
-}
-
 .row {
   height: auto;
   min-height: 90%;
