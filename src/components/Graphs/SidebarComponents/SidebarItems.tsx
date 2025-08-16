@@ -20,7 +20,7 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
   useEffect(() => {
     if (!divSidebar.current) return;
 
-    let sidebar = new MaxToolbar(divSidebar.current);
+    const sidebar = new MaxToolbar(divSidebar.current);
     sidebar.enabled = false;
 
     const addSidebarItem = (
