@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {ColorResult, CompactPicker} from "react-color";
+import Button from "react-bootstrap/Button";
 
 type ColorPickerProps = {
     selectedColor: string;
@@ -21,7 +22,10 @@ const ColorPicker = ({selectedColor, onColorChange}: ColorPickerProps) => {
                                    onChangeComplete={onColorChange}/>
                 </div>
             )}
-            <button onClick={handleButtonClick}>Select Colour</button>
+            <Button className="w-100"
+                    onClick={handleButtonClick}>
+                Select colour
+            </Button>
         </div>
     );
 };
