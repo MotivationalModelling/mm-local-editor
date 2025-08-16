@@ -10,7 +10,7 @@ import { useGraph } from "../context/GraphContext";
 // This ensures Export is only available when user is in "Render Model" interface
 const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) => {
 	const { graph } = useGraph(); // Use the context to get the graph instance
-	const { goals, cluster } = useFileContext(); // Get goals and cluster from file context
+	const {cluster } = useFileContext(); // Get goals and cluster from file context
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
 		title: "",
