@@ -11,7 +11,7 @@ import {TreeItem, useFileContext, newTreeItem, Label} from "./context/FileProvid
 
 import styles from "./TabButtons.module.css";
 import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
-import {isEmptyGoal,isGoalDraggable,isTextEmpty,handleGoalKeyPress,handleGoalBlur} from "../components/utils/GoalHint.tsx"
+import {isEmptyGoal,isGoalDraggable,isTextEmpty,handleGoalKeyPress,handleGoalBlur} from "./utils/GoalHint.tsx"
 import {addGoalToTab, deleteGoal, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
 const goalDescriptionForLabel = (label: Label): string => {
@@ -177,20 +177,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				handleSave(row, row.content);
 			}
 		};
-		const handleDeleteRow = (label: Label, index: number, row: TreeItem) => {
+		const handleDeleteRow = (row: TreeItem) => {
 			dispatch(deleteGoal(row));
-			// const newTabData = tabData.map((tab) => {
-			// 	if (tab.label === label) {
-			// 		if (tab.rows.length > 1) {
-			// 			const newRows = tab.rows.filter(
-			// 				(_, rowIndex) => rowIndex !== index
-			// 			);
-			// 			return { ...tab, rows: newRows };
-			// 		}
-			// 	}
-			// 	return tab;
-			// });
-			// setTabData(newTabData);
 			const filteredGroupSelected = groupSelected.filter(
 				(item) => item.id !== row.id
 			);
@@ -388,7 +376,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 
 										{selectGoalsForLabel({treeData}, label).length > 1 && (
 											<Button className={styles.deleteButton}
-													onClick={() => handleDeleteRow(label, index, row)}>
+													onClick={() => handleDeleteRow(row)}>
 												<BsFillTrash3Fill />
 											</Button>
 										)}
