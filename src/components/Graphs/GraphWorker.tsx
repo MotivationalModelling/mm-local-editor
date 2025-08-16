@@ -27,8 +27,7 @@ import {
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "./ResetGraphButton.tsx";
-import ScaleTextButton from "./ScaleTextButton.tsx";
-import { useGraph } from "../context/GraphContext";
+import {useGraph} from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {reset} from "../context/treeDataSlice.ts";
@@ -485,14 +484,13 @@ const GraphWorker: React.FC = () => {
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <ResetGraphButton resetEmptyGraph={() => dispatch(reset())}
                         resetDefaultGraph={() => dispatch(reset({treeData: [], tabData: initialTabs}))}/>
-      <ScaleTextButton></ScaleTextButton>
       <ErrorModal {...errorModal} />
       <Container>
         <Row className="row">
-          <Col md={11}>
+          <Col md={10}>
             <div id={GRAPH_DIV_ID} ref={divGraph}/>
           </Col>
-          <Col md={1}>
+          <Col md={2}>
             <GraphSidebar graph={graph} recentreView={recentreView} />
           </Col>
         </Row>
