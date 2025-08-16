@@ -4,21 +4,20 @@ import { BsCaretDownFill, BsCaretRightFill } from "react-icons/bs";
 import Collapse from "react-bootstrap/Collapse";
 
 interface Props {
-    title: string;
-    children: React.ReactNode;
+    title: string
+    isOpen?: boolean
+    children: React.ReactNode
 }
 
-export const CollapsibleSidebarCard = ({ title, children }: Props) => {
-    const [showCardContent, setShowCardContent] = useState(false);
+export const CollapsibleSidebarCard = ({title, isOpen=false, children}: Props) => {
+    const [showCardContent, setShowCardContent] = useState(isOpen);
 
     return (
         <Card>
             <Card.Body className="p-1">
-                <Card.Subtitle 
-                    onClick={() => setShowCardContent(!showCardContent)} 
-                    style={{ cursor: "pointer" }} 
-                >
-                    {showCardContent ? <BsCaretDownFill /> : <BsCaretRightFill />}
+                <Card.Subtitle onClick={() => setShowCardContent(!showCardContent)}
+                               style={{cursor: "pointer"}}>
+                    {showCardContent ? <BsCaretDownFill/> : <BsCaretRightFill/>}
                     {title}
                 </Card.Subtitle>
                 <Collapse in={showCardContent}>
