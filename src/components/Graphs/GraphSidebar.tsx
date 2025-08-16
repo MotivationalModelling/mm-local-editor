@@ -11,34 +11,33 @@ type GraphSidebarProps = {
   recentreView: recentreViewFunction;
 };
 
-const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
-  const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
+const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {
+    const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
 
-  // Handler for changing colours
-  const handleColorChange = (color: ColorResult) => {
-    setSelectedColor(color.hex);
-    if (graph) {
-      graph.getDataModel().beginUpdate();
-      try {
-        const cells = graph.getSelectionCells();
-        for (let i = 0; i < cells.length; i++) {
-          const style = graph.getCellStyle(cells[i]);
-          style.fillColor = color.hex;
-          graph.getDataModel().setStyle(cells[i], style);
-          console.log("colour selected");
+    // Handler for changing colours
+    const handleColorChange = (color: ColorResult) => {
+        setSelectedColor(color.hex);
+        if (graph) {
+            graph.getDataModel().beginUpdate();
+            try {
+                for (const cell of graph.getSelectionCells()) {
+                    const style = graph.getCellStyle(cell);
+
+                    style.fillColor = color.hex;
+                    graph.getDataModel().setStyle(cell, style);
+                }
+            } finally {
+                graph.getDataModel().endUpdate();
+            }
         }
-      } finally {
-        graph.getDataModel().endUpdate();
-      }
-    }
-  };
+    };
 
-  return (
-    <div style={{ width: "100px", padding: "10px" }}>
-      <ColorPicker selectedColor={selectedColor} onColorChange={handleColorChange} />
-      <SidebarBody graph={graph} recentreView={recentreView} />
-    </div>
-  );
+    return (
+        <div>
+            <ColorPicker selectedColor={selectedColor} onColorChange={handleColorChange}/>
+            <SidebarBody graph={graph} recentreView={recentreView}/>
+        </div>
+    );
 };
 
 export default GraphSidebar;
