@@ -73,6 +73,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     message: "",
     onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
   });
+
    // Function to reset the graph to empty
   //  const resetEmptyGraph = () => {
   //   if (graph) {
@@ -86,6 +87,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
   //     onResetDefault();
   //   }
   // };
+  
+  // Track if we have already centered on first entry
+  const hasCenteredOnEntryRef = useRef(false);
+  const prevShowGraphSectionRef = useRef(false);
+
 
 
   const recentreView = () => {
