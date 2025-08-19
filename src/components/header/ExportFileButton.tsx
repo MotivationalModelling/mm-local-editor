@@ -1,7 +1,7 @@
 import { Canvg } from 'canvg';
 import * as d3 from 'd3';
 import { useState } from "react";
-import { Dropdown, DropdownButton, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 import { useFileContext } from "../context/FileProvider";
 import { useGraph } from "../context/GraphContext";
@@ -106,7 +106,7 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 				const writable = await handle.createWritable();
 				await writable.write(new Blob([svgString], {type: 'image/svg+xml;charset=utf-8' }));
 				await writable.close();
-	
+			
 			}
 			// Fallback for non chromium browsers
 			else {
@@ -242,25 +242,30 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 				trigger={!isReady ? ['hover', 'focus'] : []}
 			>
 				<span className="d-inline-block">
-					<DropdownButton 
-						variant="outline-primary" 
-						title="Export" 
-						drop="down"
-						disabled={!isReady}
-					>
-						<Dropdown.Item 
-							onClick={exportGraphAsPNG}
+					<Dropdown>
+						<Dropdown.Toggle
+							variant="outline-primary"
+							id="export-dropdown"
+							className="rounded-end-0"
 							disabled={!isReady}
 						>
-							Export as PNG
-						</Dropdown.Item>
-						<Dropdown.Item 
-							onClick={exportGraphAsSVG}
-							disabled={!isReady}
-						>
-							Export as SVG
-						</Dropdown.Item>
-					</DropdownButton>
+							Export
+						</Dropdown.Toggle>
+						<Dropdown.Menu>
+							<Dropdown.Item 
+								onClick={exportGraphAsPNG}
+								disabled={!isReady}
+							>
+								Export as PNG
+							</Dropdown.Item>
+							<Dropdown.Item 
+								onClick={exportGraphAsSVG}
+								disabled={!isReady}
+							>
+								Export as SVG
+							</Dropdown.Item>
+						</Dropdown.Menu>
+					</Dropdown>
 				</span>
 			</OverlayTrigger>
 			<ErrorModal {...errorModal} />
