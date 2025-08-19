@@ -1,37 +1,37 @@
 import {
+  Cell,
   CellStyle,
   Client,
+  DragSource,
+  EventObject,
   Graph,
   InternalEvent,
-  DragSource,
-  Cell,
   KeyHandler,
-  UndoManager,
-  EventObject,
-  error,
   RubberBandHandler,
+  UndoManager,
+  error,
   getDefaultPlugins,
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useRef, useEffect, useMemo, useCallback, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Col, Container, Row } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
-import "./GraphWorker.css";
+import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
 import {
   registerCustomShapes,
 } from "./GraphShapes";
+import "./GraphWorker.css";
 
+import { initialTabs } from "../../data/initialTabs.ts";
+import { useFileContext } from "../context/FileProvider.tsx";
+import { useGraph } from "../context/GraphContext";
+import { reset } from "../context/treeDataSlice.ts";
+import { Cluster } from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
-import WarningMessage from "./WarningMessage";
 import ResetGraphButton from "./ResetGraphButton.tsx";
 import ScaleTextButton from "./ScaleTextButton.tsx";
-import { useGraph } from "../context/GraphContext";
-import {Cluster} from "../types.ts";
-import {useFileContext} from "../context/FileProvider.tsx";
-import {reset} from "../context/treeDataSlice.ts";
-import {initialTabs} from "../../data/initialTabs.ts";
+import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 
