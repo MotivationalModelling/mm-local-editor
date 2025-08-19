@@ -9,14 +9,13 @@ import {
   UndoManager,
   EventObject,
   error,
-  PanningHandler,
   RubberBandHandler,
   getDefaultPlugins,
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import {useRef, useEffect, useMemo, useCallback,useState} from "react";
-import {Container, Row, Col} from "react-bootstrap";
+import { useRef, useEffect, useMemo, useCallback, useState } from "react";
+import { Container, Row, Col } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
 import { renderGoals, layoutFunctions, associateNonFunctions } from './GraphHelpers';
 import "./GraphWorker.css";
@@ -58,7 +57,7 @@ interface GlobObject {
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC = () => {
+const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
   const divGraph = useRef<HTMLDivElement>(null);
   const {cluster, dispatch} = useFileContext();
   const {graph, setGraph} = useGraph();
@@ -88,6 +87,7 @@ const GraphWorker: React.FC = () => {
   //   }
   // };
 
+
   const recentreView = () => {
     if (graph) {
       graph.fit();
@@ -98,7 +98,7 @@ const GraphWorker: React.FC = () => {
   
   const initRecentreView = useCallback(() => {
     if (graph) {
-      graph.view.setScale(1);
+      graph.fit();
       graph.center();
     }
     console.log("center")
@@ -428,7 +428,6 @@ const GraphWorker: React.FC = () => {
       stakeholdersGlob
     );
     graph.getDataModel().endUpdate();
-    initRecentreView();
   }, [graph, cluster, initRecentreView]);
 
   // First useEffect to set up graph. Only run on mount.
@@ -478,6 +477,30 @@ const GraphWorker: React.FC = () => {
       }
     }
   }, [cluster, graph, renderGraph]);
+
+  // Trigger centering when entering render section
+  useEffect(() => {
+    console.log("useEffect triggered:", { 
+      showGraphSection, 
+      prevShowGraphSection: prevShowGraphSectionRef.current,
+      hasGraph: !!graph, 
+      goalsLength: cluster.ClusterGoals.length, 
+      hasCentered: hasCenteredOnEntryRef.current 
+    });
+    
+    // Only center when showGraphSection changes from false to true
+    if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
+      console.log("Centering graph on first entry");
+      // Use setTimeout to ensure centering happens after layout is complete
+      setTimeout(() => {
+        initRecentreView();
+      }, 200);
+      hasCenteredOnEntryRef.current = true;
+    }
+    
+    // Update previous value
+    prevShowGraphSectionRef.current = showGraphSection;
+  }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------
 
