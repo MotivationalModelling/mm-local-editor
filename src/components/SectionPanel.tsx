@@ -7,7 +7,7 @@ import Tree from "./Tree";
 import {TreeItem, useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {addGoalToTree, removeItemIdFromTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import { isEmptyGoal } from "../components/utils/GoalHint.tsx";
 
 const defaultStyle = {
@@ -125,6 +125,18 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // define a handler for deleting a cell and it children from the Graph Render Section
+  const handleDeleteCellsFromGraph = (treeItems:TreeItem[]) => {
+  // remove goal from treeData / cluster hierarchy
+    dispatch(removeItemIdFromTree);
+  };
+
+
+
+
+
+
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {

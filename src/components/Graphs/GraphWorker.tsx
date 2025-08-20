@@ -35,6 +35,7 @@ import {reset} from "../context/treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {removeGoalToTree} from "../context/treeDataSlice.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -62,6 +63,7 @@ const GraphWorker: React.FC = () => {
   const divGraph = useRef<HTMLDivElement>(null);
   const {cluster, dispatch} = useFileContext();
   const {graph, setGraph} = useGraph();
+
 
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
@@ -183,7 +185,7 @@ const GraphWorker: React.FC = () => {
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;            
               const cellID = cell.getId();
-
+              console.log("change, ",cellID)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
@@ -281,9 +283,14 @@ const GraphWorker: React.FC = () => {
     const keyHandler = new KeyHandler(graph);
     keyHandler.bindKey(DELETE_KEYBINDING, () => {
       if (graph.isEnabled()) {
-        console.log("--------------- DELETE CELL ---------------");
-        const cells = graph.removeCells();
-        graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text
+        
+        const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
+        graph.removeStateForCell(cells[0]); 
+        cells.forEach(cell => {
+          dispatch(removeGoalToTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
+        });
+        // graph.removeCells(cells, true); remove children
+        // graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text redundant
       }
     });
     keyHandler.bindKey(DELETE_KEYBINDING2, () => {
