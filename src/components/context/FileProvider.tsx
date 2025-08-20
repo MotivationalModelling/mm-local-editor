@@ -174,6 +174,18 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
 
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
+        
+        // Add safety check to prevent accessing properties of undefined goal
+        if (!goal) {
+            console.warn(`Goal with ID ${item.goalId} not found in goals object`);
+            return {
+                GoalID: item.goalId,
+                GoalType: "Functional", // Default fallback type
+                GoalContent: "Unknown Goal",
+                GoalNote: "",
+                SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
+            };
+        }
 
         return {
             GoalID: item.goalId,

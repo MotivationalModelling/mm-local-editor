@@ -5,7 +5,8 @@ import {
     Label,
     TabContent,
     TreeItem,
-    TreeNode
+    TreeNode,
+    newTreeItem
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 
@@ -35,7 +36,23 @@ const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
     goals: Record<TreeItem["id"], TreeItem>
 } => {
     const tabs: Map<Label, TabContent> = new Map(initialTabs.map((tab) => [tab.label, createTabContentFromInitialTab(tab)]));
-    const allGoals = initialTabs.map((tab) => tab.rows).flat();
+    
+    // Recursively collect all goals including nested children
+    const allGoals: TreeItem[] = [];
+    const collectGoals = (goals: TreeItem[]) => {
+        goals.forEach(goal => {
+            allGoals.push(goal);
+            if (goal.children && goal.children.length > 0) {
+                collectGoals(goal.children);
+            }
+        });
+    };
+    
+    // Collect goals from all tabs
+    initialTabs.forEach(tab => {
+        collectGoals(tab.rows);
+    });
+    
     const goals = Object.fromEntries(allGoals.map((goal) => [goal.id, goal]));
 
     return {goals, tabs};
@@ -130,6 +147,109 @@ export const treeDataSlice = createSlice({
             const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData)
                 : createInitialState(initialTabs, []);
             Object.assign(state, initialState);
+            
+            // Clear the "first visit" flag when reset is called
+            // This allows users to choose whether to load default data again
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('mm-editor-has-visited');
+            }
+        },
+        // Load default tree data for first-time users or when user clicks Default Mode
+        loadDefault: (state) => {
+            // Import defaultTreeData from SectionPanel to avoid circular dependency
+            const defaultTreeData: TreeItem[] = [
+                {
+                    id: 1,
+                    content: "Functional Goal",
+                    type: "Do",
+                    children: [
+                        {
+                            id: 6,
+                            content: "Functional Goal 2",
+                            type: "Do",
+                            children: [
+                                {
+                                    id: 7,
+                                    content: "Functional Goal 3",
+                                    type: "Do",
+                                    children: []
+                                }
+                            ]
+                        },
+                        {
+                            id: 8,
+                            content: "Functional Goal 4",
+                            type: "Do",
+                            children: []
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    content: "Quality Goals",
+                    type: "Be",
+                    children: []
+                },
+                {
+                    id: 3,
+                    content: "Emotional Goals",
+                    type: "Feel",
+                    children: []
+                },
+                {
+                    id: 4,
+                    content: "Stakeholders",
+                    type: "Who",
+                    children: []
+                },
+                {
+                    id: 5,
+                    content: "Negatives",
+                    type: "Concern",
+                    children: []
+                }
+            ];
+            
+            // Convert defaultTreeData to InitialTab format for tabs
+            // Ensure each tab has valid goals with proper type mapping
+            const defaultTabData = initialTabs.map(tab => {
+                const tabGoals = defaultTreeData.filter(goal => goal.type === tab.label);
+                // If no goals found for this tab type, create an empty goal with the correct type
+                if (tabGoals.length === 0) {
+                    return {
+                        ...tab,
+                        rows: [newTreeItem({id: Date.now(), type: tab.label})]
+                    };
+                }
+                return {
+                    ...tab,
+                    rows: tabGoals
+                };
+            });
+            
+            // Create initial state with the default data
+            const initialState = createInitialState(defaultTabData, defaultTreeData);
+            
+            // Ensure all nested goals are properly added to the goals object
+            const allGoals: TreeItem[] = [];
+            const collectGoals = (goals: TreeItem[]) => {
+                goals.forEach(goal => {
+                    allGoals.push(goal);
+                    if (goal.children && goal.children.length > 0) {
+                        collectGoals(goal.children);
+                    }
+                });
+            };
+            
+            // Collect all goals including nested ones
+            collectGoals(defaultTreeData);
+            
+            // Update the goals object to include all nested goals
+            allGoals.forEach(goal => {
+                initialState.goals[goal.id] = goal;
+            });
+            
+            Object.assign(state, initialState);
         }
     },
     extraReducers: (builder) => {
@@ -146,6 +266,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset, loadDefault} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

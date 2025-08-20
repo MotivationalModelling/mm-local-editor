@@ -37,59 +37,7 @@ const INITIAL_PROPORTIONS = {
 const DEFAULT_HEIGHT = "800px";
 
 // Predefined constant cluster to use for the example graph
-const defaultTreeData: TreeItem[] = [
-  {
-    id: 1,
-    content: "Functional Goal",
-    type: "Do",
-    children: [
-      {
-        id: 6,
-        content: "Functional Goal 2",
-        type: "Do",
-        children: [
-          {
-            id: 7,
-            content: "Functional Goal 3",
-            type: "Do",
-            children: []
-          }
-        ]
-      },
-      {
-        id: 8,
-        content: "Functional Goal 4",
-        type: "Do",
-        children: []
-      }
-    ]
-  },
-  {
-    id: 2,
-    content: "Quality Goals",
-    type: "Be",
-    children: []
-  },
-  {
-    id: 3,
-    content: "Emotional Goals",
-    type: "Feel",
-    children: []
-  },
-  {
-    id: 4,
-    content: "Stakeholders",
-    type: "Who",
-    children: []
-  },
-  {
-    id: 5,
-    content: "Negatives",
-    type: "Concern",
-    children: []
-  }
-];
-
+// Moved to treeDataSlice to avoid circular dependency and enable reuse
 
 //const defaultTreeIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -148,6 +96,20 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
     };
   }, []);
+
+  // Load default data on first visit when no treeData exists
+  useEffect(() => {
+    // Check if this is the first visit (no treeData) and load default data
+    // Use localStorage to track if this is truly the first visit
+    const hasVisitedBefore = localStorage.getItem('mm-editor-has-visited');
+    
+    if (treeData.length === 0 && !hasVisitedBefore) {
+      console.log("First visit detected, loading default data...");
+      dispatch({ type: "treeData/loadDefault", payload: undefined });
+      // Mark that user has visited
+      localStorage.setItem('mm-editor-has-visited', 'true');
+    }
+  }, [treeData.length, dispatch]);
 
   // Initialize the tree ids from the created/selected json file
   // const getIds = (treeData: TreeNode[]) => {
