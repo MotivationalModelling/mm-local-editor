@@ -116,12 +116,17 @@ export const treeDataSlice = createSlice({
             state.tree.push(newTreeNode({goalId: action.payload.id}));
             state.treeIds.push(action.payload.id);
         },
-        // remove goal(s) and its children 
-        removeGoalToTree: (state, action: PayloadAction<{
+        // remove goal(s) and its children from hierachy
+        removeGoalFromTree: (state, action: PayloadAction<{
             id:TreeItem["id"],
             removeChildren:boolean
         }>) => {
+            
             state.tree = removeItemIdFromTree(state.tree, action.payload.id,action.payload.removeChildren);
+            const collectIds = (nodes: TreeNode[]): TreeItem["id"][] => 
+            nodes.flatMap(node => [node.goalId, ...(node.children ? collectIds(node.children) : [])]);
+
+            state.treeIds = collectIds(state.tree);
         },
         deleteGoal: (state, action: PayloadAction<TreeItem>) => {
             const tabContent = state.tabs.get(action.payload.type);
@@ -165,6 +170,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset,removeGoalToTree} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset,removeGoalFromTree} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

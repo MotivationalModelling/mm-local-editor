@@ -15,7 +15,7 @@ import {
 import '@maxgraph/core/css/common.css';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Row } from "react-bootstrap";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
 import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
 import {
@@ -34,7 +34,8 @@ import ScaleTextButton from "./ScaleTextButton.tsx";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {removeGoalToTree} from "../context/treeDataSlice.ts";
+import {removeGoalFromTree} from "../context/treeDataSlice.ts";
+import ConfirmModal from "../ConfirmModal.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -76,6 +77,23 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
   });
 
+
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+  const [removeChildren, setRemoveChildren] = useState(false);
+  const deletingItemRef = useRef<Cell[] | null>(null);
+
+
+  const deleteItemFromGraph = (graph:Graph,removeChildrenFlag: boolean) => {
+    const cells = deletingItemRef.current;
+    if (!cells || !graph) return;
+    const deletedCells = graph.removeCells(cells, removeChildrenFlag);
+    deletedCells.forEach(cell => {
+      dispatch(removeGoalFromTree({ id: Number(cell.getId()), removeChildren: removeChildrenFlag }));
+    });
+
+    
+    setShowDeleteWarning(false);
+  };
    // Function to reset the graph to empty
   //  const resetEmptyGraph = () => {
   //   if (graph) {
@@ -191,7 +209,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;            
               const cellID = cell.getId();
-              console.log("change, ",cellID)
+              console.log("change, ",cell)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
@@ -290,11 +308,24 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     keyHandler.bindKey(DELETE_KEYBINDING, () => {
       if (graph.isEnabled()) {
         
-        const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
-        graph.removeStateForCell(cells[0]); 
-        cells.forEach(cell => {
-          dispatch(removeGoalToTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
-        });
+        const selectedCells = graph.getSelectionCells();
+        if (!selectedCells || selectedCells.length === 0) return;
+
+        deletingItemRef.current = selectedCells;
+
+        const hasChildren = selectedCells.some(cell => cell.getChildCount() > 0);
+        // setRemoveChildren(hasChildren);
+        if(hasChildren){
+          setShowDeleteWarning(true)
+        }else{
+          deleteItemFromGraph(graph,false)
+        }
+
+        // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
+        // graph.removeStateForCell(cells[0]); 
+        // cells.forEach(cell => {
+        //   dispatch(removeGoalFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
+        // });
         // graph.removeCells(cells, true); remove children
         // graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text redundant
       }
@@ -523,6 +554,28 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                         resetDefaultGraph={() => dispatch(reset({treeData: [], tabData: initialTabs}))}/>
       <ScaleTextButton></ScaleTextButton>
       <ErrorModal {...errorModal} />
+      <ConfirmModal
+        show={showDeleteWarning}
+        title="Delete Warning"
+        message="Do you want to delete this goal?"
+        onHide={() => setShowDeleteWarning(false)}
+        onConfirm={() => {
+          if (graph) {
+            deleteItemFromGraph(graph, removeChildren);
+          } else {
+            console.warn("Graph not initialized yet");
+          }
+          setShowDeleteWarning(false);
+        }}
+        extraContent={
+          <Form.Check
+            type="checkbox"
+            label="Delete all children goals"
+            checked={removeChildren}
+            onChange={(e) => setRemoveChildren(e.target.checked)}
+          />
+        }
+      />
       <Container>
         <Row className="row">
           <Col md={11}>

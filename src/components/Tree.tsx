@@ -101,6 +101,8 @@ const Tree: React.FC<TreeProps> = ({
     setShowDeleteWarning(false);
   };
 
+  
+
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeItem) => {
     deletingItemRef.current = item;
