@@ -1,14 +1,16 @@
-import React, {useEffect, useRef, useState} from "react";
-import {Resizable, ResizeCallback} from "re-resizable";
+import { Resizable, ResizeCallback } from "re-resizable";
+import React, { useEffect, useRef, useState } from "react";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import {TreeItem, useFileContext} from "./context/FileProvider";
+import { TreeItem, useFileContext } from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import {addGoalToTree, removeItemIdFromTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {addGoalToTree, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import { isEmptyGoal } from "../components/utils/GoalHint.tsx";
+import GraphWorker from "./Graphs/GraphWorker";
+import { addGoalToTree, updateTextForGoalId } from "./context/treeDataSlice.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -538,7 +540,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker/>
+        <GraphWorker showGraphSection={showGraphSection}/>
         {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>

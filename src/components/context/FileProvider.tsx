@@ -1,8 +1,8 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
-import {createInitialState, treeDataSlice,createTabContentFromInitialTab} from "./treeDataSlice.ts";
-import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster, ClusterGoal, GoalType} from "../types.ts";
-import useLocalStorage from "../utils/useLocalStorage.tsx"
+import React, { createContext, PropsWithChildren, useContext, useEffect, useReducer, useState } from "react";
+import { initialTabs } from "../../data/initialTabs.ts";
+import { Cluster, ClusterGoal, GoalType } from "../types.ts";
+import useLocalStorage from "../utils/useLocalStorage.tsx";
+import { createInitialState, treeDataSlice } from "./treeDataSlice.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -99,8 +99,9 @@ export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeIte
 };
 
 export const createTabDataFromTabs = (goals: Record<TreeItem["id"], TreeItem>, tabs: Map<Label, TabContent>): TabContent[] => {
-    [...tabs.keys()]
-    return [...tabs.values()];
+    // Convert Map<Label, TabContent> to TabContent[]
+    // This ensures the tabData is properly derived from the Redux state
+    return Array.from(tabs.values());
 };
 
 export const useFileContext = () => {
@@ -148,11 +149,15 @@ const FileContext = createContext<FileContextProps>({
     treeData: [],
     cluster: {ClusterGoals: []},
     xmlData: "",
-    dispatch: null,
+    dispatch: (() => {}) as React.Dispatch<DispatchActions>, // Fix: provide proper dispatch type
     // setTabData: () => {},
     // setTreeData: () => {},
     setXmlData: () => {},
     // resetData: () => {},
+    tree: [],
+    tabs: new Map(),
+    goals: {},
+    treeIds: [],
 });
 
 // Mapping of old types to new types
@@ -229,6 +234,15 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const [xmlData, setXmlData] = useState("");
 
+  // Debug: Log computed values
+  const computedTreeData = createTreeDataFromTreeNode(state.goals, state.tree);
+  const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
+  
+  useEffect(() => {
+    console.log("Computed treeData:", computedTreeData);
+    console.log("Computed tabData:", computedTabData);
+  }, [computedTreeData, computedTabData]);
+
   // const resetData = () => {
   //   setJsonFileHandle(null);
   //   del(DataType.JSON);
@@ -242,8 +256,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
       <FileContext.Provider value={{
           ...state,
           dispatch,
-          treeData: createTreeDataFromTreeNode(state.goals, state.tree),
-          tabData: createTabDataFromTabs(state.goals, state.tabs),
+          treeData: computedTreeData,
+          tabData: computedTabData,
           cluster: convertTreeDataToClusters(state.goals, state.tree),
           xmlData,
           // setTabData,

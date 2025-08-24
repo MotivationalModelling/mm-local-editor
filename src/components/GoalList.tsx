@@ -14,6 +14,13 @@ import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
 import {isEmptyGoal,isGoalDraggable,isTextEmpty,handleGoalKeyPress,handleGoalBlur} from "../components/utils/GoalHint.tsx"
 import {addGoalToTab, deleteGoal, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
+const goalDescriptionForLabel = (label: Label): string => {
+    const goalNames: Partial<Record<Label, string>> = {
+        "Who": "Stakeholder name"
+    };
+    return goalNames[label] ?? "Goal name";
+};
+
 type GoalListProps = {
 	setDraggedItem: (item: TreeItem | null) => void;
 	groupSelected: TreeItem[];
@@ -334,7 +341,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 													</Form.Group>
 											</th>
 											<th style={{ display: 'flex' }}>
-											{label=="Who" ? `Stakeholder name` : 'Goal Name'}
+                                                {goalDescriptionForLabel(label)}
 											</th>
 										</tr>
 									</thead>
