@@ -1,11 +1,11 @@
+import React, { ChangeEvent, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
-import React, { useState, useRef, ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { InitialTab } from "../data/initialTabs";
+import ErrorModal, { ErrorModalProps } from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
-import ErrorModal, { ErrorModalProps } from "./ErrorModal";
-import { useFileContext, JSONData, TabContent, TreeItem } from "./context/FileProvider";
-import { InitialTab } from "../data/initialTabs";
+import { JSONData, TabContent, TreeItem, useFileContext } from "./context/FileProvider";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";

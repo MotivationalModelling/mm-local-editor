@@ -362,7 +362,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       >
         {/* Third Panel Content */}
         
-        <GraphWorker/>
+        <GraphWorker showGraphSection={showGraphSection}/>
       </Resizable>
     </div>
   );
