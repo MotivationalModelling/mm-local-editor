@@ -1,42 +1,36 @@
 import {
-  Cell,
-  CellStyle,
-  Client,
-  DragSource,
-  EventObject,
-  Graph,
-  InternalEvent,
-  KeyHandler,
-  RubberBandHandler,
-  UndoManager,
-  error,
-  getDefaultPlugins,
+    Cell,
+    CellStyle,
+    Client,
+    DragSource,
+    error,
+    EventObject,
+    getDefaultPlugins,
+    Graph,
+    InternalEvent,
+    KeyHandler,
+    RubberBandHandler,
+    UndoManager,
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Row } from "react-bootstrap";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
-import {
-  registerCustomShapes,
-} from "./GraphShapes";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
+import {associateNonFunctions, layoutFunctions, renderGoals} from './GraphHelpers';
+import {registerCustomShapes,} from "./GraphShapes";
 import "./GraphWorker.css";
 
-import { initialTabs } from "../../data/initialTabs.ts";
-import { useFileContext } from "../context/FileProvider.tsx";
-import { useGraph } from "../context/GraphContext";
-import { reset } from "../context/treeDataSlice.ts";
-import { Cluster } from "../types.ts";
+import {initialTabs} from "../../data/initialTabs.ts";
+import {useFileContext} from "../context/FileProvider.tsx";
+import {useGraph} from "../context/GraphContext";
+import {reset} from "../context/treeDataSlice.ts";
+import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import ResetGraphButton from "./ResetGraphButton.tsx";
-import ScaleTextButton from "./ScaleTextButton.tsx";
 import WarningMessage from "./WarningMessage";
-import {useGraph} from "../context/GraphContext";
-import {Cluster} from "../types.ts";
-import {useFileContext} from "../context/FileProvider.tsx";
-import {reset} from "../context/treeDataSlice.ts";
-import {initialTabs} from "../../data/initialTabs.ts";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 
