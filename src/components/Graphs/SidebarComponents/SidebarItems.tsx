@@ -11,18 +11,11 @@ import {
 } from "../../utils/GraphConstants";
 
 type SidebarItemsProps = {
-  graph: Graph;
-};
+    graph: Graph
+}
 
 const SidebarItems = ({ graph }: SidebarItemsProps) => {
-  const divSidebar = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!divSidebar.current) return;
-
-    const sidebar = new MaxToolbar(divSidebar.current);
-    sidebar.enabled = false;
-
+    const divSidebar = useRef<HTMLDivElement>(null);
     const addSidebarItem = (
       graph: Graph,
       sidebar: MaxToolbar,
@@ -55,7 +48,7 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
         graph.getStylesheet().putCellStyle("minWidth", shapeStyle);
         graph.getStylesheet().putCellStyle("minHeight", shapeStyle);
 
-        // Add custom rules for certain shapes
+        // Add custom rules for certain shapes (XXX use shapeStyle from config)
         if (symbolKey === 'STAKEHOLDER') {
           shapeStyle = {
             ...shapeStyle,
@@ -142,6 +135,12 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
         sidebarItem.style.width = "50px";
       }
     };
+
+  useEffect(() => {
+    if (!divSidebar.current) return;
+
+    const sidebar = new MaxToolbar(divSidebar.current);
+    sidebar.enabled = false;
 
     // Add all symbol nodes to the sidebar
     Object.values(SYMBOL_CONFIGS).forEach(config => {
