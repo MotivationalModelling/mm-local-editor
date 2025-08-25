@@ -1,18 +1,19 @@
-import {Graph} from "@maxgraph/core";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Button from "react-bootstrap/Button";
 import {BsStopCircle, BsZoomIn, BsZoomOut} from "react-icons/bs";
+import {useGraph} from "../../context/GraphContext.tsx";
 
 type ZoomButtonsProps = {
-  graph: Graph;
-  recentreView: () => void;
+  recentreView: () => void
 };
 
-const ZoomButtons = ({graph, recentreView}: ZoomButtonsProps) => {
+const ZoomButtons = ({recentreView}: ZoomButtonsProps) => {
+    const {graph} = useGraph();
+
     return (
         <ButtonGroup className="w-100" size="sm">
             <Button variant="light"
-                    onClick={() => graph.zoomIn()}>
+                    onClick={() => graph?.zoomIn()}>
                 <BsZoomIn/>
             </Button>
             <Button variant="light"
@@ -20,7 +21,7 @@ const ZoomButtons = ({graph, recentreView}: ZoomButtonsProps) => {
                 <BsStopCircle/>
             </Button>
             <Button variant="light"
-                    onClick={() => graph.zoomOut()}>
+                    onClick={() => graph?.zoomOut()}>
                 <BsZoomOut/>
             </Button>
         </ButtonGroup>
