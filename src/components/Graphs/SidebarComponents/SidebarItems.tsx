@@ -157,7 +157,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
 
     // Add the edge prototype separately
     addSidebarItem(graph, sidebar, LINE_IMAGE_PATH, LINE_SIZE, LINE_SIZE, true);
-    sidebar.addLine();
   }, [graph]);
 
   return <div className={`border border-black p-1 rounded ${className}`}
