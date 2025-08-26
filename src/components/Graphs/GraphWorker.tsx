@@ -22,14 +22,10 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes,} from "./GraphShapes";
 import "./GraphWorker.css";
-
-import {initialTabs} from "../../data/initialTabs.ts";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {reset} from "../context/treeDataSlice.ts";
 import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
-import ResetGraphButton from "./ResetGraphButton.tsx";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
@@ -72,20 +68,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     message: "",
     onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
   });
-
-   // Function to reset the graph to empty
-  //  const resetEmptyGraph = () => {
-  //   if (graph) {
-  //     onResetEmpty();
-  //   }
-  // };
-
-  // Function to reset the graph to the default set of goals
-  // const resetDefaultGraph = () => {
-  //   if (graph) {
-  //     onResetDefault();
-  //   }
-  // };
 
   // Track if we have already centered on first entry
   const hasCenteredOnEntryRef = useRef(false);
@@ -511,8 +493,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <ResetGraphButton resetEmptyGraph={() => dispatch(reset())}
-                        resetDefaultGraph={() => dispatch(reset({treeData: [], tabData: initialTabs}))}/>
       <ErrorModal {...errorModal} />
       <Container>
         <Row className="row">
