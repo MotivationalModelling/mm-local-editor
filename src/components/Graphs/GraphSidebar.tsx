@@ -17,7 +17,7 @@ const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {
         <div>
             <SidebarBody graph={graph} recentreView={recentreView}/>
             {(graph) && (
-                <SidebarItems graph={graph}/>
+                <SidebarItems className="mt-1" graph={graph}/>
             )}
         </div>
     );

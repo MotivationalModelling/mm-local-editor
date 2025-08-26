@@ -12,9 +12,10 @@ import {
 
 type SidebarItemsProps = {
     graph: Graph
+    className?: string
 }
 
-const SidebarItems = ({ graph }: SidebarItemsProps) => {
+const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
     const divSidebar = useRef<HTMLDivElement>(null);
     const addSidebarItem = (
       graph: Graph,
@@ -159,7 +160,8 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
     sidebar.addLine();
   }, [graph]);
 
-  return <div ref={divSidebar}></div>;
+  return <div className={`border border-black p-1 rounded ${className}`}
+              ref={divSidebar}/>;
 };
 
 export default SidebarItems;
