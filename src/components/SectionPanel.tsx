@@ -1,14 +1,14 @@
-import React, {useEffect, useRef, useState} from "react";
-import {Resizable, ResizeCallback} from "re-resizable";
+import { Resizable, ResizeCallback } from "re-resizable";
+import React, { useEffect, useRef, useState } from "react";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import {TreeItem, useFileContext} from "./context/FileProvider";
+import { TreeItem, useFileContext } from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
-import {isEmptyGoal} from "./utils/GoalHint.tsx";
+import { addGoalToTree, updateTextForGoalId } from "./context/treeDataSlice.ts";
+import { isEmptyGoal } from "./utils/GoalHint.tsx";
 
 const defaultStyle = {
   display: "flex",
@@ -36,62 +36,7 @@ const INITIAL_PROPORTIONS = {
 
 const DEFAULT_HEIGHT = "800px";
 
-// Predefined constant cluster to use for the example graph
-const defaultTreeData: TreeItem[] = [
-  {
-    id: 1,
-    content: "Functional Goal",
-    type: "Do",
-    children: [
-      {
-        id: 6,
-        content: "Functional Goal 2",
-        type: "Do",
-        children: [
-          {
-            id: 7,
-            content: "Functional Goal 3",
-            type: "Do",
-            children: []
-          }
-        ]
-      },
-      {
-        id: 8,
-        content: "Functional Goal 4",
-        type: "Do",
-        children: []
-      }
-    ]
-  },
-  {
-    id: 2,
-    content: "Quality Goals",
-    type: "Be",
-    children: []
-  },
-  {
-    id: 3,
-    content: "Emotional Goals",
-    type: "Feel",
-    children: []
-  },
-  {
-    id: 4,
-    content: "Stakeholders",
-    type: "Who",
-    children: []
-  },
-  {
-    id: 5,
-    content: "Negatives",
-    type: "Concern",
-    children: []
-  }
-];
 
-
-//const defaultTreeIds: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 type SectionPanelProps = {
   showGoalSection: boolean;
