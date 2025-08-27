@@ -1,14 +1,14 @@
-import { Resizable, ResizeCallback } from "re-resizable";
-import React, { useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
+import {Resizable, ResizeCallback} from "re-resizable";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { TreeItem, useFileContext } from "./context/FileProvider";
+import {TreeItem, useFileContext} from "./context/FileProvider";
 
-import { isEmptyGoal } from "../components/utils/GoalHint.tsx";
 import GraphWorker from "./Graphs/GraphWorker";
-import { addGoalToTree, updateTextForGoalId } from "./context/treeDataSlice.ts";
+import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {isEmptyGoal} from "./utils/GoalHint.tsx";
 
 const defaultStyle = {
   display: "flex",
@@ -112,7 +112,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const {treeData, dispatch, treeIds} = useFileContext();
+  const {dispatch, treeIds} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
@@ -161,23 +161,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     };
   }, []);
 
-  // Initialize the tree ids from the created/selected json file
-  // const getIds = (treeData: TreeNode[]) => {
-  //   const ids: number[] = [];
-  //   // Recursively get all the ids from the tree data
-  //   const traverse = (arr: TreeNode[]) => {
-  //     arr.forEach((item) => {
-  //       ids.push(item.goalId);
-  //
-  //       if (item.children && item.children.length > 0) {
-  //         traverse(item.children);
-  //       }
-  //     });
-  //   };
-  //   traverse(treeData);
-  //   return ids;
-  // };
-
   // Handle section three resize and section one auto resize
   const handleResizeSectionThree: ResizeCallback = (
     _event,
@@ -185,7 +168,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     ref
   ) => {
     setSectionThreeWidth(ref.offsetWidth);
-    // If the width sum exceed the parent total width, auto resize the section one until reach the minimum
+    // If the width sum exceeds the parent total width, auto resize the section one until reach the minimum
     if (
       sectionTwoRef.current &&
       sectionOneWidth + sectionTwoRef.current.offsetWidth + ref.offsetWidth >=
@@ -216,30 +199,24 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   // Handle for goals drop on the nestable section
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+      e.preventDefault();
 
-    // Temporary Group drop
-    if (groupSelected.length > 1) {
-      handleDropGroupSelected();
-      return;
-    }
-
-    if (draggedItem && draggedItem.content) {
-      if (!treeIds.includes(draggedItem.id)) {
-       
-        dispatch(addGoalToTree(draggedItem));
-        // const newData: TreeItem[] = [...treeData, draggedItem];
-        // setTreeData(newData);
-        // setTreeIds([...treeIds, draggedItem.id]);
-       
-      } else {
-
-        setExistingItemIds([...existingItemIds, draggedItem.id]);
-        setExistingError(true);
-        hideErrorModalTimeout();
-
+      // Temporary Group drop
+      if (groupSelected.length > 1) {
+          handleDropGroupSelected();
+          return;
       }
-    }
+
+      if (draggedItem && draggedItem.content) {
+          if (!treeIds.includes(draggedItem.id)) {
+              dispatch(addGoalToTree(draggedItem));
+          } else {
+              setExistingItemIds([...existingItemIds, draggedItem.id]);
+              setExistingError(true);
+              hideErrorModalTimeout();
+
+          }
+      }
   };
 
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
@@ -265,14 +242,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       dispatch(addGoalToTree(item)); // Add each item individually
     });
 
-    // setTreeData(filteredTreeData);
-    // Update Ids with new items, filter out the empjty items
-    // setTreeIds((prevIds) => [
-    //   ...prevIds,
-    //   ...newItemsToAdd
-    //     .filter((item) => item.content.trim() !== "")
-    //     .map((item) => item.id),
-    // ]);
     setGroupSelected([]);
   };
 
@@ -282,62 +251,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     setGroupSelected([]);
   };
 
-  // Update the tab data if exist while the tree data changed
-  // const updateTabDataContent = (label: Label, id: number, newText: string) => {
-  //   const updatedTabData = tabData.map((tabContent) => {
-  //     if (tabContent.label === label) {
-  //       return {
-  //         ...tabContent,
-  //         rows: tabContent.rows.map((row) => {
-  //           if (row.id === id) {
-  //             return {
-  //               ...row,
-  //               content: newText,
-  //             };
-  //           }
-  //           return row;
-  //         }),
-  //       };
-  //     }
-  //     return tabContent;
-  //   });
-  //
-  //   setTabData(updatedTabData);
-  // };
-
-  // Update the tree recursively
-  // const updateItemTextInTree = (
-  //   items: TreeItem[],
-  //   idToUpdate: number,
-  //   newText: string
-  // ): TreeItem[] => {
-  //   if (!treeIds.includes(idToUpdate)) return items;
-  //
-  //   return items.map((currentItem) => {
-  //     if (currentItem.id === idToUpdate) {
-  //       return { ...currentItem, content: newText }; // Update text of this item
-  //     }
-  //     if (currentItem.children) {
-  //       currentItem.children = updateItemTextInTree(
-  //         currentItem.children,
-  //         idToUpdate,
-  //         newText
-  //       );
-  //     }
-  //     return currentItem;
-  //   });
-  // };
-
   // Handle synchronize data in table data and tree data
   const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
-    // const updatedTreeData = updateItemTextInTree(
-    //   treeData,
-    //   treeItem.id,
-    //   editedText
-    // );
-    // setTreeData(updatedTreeData);
     dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
-    // updateTabDataContent(treeItem.type, treeItem.id, editedText);
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -367,86 +283,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }
   }, [paddingX, showGoalSection, showGraphSection]); 
 
-  // useEffect(() => {
-  //   setCluster((prevCluster) => {
-  //     const newCluster = convertTreeDataToClusters(goals, tree);
-  //     console.log("Cluster changed ", newCluster);
-  //     return newCluster;
-  //   });
-  // }, [treeData]);
-
-  // Just for testing
-  // useEffect(() => {
-  //   console.log("Tab data is:", tabData);
-  //   console.log("Tree data is: ", treeData);
-  //   console.log("Selected group is: ", groupSelected);
-  //   console.log("Tree ids is: ", treeIds);
-  //   console.log("Existing item ids is: ", existingItemIds);
-  //   console.log("Existing error is: ", existingError);
-
-  // });
-
-  // // Reset tree data to empty, tab data to initial
-  // const resetGoalsToEmpty = () => {
-  //   console.log("Resetting goals to empty");
-  // dispatch(reset());
-  //   // setTreeData([]);             // Clear the tree data (hierarchy)
-  //   // setTabData(initialTabs);     // Set tab data to initial state
-  //   // setGroupSelected([]);        // Clear the selected group of items
-  //   // setExistingItemIds([]);      // Clear the existing item IDs
-  //   // setTreeIds([]);              // Clear all stored IDs in the tree
-  //   // setExistingError(false);     // Reset the error state
-  // };
-
-  // Function to convert defaultTreeData to tabData format
-  // const updateTabDataFromTreeData = (treeData: TreeItem[]) => {
-  //   // Copy initialTabs to start with the default structure, but with no rows
-  //   const newTabData = initialTabs.map(tab => ({ ...tab, rows: [] as TreeItem[]}));
-  //
-  //   // Recursively traverse the treeData and populate the corresponding tab rows
-  //   const populateTabData = (item: TreeItem) => {
-  //     const correspondingTab = newTabData.find(tab => tab.label === item.type);
-  //     if (correspondingTab) {
-  //       correspondingTab.rows.push(item);
-  //     }
-  //
-  //     if (item.children && item.children.length > 0) {
-  //       item.children.forEach(child => populateTabData(child));
-  //     }
-  //   };
-
-    // // Populate the new tab data from the provided tree data
-    // treeData.forEach(item => populateTabData(item));
-    //
-    // // Add an empty row at the end of each tab
-    // newTabData.forEach(tab => {
-    //   tab.rows.push({
-    //     id: Date.now(),
-    //     type: tab.label,
-    //     content: '',
-    //   });
-    // });
-    //
-    // setTabData(newTabData); // Set the new tab data
-  // };
-
-  // // Function to reset treeData to the default set of goals
-  // const resetGoalsToDefault = () => {
-  //   console.log("Resetting goals to default");
-  //
-  //   dispatch(setTreeData(defaultTreeData));
-  //
-  //   // const defaultTreeIds = defaultTreeData.map(item => item.id);
-  //   // setTreeIds(defaultTreeIds);
-  //
-  //   updateTabDataFromTreeData(defaultTreeData);
-  //
-  //   setGroupSelected([]);
-  //
-  //   setExistingItemIds([]);
-  //   setExistingError(false);
-  // };
-  
   return (
     <div
       style={{
@@ -539,7 +375,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         {/* Third Panel Content */}
         
         <GraphWorker showGraphSection={showGraphSection}/>
-        {/*  <GraphRender xml={xmlData} /> */}
       </Resizable>
     </div>
   );

@@ -1,11 +1,12 @@
-import React, { ChangeEvent, useRef, useState } from "react";
-import { Button } from "react-bootstrap";
+import React, { useState, useRef, ChangeEvent } from "react";
+import Button from "react-bootstrap/Button";
 import { Link, useNavigate } from "react-router-dom";
 import { InitialTab } from "../data/initialTabs";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import { JSONData, TabContent, TreeItem, useFileContext } from "./context/FileProvider";
+import {reset} from "./context/treeDataSlice.ts";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -49,14 +50,13 @@ function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeItem
 const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
 	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
-	const [errorModal, setErrorModal] =
-		useState<ErrorModalProps>(defaultModalState);
+	const [errorModal, setErrorModal] = useState<ErrorModalProps>(defaultModalState);
 
 	const jsonFileRef = useRef<HTMLInputElement>(null);
 
 	const navigate = useNavigate();
 
-	const { dispatch } = useFileContext();
+	const {dispatch} = useFileContext();
 
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
@@ -88,14 +88,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 						if (fileContent) {
 							const convertedJsonData: JSONData = JSON.parse(fileContent);
 							const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
-							dispatch({
-								type: "treeData/reset",
-								payload: {
-									tabData: initialTabs,
-									treeData: convertedJsonData.treeData,
-								},
-							});
-							
+							dispatch(reset({
+                                tabData: initialTabs,
+                                treeData: convertedJsonData.treeData,
+                            }));
 							// File imported successfully, user can now click Upload button to navigate
 							console.log("File imported successfully");
 						} else {
@@ -148,13 +144,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				if (fileContent) {
 					const convertedJsonData: JSONData = JSON.parse(fileContent);
 					const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
-					dispatch({
-						type: "treeData/reset",
-						payload: {
-							tabData: initialTabs,
-							treeData: convertedJsonData.treeData,
-						},
-					});
+                    dispatch(reset({
+                        tabData: initialTabs,
+                        treeData: convertedJsonData.treeData,
+                    }));
 					
 					// File imported successfully, user can now click Upload button to navigate
 					console.log("File imported successfully (file input)");

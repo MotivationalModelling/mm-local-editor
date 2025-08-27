@@ -3,6 +3,7 @@ import { ColorResult } from "react-color";
 import { Graph } from "@maxgraph/core";
 import ColorPicker from "./SidebarComponents/ColorPicker";
 import SidebarBody from "./SidebarComponents/SidebarBody";
+import SidebarItems from "./SidebarComponents/SidebarItems.tsx";
 
 type recentreViewFunction = () => void;
 
@@ -11,34 +12,15 @@ type GraphSidebarProps = {
   recentreView: recentreViewFunction;
 };
 
-const GraphSidebar = ({ graph, recentreView }: GraphSidebarProps) => {
-  const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
-
-  // Handler for changing colours
-  const handleColorChange = (color: ColorResult) => {
-    setSelectedColor(color.hex);
-    if (graph) {
-      graph.getDataModel().beginUpdate();
-      try {
-        const cells = graph.getSelectionCells();
-        for (let i = 0; i < cells.length; i++) {
-          const style = graph.getCellStyle(cells[i]);
-          style.fillColor = color.hex;
-          graph.getDataModel().setStyle(cells[i], style);
-          console.log("colour selected");
-        }
-      } finally {
-        graph.getDataModel().endUpdate();
-      }
-    }
-  };
-
-  return (
-    <div>
-      <ColorPicker selectedColor={selectedColor} onColorChange={handleColorChange} />
-      <SidebarBody graph={graph} recentreView={recentreView} />
-    </div>
-  );
+const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {
+    return (
+        <div>
+            <SidebarBody graph={graph} recentreView={recentreView}/>
+            {(graph) && (
+                <SidebarItems className="mt-1" graph={graph}/>
+            )}
+        </div>
+    );
 };
 
 export default GraphSidebar;

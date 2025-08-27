@@ -11,18 +11,12 @@ import {
 } from "../../utils/GraphConstants";
 
 type SidebarItemsProps = {
-  graph: Graph;
-};
+    graph: Graph
+    className?: string
+}
 
-const SidebarItems = ({ graph }: SidebarItemsProps) => {
-  const divSidebar = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!divSidebar.current) return;
-
-    let sidebar = new MaxToolbar(divSidebar.current);
-    sidebar.enabled = false;
-
+const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
+    const divSidebar = useRef<HTMLDivElement>(null);
     const addSidebarItem = (
       graph: Graph,
       sidebar: MaxToolbar,
@@ -55,7 +49,7 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
         graph.getStylesheet().putCellStyle("minWidth", shapeStyle);
         graph.getStylesheet().putCellStyle("minHeight", shapeStyle);
 
-        // Add custom rules for certain shapes
+        // Add custom rules for certain shapes (XXX use shapeStyle from config)
         if (symbolKey === 'STAKEHOLDER') {
           shapeStyle = {
             ...shapeStyle,
@@ -143,6 +137,12 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
       }
     };
 
+  useEffect(() => {
+    if (!divSidebar.current) return;
+
+    const sidebar = new MaxToolbar(divSidebar.current);
+    sidebar.enabled = false;
+
     // Add all symbol nodes to the sidebar
     Object.values(SYMBOL_CONFIGS).forEach(config => {
       addSidebarItem(
@@ -157,10 +157,10 @@ const SidebarItems = ({ graph }: SidebarItemsProps) => {
 
     // Add the edge prototype separately
     addSidebarItem(graph, sidebar, LINE_IMAGE_PATH, LINE_SIZE, LINE_SIZE, true);
-    sidebar.addLine();
   }, [graph]);
 
-  return <div ref={divSidebar}></div>;
+  return <div className={`border border-black p-1 rounded ${className}`}
+              ref={divSidebar}/>;
 };
 
 export default SidebarItems;

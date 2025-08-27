@@ -425,7 +425,7 @@ export const renderNonFunction = (
   const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
   if (nodeGeo && preferred) {
     // Adjust height based on the number of lines and font size
-    nodeGeo.height = descriptions.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;;
+    nodeGeo.height = descriptions.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;
     nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
     nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
   }

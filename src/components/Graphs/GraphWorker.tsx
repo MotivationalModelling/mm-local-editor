@@ -1,16 +1,16 @@
 import {
-  Cell,
-  CellStyle,
-  Client,
-  DragSource,
-  EventObject,
-  Graph,
-  InternalEvent,
-  KeyHandler,
-  RubberBandHandler,
-  UndoManager,
-  error,
-  getDefaultPlugins,
+    Cell,
+    CellStyle,
+    Client,
+    DragSource,
+    error,
+    EventObject,
+    getDefaultPlugins,
+    Graph,
+    InternalEvent,
+    KeyHandler,
+    RubberBandHandler,
+    UndoManager,
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
@@ -18,26 +18,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
 import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
-import {
-  registerCustomShapes,
-} from "./GraphShapes";
+import {registerCustomShapes,} from "./GraphShapes";
+import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
 import "./GraphWorker.css";
-
-import { initialTabs } from "../../data/initialTabs.ts";
-import { useFileContext } from "../context/FileProvider.tsx";
-import { useGraph } from "../context/GraphContext";
-import { reset } from "../context/treeDataSlice.ts";
-import { Cluster } from "../types.ts";
+import {useFileContext} from "../context/FileProvider.tsx";
+import {useGraph} from "../context/GraphContext";
+import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
-import ResetGraphButton from "./ResetGraphButton.tsx";
-import ScaleTextButton from "./ScaleTextButton.tsx";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
-// ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
@@ -207,7 +202,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
           for (let i = 0; i < changes.length; i++) {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
-              const cell: Cell = changes[i].cell;            
+              const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
               console.log("change, ",cell)
               const oldStyle = cell.getStyle();
@@ -524,14 +519,14 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
   // Trigger centering when entering render section
   useEffect(() => {
-    console.log("useEffect triggered:", { 
-      showGraphSection, 
+    console.log("useEffect triggered:", {
+      showGraphSection,
       prevShowGraphSection: prevShowGraphSectionRef.current,
-      hasGraph: !!graph, 
-      goalsLength: cluster.ClusterGoals.length, 
-      hasCentered: hasCenteredOnEntryRef.current 
+      hasGraph: !!graph,
+      goalsLength: cluster.ClusterGoals.length,
+      hasCentered: hasCenteredOnEntryRef.current
     });
-    
+
     // Only center when showGraphSection changes from false to true
     if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
       console.log("Centering graph on first entry");
@@ -541,7 +536,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       }, 200);
       hasCenteredOnEntryRef.current = true;
     }
-    
+
     // Update previous value
     prevShowGraphSectionRef.current = showGraphSection;
   }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
@@ -550,9 +545,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <ResetGraphButton resetEmptyGraph={() => dispatch(reset())}
-                        resetDefaultGraph={() => dispatch(reset({treeData: [], tabData: initialTabs}))}/>
-      <ScaleTextButton></ScaleTextButton>
       <ErrorModal {...errorModal} />
       <ConfirmModal
         show={showDeleteWarning}
@@ -578,10 +570,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       />
       <Container>
         <Row className="row">
-          <Col md={11}>
+          <Col md={10}>
             <div id={GRAPH_DIV_ID} ref={divGraph}/>
           </Col>
-          <Col md={1}>
+          <Col md={2}>
             <GraphSidebar graph={graph} recentreView={recentreView} />
           </Col>
         </Row>
