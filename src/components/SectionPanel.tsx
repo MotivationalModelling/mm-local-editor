@@ -326,9 +326,10 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           width: "100%",
           minWidth: DEFINED_PROPORTIONS.minWidth,
           minHeight: DEFAULT_HEIGHT,
-          height: "100%",
+          height: DEFAULT_HEIGHT,
           padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
+          overflow: "auto",
         }}
         onDrop={handleDrop}
         onDragOver={(event) => event.preventDefault()}
