@@ -1,27 +1,30 @@
-import { Graph } from "@maxgraph/core";
+import {Graph} from "@maxgraph/core";
 import ColorButtons from "./ColorButtons";
 import ZoomButtons from "./ZoomButtons";
-import SidebarItems from "./SidebarItems";
+import ScaleTextButton from "../ScaleTextButton";
+import {CollapsibleSidebarCard} from "./CollapsibleSidebarCard";
 
-const SIDEBAR_DIV_ID = "sidebarContainer";
+interface SidebarProps {
+    graph: Graph | null
+    recentreView: () => void
+}
 
-type recentreViewFunction = () => void;
+const SidebarBody = ({graph, recentreView}: SidebarProps) => {
+    if (!graph) return null;
 
-type SidebarProps = {
-  graph: Graph | null;
-  recentreView: recentreViewFunction;
-};
-
-const SidebarBody = ({ graph, recentreView }: SidebarProps) => {
-  if (!graph) return null;
-
-  return (
-    <div id={SIDEBAR_DIV_ID}>
-      <ColorButtons graph={graph} />
-      <ZoomButtons graph={graph} recentreView={recentreView} />
-      <SidebarItems graph={graph} />
-    </div>
-  );
+    return (
+        <div className="border border-black p-1 rounded">
+            <CollapsibleSidebarCard isOpen title="Zoom">
+                <ZoomButtons recentreView={recentreView}/>
+            </CollapsibleSidebarCard>
+            <CollapsibleSidebarCard title="Colour">
+                <ColorButtons graph={graph}/>
+            </CollapsibleSidebarCard>
+            <CollapsibleSidebarCard title="Font size">
+                <ScaleTextButton/>
+            </CollapsibleSidebarCard>
+        </div>
+    );
 };
 
 export default SidebarBody;

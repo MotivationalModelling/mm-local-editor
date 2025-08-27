@@ -1,49 +1,31 @@
-import { useEffect, useRef } from "react";
-import { Graph, MaxToolbar } from "@maxgraph/core";
-
-const ZOOMIN_PATH = "img/zoomin.svg";
-const ZOOMOUT_PATH = "img/zoomout.svg";
-const CENTRE_PATH = "img/centre.svg";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Button from "react-bootstrap/Button";
+import {BsStopCircle, BsZoomIn, BsZoomOut} from "react-icons/bs";
+import {useGraph} from "../../context/GraphContext.tsx";
 
 type ZoomButtonsProps = {
-  graph: Graph;
-  recentreView: () => void;
+  recentreView: () => void
 };
 
-const ZoomButtons = ({ graph, recentreView }: ZoomButtonsProps) => {
-  const divSidebar = useRef<HTMLDivElement>(null);
+const ZoomButtons = ({recentreView}: ZoomButtonsProps) => {
+    const {graph} = useGraph();
 
-  useEffect(() => {
-    if (!divSidebar.current) return;
-
-    let sidebar = new MaxToolbar(divSidebar.current);
-    sidebar.enabled = false;
-
-    sidebar.addLine();
-    const zoomIn = sidebar.addItem("Zoom In", ZOOMIN_PATH, () => {
-      graph.zoomIn();
-    });
-    zoomIn.style.width = "20px";
-
-    const centre = sidebar.addItem("centre", CENTRE_PATH, () => {
-      recentreView();
-    });
-    centre.style.width = "20px";
-
-    const zoomOut = sidebar.addItem("Zoom Out", ZOOMOUT_PATH, () => {
-      graph.zoomOut();
-    });
-    zoomOut.style.width = "20px";
-    sidebar.addLine();
-
-    return () => {
-      if (divSidebar.current) {
-        divSidebar.current.innerHTML = "";
-      }
-    };
-  }, [graph, recentreView]);
-
-  return <div ref={divSidebar}></div>;
+    return (
+        <ButtonGroup className="w-100" size="sm">
+            <Button variant="light"
+                    onClick={() => graph?.zoomIn()}>
+                <BsZoomIn/>
+            </Button>
+            <Button variant="light"
+                    onClick={() => recentreView()}>
+                <BsStopCircle/>
+            </Button>
+            <Button variant="light"
+                    onClick={() => graph?.zoomOut()}>
+                <BsZoomOut/>
+            </Button>
+        </ButtonGroup>
+    )
 };
 
 export default ZoomButtons;

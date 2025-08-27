@@ -1,12 +1,12 @@
-import { Button } from "react-bootstrap";
 import React, { useState, useRef, ChangeEvent } from "react";
+import Button from "react-bootstrap/Button";
 import { Link, useNavigate } from "react-router-dom";
+import { InitialTab } from "../data/initialTabs";
+import ErrorModal, { ErrorModalProps } from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
-import ErrorModal, { ErrorModalProps } from "./ErrorModal";
-import { useFileContext, JSONData, DataType } from "./context/FileProvider";
-import { set } from "idb-keyval";
-import { isChrome, isOpera, isEdge } from "react-device-detect";
+import { JSONData, TabContent, TreeItem, useFileContext } from "./context/FileProvider";
+import {reset} from "./context/treeDataSlice.ts";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -27,82 +27,94 @@ const defaultModalState: ErrorModalProps = {
 // https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
 
 // Helper to convert TabContent[] to InitialTab[] using all goals from treeData
-function convertTabContentToInitialTab(tabData, treeData) {
+function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeItem[]): InitialTab[] {
 	// Build a map of all goals by id
-	const allGoals = {};
-	(treeData || []).forEach(goal => {
+	const allGoals: Record<number, TreeItem> = {};
+	(treeData || []).forEach((goal: TreeItem) => {
 		allGoals[goal.id] = goal;
-		const addChildren = (children) => {
-			(children || []).forEach(child => {
+		const addChildren = (children: TreeItem[]) => {
+			(children || []).forEach((child: TreeItem) => {
 				allGoals[child.id] = child;
-				addChildren(child.children);
+				addChildren(child.children || []);
 			});
 		};
-		addChildren(goal.children);
+		addChildren(goal.children || []);
 	});
-	return (tabData || []).map(tab => ({
+	return (tabData || []).map((tab: TabContent) => ({
 		label: tab.label,
 		icon: tab.icon,
-		rows: (tab.goalIds || []).map(id => allGoals[id]).filter(Boolean),
+		rows: (tab.goalIds || []).map((id: number) => allGoals[id]).filter(Boolean),
 	}));
 }
 
 const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
 	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
-	const [errorModal, setErrorModal] =
-		useState<ErrorModalProps>(defaultModalState);
+	const [errorModal, setErrorModal] = useState<ErrorModalProps>(defaultModalState);
 
 	const jsonFileRef = useRef<HTMLInputElement>(null);
 
 	const navigate = useNavigate();
 
-	const { setJsonFileHandle, dispatch } = useFileContext();
-
-	const handleJSONFileSetup = async (handle: FileSystemFileHandle) => {
-		try {
-			await handle.createWritable();
-			const file = await handle.getFile();
-			const fileContent = await file.text();
-			if (fileContent) {
-				const convertedJsonData: JSONData = JSON.parse(fileContent);
-				const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
-				dispatch({
-					type: "treeData/reset",
-					payload: {
-						tabData: initialTabs,
-						treeData: convertedJsonData.treeData,
-					},
-				});
-			} else {
-				console.log("File can't be read and parsed");
-			}
-			set(DataType.JSON, handle);
-			setJsonFileHandle(handle);
-		} catch (error) {
-			if (error instanceof DOMException) {
-				setJsonFile(null);
-			}
-			console.log(`Error setup JSON File: ${error}`);
-		}
-	};
+	const {dispatch} = useFileContext();
 
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
+		setIsJsonDragOver(false); // Reset drag state
+		
 		try {
 			const items = event.dataTransfer.items;
 			if (items.length > 0) {
 				const item = items[0];
 				if (item.kind === "file") {
-					const fileHandle =
-						(await item.getAsFileSystemHandle()) as FileSystemFileHandle;
-					if (fileHandle) {
-						await handleJSONFileInputChange(fileHandle);
+					const file = item.getAsFile();
+					if (file) {
+						// Validate file type
+						if (file.type !== "application/json" && !file.name.endsWith('.json')) {
+							setErrorModal({
+								...defaultModalState,
+								show: true,
+								title: "Incorrect File Type",
+								message: JSON_FILE_ALERT,
+								onHide: () => setErrorModal(defaultModalState),
+							});
+							return;
+						}
+						
+						setJsonFile(file);
+						
+						// Parse and process the file
+						const fileContent = await file.text();
+						if (fileContent) {
+							const convertedJsonData: JSONData = JSON.parse(fileContent);
+							const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
+							dispatch(reset({
+                                tabData: initialTabs,
+                                treeData: convertedJsonData.treeData,
+                            }));
+							// File imported successfully, user can now click Upload button to navigate
+							console.log("File imported successfully");
+						} else {
+							setErrorModal({
+								...defaultModalState,
+								show: true,
+								title: "File Upload Failed",
+								message: "File is empty or cannot be read.",
+								onHide: () => setErrorModal(defaultModalState),
+							});
+						}
 					}
 				}
 			}
 		} catch (error) {
 			console.error("Error handling dropped JSON file:", error);
+			setErrorModal({
+				...defaultModalState,
+				show: true,
+				title: "File Upload Failed",
+				message: "Failed to process the dropped file. Please try again.",
+				onHide: () => setErrorModal(defaultModalState),
+			});
 		}
 	};
 
@@ -116,25 +128,8 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	};
 
 	const handleJSONUpload = async () => {
-		if (isChrome || isEdge || isOpera) {
-			try {
-				const [handle] = await window.showOpenFilePicker({
-					types: [
-						{
-							description: "JSON file",
-							accept: { "application/json": [".json"] },
-						},
-					],
-					multiple: false,
-				});
-				const file = await handle.getFile();
-				setJsonFile(file);
-
-				await handleJSONFileSetup(handle);
-			} catch (error) {
-				console.error(`Error selecting JSON file: ${error}`);
-			}
-		} else if (jsonFileRef && jsonFileRef.current) {
+		// Simplified: always use file input for better compatibility
+		if (jsonFileRef && jsonFileRef.current) {
 			jsonFileRef.current.click();
 		}
 	};
@@ -149,13 +144,13 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				if (fileContent) {
 					const convertedJsonData: JSONData = JSON.parse(fileContent);
 					const initialTabs = convertTabContentToInitialTab(convertedJsonData.tabData, convertedJsonData.treeData);
-					dispatch({
-						type: "treeData/reset",
-						payload: {
-							tabData: initialTabs,
-							treeData: convertedJsonData.treeData,
-						},
-					});
+                    dispatch(reset({
+                        tabData: initialTabs,
+                        treeData: convertedJsonData.treeData,
+                    }));
+					
+					// File imported successfully, user can now click Upload button to navigate
+					console.log("File imported successfully (file input)");
 				} else {
 					console.log("File can't be read and parsed");
 				}
@@ -166,36 +161,6 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	};
 
 	/* --------------------------------------------------------------------------------------------------------*/
-
-	const handleJSONFileInputChange = async (
-		fileHandle: FileSystemFileHandle
-	) => {
-		const file = await fileHandle.getFile();
-		if (!file) {
-			setIsJsonDragOver(false);
-			setErrorModal({
-				...defaultModalState,
-				show: true,
-				title: "File Upload Failed",
-				message: EMPTY_FILE_ALERT,
-				onHide: () => setErrorModal(defaultModalState),
-			});
-			return;
-		}
-
-		if (file.type !== "application/json") {
-			setIsJsonDragOver(false);
-			setErrorModal({
-				...defaultModalState,
-				show: true,
-				title: "Incorrect File Type",
-				message: JSON_FILE_ALERT,
-				onHide: () => setErrorModal(defaultModalState),
-			});
-			return;
-		}
-		await handleJSONFileSetup(fileHandle);
-	};
 
 	const handleJSONFileRemove = () => {
 		setJsonFile(null);
