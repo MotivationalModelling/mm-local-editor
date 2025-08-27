@@ -18,10 +18,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
 import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
-import {registerCustomShapes,} from "./GraphShapes";
-import Col from "react-bootstrap/Col";
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
+import {
+  registerCustomShapes,
+} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
@@ -33,6 +32,7 @@ import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
+// ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
