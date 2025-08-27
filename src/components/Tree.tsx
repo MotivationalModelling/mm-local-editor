@@ -320,7 +320,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}>
+    <div style={{ width: "100%", height: "100%", alignSelf: "flex-start", position: "relative" }}>
       <ConfirmModal
         show={showDeleteWarning}
         title="Delete Warning"
