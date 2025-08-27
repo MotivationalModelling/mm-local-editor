@@ -15,7 +15,7 @@ import {
 import '@maxgraph/core/css/common.css';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Row } from "react-bootstrap";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
 import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
 import {
