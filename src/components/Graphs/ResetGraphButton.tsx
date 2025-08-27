@@ -1,16 +1,29 @@
 import React from "react";
-import { Dropdown, DropdownButton } from "react-bootstrap";
+import Dropdown from "react-bootstrap/Dropdown";
+import DropdownButton from "react-bootstrap/DropdownButton";
+import {ButtonVariant} from "react-bootstrap/types";
+import {reset} from "../context/treeDataSlice.ts";
+import {initialTabs} from "../../data/initialTabs.ts";
+import {useFileContext} from "../context/FileProvider.tsx";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 
 type ResetGraphProps = {
-    resetEmptyGraph: () => void;
-    resetDefaultGraph: () => void;
-};
+    variant?: ButtonVariant
+    className?: string
+}
 
-const ResetGraphButton: React.FC<ResetGraphProps>  = ({ resetEmptyGraph, resetDefaultGraph }) => {
+const ResetGraphButton: React.FC<ResetGraphProps>  = ({variant="", className=""}) => {
+	const {dispatch} = useFileContext();
+
     return (
-        <DropdownButton id="dropdown-basic-button" title="Reset">
-            <Dropdown.Item onClick={resetEmptyGraph}>Empty</Dropdown.Item>
-            <Dropdown.Item onClick={resetDefaultGraph}>Default</Dropdown.Item>
+        <DropdownButton as={ButtonGroup} title="Reset" variant={variant} className={className}>
+            <Dropdown.Item onClick={() => dispatch(reset())}>Empty</Dropdown.Item>
+            <Dropdown.Item onClick={() => dispatch(reset({
+                                              treeData: [],
+                                              tabData: initialTabs
+                                          }))}>
+                Default
+            </Dropdown.Item>
         </DropdownButton>
     );
 };
