@@ -1,7 +1,8 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {
-    createTabDataFromTabs, createTreeDataFromTreeNode,
-    createTreeIdsFromTreeData,
+    createTabDataFromTabs,
+    createTreeDataFromTreeNode,
+    createTreeIdsFromTreeData, createTreeIdsFromTreeNode,
     Label,
     TabContent,
     TreeItem,
@@ -117,16 +118,12 @@ export const treeDataSlice = createSlice({
             state.treeIds.push(action.payload.id);
         },
         // remove goal(s) and its children from hierachy
-        removeGoalFromTree: (state, action: PayloadAction<{
-            id:TreeItem["id"],
-            removeChildren:boolean
+        removeGoalIdFromTree: (state, action: PayloadAction<{
+            id: TreeItem["id"],
+            removeChildren: boolean
         }>) => {
-            
-            state.tree = removeItemIdFromTree(state.tree, action.payload.id,action.payload.removeChildren);
-            const collectIds = (nodes: TreeNode[]): TreeItem["id"][] => 
-            nodes.flatMap(node => [node.goalId, ...(node.children ? collectIds(node.children) : [])]);
-
-            state.treeIds = collectIds(state.tree);
+            state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.removeChildren);
+            state.treeIds = createTreeIdsFromTreeNode(state.tree);
         },
         deleteGoal: (state, action: PayloadAction<TreeItem>) => {
             const tabContent = state.tabs.get(action.payload.type);
@@ -170,6 +167,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset,removeGoalFromTree} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset, removeGoalIdFromTree} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

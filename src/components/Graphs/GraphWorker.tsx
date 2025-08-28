@@ -29,7 +29,7 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {removeGoalFromTree} from "../context/treeDataSlice.ts";
+import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
 // ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     if (!cells || !graph) return;
     const deletedCells = graph.removeCells(cells, removeChildrenFlag);
     deletedCells.forEach(cell => {
-      dispatch(removeGoalFromTree({ id: Number(cell.getId()), removeChildren: removeChildrenFlag }));
+      dispatch(removeGoalIdFromTree({ id: Number(cell.getId()), removeChildren: removeChildrenFlag }));
     });
 
     
@@ -308,18 +308,18 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
         deletingItemRef.current = selectedCells;
 
-        const hasChildren = selectedCells.some(cell => cell.getChildCount() > 0);
+        const hasChildren = selectedCells.some((cell) => cell.getChildCount() > 0);
         // setRemoveChildren(hasChildren);
-        if(hasChildren){
-          setShowDeleteWarning(true)
-        }else{
-          deleteItemFromGraph(graph,false)
+        if (hasChildren) {
+          setShowDeleteWarning(true);
+        } else {
+          deleteItemFromGraph(graph,false);
         }
 
         // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
         // graph.removeStateForCell(cells[0]); 
         // cells.forEach(cell => {
-        //   dispatch(removeGoalFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
+        //   dispatch(removeGoalIdFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
         // });
         // graph.removeCells(cells, true); remove children
         // graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text redundant
@@ -548,8 +548,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       <ErrorModal {...errorModal} />
       <ConfirmModal
         show={showDeleteWarning}
-        title="Delete Warning"
-        message="Do you want to delete this goal?"
+        title="Delete goal with children"
+        message="The selected goal has children. Confirm you want to delete this goal"
         onHide={() => setShowDeleteWarning(false)}
         onConfirm={() => {
           if (graph) {
