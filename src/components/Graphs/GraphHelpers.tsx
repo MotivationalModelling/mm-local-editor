@@ -187,7 +187,7 @@ export const renderFunction = (
 
   // insert new vertex and edge into graph
   const node = graph.insertVertex(
-    null,
+    source,
     String(goal.GoalID), // give goal id
     arr.join("\n"),
     SYMBOL_X_COORD,
@@ -203,6 +203,7 @@ export const renderFunction = (
     rootGoalWrapper.value = node;
     console.log("rootgoal registered", rootGoalWrapper.value);
   }
+
 
   //resize functional goal base on text length and number of lines
   const node_geo = node.getGeometry();
@@ -406,7 +407,7 @@ export const renderNonFunction = (
   console.log("description: ", descriptions)
   // Insert the vertex
   const node = graph.insertVertex(
-    null,
+    source,
     descriptions.map(x => x.id).join(delimiter),
     descriptions.map(x => x.content).join(delimiter),
     x,
