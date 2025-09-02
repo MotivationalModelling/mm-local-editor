@@ -16,11 +16,11 @@ import {
   isTextEmpty,
   handleContentSave,
   handleGoalKeyPress,
-  handleGoalBlur
-} from "../components/utils/GoalHint.tsx"
+  handleGoalBlur,
+} from "../components/utils/GoalHint.tsx";
 
 import "./Tree.css";
-import {deleteGoal, setTreeData} from "./context/treeDataSlice.ts";
+import { deleteGoal, setTreeData } from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -91,7 +91,7 @@ const Tree: React.FC<TreeProps> = ({
   const deletingItemRef = useRef<TreeItem | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const {treeData, dispatch} = useFileContext();
+  const { treeData, dispatch } = useFileContext();
 
   // Delete item by its id
   const deleteItem = () => {
@@ -100,8 +100,6 @@ const Tree: React.FC<TreeProps> = ({
     }
     setShowDeleteWarning(false);
   };
-
-  
 
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeItem) => {
@@ -146,7 +144,7 @@ const Tree: React.FC<TreeProps> = ({
       if (isEmptyGoal(treeItem)) {
         return;
       }
-      
+
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -249,6 +247,9 @@ const Tree: React.FC<TreeProps> = ({
           style={{
             padding: ".5rem",
             flex: 1,
+            minWidth: 0,
+            overflowWrap: "break-word",
+            wordBreak: "break-word",
           }}
         >
           {isEditing ? (
@@ -259,7 +260,9 @@ const Tree: React.FC<TreeProps> = ({
               onChange={(event) => setEditedText(event.target.value)}
               onBlur={handleBlur}
               onKeyDown={handleEditKeyDown}
-              className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
+              className={`tree-input ${
+                isTextEmpty(editedText) ? "is-invalid" : ""
+              }`}
               style={treeInputStyle}
             />
           ) : (
@@ -281,7 +284,8 @@ const Tree: React.FC<TreeProps> = ({
           onClick={isEditing ? handleSave : handleEdit}
           style={{
             opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
-            cursor: !isEditing && isEmptyGoal(treeItem) ? 'not-allowed' : 'pointer'
+            cursor:
+              !isEditing && isEmptyGoal(treeItem) ? "not-allowed" : "pointer",
           }}
         >
           {isEditing ? (
