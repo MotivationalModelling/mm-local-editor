@@ -244,6 +244,21 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             else if (change.constructor.name == "ValueChange") {
               const cell: Cell = change.cell;
               // goal id
+
+              // check if input is null
+              const newInput = String(change.value ?? "");
+
+              if (newInput.trim() === "") {
+                graph.getDataModel().setValue(cell, change.previous);
+                setErrorModal({
+                  show: true,
+                  title: "Input Error",
+                  message: "Input cannot be empty.",
+                  onHide: () => setErrorModal(prev => ({ ...prev, show: false}))
+                })
+                return;
+              }
+
               const cellID = cell.getId()?.split(",") ?? [];
               // goal value
               const newContent = change.value.split(",");
