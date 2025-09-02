@@ -1,3 +1,15 @@
+/**
+ * ProjectEditHeader Component
+ *
+ * This component renders the header for the project edit page.
+ * It includes:
+ * - Project title
+ * - Buttons to toggle goal list visibility
+ * - Graph reset button
+ * - Export and Save file buttons (Save enabled only for supported browsers)
+ * - Back button to reset data and navigate to home
+ */
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Col, Container, Row, Button, ButtonGroup } from "react-bootstrap";
@@ -10,10 +22,16 @@ import { reset } from "../context/treeDataSlice.ts";
 import { initialTabs } from "../../data/initialTabs.ts";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
+/**
+ * Props for ProjectEditHeader component
+ *
+ * @property showGoalSection - Controls visibility of the goal list section
+ * @property setShowGoalSection - Function to toggle showGoalSection state
+ * @property showGraphSection - Controls whether Export button is enabled
+ */
 type ProjectEditHeaderProps = {
   showGoalSection: boolean;
   setShowGoalSection: (showGoalSection: boolean) => void;
-  // Add showGraphSection prop to control Export button enablement
   showGraphSection: boolean;
 };
 
@@ -22,16 +40,22 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
   setShowGoalSection,
   showGraphSection,
 }) => {
-  const { dispatch } = useFileContext();
-  const navigate = useNavigate();
-  const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+  const { dispatch } = useFileContext(); // Access global file context
+  const navigate = useNavigate(); // React Router navigation
+  const [isBrowserSupported, setIsBrowserSupported] = useState(false); // Flag for browser support for SaveFileButton
 
   useEffect(() => {
+    // Check if current browser supports save functionality (Chrome, Edge, Opera)
     if (isChrome || isEdge || isOpera) {
       setIsBrowserSupported(true);
     }
   }, []);
 
+  /**
+   * Handle back button click
+   * - Reset project tabs and tree data to initial state
+   * - Navigate back to home page
+   */
   const handleBackBtnClick = () => {
     dispatch(reset({ tabData: initialTabs, treeData: [] }));
     navigate("/", { replace: true });
