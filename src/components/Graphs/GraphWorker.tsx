@@ -14,13 +14,13 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
-import {
-  registerCustomShapes,
-} from "./GraphShapes";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
+import {associateNonFunctions, layoutFunctions, renderGoals} from './GraphHelpers';
+import {registerCustomShapes,} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
@@ -29,8 +29,6 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
-import ConfirmModal from "../ConfirmModal.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -59,7 +57,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
   const {cluster, dispatch} = useFileContext();
   const {graph, setGraph} = useGraph();
 
-
   const hasFunctionalGoal = (cluster: Cluster) => (
       cluster.ClusterGoals.some((goal) => goal.GoalType === "Functional")
   );
@@ -72,37 +69,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
   });
 
-
-  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
-  const [removeChildren, setRemoveChildren] = useState(false);
-  const deletingItemRef = useRef<Cell[] | null>(null);
-
-
-  const deleteItemFromGraph = (graph:Graph,removeChildrenFlag: boolean) => {
-    const cells = deletingItemRef.current;
-    if (!cells || !graph) return;
-    const deletedCells = graph.removeCells(cells, removeChildrenFlag);
-    deletedCells.forEach(cell => {
-      dispatch(removeGoalIdFromTree({ id: Number(cell.getId()), removeChildren: removeChildrenFlag }));
-    });
-
-    
-    setShowDeleteWarning(false);
-  };
-   // Function to reset the graph to empty
-  //  const resetEmptyGraph = () => {
-  //   if (graph) {
-  //     onResetEmpty();
-  //   }
-  // };
-
-  // Function to reset the graph to the default set of goals
-  // const resetDefaultGraph = () => {
-  //   if (graph) {
-  //     onResetDefault();
-  //   }
-  // };
-  
   // Track if we have already centered on first entry
   const hasCenteredOnEntryRef = useRef(false);
   const prevShowGraphSectionRef = useRef(false);
@@ -204,7 +170,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
-              console.log("change, ",cell)
+
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
@@ -302,27 +268,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     const keyHandler = new KeyHandler(graph);
     keyHandler.bindKey(DELETE_KEYBINDING, () => {
       if (graph.isEnabled()) {
-        
-        const selectedCells = graph.getSelectionCells();
-        if (!selectedCells || selectedCells.length === 0) return;
-
-        deletingItemRef.current = selectedCells;
-
-        const hasChildren = selectedCells.some((cell) => cell.getChildCount() > 0);
-        // setRemoveChildren(hasChildren);
-        if (hasChildren) {
-          setShowDeleteWarning(true);
-        } else {
-          deleteItemFromGraph(graph,false);
-        }
-
-        // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
-        // graph.removeStateForCell(cells[0]); 
-        // cells.forEach(cell => {
-        //   dispatch(removeGoalIdFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
-        // });
-        // graph.removeCells(cells, true); remove children
-        // graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text redundant
+        console.log("--------------- DELETE CELL ---------------");
+        const cells = graph.removeCells();
+        graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text
       }
     });
     keyHandler.bindKey(DELETE_KEYBINDING2, () => {
@@ -546,28 +494,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <ErrorModal {...errorModal} />
-      <ConfirmModal
-        show={showDeleteWarning}
-        title="Delete goal with children"
-        message="The selected goal has children. Confirm you want to delete this goal"
-        onHide={() => setShowDeleteWarning(false)}
-        onConfirm={() => {
-          if (graph) {
-            deleteItemFromGraph(graph, removeChildren);
-          } else {
-            console.warn("Graph not initialized yet");
-          }
-          setShowDeleteWarning(false);
-        }}
-        extraContent={
-          <Form.Check
-            type="checkbox"
-            label="Delete all children goals"
-            checked={removeChildren}
-            onChange={(e) => setRemoveChildren(e.target.checked)}
-          />
-        }
-      />
       <Container>
         <Row className="row">
           <Col md={10}>

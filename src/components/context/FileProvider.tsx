@@ -91,17 +91,6 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): TreeItem["id"][
     return treeIds;
 };
 
-// this is very similar to createTreeIdsFromTreeData
-export const createTreeIdsFromTreeNode = (tree: TreeNode[]): TreeNode["goalId"][] => {
-    const treeIds = tree.map((node) => [
-            node.goalId,
-            ...createTreeIdsFromTreeNode(node.children ?? [])
-        ]
-    ).flat();
-    return treeIds;
-};
-
-
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
         const goal = goals[tn.goalId];

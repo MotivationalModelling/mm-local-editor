@@ -1,6 +1,5 @@
 import React from "react";
-import Modal from "react-bootstrap/Modal";
-import Button from "react-bootstrap/Button";
+import { Modal, Button } from "react-bootstrap";
 
 export type ErrorModalProps = {
 	show: boolean;
