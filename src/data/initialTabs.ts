@@ -23,17 +23,17 @@ const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): Tr
 export const defaultTreeData: TreeItem[] = [
   {
     id: 1,
-    content: "Functional Goal",
+    content: "Do",
     type: "Do",
     children: [
       {
         id: 6,
-        content: "Functional Goal 2",
+        content: "Do1",
         type: "Do",
         children: [
           {
             id: 7,
-            content: "Functional Goal 3",
+            content: "Do2",
             type: "Do",
             children: []
           }
@@ -41,7 +41,7 @@ export const defaultTreeData: TreeItem[] = [
       },
       {
         id: 8,
-        content: "Functional Goal 4",
+        content: "Do3",
         type: "Do",
         children: []
       }
@@ -49,25 +49,25 @@ export const defaultTreeData: TreeItem[] = [
   },
   {
     id: 2,
-    content: "Quality Goals",
+    content: "Be",
     type: "Be",
     children: []
   },
   {
     id: 3,
-    content: "Emotional Goals",
+    content: "Feel",
     type: "Feel",
     children: []
   },
   {
     id: 4,
-    content: "Stakeholders",
+    content: "Who",
     type: "Who",
     children: []
   },
   {
     id: 5,
-    content: "Negatives",
+    content: "Concern",
     type: "Concern",
     children: []
   }
