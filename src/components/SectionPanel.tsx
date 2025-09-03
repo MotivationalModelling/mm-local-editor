@@ -71,6 +71,18 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const goalListRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // // define a handler for deleting a cell and it children from the Graph Render Section
+  // const handleDeleteCellsFromGraph = (treeItems:TreeItem[]) => {
+  // // remove goal from treeData / cluster hierarchy
+  //   dispatch(removeItemIdFromTree);
+  // };
+
+
+
+
+
+
+
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
     setSectionOneWidth(ref.offsetWidth);

@@ -1,7 +1,4 @@
-import { useState } from "react";
-import { ColorResult } from "react-color";
-import { Graph } from "@maxgraph/core";
-import ColorPicker from "./SidebarComponents/ColorPicker";
+import {Graph} from "@maxgraph/core";
 import SidebarBody from "./SidebarComponents/SidebarBody";
 import SidebarItems from "./SidebarComponents/SidebarItems.tsx";
 
@@ -15,7 +12,9 @@ type GraphSidebarProps = {
 const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {
     return (
         <div>
-            <SidebarBody graph={graph} recentreView={recentreView}/>
+            <SidebarBody graph={graph}
+                         recentreView={recentreView}
+                         className="mt-1"/>
             {(graph) && (
                 <SidebarItems className="mt-1" graph={graph}/>
             )}
