@@ -1,12 +1,12 @@
-import React, { useState, useRef, ChangeEvent } from "react";
+import React, { ChangeEvent, useRef, useState } from "react";
 import Button from "react-bootstrap/Button";
-import { Link, useNavigate } from "react-router-dom";
-import { InitialTab } from "../data/initialTabs";
+import { useNavigate } from "react-router-dom";
+import { InitialTab, createDefaultTabData, defaultTreeData } from "../data/initialTabs";
 import ErrorModal, { ErrorModalProps } from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import { JSONData, TabContent, TreeItem, useFileContext } from "./context/FileProvider";
-import {reset} from "./context/treeDataSlice.ts";
+import { reset } from "./context/treeDataSlice.ts";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -57,6 +57,14 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const navigate = useNavigate();
 
 	const {dispatch} = useFileContext();
+
+	// Handle Create Model button click - load default data
+	const handleCreateModel = () => {
+		dispatch(reset({
+			treeData: defaultTreeData,
+			tabData: createDefaultTabData()
+		}));
+	};
 
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
@@ -229,16 +237,17 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 					{/* Link section is bigger than Button section, click outside Button could trigger navigation,
              hard code a static height for temporary, need a better solution
           */}
-					<Link
-						to="/projectEdit"
+					<Button 
+						variant="primary" 
+						size="lg"
 						className="me-5"
-						style={{ height: "60px" }}
-						draggable={false}
+						onClick={() => {
+							handleCreateModel();
+							navigate("/projectEdit");
+						}}
 					>
-						<Button variant="primary" size="lg">
-							Create Model
-						</Button>
-					</Link>
+						Create Model
+					</Button>
 					<Button
 						variant="primary"
 						size="lg"

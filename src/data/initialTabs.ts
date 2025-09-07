@@ -1,10 +1,10 @@
-import {Label, TreeItem} from "../components/context/FileProvider.tsx";
+import { Label, TreeItem } from "../components/context/FileProvider.tsx";
 
-import WhoIcon from "/img/Stakeholder.png";
-import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
+import DoIcon from "/img/Function.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
+import WhoIcon from "/img/Stakeholder.png";
 
 export interface InitialTab {
     label: Label
@@ -18,6 +18,81 @@ const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): Tr
     id: initFields.id ?? Date.now(),
     ...initFields
 });
+
+// Predefined constant cluster to use for the example graph
+export const defaultTreeData: TreeItem[] = [{
+    id: 1,
+    content: "Do",
+    type: "Do",
+    children: [{
+        id: 6,
+        content: "Do1",
+        type: "Do",
+        children: [{
+            id: 7,
+            content: "Do2",
+            type: "Do",
+            children: []
+        }]
+    }, {
+        id: 8,
+        content: "Do3",
+        type: "Do",
+        children: []
+    }]
+}, {
+    id: 2,
+    content: "Be",
+    type: "Be",
+    children: []
+}, {
+    id: 3,
+    content: "Feel",
+    type: "Feel",
+    children: []
+}, {
+    id: 4,
+    content: "Who",
+    type: "Who",
+    children: []
+}, {
+    id: 5,
+    content: "Concern",
+    type: "Concern",
+    children: []
+}];
+
+// Function to create default tab data from default tree data
+export const createDefaultTabData = (): InitialTab[] => {
+    // Group goals by type
+    const goalsByType: Record<Label, TreeItem[]> = {
+        "Do": [],
+        "Be": [],
+        "Feel": [],
+        "Who": [],
+        "Concern": []
+    };
+
+    // Helper function to collect all goals from tree data
+    const collectGoals = (items: TreeItem[]) => {
+        items.forEach(item => {
+            goalsByType[item.type].push(item);
+            if (item.children && item.children.length > 0) {
+                collectGoals(item.children);
+            }
+        });
+    };
+
+    collectGoals(defaultTreeData);
+
+    return [
+        {label: "Do", icon: DoIcon, rows: goalsByType["Do"]},
+        {label: "Be", icon: BeIcon, rows: goalsByType["Be"]},
+        {label: "Feel", icon: FeelIcon, rows: goalsByType["Feel"]},
+        {label: "Concern", icon: ConcernIcon, rows: goalsByType["Concern"]},
+        {label: "Who", icon: WhoIcon, rows: goalsByType["Who"]},
+    ];
+};
 
 // Define the initial tabs with labels and corresponding icons
 // Note that the order here defines the order that the tabs appear
