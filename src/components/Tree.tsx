@@ -31,6 +31,7 @@ const treeListStyle: React.CSSProperties = {
   borderRadius: "5px",
   alignItems: "center",
   padding: "0.1rem",
+  minWidth: "100px",
 };
 
 const treeInputStyle: React.CSSProperties = {
@@ -249,6 +250,8 @@ const Tree: React.FC<TreeProps> = ({
           style={{
             padding: ".5rem",
             flex: 1,
+            overflowWrap: "break-word",
+            wordBreak: "break-word",
           }}
         >
           {isEditing ? (
