@@ -61,9 +61,6 @@ export const renderGoals = (
 
     console.log("Logging: renderGoals() called on list: ", goals);
     // accumulate non-functional goals to be rendered into a single symbol
-    
-    const rootGoals: Cell[] = [];
-    
     const emotions = [];
     const qualities = [];
     const concerns = [];
@@ -81,7 +78,7 @@ export const renderGoals = (
         // recurse over functional goals
         console.log("Render goals type:", type);
         if (type === SYMBOL_CONFIGS.FUNCTIONAL.type) {
-            const node = renderFunction(
+            renderFunction(
                 goal,
                 graph,
                 source,
@@ -91,10 +88,6 @@ export const renderGoals = (
                 qualitiesGlob,
                 stakeholdersGlob
             );
-
-            if (!source && node) {
-              rootGoals.push(node);
-            }
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
@@ -151,8 +144,6 @@ export const renderGoals = (
             stakeholdersGlob[key] = stakeholders;
         }
     }
-
-    return rootGoals;
 };
 
 /**
@@ -241,8 +232,6 @@ export const renderFunction = (
         qualitiesGlob,
         stakeholdersGlob
     );
-
-    return node;
 };
 
 
@@ -515,13 +504,13 @@ export const renderLegend = (graph: Graph): Cell => {
 /**
   * Automatically lays-out the functional hierarchy of the graph.
   */
-export const layoutFunctions = (graph: Graph, rootGoal: Cell | null, xStart?: number, yStart?: number) => {
+export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
     const layout = new GoalModelLayout(
         graph,
         VERTICAL_SPACING,
         HORIZONTAL_SPACING
     );
-    return layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell, xStart, yStart);
+    layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
 };
 
 /**

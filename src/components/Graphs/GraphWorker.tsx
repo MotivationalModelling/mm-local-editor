@@ -461,7 +461,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
     // Start the transaction to render the graph
     graph.getDataModel().beginUpdate();
-    const rootGoals = renderGoals(
+    renderGoals(
       cluster.ClusterGoals,
       graph,
       null,
@@ -471,24 +471,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       qualitiesGlob,
       stakeholdersGlob
     );
-    // rootGoal = rootGoalWrapper.value;
-    // layoutFunctions(graph, rootGoal);
-
-    const GAP = 100 ?? 30;
-    const yBaseLine = graph.gridSize;
-    let cursorX = graph.gridSize;
-
-    for (let i = 0; i < rootGoals.length; i++) {
-      const root = rootGoals[i];
-      const bounds = layoutFunctions(graph, root, cursorX, yBaseLine);
-      
-      if (bounds) {
-        cursorX = bounds.x + bounds.width + GAP;
-      } else {
-        cursorX += 200 + GAP;
-      }
-    }
-    
+    rootGoal = rootGoalWrapper.value;
+    layoutFunctions(graph, rootGoal);
     associateNonFunctions(
       graph,
       rootGoal,

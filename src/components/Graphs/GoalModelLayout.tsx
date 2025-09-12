@@ -107,7 +107,7 @@ export class GoalModelLayout extends GraphLayout {
    * root - Optional <mxCell> that will be used as the root of the tree.
    * Overrides <root> if specified.
    */
-  execute(parent: Cell, root?: Cell, xStart?: number, yStart?: number): Rectangle | null {
+  execute(parent: Cell, root?: Cell): void {
     console.log("Executing layout with parent:", parent, "and root:", root);
     this.parent = parent;
     const model = this.graph.getDataModel();
@@ -157,10 +157,10 @@ export class GoalModelLayout extends GraphLayout {
 
         if (this.node != null) {
           this.layout(this.node);
-          const x0 = typeof xStart === "number" ? xStart : this.graph.gridSize;
-          const y0 = typeof yStart === "number" ? yStart : this.graph.gridSize;
+          const x0 = this.graph.gridSize;
+          const y0 = x0;
 
-          let bounds = this.verticalLayout(this.node, null, x0, y0) as Rectangle | null;
+          const bounds = this.verticalLayout(this.node, null, x0, y0);
 
           if (bounds != null) {
             let dx = 0;
@@ -176,13 +176,6 @@ export class GoalModelLayout extends GraphLayout {
 
             if (dx != 0 || dy != 0) {
               this.moveNode(this.node, dx, dy);
-              bounds = new Rectangle(
-                bounds.x + dx,
-                bounds.y + dy,
-                bounds.width,
-                bounds.height,
-              );
-              console.log("debug", bounds, "node Id");
             }
           }
 
@@ -197,7 +190,6 @@ export class GoalModelLayout extends GraphLayout {
               model.setGeometry(parent, geo);
             }
           }
-          return bounds ?? null;
         }
       } finally {
         model.endUpdate(); // end transaction
