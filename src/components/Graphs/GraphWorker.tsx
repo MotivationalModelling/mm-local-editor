@@ -47,6 +47,7 @@ interface CellHistory {
 }
 
 interface GlobObject {
+    [key: string]: { id: number; content: string; }[];
 }
 
 // ---------------------------------------------------------------------------
