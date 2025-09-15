@@ -446,6 +446,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
     // Start the transaction to render the graph
     graph.getDataModel().beginUpdate();
+
+    // render functional goals
     renderGoals(
       cluster.ClusterGoals,
       graph,
@@ -458,6 +460,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     );
     rootGoal = rootGoalWrapper.value;
     layoutFunctions(graph, rootGoal);
+
+    // render non-functional goals
     associateNonFunctions(
       graph,
       rootGoal,
