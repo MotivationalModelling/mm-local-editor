@@ -127,6 +127,14 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 		catch (error) {
 			console.error('Failed to save file: ', error);
 		}
+
+		// Return focus to graph container to enable keyboard shortcuts
+		setTimeout(() => {
+			const graphContainer = document.getElementById('graphContainer');
+			if (graphContainer) {
+				graphContainer.focus();
+			}
+		}, 100);
 	};
 
 	// Function to export graph as PNG
@@ -221,6 +229,14 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 				}
 			}
 		}, 'image/png');
+
+		// Return focus to graph container to enable keyboard shortcuts
+		setTimeout(() => {
+			const graphContainer = document.getElementById('graphContainer');
+			if (graphContainer) {
+				graphContainer.focus();
+			}
+		}, 100);
 	};
 
 	// Check if the model is ready for export

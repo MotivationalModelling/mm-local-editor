@@ -14,13 +14,11 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Col, Container, Form, Row} from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
-import {
-  registerCustomShapes,
-} from "./GraphShapes";
+import {associateNonFunctions, layoutFunctions, renderGoals} from './GraphHelpers';
+import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
@@ -49,7 +47,6 @@ interface CellHistory {
 }
 
 interface GlobObject {
-  [key: string]: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -571,7 +568,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       <Container>
         <Row className="row">
           <Col md={10}>
-            <div id={GRAPH_DIV_ID} ref={divGraph}/>
+            <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}}/>
           </Col>
           <Col md={2}>
             <GraphSidebar graph={graph} recentreView={recentreView} />

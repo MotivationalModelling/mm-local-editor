@@ -76,6 +76,14 @@ const SaveFileButton = () => {
 			await writable.write(json);
 			await writable.close();
 			setJsonFileHandle(handle);
+
+			// Return focus to graph container to enable keyboard shortcuts
+			setTimeout(() => {
+				const graphContainer = document.getElementById('graphContainer');
+				if (graphContainer) {
+					graphContainer.focus();
+				}
+			}, 100);
 		} catch (error) {
 			console.log(`Error initialize JSON File: ${error}`);
 		}
