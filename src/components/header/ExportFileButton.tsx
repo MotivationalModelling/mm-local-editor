@@ -89,7 +89,11 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 	
 		// Serialize the SVG element to a string
 		const serializer = new XMLSerializer();
-		const svgString = serializer.serializeToString(svgElement);
+		let svgString = serializer.serializeToString(svgElement);
+
+		// Remove problematic image references that cause loading errors
+		svgString = svgString.replace(/href="[^"]*expanded\.gif[^"]*"/g, 'href=""');
+
 		try {
 			// If chromium browser
 			if ('showSaveFilePicker' in self) {
@@ -177,7 +181,10 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 
 		// Serialize the SVG element to a string
 		const serializer = new XMLSerializer();
-		const svgString = serializer.serializeToString(svgElement);
+		let svgString = serializer.serializeToString(svgElement);
+
+		// Remove problematic image references that cause loading errors
+		svgString = svgString.replace(/href="[^"]*expanded\.gif[^"]*"/g, 'href=""');
 
 		// Create a canvas element
 		const canvas = document.createElement('canvas');
@@ -194,8 +201,13 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 		// Use Canvg to render SVG onto the canvas
 		const v = Canvg.fromString(context, svgString);
 
-		// Render SVG onto the canvas
-		await v.render();
+		// Render SVG onto the canvas with error handling
+		try {
+			await v.render();
+		} catch (imageError) {
+			console.warn('Image loading error during PNG export:', imageError);
+			// Continue with export even if some images fail to load
+		}
 
 		// Convert the canvas content to a Blob (PNG format)
 		canvas.toBlob(async (blob) => {
