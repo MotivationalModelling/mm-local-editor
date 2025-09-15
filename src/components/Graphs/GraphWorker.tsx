@@ -308,7 +308,14 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
         deletingItemRef.current = selectedCells;
 
-        const hasChildren = selectedCells.some((cell) => cell.getChildCount() > 0);
+        // check its children by outgoing edges
+        const outgoingEdges = graph.getOutgoingEdges(selectedCells[0],null);
+
+        console.log("Outgoing edges:", outgoingEdges);
+
+        console.log("deletingItemRef: ",deletingItemRef)
+
+        const hasChildren = outgoingEdges.length>0;
         // setRemoveChildren(hasChildren);
         if (hasChildren) {
           setShowDeleteWarning(true);
