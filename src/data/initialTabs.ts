@@ -20,89 +20,78 @@ const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): Tr
 });
 
 // Predefined constant cluster to use for the example graph
-export const defaultTreeData: TreeItem[] = [
-  {
+export const defaultTreeData: TreeItem[] = [{
     id: 1,
-    content: "Functional Goal",
+    content: "Do",
     type: "Do",
-    children: [
-      {
+    children: [{
         id: 6,
-        content: "Functional Goal 2",
+        content: "Do1",
         type: "Do",
-        children: [
-          {
+        children: [{
             id: 7,
-            content: "Functional Goal 3",
+            content: "Do2",
             type: "Do",
             children: []
-          }
-        ]
-      },
-      {
+        }]
+    }, {
         id: 8,
-        content: "Functional Goal 4",
+        content: "Do3",
         type: "Do",
         children: []
-      }
-    ]
-  },
-  {
+    }]
+}, {
     id: 2,
-    content: "Quality Goals",
+    content: "Be",
     type: "Be",
     children: []
-  },
-  {
+}, {
     id: 3,
-    content: "Emotional Goals",
+    content: "Feel",
     type: "Feel",
     children: []
-  },
-  {
+}, {
     id: 4,
-    content: "Stakeholders",
+    content: "Who",
     type: "Who",
     children: []
-  },
-  {
+}, {
     id: 5,
-    content: "Negatives",
+    content: "Concern",
     type: "Concern",
     children: []
-  }
-];
+}];
 
 // Function to create default tab data from default tree data
 export const createDefaultTabData = (): InitialTab[] => {
-  // Group goals by type
-  const goalsByType: Record<Label, TreeItem[]> = {
-    "Do": [],
-    "Be": [],
-    "Feel": [],
-    "Who": [],
-    "Concern": []
-  };
+    // Group goals by type
+    const goalsByType: Record<Label, TreeItem[]> = {
+        "Do": [],
+        "Be": [],
+        "Feel": [],
+        "Who": [],
+        "Concern": []
+    };
 
-  // Helper function to collect all goals from tree data
-  const collectGoals = (items: TreeItem[]) => {
-    items.forEach(item => {
-      goalsByType[item.type].push(item);
-      if (item.children && item.children.length > 0) {
-        collectGoals(item.children);
-      }
-    });
-  };
+    // Helper function to collect all goals from tree data
+    const collectGoals = (items: TreeItem[]) => {
+        items.forEach(item => {
+            goalsByType[item.type].push(item);
+            if (item.children && item.children.length > 0) {
+                collectGoals(item.children);
+            }
+        });
+    };
 
-  collectGoals(defaultTreeData);
+    collectGoals(defaultTreeData);
 
-  return [
-    {label: "Do", icon: DoIcon, rows: goalsByType["Do"]},
-    {label: "Be", icon: BeIcon, rows: goalsByType["Be"]},
-    {label: "Feel", icon: FeelIcon, rows: goalsByType["Feel"]},
-    {label: "Concern", icon: ConcernIcon, rows: goalsByType["Concern"]},
-    {label: "Who", icon: WhoIcon, rows: goalsByType["Who"]},
-  ];
+    return [
+        {label: "Do", icon: DoIcon, rows: goalsByType["Do"]},
+        {label: "Be", icon: BeIcon, rows: goalsByType["Be"]},
+        {label: "Feel", icon: FeelIcon, rows: goalsByType["Feel"]},
+        {label: "Concern", icon: ConcernIcon, rows: goalsByType["Concern"]},
+        {label: "Who", icon: WhoIcon, rows: goalsByType["Who"]},
+    ];
 };
 
 // Define the initial tabs with labels and corresponding icons
