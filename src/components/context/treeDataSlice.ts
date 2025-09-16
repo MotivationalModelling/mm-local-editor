@@ -1,4 +1,4 @@
-import {createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {createSlice, current, PayloadAction} from "@reduxjs/toolkit";
 import {
     createTabDataFromTabs,
     createTreeDataFromTreeNode,
@@ -49,7 +49,11 @@ export const removeItemIdFromTree = (
   removeChildren: boolean=true
 ): TreeNode[] => {
   return items.reduce((acc, item) => {
+
+    console.log("removeCellRecursively: item.goalID ",item.goalId)
+    console.log("removeCellRecursively: id ",id)
     if (item.goalId === id) {
+        console.log("removeCellRecursively: item ",item)
       if (!removeChildren && item.children) {
         // Promote children to parent level
         acc.push(...item.children);
@@ -60,8 +64,9 @@ export const removeItemIdFromTree = (
     if (item.children) {
       item.children = removeItemIdFromTree(item.children, id, removeChildren);
     }
-
+    
     acc.push(item);
+    console.log("removeCellRecursively: acc ",acc)
     return acc;
   }, [] as TreeNode[]);
 };

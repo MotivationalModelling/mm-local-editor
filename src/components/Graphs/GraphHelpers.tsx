@@ -208,7 +208,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        String(goal.GoalID), // give goal id
+        goal.GoalType+"-"+goal.GoalID, // give goal id, this will be replaced by maxgraph self id if conflict
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -216,7 +216,7 @@ export const renderFunction = (
         height,
         style
     );
-    
+    console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if(source){
         graph.insertEdge(null, null, "", source, node);
     }
