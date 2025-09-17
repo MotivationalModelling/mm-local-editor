@@ -219,7 +219,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     useEffect(() => {
         console.log("FileProvider state updated:", state);
-        }, [state]);
+    }, [state]);
 
     // // Listen to changes in redux state and write back to localStorage
     useEffect(() => {
