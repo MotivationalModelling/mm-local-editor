@@ -571,7 +571,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       <Container>
         <Row className="row">
           <Col md={10}>
-            <div id={GRAPH_DIV_ID} ref={divGraph}/>
+            <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}}/>
           </Col>
           <Col md={2}>
             <GraphSidebar graph={graph} recentreView={recentreView} />
