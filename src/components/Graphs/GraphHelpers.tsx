@@ -48,7 +48,7 @@ const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
  * : source, the parent goal of the given array, defaults to null
  */
 export const renderGoals = (
-    goals: ClusterGoal[], 
+    goals: ClusterGoal[],
     graph: Graph,
     source: Cell | null = null,
     // rootGoal: Cell | null,
@@ -59,7 +59,7 @@ export const renderGoals = (
     stakeholdersGlob: GlobObject
 ) => {
 
-    // TODO: the functional goal is the child of the parent goal
+    //  the functional goal is the child of the parent goal
     //       the non-functional goal is to describe the parent goal
 
     // 
@@ -114,7 +114,7 @@ export const renderGoals = (
 
     // Determine the key to use for non-functional goals, use cell id as unique id
     let key = source?.id?.toString() || ROOT_KEY;
-    console.log("Key1: ",key)
+
     // If rootGoalWrapper.value exists and source is null, use its value as the key
     if (!source && rootGoalWrapper.value) {
         key = rootGoalWrapper.value.id?.toString() || ROOT_KEY;
@@ -200,15 +200,13 @@ export const renderFunction = (
     style.shape = config.shape;
 
     // insert new vertex and edge into graph
-
-    console.log("source in render funcational goal: ",source)
     // between functional goal, should connect with edge, rather than cell hierachy
     // Using null ensures the coordinates (SYMBOL_X_COORD, SYMBOL_Y_COORD) are absolute, 
     // not relative to a parent vertex’s coordinate system.
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        goal.GoalType+"-"+goal.GoalID, // give goal id, this will be replaced by maxgraph self id if conflict
+        goal.GoalType+"-"+goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -217,7 +215,7 @@ export const renderFunction = (
         style
     );
     console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
-    if(source){
+    if (source) {
         graph.insertEdge(null, null, "", source, node);
     }
     // if no root goal is registered, then store this as root

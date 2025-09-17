@@ -29,9 +29,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 			</Modal.Body>
 			<Modal.Footer>
 				<Button variant="secondary" onClick={onHide}>
-					Close
+					Cancel
 				</Button>
-				<Button variant="warning" onClick={onConfirm}>
+				<Button variant="warning" onClick={onConfirm} style={{ backgroundColor:"red" }}>
 					Confirm
 				</Button>
 			</Modal.Footer>
