@@ -1,8 +1,9 @@
 import Button from "react-bootstrap/Button";
 import {ButtonVariant} from "react-bootstrap/types";
+import {MouseEventHandler} from "react";
 
 interface ShowGoalSectionButtonProps {
-    onClick: () => void
+    onClick: MouseEventHandler
     showGoalSection: boolean
     className?: string
     size?: "sm" | "lg"
