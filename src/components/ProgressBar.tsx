@@ -98,7 +98,7 @@ const ProgressBar = ({
                 </OverlayTrigger>
               </span>
           </div>
-          <div className={`step ${selectedTab === TabOptions.Graph ? "current" : ""}`}
+          <div className={`step ${(selectedTab === TabOptions.Graph) ? "current" : ""}`}
                id="graphTab"
                onClick={handleGraphBarClick}>
           <span>
@@ -113,7 +113,9 @@ const ProgressBar = ({
                                          setShowGoalSection(!showGoalSection);
                                          ev.stopPropagation();
                                      }}
-                                     size="sm"
+                                     // make button stand out on dark background colour
+                                     variant={(selectedTab === TabOptions.Graph) ? "info" : undefined}
+                                     size="xs"
                                      className="ms-1"/>
           </span>
         </div>
