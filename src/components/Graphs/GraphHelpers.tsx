@@ -59,6 +59,12 @@ export const renderGoals = (
     stakeholdersGlob: GlobObject
 ) => {
 
+    //  the functional goal is the child of the parent goal
+    //       the non-functional goal is to describe the parent goal
+
+    // 
+
+    // Goals: all root goal (include functional and functional goal)
     console.log("Logging: renderGoals() called on list: ", goals);
     // accumulate non-functional goals to be rendered into a single symbol
     const emotions = [];
@@ -76,6 +82,9 @@ export const renderGoals = (
         const id = goal.GoalID
         const content = goal.GoalContent;
         // recurse over functional goals
+
+        // 1. if no root goal, then mark this as root goal
+        // the rest on the same level will be treat as child goal
         console.log("Render goals type:", type);
         if (type === SYMBOL_CONFIGS.FUNCTIONAL.type) {
             renderFunction(
@@ -103,18 +112,21 @@ export const renderGoals = (
         }
     }
 
-    // Determine the key to use for non-functional goals
-    let key = source ? source.value : ROOT_KEY;
+    // Determine the key to use for non-functional goals, use cell id as unique id
+    let key = source?.id?.toString() || ROOT_KEY;
 
     // If rootGoalWrapper.value exists and source is null, use its value as the key
     if (!source && rootGoalWrapper.value) {
-        key = rootGoalWrapper.value.value;
+        key = rootGoalWrapper.value.id?.toString() || ROOT_KEY;
     }
+    console.log("Key2: ",key)
 
     // Store non-functional goals using the determined key
     if (emotions.length) {
         console.log("emotions key value: ", key);
         console.log("emotions length: ", emotions);
+
+        // existing
         if (emotionsGlob[key]) {
             emotionsGlob[key] = emotionsGlob[key].concat(emotions);
         } else {
@@ -170,6 +182,8 @@ export const renderFunction = (
     // Dynamically set size, based on source (parent) size
     let width = SYMBOL_WIDTH;
     let height = SYMBOL_HEIGHT;
+
+    // has parent functional goal
     if (source) {
         const geo = source.getGeometry();
         if (geo) {
@@ -186,9 +200,13 @@ export const renderFunction = (
     style.shape = config.shape;
 
     // insert new vertex and edge into graph
+    // between functional goal, should connect with edge, rather than cell hierachy
+    // Using null ensures the coordinates (SYMBOL_X_COORD, SYMBOL_Y_COORD) are absolute, 
+    // not relative to a parent vertex’s coordinate system.
+    // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
-        source,
-        String(goal.GoalID), // give goal id
+        null,
+        goal.GoalType+"-"+goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -196,8 +214,10 @@ export const renderFunction = (
         height,
         style
     );
-    graph.insertEdge(null, null, "", source, node);
-
+    console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
+    if (source) {
+        graph.insertEdge(null, null, "", source, node);
+    }
     // if no root goal is registered, then store this as root
     if (rootGoalWrapper.value === null) {
         rootGoalWrapper.value = node;
@@ -406,7 +426,7 @@ export const renderNonFunction = (
     console.log("description: ", descriptions)
     // Insert the vertex
     const node = graph.insertVertex(
-        source,
+        null,
         descriptions.map(x => x.id).join(delimiter),
         descriptions.map(x => x.content).join(delimiter),
         x,
@@ -525,17 +545,21 @@ export const associateNonFunctions = (
   qualitiesGlob: GlobObject,
   stakeholdersGlob: GlobObject
 ) => {
+    console.log("Glob: ",emotionsGlob,negativesGlob,qualitiesGlob,stakeholdersGlob)
     // fetch all the functional goals
     const goals = graph.getChildVertices();
 
+    console.log("Glob;child ",goals)
+
     goals.forEach((goal, i) => {
-        const value = goal.value;
+        const value = goal.id?.toString();
+        if (!value) return;
         console.log("Associate: ", i, ", ", value);
 
         // render all concerns
         if (negativesGlob[value]) {
             renderNonFunction(
-                negativesGlob[goal.value],
+                negativesGlob[value],
                 graph,
                 goal,
                 SYMBOL_CONFIGS.NEGATIVE.type
@@ -544,7 +568,7 @@ export const associateNonFunctions = (
         // render all stakeholders
         if (stakeholdersGlob[value]) {
             renderNonFunction(
-                stakeholdersGlob[goal.value],
+                stakeholdersGlob[value],
                 graph,
                 goal,
                 SYMBOL_CONFIGS.STAKEHOLDER.type
@@ -554,7 +578,7 @@ export const associateNonFunctions = (
         // render all emotions
         if (emotionsGlob[value]) {
             renderNonFunction(
-                emotionsGlob[goal.value],
+                emotionsGlob[value],
                 graph,
                 goal,
                 SYMBOL_CONFIGS.EMOTIONAL.type
@@ -564,7 +588,7 @@ export const associateNonFunctions = (
         // render all qualities
         if (qualitiesGlob[value]) {
             renderNonFunction(
-                qualitiesGlob[goal.value],
+                qualitiesGlob[value],
                 graph,
                 goal,
                 SYMBOL_CONFIGS.QUALITY.type

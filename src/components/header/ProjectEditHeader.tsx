@@ -39,14 +39,13 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	};
 
 	return (
-		<header className="mb-2 py-3 px-5"
-				style={{width: "auto", minWidth: "1280px", maxWidth: "100%"}}>
+		<header className="w-full sticky top-0 z-10 border-b bg-white shadow-sm">
 			<Container fluid>
 				<Row className="text-start align-content-start">
-					<Col>
+					<Col xs="auto">
 						<strong style={{ fontSize: "35px" }}>AMMBER</strong>
 					</Col>
-					<Col className="text-end align-content-end">
+					<Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center"> 
 						<Button variant="outline-primary" onClick={() => setShowGoalSection(!showGoalSection)}>
 							{showGoalSection ? "Hide Goal List" : "Show Goal List"}
 						</Button>
