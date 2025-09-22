@@ -57,7 +57,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const {dispatch, treeIds} = useFileContext();
+  const {dispatch, treeIds,tree} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
@@ -153,7 +153,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
 
       if (draggedItem && draggedItem.content) {
-          if (!treeIds.includes(draggedItem.id)) {
+        // the first hierachy does not contain the dragged item
+          if (!tree.map((index)=>(index.goalId)).includes(draggedItem.id)) {
               dispatch(addGoalToTree(draggedItem));
           } else {
               setExistingItemIds([...existingItemIds, draggedItem.id]);
