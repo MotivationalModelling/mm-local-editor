@@ -78,17 +78,42 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
   const deletingItemRef = useRef<Cell[] | null>(null);
 
 
-  const deleteItemFromGraph = (graph:Graph,removeChildrenFlag: boolean) => {
-    const cells = deletingItemRef.current;
-    if (!cells || !graph) return;
-    const deletedCells = graph.removeCells(cells, removeChildrenFlag);
-    deletedCells.forEach(cell => {
-      dispatch(removeGoalIdFromTree({ id: Number(cell.getId()), removeChildren: removeChildrenFlag }));
-    });
-
+const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
+  const cells = deletingItemRef.current
+  console.log("removeCellRecursively: selected ",cells)
+  if(!cells||!graph) return
+  const deletedCells: Cell[] = [];
+  
+  // selected cell
+  const removeCellRecursively = (cell: Cell) => {
     
-    setShowDeleteWarning(false);
+    console.log("removeCellRecursively: iterate ",cell)
+    // check the children
+    const outgoingEdges = graph.getOutgoingEdges(cell,null);
+
+    if (removeChildrenFlag && outgoingEdges.length) {
+      outgoingEdges.forEach(edge => {
+        if (edge.target) removeCellRecursively(edge.target);
+      });
+    }
+    const removed = graph.removeCells([cell], removeChildrenFlag);
+    console.log("removeCellRecursively: removed ",removed)
+    deletedCells.push(...removed);
   };
+
+  cells.forEach(cell => 
+      removeCellRecursively(cell));
+  deletedCells.forEach((cell) => {
+    // since the cell.getID is functionatype + the id
+
+    const idStr = cell.getId(); // i.e "Functional-8"
+    const numericId = Number(idStr?.split("-").pop()); // 8
+    dispatch(removeGoalIdFromTree({ id: numericId, removeChildren: removeChildrenFlag }));
+  });
+
+  setShowDeleteWarning(false);
+};
+
    // Function to reset the graph to empty
   //  const resetEmptyGraph = () => {
   //   if (graph) {
@@ -308,7 +333,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
         deletingItemRef.current = selectedCells;
 
-        const hasChildren = selectedCells.some((cell) => cell.getChildCount() > 0);
+      
+
+        const outgoingEdges = graph.getOutgoingEdges(selectedCells[0],null);
+        const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
+
         // setRemoveChildren(hasChildren);
         if (hasChildren) {
           setShowDeleteWarning(true);
@@ -446,6 +475,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
     // Start the transaction to render the graph
     graph.getDataModel().beginUpdate();
+
+    // render functional goals
     renderGoals(
       cluster.ClusterGoals,
       graph,
@@ -458,6 +489,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     );
     rootGoal = rootGoalWrapper.value;
     layoutFunctions(graph, rootGoal);
+
+    // render non-functional goals
     associateNonFunctions(
       graph,
       rootGoal,
@@ -571,7 +604,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
       <Container>
         <Row className="row">
           <Col md={10}>
-            <div id={GRAPH_DIV_ID} ref={divGraph}/>
+            <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}}/>
           </Col>
           <Col md={2}>
             <GraphSidebar graph={graph} recentreView={recentreView} />

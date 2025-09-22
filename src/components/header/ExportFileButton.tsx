@@ -5,6 +5,7 @@ import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 import { useFileContext } from "../context/FileProvider";
 import { useGraph } from "../context/GraphContext";
+import { returnFocusToGraph } from "../utils/GraphUtils";
 
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
@@ -127,6 +128,8 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 		catch (error) {
 			console.error('Failed to save file: ', error);
 		}
+        // Return focus to graph container to enable keyboard shortcuts
+        returnFocusToGraph();
 	};
 
 	// Function to export graph as PNG
@@ -221,6 +224,9 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
 				}
 			}
 		}, 'image/png');
+
+        // Return focus to graph container to enable keyboard shortcuts
+        returnFocusToGraph();
 	};
 
 	// Check if the model is ready for export

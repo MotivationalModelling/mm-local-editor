@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "react-bootstrap";
 import { JSONData, useFileContext } from "../context/FileProvider";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal";
+import { returnFocusToGraph } from "../utils/GraphUtils";
 
 const SaveFileButton = () => {
 	const { setJsonFileHandle, treeData, tabData, goals } = useFileContext();
@@ -93,6 +94,7 @@ const SaveFileButton = () => {
 		} catch (error) {
 			console.error(`Error creating files: ${error}`);
 		}
+        returnFocusToGraph();
 	};
 	// className="m-2"
 
