@@ -31,6 +31,7 @@ import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
+import { returnFocusToGraph } from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -542,13 +543,18 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       if (cluster.ClusterGoals.length > 0) {
         console.log("re render");
         renderGraph();
-      } 
+        // Restore focus after rendering to enable Delete key functionality
+        // Set the focus after the graph section render finished
+        if (showGraphSection) {
+          returnFocusToGraph();
+        }
+      }
       else {
         graph.getDataModel().clear();
         console.log("Graph is empty");
       }
     }
-  }, [cluster, graph, renderGraph]);
+  }, [cluster, graph, renderGraph, showGraphSection]);
 
   // Trigger centering when entering render section
   useEffect(() => {
@@ -566,6 +572,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       // Use setTimeout to ensure centering happens after layout is complete
       setTimeout(() => {
         initRecentreView();
+        // Set focus after navigation to enable keyboard shortcuts
+        returnFocusToGraph();
       }, 200);
       hasCenteredOnEntryRef.current = true;
     }
