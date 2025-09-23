@@ -1,25 +1,22 @@
-import React, {Dispatch, useState} from "react";
+import { useState } from "react";
 import "./ProgressBar.css";
 import { Popover, OverlayTrigger } from "react-bootstrap";
-import {BsInfoCircleFill} from "react-icons/bs";
-import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
+import { FaInfoCircle } from "react-icons/fa";
 
 enum TabOptions {
   Cluster,
   Graph,
 }
 
-interface ProgressBarProps {
-    showGoalSection: boolean
-    setShowGoalSection: Dispatch<React.SetStateAction<boolean>>
-    setShowGraphSection: (showGraphSection: boolean) => void
-}
+type ProgressBarProps = {
+  setShowGoalSection: (showGoalSection: boolean) => void;
+  setShowGraphSection: (showGraphSection: boolean) => void;
+};
 
 const ProgressBar = ({
-                         showGoalSection,
-                         setShowGoalSection,
-                         setShowGraphSection,
-                     }: ProgressBarProps) => {
+  setShowGoalSection,
+  setShowGraphSection,
+}: ProgressBarProps) => {
   const [selectedTab, setSelectedTab] = useState(TabOptions.Cluster);
 
   const handleClusterBarClick = () => {
@@ -79,44 +76,53 @@ const ProgressBar = ({
   );
 
   return (
-      <div style={{
-          width: "auto",
-          minWidth: "1280px",
-          overflowY: "hidden",
-          maxWidth: "100%",
-      }}>
+    <div
+      style={{
+        width: "auto",
+        minWidth: "1280px",
+        overflowY: "hidden",
+        maxWidth: "100%",
+      }}
+    >
       <div className="arrow-steps clearfix mb-1">
-          <div className={`step ${(selectedTab === TabOptions.Cluster) ? "current" : ""}`}
-               id="clusterTab"
-               onClick={handleClusterBarClick}>
-              <span>
-                Enter Goals / Arrange Hierarchy
-                <OverlayTrigger trigger="click"
-                                placement="right"
-                                overlay={clusterInfoPopover}>
-                    <BsInfoCircleFill className="ms-1"/>
-                </OverlayTrigger>
-              </span>
-          </div>
-          <div className={`step ${(selectedTab === TabOptions.Graph) ? "current" : ""}`}
-               id="graphTab"
-               onClick={handleGraphBarClick}>
+        <div
+          className={`step ${
+            selectedTab === TabOptions.Cluster ? "current" : ""
+          }`}
+          id="clusterTab"
+          onClick={handleClusterBarClick}
+        >
           <span>
-              Arrange Hierarchy / Render Model
-              <OverlayTrigger trigger="click"
-                              placement="left"
-                              overlay={graphInfoPopover}>
-                  <BsInfoCircleFill className="ms-1"/>
-              </OverlayTrigger>
-              <ShowGoalSectionButton showGoalSection={showGoalSection}
-                                     onClick={(ev) => {
-                                         setShowGoalSection(!showGoalSection);
-                                         ev.stopPropagation();
-                                     }}
-                                     // make button stand out on dark background colour
-                                     variant={(selectedTab === TabOptions.Graph) ? "info" : undefined}
-                                     size="xs"
-                                     className="ms-1"/>
+            Enter Goals / Arrange Hierarchy
+            <OverlayTrigger
+              trigger={"click"}
+              placement="right"
+              overlay={clusterInfoPopover}
+            >
+              <span>
+                <FaInfoCircle style={{ marginLeft: "5px" }} />
+              </span>
+            </OverlayTrigger>
+          </span>
+        </div>
+        <div
+          className={`step ${
+            selectedTab === TabOptions.Graph ? "current" : ""
+          }`}
+          id="graphTab"
+          onClick={handleGraphBarClick}
+        >
+          <span>
+          Arrange Hierarchy / Render Model
+            <OverlayTrigger
+              trigger={"click"}
+              placement="left"
+              overlay={graphInfoPopover}
+            >
+              <span>
+                <FaInfoCircle style={{ marginLeft: "5px" }} />
+              </span>
+            </OverlayTrigger>
           </span>
         </div>
       </div>
