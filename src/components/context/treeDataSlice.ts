@@ -108,6 +108,7 @@ export const treeDataSlice = createSlice({
         //     state.tabData = action.payload;
         // },
         addGoal(state, action: PayloadAction<TreeItem>) {
+            console.log("！！！addGoal: action.payload ",action.payload)
             state.goals[action.payload.id] = action.payload;
             state.tabs.get(action.payload.type)?.goalIds.push(action.payload.id);
         },
@@ -119,8 +120,10 @@ export const treeDataSlice = createSlice({
             state.tree = createTreeFromTreeData(action.payload);
         },
         addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
+            console.log("！！！addGoalToTree: action.payload ",action.payload)
             state.tree.push(newTreeNode({goalId: action.payload.id}));
             state.treeIds.push(action.payload.id);
+            console.log("！！！addGoalToTree:treeIds ",state.treeIds.slice())
         },
         // remove goal(s) and its children from hierachy
         removeGoalIdFromTree: (state, action: PayloadAction<{

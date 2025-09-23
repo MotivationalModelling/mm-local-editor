@@ -9,6 +9,7 @@ import {
   SYMBOL_HEIGHT,
   SYMBOL_CONFIGS,
 } from "../../utils/GraphConstants";
+import { symbol } from "d3";
 
 type SidebarItemsProps = {
     graph: Graph
@@ -26,6 +27,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
       isEdge: boolean
     ) => {
       let prototype: Cell;
+      let 
 
       if (!isEdge) {
         // Try to find matching symbol config by image path
@@ -88,10 +90,13 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
         const goal = graph.cloneCell(prototype);
+        console.log("！！！dragAndDrop: point ",point, "goal value ",goal.style.shape)
 
         if (goal && goal.geometry) {
           goal.geometry.x = point.x;
           goal.geometry.y = point.y;
+          console.log("！！！dragAndDrop: goal ",goal, " goal.geometry ",goal.geometry)
+          goal.setId(`${symbolKey}-${new Date().getTime()}`);
           graph.importCells([goal], 0, 0, cell);
         }
       };
@@ -103,6 +108,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         x?: number,
         y?: number
       ) => {
+        console.log("！！！dragAndDropEdge: evt ",evt, " cell ",cell)
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
         const goal = graph.cloneCell(prototype);

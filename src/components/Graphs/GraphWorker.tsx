@@ -22,14 +22,14 @@ import {
   registerCustomShapes,
 } from "./GraphShapes";
 import "./GraphWorker.css";
-import {useFileContext} from "../context/FileProvider.tsx";
+import {TreeItem, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
+import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
 // ---------------------------------------------------------------------------
@@ -56,7 +56,10 @@ interface GlobObject {
 
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
   const divGraph = useRef<HTMLDivElement>(null);
-  const {cluster, dispatch} = useFileContext();
+  const {cluster, dispatch, treeIds} = useFileContext();
+  const treeIdsRef = useRef(treeIds);
+  useEffect(() => { treeIdsRef.current = treeIds }, [treeIds])
+
   const {graph, setGraph} = useGraph();
 
 
@@ -229,14 +232,32 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
-              console.log("change, ",cell)
+              console.log("！！！change, ",cell)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
+            
+              const numericId = Number(cellID?.split("-").pop());
+              if (!treeIdsRef.current.includes(numericId)) {
+                console.log("！！！New goal added with id: ", numericId, "treeIds: ",treeIds.slice());
+                const newTreeItem: TreeItem = {
+                  id: numericId,
+                  content: "",
+                  type: "Be",//export type Label =  "Do" | "Be" | "Feel" | "Concern" | "Who";
+
+                  //children?: TreeItem[];
+                };
+                console.log("！！！FileProvider state updated: newTreeItem: ", newTreeItem);
+                dispatch(addGoal(newTreeItem));
+                dispatch(addGoalToTree(newTreeItem));
+              }
 
               if (cellID != null && cellHistory[cellID] == undefined) {
+                console.log("！！！if 1");
                 cellHistory[cellID] = [newWidth, newHeight];
+                
               } else {
+                console.log("！！！else 2");
                 if (cellID != null) {
                   const oldWidth = cellHistory[cellID][0];
                   const oldHeight = cellHistory[cellID][1];
@@ -263,17 +284,20 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 }
               }
               if (cellID) {
+                console.log("if 3");
                 cellHistory[cellID] = [newWidth, newHeight];
               }
             }
+           
+
             else if (change.constructor.name == "ValueChange") {
               const cell: Cell = change.cell;
               // goal id
-              const cellID = cell.getId()?.split(",") ?? [];
+              const cellIDs = cell.getId()?.split(",") ?? [];
               // goal value
               const newContent = change.value.split(",");
 
-              const lengthUpdated = cellID.length
+              const lengthUpdated = cellIDs.length
               // Check if the number of items matches
               if (lengthUpdated !== newContent.length) {
                 graph.getDataModel().setValue(cell, change.previous);
@@ -285,7 +309,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 });
               } else {
                 for (let i = 0; i < lengthUpdated; i++) {
-                  const id = Number(cellID[i]);
+                  const id = Number(cellIDs[i]?.split("-").pop());
                   const text = newContent[i].trim("");
 
                   console.log("FileProvider state updated: cellid: ", id);
