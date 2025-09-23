@@ -22,13 +22,13 @@ import {
   registerCustomShapes,
 } from "./GraphShapes";
 import "./GraphWorker.css";
-import {TreeItem, useFileContext} from "../context/FileProvider.tsx";
+import {Label, TreeItem, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
-import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {VERTEX_FONT, getSymbolConfigByShape,} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
@@ -231,19 +231,22 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
+              const numericId = Number(cell.getId());
+              
+              const cellLabel = getSymbolConfigByShape(String(cell.style.shape))?.label;
+              //cell.setId(`${cellLabel}-${numericId}`); 
               const cellID = cell.getId();
-              console.log("！！！change, ",cell)
+              console.log("！！！cell id",cellID, "cell label ",cellLabel)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
-            
-              const numericId = Number(cellID?.split("-").pop());
+              
               if (!treeIdsRef.current.includes(numericId)) {
-                console.log("！！！New goal added with id: ", numericId, "treeIds: ",treeIds.slice());
+                //${getSymbolConfigByShape(String(goal.style.shape))?.type}-
                 const newTreeItem: TreeItem = {
                   id: numericId,
                   content: "",
-                  type: "Be",//export type Label =  "Do" | "Be" | "Feel" | "Concern" | "Who";
+                  type: cellLabel as Label || "Do",//export type Label =  "Do" | "Be" | "Feel" | "Concern" | "Who";
 
                   //children?: TreeItem[];
                 };
@@ -253,11 +256,9 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               }
 
               if (cellID != null && cellHistory[cellID] == undefined) {
-                console.log("！！！if 1");
                 cellHistory[cellID] = [newWidth, newHeight];
                 
               } else {
-                console.log("！！！else 2");
                 if (cellID != null) {
                   const oldWidth = cellHistory[cellID][0];
                   const oldHeight = cellHistory[cellID][1];
@@ -284,7 +285,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 }
               }
               if (cellID) {
-                console.log("if 3");
                 cellHistory[cellID] = [newWidth, newHeight];
               }
             }

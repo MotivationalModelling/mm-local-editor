@@ -8,8 +8,8 @@ import {
   SYMBOL_WIDTH,
   SYMBOL_HEIGHT,
   SYMBOL_CONFIGS,
+  getSymbolConfigByShape,
 } from "../../utils/GraphConstants";
-import { symbol } from "d3";
 
 type SidebarItemsProps = {
     graph: Graph
@@ -27,8 +27,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
       isEdge: boolean
     ) => {
       let prototype: Cell;
-      let 
-
+      
       if (!isEdge) {
         // Try to find matching symbol config by image path
         const symbolEntry = Object.entries(SYMBOL_CONFIGS).find(
@@ -41,6 +40,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         }
 
         const [symbolKey, config] = symbolEntry;
+
 
         let shapeStyle: CellStateStyle = {
           fontSize: VERTEX_FONT.size,
@@ -72,6 +72,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
           shapeStyle
         );
         prototype.setVertex(true);
+
       } else {
         prototype = new Cell(null, new Geometry(0, 0, width, height));
         if (prototype.geometry) {
@@ -90,14 +91,19 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
         const goal = graph.cloneCell(prototype);
-        console.log("！！！dragAndDrop: point ",point, "goal value ",goal.style.shape)
 
         if (goal && goal.geometry) {
           goal.geometry.x = point.x;
           goal.geometry.y = point.y;
-          console.log("！！！dragAndDrop: goal ",goal, " goal.geometry ",goal.geometry)
-          goal.setId(`${symbolKey}-${new Date().getTime()}`);
           graph.importCells([goal], 0, 0, cell);
+          //const insertedCell = graph.getSelectionCell();
+          // console.log("！！！dragAndDrop: insertedCell ",insertedCell)
+          // if (insertedCell) {
+          //   const numericId = Number(insertedCell.getId());
+          //   const cellType = getSymbolConfigByShape(String(insertedCell.style.shape))?.type;
+          //   insertedCell.setId(`${cellType}-${numericId}`);
+          //   console.log("！！！dragAndDrop: insertedCell id ",insertedCell.getId())
+          // }
         }
       };
 
@@ -119,6 +125,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
             new Point(point.x + LINE_SIZE, point.y + LINE_SIZE),
             false
           );
+          console.log("！！！dragAndDropEdge: goal ",goal.getId());
           goal.parent = graph.getDefaultParent();
           graph.importCells([goal], 0, 0, cell);
         }
