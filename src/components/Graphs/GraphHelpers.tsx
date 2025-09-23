@@ -1,17 +1,17 @@
 import {
-  Graph,
-  Rectangle,
-  Cell,
+    Graph,
+    Rectangle,
+    Cell,
 } from "@maxgraph/core";
 import { ClusterGoal, GlobObject } from "../types.ts";
 import { GoalModelLayout } from "./GoalModelLayout";
 
 import {
-  VERTEX_FONT,
-  SYMBOL_WIDTH,
-  SYMBOL_HEIGHT,
-  SYMBOL_CONFIGS,
-  SymbolKey
+    VERTEX_FONT,
+    SYMBOL_WIDTH,
+    SYMBOL_HEIGHT,
+    SYMBOL_CONFIGS,
+    SymbolKey
 } from "../utils/GraphConstants.tsx";
 
 import { getSymbolKeyByType } from "../utils/GraphUtils";
@@ -100,13 +100,13 @@ export const renderGoals = (
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
-            emotions.push({id, content});
+            emotions.push({ id, content });
         } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-            concerns.push({id, content});
+            concerns.push({ id, content });
         } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
-            qualities.push({id, content});
+            qualities.push({ id, content });
         } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
-            stakeholders.push({id, content});
+            stakeholders.push({ id, content });
         } else {
             console.log("Logging: goal of unknown type received: " + type);
         }
@@ -119,7 +119,7 @@ export const renderGoals = (
     if (!source && rootGoalWrapper.value) {
         key = rootGoalWrapper.value.id?.toString() || ROOT_KEY;
     }
-    console.log("Key2: ",key)
+    console.log("Key2: ", key)
 
     // Store non-functional goals using the determined key
     if (emotions.length) {
@@ -194,7 +194,7 @@ export const renderFunction = (
 
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -206,7 +206,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        goal.GoalType+"-"+goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
+        goal.GoalType + "-" + goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -402,13 +402,33 @@ export const renderNonFunction = (
             y = geo.y + OFFSET_Y;
             delimiter = "\n";
             break;
+            case "EMOTIONAL": // Top Right
+                x = geo.x + width + OFFSET_X;
+                y = geo.y - height - OFFSET_Y;
+                delimiter = ",\n";
+                break;
+            case "NEGATIVE": // Bottom Right
+                x = geo.x + width + OFFSET_X;
+                y = geo.y + OFFSET_Y;
+                delimiter = ",\n";
+                break;
+            case "QUALITY": // Top Left
+                x = geo.x - width - OFFSET_X;
+                y = geo.y - height - OFFSET_Y;
+                delimiter = ",\n";
+                break;
+            case "STAKEHOLDER": // Bottom Left
+                x = geo.x - width - OFFSET_X;
+                y = geo.y + OFFSET_Y;
+                delimiter = "\n";
+                break;
         }
     } else {
         console.warn(`Unknown type "${type}" — no matching symbol config found.`);
     }
 
     // Clone style to avoid modifying the default
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
     style.shape = shape;
     style.align = "center";
     style.verticalAlign = "middle";
@@ -425,11 +445,12 @@ export const renderNonFunction = (
 
     const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
 
-    console.log("description: ", descriptions)
+    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        descriptions.map(x => x.id).join(delimiter),
+        "NonFunctional"+descriptions.map(x => x.id).join(delimiter),
         squareLabel,
         x,
         y,
@@ -437,6 +458,7 @@ export const renderNonFunction = (
         height,
         style
     );
+    console.log("nonFunctional node: ",node)
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
     edge.visible = false; // Make the edge invisible - used in auto layout
@@ -505,7 +527,7 @@ export const renderLegend = (graph: Graph): Cell => {
         startY,
         fWidth * 1.5,
         fHeight * legendTypes.length * 1.5,
-        {shape: "rect", strokeColor: "black", fillColor: "transparent"}
+        { shape: "rect", strokeColor: "black", fillColor: "transparent" }
     );
 
     legendTypes.forEach((symbolKey, index) => {
@@ -553,18 +575,18 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
  * functional goals.
  */
 export const associateNonFunctions = (
-  graph: Graph,
-  rootGoal: Cell | null,
-  emotionsGlob: GlobObject,
-  negativesGlob: GlobObject,
-  qualitiesGlob: GlobObject,
-  stakeholdersGlob: GlobObject
+    graph: Graph,
+    rootGoal: Cell | null,
+    emotionsGlob: GlobObject,
+    negativesGlob: GlobObject,
+    qualitiesGlob: GlobObject,
+    stakeholdersGlob: GlobObject
 ) => {
-    console.log("Glob: ",emotionsGlob,negativesGlob,qualitiesGlob,stakeholdersGlob)
+    console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob)
     // fetch all the functional goals
     const goals = graph.getChildVertices();
 
-    console.log("Glob;child ",goals)
+    console.log("Glob;child ", goals)
 
     goals.forEach((goal, i) => {
         const value = goal.id?.toString();
