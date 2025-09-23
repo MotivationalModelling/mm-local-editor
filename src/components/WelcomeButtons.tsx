@@ -173,6 +173,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 	const handleJSONFileRemove = () => {
 		setJsonFile(null);
 		setIsJsonDragOver(false);
+		// Clear the file input value to allow re-selecting the same file
+		if (jsonFileRef.current) {
+			jsonFileRef.current.value = '';
+		}
 	};
 
 	/* --------------------------------------------------------------------------------------------------------*/
