@@ -385,17 +385,17 @@ export const renderNonFunction = (
         case "EMOTIONAL": // Top Right
             x = geo.x + width + OFFSET_X;
             y = geo.y - height - OFFSET_Y;
-            delimiter = ",\n";
+            delimiter = ", ";
             break;
         case "NEGATIVE": // Bottom Right
             x = geo.x + width + OFFSET_X;
             y = geo.y + OFFSET_Y;
-            delimiter = ",\n";
+            delimiter = ", ";
             break;
         case "QUALITY": // Top Left
             x = geo.x - width - OFFSET_X;
             y = geo.y - height - OFFSET_Y;
-            delimiter = ",\n";
+            delimiter = ", ";
             break;
         case "STAKEHOLDER": // Bottom Left
             x = geo.x - width - OFFSET_X;
@@ -413,7 +413,7 @@ export const renderNonFunction = (
     style.align = "center";
     style.verticalAlign = "middle";
     style.labelPosition = "center";
-    style.spacingTop = -10;
+    style.spacingTop = 0;
 
     // Text goes at bottom for stakeholder
     if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
@@ -423,12 +423,14 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
+    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+
     console.log("description: ", descriptions)
     // Insert the vertex
     const node = graph.insertVertex(
         null,
         descriptions.map(x => x.id).join(delimiter),
-        descriptions.map(x => x.content).join(delimiter),
+        squareLabel,
         x,
         y,
         width,
@@ -442,10 +444,23 @@ export const renderNonFunction = (
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
     const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
+
     if (nodeGeo && preferred) {
         // Adjust height based on the number of lines and font size
-        nodeGeo.height = descriptions.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;
-        nodeGeo.width = Math.max(nodeGeo.height, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
+        const lines: string[] = squareLabel.split(/\n/);
+        nodeGeo.height = lines.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;
+
+        let maxLineWidth = Math.max(...lines.map(l => l.length)) * VERTEX_FONT.size * 0.6;
+        // const side = Math.round((nodeGeo.height + maxLineWidth) / 2);
+
+        const ratio = maxLineWidth / nodeGeo.height;
+        if (ratio > 1.5) {
+            nodeGeo.height = maxLineWidth / 1.5;
+        } else if (ratio < 0.67) {
+            maxLineWidth = nodeGeo.height * 0.67;
+        }
+        
+        nodeGeo.width = Math.max(maxLineWidth, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
         nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
     }
 
@@ -596,3 +611,25 @@ export const associateNonFunctions = (
         }
     });
 };
+
+export function makeSquareLable (
+    items: Array<string>,
+    sep = ", "
+  ): string {
+    const n = items.length;
+
+    if (n === 0) {
+        return "";
+    }
+
+    const cols = Math.ceil(Math.sqrt(n));
+    const rows = Math.ceil(n / cols);
+    const lines: string[] = [];
+
+    for (let r = 0; r < rows; r++) {
+      const slice = items.slice(r * cols, (r + 1) * cols);
+      lines.push(slice.join(sep));
+    }
+
+    return lines.join(", \n");
+  }
