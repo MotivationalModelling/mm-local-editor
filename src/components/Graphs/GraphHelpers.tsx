@@ -382,40 +382,20 @@ export const renderNonFunction = (
 
         // Set the position and delimiter based on symbol type
         switch (symbolKey) {
-        case "EMOTIONAL": // Top Right
-            x = geo.x + width + OFFSET_X;
-            y = geo.y - height - OFFSET_Y;
-            delimiter = ", ";
-            break;
-        case "NEGATIVE": // Bottom Right
-            x = geo.x + width + OFFSET_X;
-            y = geo.y + OFFSET_Y;
-            delimiter = ", ";
-            break;
-        case "QUALITY": // Top Left
-            x = geo.x - width - OFFSET_X;
-            y = geo.y - height - OFFSET_Y;
-            delimiter = ", ";
-            break;
-        case "STAKEHOLDER": // Bottom Left
-            x = geo.x - width - OFFSET_X;
-            y = geo.y + OFFSET_Y;
-            delimiter = "\n";
-            break;
             case "EMOTIONAL": // Top Right
                 x = geo.x + width + OFFSET_X;
                 y = geo.y - height - OFFSET_Y;
-                delimiter = ",\n";
+                delimiter = ", ";
                 break;
             case "NEGATIVE": // Bottom Right
                 x = geo.x + width + OFFSET_X;
                 y = geo.y + OFFSET_Y;
-                delimiter = ",\n";
+                delimiter = ", ";
                 break;
             case "QUALITY": // Top Left
                 x = geo.x - width - OFFSET_X;
                 y = geo.y - height - OFFSET_Y;
-                delimiter = ",\n";
+                delimiter = ", ";
                 break;
             case "STAKEHOLDER": // Bottom Left
                 x = geo.x - width - OFFSET_X;
@@ -442,8 +422,6 @@ export const renderNonFunction = (
     } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
         style.fillColor = "grey";
     }
-
-    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
 
     const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
 
