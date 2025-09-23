@@ -10,6 +10,8 @@ import {reset} from "../context/treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
+import HomeButton from "./HomeButton.tsx";
+
 type ProjectEditHeaderProps = {
 	showGoalSection: boolean;
 	setShowGoalSection: (showGoalSection: boolean) => void;
@@ -17,14 +19,11 @@ type ProjectEditHeaderProps = {
 	showGraphSection: boolean;
 };
 
-
 const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	showGoalSection,
 	setShowGoalSection,
 	showGraphSection,
   }) => {
-	const {dispatch} = useFileContext();
-	const navigate = useNavigate();
 	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
   
 	useEffect(() => {
@@ -33,11 +32,6 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 		}
 	}, []);
   
-	const handleBackBtnClick = () => {
-		dispatch(reset({tabData: initialTabs, treeData: []}));
-		navigate("/", { replace: true });
-	};
-
 	return (
 		<header className="w-full sticky top-0 z-10 border-b bg-white shadow-sm">
             <Container fluid>
@@ -52,9 +46,7 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
                             <ExportFileButton showGraphSection={showGraphSection}/>
                             {isBrowserSupported && <SaveFileButton/>}
                         </ButtonGroup>
-                        <Button variant="outline-primary" onClick={handleBackBtnClick} className="ms-3">
-                            Back
-                        </Button>
+                        <HomeButton className="ms-3"/>
                     </Col>
                 </Row>
             </Container>
