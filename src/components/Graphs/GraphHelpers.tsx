@@ -214,7 +214,6 @@ export const renderFunction = (
         height,
         style
     );
-    console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
         graph.insertEdge(null, null, "", source, node);
     }
