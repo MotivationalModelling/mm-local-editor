@@ -36,11 +36,11 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 		<header className="w-full sticky top-0 z-10 border-b bg-white shadow-sm">
             <Container fluid>
                 <Row className="text-start align-content-start">
-                    <Col xs="auto">
+                    <Col xs="auto" className="d-flex align-items-center">
                         <strong style={{fontSize: "35px"}}>AMMBER</strong>
+                        <ResetGraphButton variant="outline-primary" className="ms-3"/>
                     </Col>
                     <Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center">
-                        <ResetGraphButton variant="outline-primary" className="ms-3"/>
                         <ButtonGroup className="ms-3">
                             {/* Pass showGraphSection to ExportFileButton to control enablement */}
                             <ExportFileButton showGraphSection={showGraphSection}/>
