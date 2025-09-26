@@ -178,7 +178,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 		const handleDeleteRow = (row: TreeItem) => {
-			dispatch(deleteGoal(row));
+			dispatch(deleteGoal({item:row,deleteFromGoalList:true}));
 			const filteredGroupSelected = groupSelected.filter(
 				(item) => item.id !== row.id
 			);
@@ -259,7 +259,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			// 	});
 			//
 			// 	setTabData(newTabData);
-				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoal(item)));
+
+				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoal({item:item,deleteFromGoalList:true})));
 				setGroupSelected([]); 
 			}
 		};

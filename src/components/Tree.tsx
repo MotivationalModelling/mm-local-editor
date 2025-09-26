@@ -97,7 +97,7 @@ const Tree: React.FC<TreeProps> = ({
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoal(deletingItemRef.current));
+      dispatch(deleteGoal({item:deletingItemRef.current,deleteFromGoalList:false}));
     }
     setShowDeleteWarning(false);
   };

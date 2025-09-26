@@ -14,8 +14,9 @@ export interface InitialTab {
 
 // TODO: this is a duplicate copy of this function to avoid a circular import -- fix this!!
 const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
-    content: "",
     id: initFields.id ?? Date.now(),
+    content: "",
+    copies:initFields.copies??1,
     ...initFields
 });
 

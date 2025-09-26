@@ -20,13 +20,15 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 
 export interface TreeNode {
     goalId: TreeItem["id"]
+    copies:TreeItem["copies"]
     children?: TreeNode[]
 }
 
 // require id and type fields, others optional.
 export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
-    content: "",
     id: initFields.id ?? Date.now(),
+    content: "",
+    copies:initFields.copies, 
     ...initFields
 });
 
@@ -41,6 +43,7 @@ export type TreeItem = {
     id: number;
     content: string;
     type: Label;
+    copies:number;
     children?: TreeItem[];
 };
 
@@ -92,20 +95,38 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): TreeItem["id"][
 };
 
 // this is very similar to createTreeIdsFromTreeData
-export const createTreeIdsFromTreeNode = (tree: TreeNode[]): TreeNode["goalId"][] => {
-    const treeIds = tree.map((node) => [
-            node.goalId,
-            ...createTreeIdsFromTreeNode(node.children ?? [])
-        ]
-    ).flat();
-    return treeIds;
+export const createTreeIdsFromTreeNode = (
+  tree: TreeNode[]
+): Record<TreeItem["id"], TreeItem["copies"][]> => {
+  const treeIds: Record<TreeItem["id"], TreeItem["copies"][]> = {};
+
+  const traverse = (nodes: TreeNode[]) => {
+    nodes.forEach((node) => {
+      // Initialize array if it doesn't exist
+      if (!treeIds[node.goalId]) {
+        treeIds[node.goalId] = [];
+      }
+      // Push the copiedId (instance ID)
+      treeIds[node.goalId].push(node.copies);
+
+      // Recurse on children
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    });
+  };
+
+  traverse(tree);
+
+  return treeIds;
 };
+
 
 
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
         const goal = goals[tn.goalId];
-        return newTreeItem({...goal, ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
+        return newTreeItem({...goal, copies: tn.copies,...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
     });
 };
 
@@ -185,9 +206,10 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
 
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
-
+        console.log("convertTreeDataToClusters: ",item)
         return {
             GoalID: item.goalId,
+            Copies: item.copies,
             GoalType: typeMapping[goal.type],
             GoalContent: goal.content,
             GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
@@ -214,6 +236,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     );
 
     const initialState = createInitialState(tabData, treeData);
+    console.log("transformation from localstorage to data: ",treeData)
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
@@ -225,9 +248,18 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     useEffect(() => {
         // Convert TreeNode[] to TreeItem[] for storage
         // Here we map TreeNode.goalId to TreeItem from state.goals
-        const treeItems = state.tree.map(treeNode => {
-        return state.goals[treeNode.goalId];
-        }).filter(Boolean); // Remove undefined if any
+        const treeItems = state.tree.map((treeNode:TreeNode) => {
+            const goal = state.goals[treeNode.goalId];
+            if (!goal) return null;
+            return {
+                ...goal,
+                copies: treeNode.copies, 
+                children: treeNode.children?.map(child => ({
+                    ...state.goals[child.goalId],
+                    copies: child.copies,
+                }))
+            };
+        }).filter(Boolean);
 
         setTreeData(treeItems);
 
