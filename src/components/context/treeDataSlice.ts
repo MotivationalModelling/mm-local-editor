@@ -25,20 +25,11 @@ export const createTreeFromTreeData = (
   treeData: TreeItem[],
   existingOcurrance: Record<TreeItem["id"], number> = {}
 ): TreeNode[] => {
-  
-  const existingDictionary = (goalId: TreeItem["id"]): number => {
-    if (existingOcurrance[goalId]===undefined) {
-      existingOcurrance[goalId] = 1;
-    } else {
-      existingOcurrance[goalId] = existingOcurrance[goalId] + 1;
-    }
-    return existingOcurrance[goalId];
-  };
 
   return treeData.map((ti) => ({
     goalId: ti.id,
     // if ti.instanceID exists, use it, else compute one
-    instanceID: existingDictionary(ti.id),
+    instanceID: ti.id,
     children: createTreeFromTreeData(ti.children ?? [], existingOcurrance)
   }));
 };
