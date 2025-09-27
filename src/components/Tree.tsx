@@ -61,9 +61,11 @@ const iconFromType = (type: Label) => {
 };
 
 type TreeProps = {
-  existingItemIds: number[];
+  // existingItemIds: number[];
   handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
-  setExistingItemIds: (existingItemIds: number[]) => void;
+  // setExistingItemIds: (existingItemIds: number[]) => void;
+  existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[];
+  setExistingGoalReferenceInstanceId:(existingGoalReferenceInstanceId:{ goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[])=>void
 };
 
 // Goal icon in the tree
@@ -81,9 +83,11 @@ const IconComponent = ({ type }: { type: Label }) => {
 };
 
 const Tree: React.FC<TreeProps> = ({
-  existingItemIds,
+  // existingItemIds,
   handleSynTableTree,
-  setExistingItemIds,
+  // setExistingItemIds,
+  existingGoalReferenceInstanceId,
+  setExistingGoalReferenceInstanceId,
 }) => {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState<string>("");
@@ -107,9 +111,12 @@ const Tree: React.FC<TreeProps> = ({
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeItem) => {
     deletingItemRef.current = item;
-    const deletingIds = getAllIds(item);
+    // const deletingIds = getAllIds(item);
+
+    const deletingInstanceId =getAllGoalInstances(item)
     if (item.children && item.children.length > 0) {
-      setExistingItemIds([...existingItemIds, ...deletingIds]);
+      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId,...deletingInstanceId])
+      // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {
       deleteItem();
@@ -119,22 +126,35 @@ const Tree: React.FC<TreeProps> = ({
   // Handle cancel deleting goal with children(s)
   const handleDeleteCancel = () => {
     setShowDeleteWarning(false);
-    setExistingItemIds([]);
+    // setExistingItemIds([]);
+    setExistingGoalReferenceInstanceId([])
   };
 
-  // Get ids from the tree item
-  const getAllIds = (item: TreeItem) => {
-    const ids: number[] = [item.id];
+  // // Get ids from the tree item
+  // const getAllIds = (item: TreeItem) => {
+  //   const ids: number[] = [item.id];
 
-    // If the item has children, recursively collect their ids
+  //   // If the item has children, recursively collect their ids
+  //   if (item.children) {
+  //     item.children.forEach((child) => {
+  //       ids.push(...getAllIds(child));
+  //     });
+  //   }
+
+  //   return ids;
+  // };
+
+  const getAllGoalInstances = (item: TreeItem): { goalId: number; instanceID: number }[] => {
+    const result = [{ goalId: item.id, instanceID: item.instanceID }];
+
     if (item.children) {
       item.children.forEach((child) => {
-        ids.push(...getAllIds(child));
+        result.push(...getAllGoalInstances(child)); // recurse into children
       });
     }
 
-    return ids;
-  };
+    return result;
+};
 
   // Function for rendering every item
   const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
@@ -230,6 +250,9 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     const ICON_SIZE = 25;
+    const isReference = existingGoalReferenceInstanceId.some(
+  ref => ref.goalId === treeItem.id && ref.instanceID === treeItem.instanceID
+);
     return (
       // While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
       <div
@@ -237,7 +260,7 @@ const Tree: React.FC<TreeProps> = ({
           ...treeListStyle,
           backgroundColor: isEditing
             ? "#e0e0e0"
-            : existingItemIds.includes(treeItem.id)
+            : isReference
             ? "#FF474C"
             : "white",
         }}
