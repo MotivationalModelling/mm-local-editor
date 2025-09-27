@@ -195,12 +195,12 @@ export const treeDataSlice = createSlice({
         },
         addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
             // the instance id is given only when add to the tree
-      
+            const instanceID = generateInstanceID(state.treeIds,action.payload.id)
             state.tree.push(newTreeNode({
                 goalId: action.payload.id,
-                instanceID: generateInstanceID(state.treeIds,action.payload.id)
+                instanceID: instanceID
             }));
-
+            state.treeIds[action.payload.id].push(instanceID)
         },
         // remove goal(s) and its children from canvas
         removeGoalIdFromTree: (state, action: PayloadAction<{
