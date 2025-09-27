@@ -20,15 +20,16 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 
 export interface TreeNode {
     goalId: TreeItem["id"]
-    copies:TreeItem["copies"]
+    instanceID:TreeItem["instanceID"]
     children?: TreeNode[]
 }
 
 // require id and type fields, others optional.
+// create a empty treeItem
 export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
     id: initFields.id ?? Date.now(),
     content: "",
-    copies:initFields.copies, 
+    instanceID:initFields.instanceID??0,  // give 0 when it is empty
     ...initFields
 });
 
@@ -43,7 +44,7 @@ export type TreeItem = {
     id: number;
     content: string;
     type: Label;
-    copies:number;
+    instanceID:number;
     children?: TreeItem[];
 };
 
@@ -85,48 +86,31 @@ export const LocalStorageType = {
 };
 
 // XXX this should be a Set
-export const createTreeIdsFromTreeData = (treeData: TreeItem[]): TreeItem["id"][] => {
-    const treeIds = treeData.map((td) => [
-            td.id,
-            ...createTreeIdsFromTreeData(td.children ?? [])
-        ]
-    ).flat();
-    return treeIds;
+export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem["id"],TreeItem["instanceID"][]> => {
+    const treeIds :Record<TreeItem["id"],TreeItem["instanceID"][]>={}
+    // inner function
+    const accumulate = (nodes:TreeItem[])=>{
+        nodes.forEach((node)=>{
+            if(!treeIds[node.id]){
+                treeIds[node.id] = [];
+            }
+            treeIds[node.id].push(node.instanceID)
+            if (node.children && node.children.length > 0) {
+                accumulate(node.children);
+            }
+        })
+    }
+    accumulate(treeData)
+    return treeIds
 };
 
-// this is very similar to createTreeIdsFromTreeData
-export const createTreeIdsFromTreeNode = (
-  tree: TreeNode[]
-): Record<TreeItem["id"], TreeItem["copies"][]> => {
-  const treeIds: Record<TreeItem["id"], TreeItem["copies"][]> = {};
-
-  const traverse = (nodes: TreeNode[]) => {
-    nodes.forEach((node) => {
-      // Initialize array if it doesn't exist
-      if (!treeIds[node.goalId]) {
-        treeIds[node.goalId] = [];
-      }
-      // Push the copiedId (instance ID)
-      treeIds[node.goalId].push(node.copies);
-
-      // Recurse on children
-      if (node.children && node.children.length > 0) {
-        traverse(node.children);
-      }
-    });
-  };
-
-  traverse(tree);
-
-  return treeIds;
-};
 
 
 
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
         const goal = goals[tn.goalId];
-        return newTreeItem({...goal, copies: tn.copies,...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
+        return newTreeItem({...goal, instanceID: tn.instanceID,...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
     });
 };
 
@@ -170,7 +154,7 @@ interface FileContextProps {
     tree: TreeNode[]
     tabs: Map<Label, TabContent>
     goals: Record<TreeItem["id"], TreeItem>
-    treeIds: TreeItem["id"][]
+    treeIds: Record<TreeItem["id"], TreeItem["instanceID"][]>
 }
 
 // Create context for data tansfer and file handle
@@ -189,7 +173,7 @@ const FileContext = createContext<FileContextProps>({
     tree: [],
     tabs: new Map(),
     goals: {},
-    treeIds: [],
+    treeIds: {},
 });
 
 // Mapping of old types to new types
@@ -206,10 +190,9 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
 
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
-        console.log("convertTreeDataToClusters: ",item)
         return {
             GoalID: item.goalId,
-            Copies: item.copies,
+            InstanceID: item.instanceID,
             GoalType: typeMapping[goal.type],
             GoalContent: goal.content,
             GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
@@ -253,10 +236,10 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
             if (!goal) return null;
             return {
                 ...goal,
-                copies: treeNode.copies, 
+                instanceID: treeNode.instanceID, 
                 children: treeNode.children?.map(child => ({
                     ...state.goals[child.goalId],
-                    copies: child.copies,
+                    instanceID: child.instanceID,
                 }))
             };
         }).filter(Boolean);
@@ -294,6 +277,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
   //   localStorage.removeItem(LocalStorageType.TREE);
   //   localStorage.removeItem(LocalStorageType.TAB);
   // };
+
 
   return (
       <FileContext.Provider value={{

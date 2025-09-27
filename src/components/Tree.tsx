@@ -20,7 +20,7 @@ import {
 } from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
-import {deleteGoal, setTreeData} from "./context/treeDataSlice.ts";
+import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -97,7 +97,7 @@ const Tree: React.FC<TreeProps> = ({
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoal({item:deletingItemRef.current,deleteFromGoalList:false}));
+      dispatch(deleteGoalReferenceFromHierarchy({item:deletingItemRef.current}));
     }
     setShowDeleteWarning(false);
   };

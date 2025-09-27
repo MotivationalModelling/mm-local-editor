@@ -12,7 +12,7 @@ import {TreeItem, useFileContext, newTreeItem, Label} from "./context/FileProvid
 import styles from "./TabButtons.module.css";
 import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
 import {isEmptyGoal,isGoalDraggable,isTextEmpty,handleGoalKeyPress,handleGoalBlur} from "./utils/GoalHint.tsx"
-import {addGoalToTab, deleteGoal, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {addGoalToTab,deleteGoalFromGoalList, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -178,7 +178,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 		const handleDeleteRow = (row: TreeItem) => {
-			dispatch(deleteGoal({item:row,deleteFromGoalList:true}));
+			dispatch(deleteGoalFromGoalList({item:row}));
 			const filteredGroupSelected = groupSelected.filter(
 				(item) => item.id !== row.id
 			);
@@ -260,7 +260,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			//
 			// 	setTabData(newTabData);
 
-				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoal({item:item,deleteFromGoalList:true})));
+				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoalFromGoalList({item:item})));
 				setGroupSelected([]); 
 			}
 		};

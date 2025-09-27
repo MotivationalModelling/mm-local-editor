@@ -16,7 +16,7 @@ export interface InitialTab {
 const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
     id: initFields.id ?? Date.now(),
     content: "",
-    copies:initFields.copies??1,
+    instanceID:initFields.instanceID??1,
     ...initFields
 });
 
@@ -25,49 +25,49 @@ export const defaultTreeData: TreeItem[] = [{
     id: 1,
     content: "Do",
     type: "Do",
-    copies:1,
+    instanceID:1,
     children: [{
         id: 6,
         content: "Do1",
         type: "Do",
-        copies:1,
+        instanceID:1,
         children: [{
             id: 7,
             content: "Do2",
             type: "Do",
-            copies:1,
+            instanceID:1,
             children: []
         }]
     }, {
         id: 8,
         content: "Do3",
         type: "Do",
-        copies:1,
+        instanceID:1,
         children: []
     }]
 }, {
     id: 2,
     content: "Be",
     type: "Be",
-    copies:1,
+    instanceID:1,
     children: []
 }, {
     id: 3,
     content: "Feel",
     type: "Feel",
-    copies:1,
+    instanceID:1,
     children: []
 }, {
     id: 4,
     content: "Who",
     type: "Who",
-    copies:1,
+    instanceID:1,
     children: []
 }, {
     id: 5,
     content: "Concern",
     type: "Concern",
-    copies:1,
+    instanceID:1,
     children: []
 }];
 
