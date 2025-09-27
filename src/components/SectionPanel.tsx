@@ -62,6 +62,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
+  const [existingGoalReferenceInstanceId,setExistingGoalReferenceInstanceId]=useState<{ goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[]>([])
   const [existingError, setExistingError] = useState<boolean>(false);
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
@@ -171,7 +172,10 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     
     // Filter groupSelected to get only objects whose IDs are not in treeData
     const newItemsToAdd = groupSelected.filter(
-      (item) => !treeIds.includes(item.id)
+      // current hierachy
+      (item) => !tree.some(
+        ref => ref.goalId === item.id
+        )
     );
 
     // If all items are in the tree, then show the warning
@@ -295,10 +299,13 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         ref={sectionTwoRef}
       >
         <Tree
-          existingItemIds={existingItemIds}
+
+          // existingItemIds={existingItemIds}
           // setTreeIds={setTreeIds}
           handleSynTableTree={handleSynTableTree}
-          setExistingItemIds={setExistingItemIds}
+          // setExistingItemIds={setExistingItemIds}
+          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
         />
       </div>
 

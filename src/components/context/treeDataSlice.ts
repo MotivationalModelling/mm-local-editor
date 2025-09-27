@@ -228,7 +228,6 @@ export const treeDataSlice = createSlice({
             item:TreeItem}>) => {
             // only itself
             state.tree = removeAllReferenceFromHierarchy(state.tree,action.payload.item.id,action.payload.item.instanceID)
-            console.log("deleteGoal: ",action.payload.item.id)
             state.treeIds[action.payload.item.id] = state.treeIds[action.payload.item.id].filter(node=>node!==action.payload.item.instanceID);
         },
         
