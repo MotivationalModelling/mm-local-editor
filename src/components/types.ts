@@ -4,7 +4,7 @@ export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "
 
 export interface GoalBase {
     GoalID: number
-    InstanceID:number
+    InstanceID:string
     GoalType: GoalType
     GoalContent: string
     GoalNote: string

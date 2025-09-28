@@ -9,7 +9,6 @@ import {
     TreeNode
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import { number } from "zod/v4";
 
 export const newTreeNode = ({goalId, instanceID,children = []}: {
     goalId: TreeItem["id"],
@@ -23,23 +22,13 @@ export const newTreeNode = ({goalId, instanceID,children = []}: {
 
 export const createTreeFromTreeData = (
   treeData: TreeItem[],
-  existingOcurrance: Record<TreeItem["id"], number> = {}
 ): TreeNode[] => {
-  
-  const existingDictionary = (goalId: TreeItem["id"]): number => {
-    if (existingOcurrance[goalId]===undefined) {
-      existingOcurrance[goalId] = 1;
-    } else {
-      existingOcurrance[goalId] = existingOcurrance[goalId] + 1;
-    }
-    return existingOcurrance[goalId];
-  };
 
   return treeData.map((ti) => ({
     goalId: ti.id,
     // if ti.instanceID exists, use it, else compute one
-    instanceID: existingDictionary(ti.id),
-    children: createTreeFromTreeData(ti.children ?? [], existingOcurrance)
+    instanceID: ti.instanceID,
+    children: createTreeFromTreeData(ti.children ?? [])
   }));
 };
 
@@ -146,11 +135,19 @@ const generateInstanceID = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"
   if(treeIds[goalId]==undefined){
     treeIds[goalId]=[]
   }
+
   // give it new instance id 
-  const instanceId: TreeItem["instanceID"] = (treeIds[goalId].length > 0)
-    ? Math.max(...treeIds[goalId]) + 1
-    : 1;
-  return instanceId
+  const maxSuffix:number = treeIds[goalId].length > 0
+    ? Math.max(
+        ...treeIds[goalId].map(it => {
+          console.log("generateInstanceID: ",it)
+          const parts = it.split("-");
+          return Number(parts[-1]); // extract the last number
+        })
+      )
+    : 0;
+    
+  return `${goalId}-${maxSuffix+1}`
 }
 
 //

@@ -26,12 +26,16 @@ export interface TreeNode {
 
 // require id and type fields, others optional.
 // create a empty treeItem
-export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
-    id: initFields.id ?? Date.now(),
-    content: "",
-    instanceID:initFields.instanceID??0,  // give 0 when it is empty
-    ...initFields
-});
+export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
+    const id = initFields.id ?? Date.now();
+    const instanceID = initFields.instanceID ?? `${id}-${0}`;
+    return{
+        id: id,
+        content: "",
+        instanceID:instanceID,  // give 0 when it is empty
+        ...initFields
+    }
+};
 
 // Type of the json data
 export type JSONData = {
@@ -44,7 +48,7 @@ export type TreeItem = {
     id: number;
     content: string;
     type: Label;
-    instanceID:number;
+    instanceID:string;
     children?: TreeItem[];
 };
 
@@ -231,9 +235,9 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     useEffect(() => {
         // Convert TreeNode[] to TreeItem[] for storage
         // Here we map TreeNode.goalId to TreeItem from state.goals
-        const treeItems = state.tree.map((treeNode:TreeNode) => {
+        const treeItems:TreeItem[] = state.tree.map((treeNode:TreeNode) => {
             const goal = state.goals[treeNode.goalId];
-            if (!goal) return null;
+            if (!goal) return;
             return {
                 ...goal,
                 instanceID: treeNode.instanceID, 
@@ -242,7 +246,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
                     instanceID: child.instanceID,
                 }))
             };
-        }).filter(Boolean);
+        }).filter(Boolean) as TreeItem[];
 
         setTreeData(treeItems);
 

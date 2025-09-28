@@ -144,7 +144,7 @@ const Tree: React.FC<TreeProps> = ({
   //   return ids;
   // };
 
-  const getAllGoalInstances = (item: TreeItem): { goalId: number; instanceID: number }[] => {
+  const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[] => {
     const result = [{ goalId: item.id, instanceID: item.instanceID }];
 
     if (item.children) {
@@ -360,6 +360,7 @@ const Tree: React.FC<TreeProps> = ({
         onChange={({ items }) => dispatch(setTreeData(items as TreeItem[]))}
         items={treeData}
         renderItem={renderItem}
+        idProp="instanceID"
         renderCollapseIcon={({ isCollapsed }) => (
           <Collapser isCollapsed={isCollapsed} />
         )}

@@ -12,62 +12,66 @@ export interface InitialTab {
     rows: TreeItem[]
 }
 
-// TODO: this is a duplicate copy of this function to avoid a circular import -- fix this!!
-const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
-    id: initFields.id ?? Date.now(),
-    content: "",
-    instanceID:initFields.instanceID??1,
-    ...initFields
-});
+//TODO: this is a duplicate copy of this function to avoid a circular import -- fix this!!
+const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
+    const id = initFields.id ?? Date.now();
+    const instanceID = initFields.instanceID ?? `${id}-${0}`;
+    return{
+        id: id,
+        content: "",
+        instanceID:instanceID,  // give 0 when it is empty
+        ...initFields
+    }
+};
 
 // Predefined constant cluster to use for the example graph
 export const defaultTreeData: TreeItem[] = [{
     id: 1,
     content: "Do",
     type: "Do",
-    instanceID:1,
+    instanceID:"1-1",
     children: [{
         id: 6,
         content: "Do1",
         type: "Do",
-        instanceID:1,
+        instanceID:"6-1",
         children: [{
             id: 7,
             content: "Do2",
             type: "Do",
-            instanceID:1,
+            instanceID:"7-1",
             children: []
         }]
     }, {
         id: 8,
         content: "Do3",
         type: "Do",
-        instanceID:1,
+        instanceID:"8-1",
         children: []
     }]
 }, {
     id: 2,
     content: "Be",
     type: "Be",
-    instanceID:1,
+    instanceID:"2-1",
     children: []
 }, {
     id: 3,
     content: "Feel",
     type: "Feel",
-    instanceID:1,
+    instanceID:"3-1",
     children: []
 }, {
     id: 4,
     content: "Who",
     type: "Who",
-    instanceID:1,
+    instanceID:"4-1",
     children: []
 }, {
     id: 5,
     content: "Concern",
     type: "Concern",
-    instanceID:1,
+    instanceID:"5-1",
     children: []
 }];
 
