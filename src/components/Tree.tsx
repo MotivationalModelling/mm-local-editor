@@ -264,7 +264,6 @@ const Tree: React.FC<TreeProps> = ({
             ? "#FF474C"
             : "white",
         }}
-        key={`${treeItem.id}-${treeItem.instanceID}`}
         className="tree-list"
         onDoubleClick={handleDoubleClick}
       >
