@@ -96,6 +96,8 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
           goal.geometry.x = point.x;
           goal.geometry.y = point.y;
           graph.importCells([goal], 0, 0, cell);
+          graph.set
+
           //const insertedCell = graph.getSelectionCell();
           // console.log("！！！dragAndDrop: insertedCell ",insertedCell)
           // if (insertedCell) {
