@@ -8,7 +8,6 @@ import {
   SYMBOL_WIDTH,
   SYMBOL_HEIGHT,
   SYMBOL_CONFIGS,
-  getSymbolConfigByShape,
 } from "../../utils/GraphConstants";
 
 type SidebarItemsProps = {
@@ -27,7 +26,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
       isEdge: boolean
     ) => {
       let prototype: Cell;
-      
       if (!isEdge) {
         // Try to find matching symbol config by image path
         const symbolEntry = Object.entries(SYMBOL_CONFIGS).find(
@@ -40,7 +38,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         }
 
         const [symbolKey, config] = symbolEntry;
-
 
         let shapeStyle: CellStateStyle = {
           fontSize: VERTEX_FONT.size,

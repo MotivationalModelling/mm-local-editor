@@ -185,8 +185,6 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
 
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
-        console.log("convertTreeItemToGoal: item ",item)
-
         return {
             GoalID: item.goalId,
             GoalType: typeMapping[goal.type],

@@ -244,7 +244,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               }
               else if (cellId && /^-?\d+$/.test(cellId)){
                 numericId = Number(cellId);
-                const goalType = getSymbolConfigByShape(String(cell.style.shape))?.type || "Functional";
+                const goalTypeRaw = getSymbolConfigByShape(String(cell.style.shape))?.type;
+                const goalType = goalTypeRaw === "Functional" ? "Functional" : "Nonfunctional";
                 const newId = `${goalType}-${numericId}`;
                 cell.setId(newId);
                 cellId = newId;
@@ -257,11 +258,10 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
               if (numericId && !treeIdsRef.current.includes(numericId)) {
-                //${getSymbolConfigByShape(String(goal.style.shape))?.type}-
                 const newTreeItem: TreeItem = {
                   id: numericId,
                   content: "",
-                  type: cellLabel as Label || "Do",//export type Label =  "Do" | "Be" | "Feel" | "Concern" | "Who";
+                  type: cellLabel as Label,
 
                   //children?: TreeItem[];
                 };

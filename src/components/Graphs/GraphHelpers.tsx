@@ -426,7 +426,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        "NonFunctional"+descriptions.map(x => x.id).join(delimiter),
+        "NonFunctional-"+descriptions.map(x => x.id).join(delimiter),
         descriptions.map(x => x.content).join(delimiter),
         x,
         y,
