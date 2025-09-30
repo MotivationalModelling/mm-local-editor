@@ -216,7 +216,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 					)}
 					<div
 						className="position-absolute d-flex flex-row gap-5"
-						style={{bottom: "160px"}}
+						style={{ bottom: "80px" }}
 					>
 						<Button
 							variant="primary"
