@@ -13,7 +13,7 @@ const FileUploadSection = ({
 	onUpload,
 }: FileUploadSectionProps) => {
 	return (
-		<div className="mt-3 border border-primary-subtle rounded file-container p-4 align-content-center mx-5">
+		<div className="mt-3 border border-primary-subtle rounded file-container py-2 px-4 align-content-center mx-5">
 			{/* File remove button */}
 			<div
 				onClick={onRemove}
