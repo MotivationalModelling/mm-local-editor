@@ -234,31 +234,28 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
               const cell: Cell = changes[i].cell;
               let cellId = cell.getId();
-              console.log("！！！GeometryChange: cellId ",cellId)
               let numericId: number | undefined;
               
-              if (cellId && /^(Functional|Nonfunctional)--?\d+$/.test(cellId)) {
-                numericId = Number(cellId.split("-").pop());
-                console.log("！！！case1: numericId ",numericId)
-              } 
+              if (cellId && /^(Functional|Nonfunctional)-(-?\d+)$/.test(cellId)) {
+                const match = cellId.match(/^(Functional|Nonfunctional)-(-?\d+)$/);
+                if (match) {
+                  numericId = Number(match[2]); // 这里 match[2] 就是数字部分，带负号
+                }
+              }
               else if (cellId && /^-?\d+$/.test(cellId)){
                 numericId = Number(cellId);
                 const goalType = getSymbolConfigByShape(String(cell.style.shape))?.type || "Functional";
                 const newId = `${goalType}-${numericId}`;
                 cell.setId(newId);
                 cellId = newId;
-                console.log("！！！case2: numericId ",numericId)
               }
 
-              console.log("！！！GeometryChange: cell ",cell.getId(), "geometry ",cell.geometry, "style ",cell.style);
 
               const cellLabel = getSymbolConfigByShape(String(cell.style.shape))?.label;
               const cellID = cell.getId();
-              console.log("！！！cell id",cellID, "cell label ",cellLabel)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
-              console.log("！！！tree ids ref 1",treeIdsRef.current, "numericId ",numericId)
               if (numericId && !treeIdsRef.current.includes(numericId)) {
                 //${getSymbolConfigByShape(String(goal.style.shape))?.type}-
                 const newTreeItem: TreeItem = {
@@ -268,10 +265,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
                   //children?: TreeItem[];
                 };
-                console.log("！！！FileProvider state updated: newTreeItem: ", newTreeItem);
                 dispatch(addGoal(newTreeItem));
                 dispatch(addGoalToTree(newTreeItem));
-                console.log("！！！tree ids ref2 ",treeIdsRef.current)
 
               }
 

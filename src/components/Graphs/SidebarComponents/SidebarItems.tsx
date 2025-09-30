@@ -96,16 +96,8 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
           goal.geometry.x = point.x;
           goal.geometry.y = point.y;
           graph.importCells([goal], 0, 0, cell);
-          graph.set
 
-          //const insertedCell = graph.getSelectionCell();
-          // console.log("！！！dragAndDrop: insertedCell ",insertedCell)
-          // if (insertedCell) {
-          //   const numericId = Number(insertedCell.getId());
-          //   const cellType = getSymbolConfigByShape(String(insertedCell.style.shape))?.type;
-          //   insertedCell.setId(`${cellType}-${numericId}`);
-          //   console.log("！！！dragAndDrop: insertedCell id ",insertedCell.getId())
-          // }
+
         }
       };
 
@@ -116,7 +108,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         x?: number,
         y?: number
       ) => {
-        console.log("！！！dragAndDropEdge: evt ",evt, " cell ",cell)
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
         const goal = graph.cloneCell(prototype);
@@ -127,7 +118,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
             new Point(point.x + LINE_SIZE, point.y + LINE_SIZE),
             false
           );
-          console.log("！！！dragAndDropEdge: goal ",goal.getId());
           goal.parent = graph.getDefaultParent();
           graph.importCells([goal], 0, 0, cell);
         }
