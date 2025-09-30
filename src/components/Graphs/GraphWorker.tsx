@@ -280,7 +280,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 setErrorModal({
                   show: true,
                   title: "Input Error",
-                  message: `Please provide ${lengthUpdated} items split by comma`,
+                  message: `Please provide ${lengthUpdated} items separated by commas`,
                   onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
                 });
               } else {
