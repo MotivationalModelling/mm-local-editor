@@ -27,8 +27,8 @@ import {useGraph} from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
-
-import {VERTEX_FONT, getSymbolConfigByShape,} from "../utils/GraphConstants.tsx"
+import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {getSymbolConfigByShape} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
@@ -227,11 +227,9 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
         evt.consume();
         try {
           const changes = evt.getProperty("edit").changes;
-      
           for (let i = 0; i < changes.length; i++) {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
-
               const cell: Cell = changes[i].cell;
               let cellId = cell.getId();
               let numericId: number | undefined;
@@ -239,7 +237,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               if (cellId && /^(Functional|Nonfunctional)-(-?\d+)$/.test(cellId)) {
                 const match = cellId.match(/^(Functional|Nonfunctional)-(-?\d+)$/);
                 if (match) {
-                  numericId = Number(match[2]); // 这里 match[2] 就是数字部分，带负号
+                  numericId = Number(match[2]); 
                 }
               }
               else if (cellId && /^-?\d+$/.test(cellId)){
@@ -262,17 +260,13 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                   id: numericId,
                   content: "",
                   type: cellLabel as Label,
-
-                  //children?: TreeItem[];
                 };
                 dispatch(addGoal(newTreeItem));
                 dispatch(addGoalToTree(newTreeItem));
-
               }
 
               if (cellID != null && cellHistory[cellID] == undefined) {
                 cellHistory[cellID] = [newWidth, newHeight];
-                
               } else {
                 if (cellID != null) {
                   const oldWidth = cellHistory[cellID][0];
@@ -303,8 +297,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 cellHistory[cellID] = [newWidth, newHeight];
               }
             }
-           
-
             else if (change.constructor.name == "ValueChange") {
               const cell: Cell = change.cell;
               // goal id

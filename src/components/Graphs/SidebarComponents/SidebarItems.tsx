@@ -69,7 +69,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
           shapeStyle
         );
         prototype.setVertex(true);
-
       } else {
         prototype = new Cell(null, new Geometry(0, 0, width, height));
         if (prototype.geometry) {
@@ -93,8 +92,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
           goal.geometry.x = point.x;
           goal.geometry.y = point.y;
           graph.importCells([goal], 0, 0, cell);
-
-
         }
       };
 

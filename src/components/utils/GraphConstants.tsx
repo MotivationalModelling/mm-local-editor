@@ -81,11 +81,6 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
     },
 };
 
-// --- Utility Functions ---
-export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined => {
-    return Object.values(SYMBOL_CONFIGS).find(config => config.shape === shape);
-};
-
 // --- Additional Assets ---
 // Path to the default line image used in the diagram.
 export const LINE_IMAGE_PATH = "img/line.svg";
