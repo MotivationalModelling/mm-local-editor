@@ -129,23 +129,25 @@ const removeAllReferenceFromHierarchy = (
     }));
 };
 
-
-const generateInstanceID = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"][]>,goalId:TreeItem["id"]):TreeItem["instanceID"]=>{
-  //if the goal is the first time moved to the hierachy
-  if(treeIds[goalId]==undefined){
-    treeIds[goalId]=[]
-  }
-
-  // give it new instance id 
-  const maxSuffix:number = treeIds[goalId].length > 0
+const generateMaxSuffix  = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"][]>,goalId:TreeItem["id"]):number=>{
+  return treeIds[goalId].length > 0
     ? Math.max(
         ...treeIds[goalId].map(it => {
-          console.log("generateInstanceID: ",it)
           const parts = it.split("-");
           return Number(parts[-1]); // extract the last number
         })
       )
     : 0;
+}
+
+const generateInstanceID = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"][]>,goalId:TreeItem["id"]):TreeItem["instanceID"]=>{
+  //if the goal is the first time moved to the hierachy
+  if(treeIds[goalId]== undefined){
+    treeIds[goalId]=[]
+  }
+
+  // give it new instance id 
+  const maxSuffix:number = generateMaxSuffix(treeIds,goalId)
     
   return `${goalId}-${maxSuffix+1}`
 }
