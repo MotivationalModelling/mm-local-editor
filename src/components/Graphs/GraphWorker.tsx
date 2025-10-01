@@ -273,18 +273,18 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               // goal value
               const newContent = change.value.split(",");
 
-              const lengthUpdated = cellID.length
+              const nUpdated = cellID.length
               // Check if the number of items matches
-              if (lengthUpdated !== newContent.length) {
+              if (nUpdated !== newContent.length) {
                 graph.getDataModel().setValue(cell, change.previous);
                 setErrorModal({
                   show: true,
                   title: "Input Error",
-                  message: `Please provide ${lengthUpdated} items separated by commas`,
+                  message: `Please provide ${nUpdated} ${(nUpdated === 1) ? "item" : "items"} separated by commas`,
                   onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
                 });
               } else {
-                for (let i = 0; i < lengthUpdated; i++) {
+                for (let i = 0; i < nUpdated; i++) {
                   const id = Number(cellID[i]);
                   const text = newContent[i].trim("");
 
