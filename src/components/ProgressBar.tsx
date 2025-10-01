@@ -94,7 +94,9 @@ const ProgressBar = ({
                 <OverlayTrigger trigger="click"
                                 placement="right"
                                 overlay={clusterInfoPopover}>
-                    <BsInfoCircleFill className="ms-1"/>
+                    <span>
+                        <BsInfoCircleFill className="ms-1"/>
+                    </span>
                 </OverlayTrigger>
               </span>
           </div>
@@ -106,7 +108,9 @@ const ProgressBar = ({
               <OverlayTrigger trigger="click"
                               placement="left"
                               overlay={graphInfoPopover}>
-                  <BsInfoCircleFill className="ms-1"/>
+                  <span>
+                      <BsInfoCircleFill className="ms-1"/>
+                  </span>
               </OverlayTrigger>
               <ShowGoalSectionButton showGoalSection={showGoalSection}
                                      onClick={(ev) => {
