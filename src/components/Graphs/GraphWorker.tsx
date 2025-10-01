@@ -501,7 +501,14 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       stakeholdersGlob
     );
     graph.getDataModel().endUpdate();
-  }, [graph, cluster, initRecentreView]);
+
+    if (showGraphSection) {
+      // Use setTimeout to ensure focus is set after DOM updates
+      setTimeout(() => {
+        returnFocusToGraph();
+      }, 0);
+    }
+  }, [graph, cluster, showGraphSection]);
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
@@ -536,25 +543,16 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     }
   }, [graphListener, setGraph]);
 
-  // Separate useEffect to render / update the graph.
-  useEffect(() => {
-    if (graph) {
-      // If user has goals defined, draw the graph
-      if (cluster.ClusterGoals.length > 0) {
-        console.log("re render");
-        renderGraph();
-        // Restore focus after rendering to enable Delete key functionality
-        // Set the focus after the graph section render finished
-        if (showGraphSection) {
-          returnFocusToGraph();
-        }
-      }
-      else {
-        graph.getDataModel().clear();
-        console.log("Graph is empty");
-      }
+  // Handle graph rendering when cluster or graph changes
+  if (graph) {
+    if (cluster.ClusterGoals.length > 0) {
+      console.log("re render");
+      renderGraph();
+    } else {
+      graph.getDataModel().clear();
+      console.log("Graph is empty");
     }
-  }, [cluster, graph, renderGraph, showGraphSection]);
+  }
 
   // Trigger centering when entering render section
   useEffect(() => {
@@ -572,7 +570,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       // Use setTimeout to ensure centering happens after layout is complete
       setTimeout(() => {
         initRecentreView();
-        // Set focus after navigation to enable keyboard shortcuts
         returnFocusToGraph();
       }, 200);
       hasCenteredOnEntryRef.current = true;
