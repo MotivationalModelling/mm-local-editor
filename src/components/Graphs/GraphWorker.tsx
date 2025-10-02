@@ -285,25 +285,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             }
             else if (change.constructor.name === "ValueChange") {
               const cell: Cell = change.cell;
-<<<<<<< HEAD
-=======
-              // goal id
-
-              if (isGoalNameEmpty(change.value)) {
-                graph.getDataModel().setValue(cell, change.previous);
-                setErrorModal({
-                  show: true,
-                  title: "Input Error",
-                  message: "Goal name cannot be empty.",
-                  onHide: () => setErrorModal(prev => ({ ...prev, show: false}))
-                })
-                return;
-              }
-
-              const cellID = cell.getId()?.split(",") ?? [];
-              // goal value
-              const newContent = change.value.split(",");
->>>>>>> origin/develop
 
               // Ensure cell ID(s) are in proper format
               ensureCellIdFormat(cell);
@@ -368,8 +349,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
         if (!selectedCells || selectedCells.length === 0) return;
 
         deletingItemRef.current = selectedCells;
-
-      
 
         const outgoingEdges = graph.getOutgoingEdges(selectedCells[0],null);
         const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
