@@ -633,3 +633,7 @@ export function makeSquareLable (
 
     return lines.join(", \n");
   }
+
+export function isGoalNameEmpty(value: string): boolean {
+    return !value || value.trim() === "";
+}
