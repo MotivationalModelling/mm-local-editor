@@ -301,15 +301,12 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 setErrorModal({
                   show: true,
                   title: "Input Error",
-                  message: `Please provide ${numericIds.length} item(s) split by comma, corresponding to the ID(s): ${numericIds.join(", ")}, or edit the cell ID(s) to match the number of items.`,
+                  message: `Please provide ${numericIds.length} item(s) split by comma.`,
                   onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
                 });
               } else {
                 numericIds.forEach((id, index) => {
                   const text = newContent[index];
-
-                  console.log("FileProvider state updated: cellid:", id);
-                  console.log("FileProvider state updated: content:", text);
 
                   dispatch({
                     type: "treeData/updateTextForGoalId",
