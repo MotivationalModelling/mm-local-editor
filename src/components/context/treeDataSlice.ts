@@ -129,7 +129,7 @@ const removeAllReferenceFromHierarchy = (
     }));
 };
 
-const generateMaxSuffix  = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"][]>,goalId:TreeItem["id"]):number=>{
+const generateMaxSuffix  = (treeIds: Record<TreeItem["id"], TreeItem["instanceID"][]>,goalId: TreeItem["id"]): number=>{
   return treeIds[goalId].length > 0
     ? Math.max(
         ...treeIds[goalId].map(it => {
@@ -141,13 +141,8 @@ const generateMaxSuffix  = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"
 }
 
 const generateInstanceID = (treeIds:Record<TreeItem["id"], TreeItem["instanceID"][]>,goalId:TreeItem["id"]):TreeItem["instanceID"]=>{
-  //if the goal is the first time moved to the hierachy
-  if(treeIds[goalId]== undefined){
-    treeIds[goalId]=[]
-  }
-
   // give it new instance id 
-  const maxSuffix:number = generateMaxSuffix(treeIds,goalId)
+  const maxSuffix = generateMaxSuffix(treeIds,goalId)
     
   return `${goalId}-${maxSuffix+1}`
 }
@@ -194,6 +189,11 @@ export const treeDataSlice = createSlice({
         },
         addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
             // the instance id is given only when add to the tree
+
+            // if this is the first time the goal is moved into the hierarchy ✅
+            if(state.treeIds[action.payload.id]== undefined){
+              state.treeIds[action.payload.id]=[]
+            }
             const instanceID = generateInstanceID(state.treeIds,action.payload.id)
             state.tree.push(newTreeNode({
                 goalId: action.payload.id,

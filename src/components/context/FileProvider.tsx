@@ -32,7 +32,7 @@ export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeIte
     return{
         id: id,
         content: "",
-        instanceID:instanceID, 
+        instanceID: instanceID, 
         ...initFields
     }
 };
@@ -235,7 +235,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
     useEffect(() => {
         // Convert TreeNode[] to TreeItem[] for storage
         // Here we map TreeNode.goalId to TreeItem from state.goals
-        const treeItems: TreeItem[] =  createTreeDataFromTreeNode(state.goals,state.tree)
+        const treeItems = createTreeDataFromTreeNode(state.goals,state.tree)
 
         setTreeData(treeItems);
 
