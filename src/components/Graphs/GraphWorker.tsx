@@ -22,13 +22,13 @@ import {
   registerCustomShapes,
 } from "./GraphShapes";
 import "./GraphWorker.css";
-import {Label, TreeItem, useFileContext} from "../context/FileProvider.tsx";
+import {Label, newTreeItem, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getSymbolConfigByShape} from "../utils/GraphUtils";
+import {getSymbolConfigByShape, ensureCellIdFormat, getCellNumericIds} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
@@ -107,11 +107,13 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   cells.forEach(cell => 
       removeCellRecursively(cell));
   deletedCells.forEach((cell) => {
-    // since the cell.getID is functionatype + the id
 
-    const idStr = cell.getId(); // i.e "Functional-8"
-    const numericId = Number(idStr?.split("-").pop()); // 8
-    dispatch(removeGoalIdFromTree({ id: numericId, removeChildren: removeChildrenFlag }));
+    const numericIds = getCellNumericIds(cell);
+    if (numericIds.length > 0) {
+      numericIds.forEach(numericId => {
+        dispatch(removeGoalIdFromTree({ id: numericId, removeChildren: removeChildrenFlag }));
+      });
+    }
   });
 
   setShowDeleteWarning(false);
@@ -231,39 +233,23 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
-              let cellId = cell.getId();
-              let numericId: number | undefined;
-              
-              if (cellId && /^(Functional|Nonfunctional)-(-?\d+)$/.test(cellId)) {
-                const match = cellId.match(/^(Functional|Nonfunctional)-(-?\d+)$/);
-                if (match) {
-                  numericId = Number(match[2]); 
-                }
-              }
-              else if (cellId && /^-?\d+$/.test(cellId)){
-                numericId = Number(cellId);
-                const goalTypeRaw = getSymbolConfigByShape(String(cell.style.shape))?.type;
-                const goalType = goalTypeRaw === "Functional" ? "Functional" : "Nonfunctional";
-                const newId = `${goalType}-${numericId}`;
-                cell.setId(newId);
-                cellId = newId;
-              }
-
-
+              const numericIds = getCellNumericIds(cell);
               const cellLabel = getSymbolConfigByShape(String(cell.style.shape))?.label;
               const cellID = cell.getId();
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
-              if (numericId && !treeIdsRef.current.includes(numericId)) {
-                const newTreeItem: TreeItem = {
-                  id: numericId,
-                  content: "",
-                  type: cellLabel as Label,
-                };
-                dispatch(addGoal(newTreeItem));
-                dispatch(addGoalToTree(newTreeItem));
-              }
+              numericIds.forEach(numericId => {
+                if (numericId && !treeIdsRef.current.includes(numericId)) {
+                  const newTreeItemObj = newTreeItem({
+                    id: numericId,
+                    type: cellLabel as Label,
+                  });
+                  dispatch(addGoal(newTreeItemObj));
+                  dispatch(addGoalToTree(newTreeItemObj));
+                }
+              });
+              
 
               if (cellID != null && cellHistory[cellID] == undefined) {
                 cellHistory[cellID] = [newWidth, newHeight];
@@ -297,30 +283,33 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 cellHistory[cellID] = [newWidth, newHeight];
               }
             }
-            else if (change.constructor.name == "ValueChange") {
+            else if (change.constructor.name === "ValueChange") {
               const cell: Cell = change.cell;
-              // goal id
-              const cellIDs = cell.getId()?.split(",") ?? [];
-              // goal value
-              const newContent = change.value.split(",");
 
-              const lengthUpdated = cellIDs.length
+              // Ensure cell ID(s) are in proper format
+              ensureCellIdFormat(cell);
+
+              // Extract numeric IDs as an array
+              const numericIds = getCellNumericIds(cell);
+
+              // Split new content by comma and trim
+              const newContent = change.value.split(",").map(s => s.trim());
+
               // Check if the number of items matches
-              if (lengthUpdated !== newContent.length) {
+              if (numericIds.length !== newContent.length) {
                 graph.getDataModel().setValue(cell, change.previous);
                 setErrorModal({
                   show: true,
                   title: "Input Error",
-                  message: `Please provide ${lengthUpdated} items split by comma`,
-                  onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+                  message: `Please provide ${numericIds.length} item(s) split by comma, corresponding to the ID(s): ${numericIds.join(", ")}, or edit the cell ID(s) to match the number of items.`,
+                  onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
                 });
               } else {
-                for (let i = 0; i < lengthUpdated; i++) {
-                  const id = Number(cellIDs[i]?.split("-").pop());
-                  const text = newContent[i].trim("");
+                numericIds.forEach((id, index) => {
+                  const text = newContent[index];
 
-                  console.log("FileProvider state updated: cellid: ", id);
-                  console.log("FileProvider state updated: content: ", text);
+                  console.log("FileProvider state updated: cellid:", id);
+                  console.log("FileProvider state updated: content:", text);
 
                   dispatch({
                     type: "treeData/updateTextForGoalId",
@@ -329,13 +318,10 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                       text,
                     },
                   });
-                }
+                });
               }
-
-
             }
           }
-
         } finally {
           graph.getDataModel().endUpdate();
           graph.refresh();

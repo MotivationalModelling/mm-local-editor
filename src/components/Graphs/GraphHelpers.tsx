@@ -426,7 +426,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        "NonFunctional-"+descriptions.map(x => x.id).join(delimiter),
+        "Nonfunctional-"+descriptions.map(x => x.id).join(delimiter),
         descriptions.map(x => x.content).join(delimiter),
         x,
         y,
@@ -437,7 +437,7 @@ export const renderNonFunction = (
     console.log("nonFunctional node: ",node)
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
-    edge.visible = false; // Make the edge invisible - used in auto layout
+    edge.visible = true; // Make the edge invisible - used in auto layout
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
