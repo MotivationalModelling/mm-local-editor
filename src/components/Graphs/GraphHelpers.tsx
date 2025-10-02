@@ -429,7 +429,7 @@ export const renderNonFunction = (
     const node = graph.insertVertex(
         null,
         "Nonfunctional-"+descriptions.map(x => x.id).join(delimiter),
-        descriptions.map(x => x.content).join(delimiter),
+        squareLabel,
         x,
         y,
         width,
