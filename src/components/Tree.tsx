@@ -20,7 +20,7 @@ import {
 } from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
+import { deleteGoalReferenceFromHierarchy, setTreeData } from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -64,8 +64,8 @@ type TreeProps = {
   // existingItemIds: number[];
   handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
   // setExistingItemIds: (existingItemIds: number[]) => void;
-  existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[];
-  setExistingGoalReferenceInstanceId:(existingGoalReferenceInstanceId:{ goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[])=>void
+  existingGoalReferenceinstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[];
+  setExistingGoalReferenceinstanceId: (existingGoalReferenceinstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[]) => void
 };
 
 // Goal icon in the tree
@@ -86,8 +86,8 @@ const Tree: React.FC<TreeProps> = ({
   // existingItemIds,
   handleSynTableTree,
   // setExistingItemIds,
-  existingGoalReferenceInstanceId,
-  setExistingGoalReferenceInstanceId,
+  existingGoalReferenceinstanceId,
+  setExistingGoalReferenceinstanceId,
 }) => {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState<string>("");
@@ -96,26 +96,26 @@ const Tree: React.FC<TreeProps> = ({
   const deletingItemRef = useRef<TreeItem | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const {treeData, dispatch} = useFileContext();
+  const { treeData, dispatch } = useFileContext();
 
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoalReferenceFromHierarchy({item:deletingItemRef.current}));
+      dispatch(deleteGoalReferenceFromHierarchy({ item: deletingItemRef.current }));
     }
     setShowDeleteWarning(false);
   };
 
-  
+
 
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeItem) => {
     deletingItemRef.current = item;
     // const deletingIds = getAllIds(item);
 
-    const deletingInstanceId =getAllGoalInstances(item)
+    const deletinginstanceId = getAllGoalInstances(item)
     if (item.children && item.children.length > 0) {
-      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId,...deletingInstanceId])
+      setExistingGoalReferenceinstanceId([...existingGoalReferenceinstanceId, ...deletinginstanceId])
       // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {
@@ -127,7 +127,7 @@ const Tree: React.FC<TreeProps> = ({
   const handleDeleteCancel = () => {
     setShowDeleteWarning(false);
     // setExistingItemIds([]);
-    setExistingGoalReferenceInstanceId([])
+    setExistingGoalReferenceinstanceId([])
   };
 
   // // Get ids from the tree item
@@ -144,8 +144,8 @@ const Tree: React.FC<TreeProps> = ({
   //   return ids;
   // };
 
-  const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceID: TreeItem["instanceID"] }[] => {
-    const result = [{ goalId: item.id, instanceID: item.instanceID }];
+  const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[] => {
+    const result = [{ goalId: item.id, instanceId: item.instanceId }];
 
     if (item.children) {
       item.children.forEach((child) => {
@@ -154,7 +154,7 @@ const Tree: React.FC<TreeProps> = ({
     }
 
     return result;
-};
+  };
 
   // Function for rendering every item
   const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
@@ -167,7 +167,7 @@ const Tree: React.FC<TreeProps> = ({
       if (isEmptyGoal(treeItem)) {
         return;
       }
-      
+
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -250,9 +250,9 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     const ICON_SIZE = 25;
-    const isReference = existingGoalReferenceInstanceId.some(
-  ref => ref.goalId === treeItem.id && ref.instanceID === treeItem.instanceID
-);
+    const isReference = existingGoalReferenceinstanceId.some(
+      ref => ref.goalId === treeItem.id && ref.instanceId === treeItem.instanceId
+    );
     return (
       // While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
       <div
@@ -261,8 +261,8 @@ const Tree: React.FC<TreeProps> = ({
           backgroundColor: isEditing
             ? "#e0e0e0"
             : isReference
-            ? "#FF474C"
-            : "white",
+              ? "#FF474C"
+              : "white",
         }}
         className="tree-list"
         onDoubleClick={handleDoubleClick}
@@ -360,7 +360,7 @@ const Tree: React.FC<TreeProps> = ({
         onChange={({ items }) => dispatch(setTreeData(items as TreeItem[]))}
         items={treeData}
         renderItem={renderItem}
-        idProp="instanceID"
+        idProp="instanceId"
         renderCollapseIcon={({ isCollapsed }) => (
           <Collapser isCollapsed={isCollapsed} />
         )}
