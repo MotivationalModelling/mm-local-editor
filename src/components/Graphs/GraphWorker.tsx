@@ -240,7 +240,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
               numericIds.forEach(numericId => {
-                if (numericId && !treeIdsRef.current.includes(numericId)) {
+                if (numericId && cellLabel && !treeIdsRef.current.includes(numericId)) {
                   const newTreeItemObj = newTreeItem({
                     id: numericId,
                     type: cellLabel as Label,
