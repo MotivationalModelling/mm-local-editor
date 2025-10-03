@@ -58,7 +58,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
   const divGraph = useRef<HTMLDivElement>(null);
   const {cluster, dispatch, treeIds} = useFileContext();
   const treeIdsRef = useRef(treeIds);
-  useEffect(() => { treeIdsRef.current = treeIds }, [treeIds])
+  treeIdsRef.current = treeIds;
 
   const {graph, setGraph} = useGraph();
 
