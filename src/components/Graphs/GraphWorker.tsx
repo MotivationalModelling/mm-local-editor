@@ -108,10 +108,10 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       removeCellRecursively(cell));
   deletedCells.forEach((cell) => {
 
-    const numericIds = getCellNumericIds(cell);
-    if (numericIds.length > 0) {
-      numericIds.forEach(numericId => {
-        dispatch(removeGoalIdFromTree({ id: numericId, removeChildren: removeChildrenFlag }));
+    const numericCellIds = getCellNumericIds(cell);
+    if (numericCellIds.length > 0) {
+      numericCellIds.forEach(numericCellId => {
+        dispatch(removeGoalIdFromTree({id: numericCellId, removeChildren: removeChildrenFlag}));
       });
     }
   });
@@ -233,23 +233,22 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             const change = changes[i];
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
-              const numericIds = getCellNumericIds(cell);
+              const numericCellIds = getCellNumericIds(cell);
               const cellLabel = getSymbolConfigByShape(String(cell.style.shape))?.label;
               const cellID = cell.getId();
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
-              numericIds.forEach(numericId => {
-                if (numericId && cellLabel && !treeIdsRef.current.includes(numericId)) {
+              numericCellIds.forEach(numericCellId => {
+                if (numericCellId && cellLabel && !treeIdsRef.current.includes(numericCellId)) {
                   const newTreeItemObj = newTreeItem({
-                    id: numericId,
+                    id: numericCellId,
                     type: cellLabel as Label,
                   });
                   dispatch(addGoal(newTreeItemObj));
                   dispatch(addGoalToTree(newTreeItemObj));
                 }
               });
-              
 
               if (cellID != null && cellHistory[cellID] == undefined) {
                 cellHistory[cellID] = [newWidth, newHeight];
@@ -290,22 +289,22 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               ensureCellIdFormat(cell);
 
               // Extract numeric IDs as an array
-              const numericIds = getCellNumericIds(cell);
+              const numericCellIds = getCellNumericIds(cell);
 
               // Split new content by comma and trim
               const newContent = change.value.split(",").map(s => s.trim());
 
               // Check if the number of items matches
-              if (numericIds.length !== newContent.length) {
+              if (numericCellIds.length !== newContent.length) {
                 graph.getDataModel().setValue(cell, change.previous);
                 setErrorModal({
                   show: true,
                   title: "Input Error",
-                  message: `Please provide ${numericIds.length} item(s) split by comma.`,
+                  message: `Please provide ${numericCellIds.length} item(s) split by comma.`,
                   onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
                 });
               } else {
-                numericIds.forEach((id, index) => {
+                numericCellIds.forEach((id, index) => {
                   const text = newContent[index];
 
                   dispatch({

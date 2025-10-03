@@ -53,20 +53,18 @@ export function ensureCellIdFormat(cell: Cell): Cell {
  * - Returns an array of numbers, e.g. [1, 2, 3]
  */
 export function getCellNumericIds(cell: Cell): number[] {
-  // Ensure cell ID is normalized
   ensureCellIdFormat(cell);
 
   const cellId = cell.getId();
-  if (!cellId) return [];
-
-  // Remove prefix and split by comma
-  const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
-  if (!match) return [];
-
-  return match[2]
-    .split(",")
-    .map(s => Number(s.trim()))
-    .filter(n => !isNaN(n));
+  if (cellId) {
+    const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
+    if (match) {
+      return match[2]
+        .split(",")
+        .map(s => Number(s.trim()))
+    }
+  }
+  return [];
 }
 
 

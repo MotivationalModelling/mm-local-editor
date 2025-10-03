@@ -428,7 +428,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        "Nonfunctional-"+descriptions.map(x => x.id).join(delimiter),
+        "Nonfunctional-"+descriptions.map(x => x.id).join(","),
         squareLabel,
         x,
         y,
@@ -436,7 +436,6 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("nonFunctional node: ",node)
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
     edge.visible = true; // Make the edge invisible - used in auto layout
