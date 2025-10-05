@@ -64,8 +64,8 @@ type TreeProps = {
   // existingItemIds: number[];
   handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
   // setExistingItemIds: (existingItemIds: number[]) => void;
-  existingGoalReferenceinstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[];
-  setExistingGoalReferenceinstanceId: (existingGoalReferenceinstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[]) => void
+  existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[];
+  setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[]) => void
 };
 
 // Goal icon in the tree
@@ -86,8 +86,8 @@ const Tree: React.FC<TreeProps> = ({
   // existingItemIds,
   handleSynTableTree,
   // setExistingItemIds,
-  existingGoalReferenceinstanceId,
-  setExistingGoalReferenceinstanceId,
+  existingGoalReferenceInstanceId,
+  setExistingGoalReferenceInstanceId,
 }) => {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState<string>("");
@@ -115,7 +115,7 @@ const Tree: React.FC<TreeProps> = ({
 
     const deletinginstanceId = getAllGoalInstances(item)
     if (item.children && item.children.length > 0) {
-      setExistingGoalReferenceinstanceId([...existingGoalReferenceinstanceId, ...deletinginstanceId])
+      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletinginstanceId])
       // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {
@@ -127,7 +127,7 @@ const Tree: React.FC<TreeProps> = ({
   const handleDeleteCancel = () => {
     setShowDeleteWarning(false);
     // setExistingItemIds([]);
-    setExistingGoalReferenceinstanceId([])
+    setExistingGoalReferenceInstanceId([])
   };
 
   // // Get ids from the tree item
@@ -250,7 +250,7 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     const ICON_SIZE = 25;
-    const isReference = existingGoalReferenceinstanceId.some(
+    const isReference = existingGoalReferenceInstanceId.some(
       ref => ref.goalId === treeItem.id && ref.instanceId === treeItem.instanceId
     );
     return (

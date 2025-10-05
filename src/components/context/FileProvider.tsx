@@ -32,7 +32,7 @@ export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeIte
     return {
         id: id,
         content: "",
-        instanceId: instanceId,
+        instanceId,
         ...initFields
     }
 };
@@ -138,7 +138,7 @@ export const useFileContext = () => {
 // adds that to the action name to match RTK's action names.
 
 type SliceActions<T, Name extends string> = {
-    [K in keyof T]: { type: K extends string ? `${Name}/${K}` : K; payload: T[K] extends (...args: infer P) => void ? P[0] : never };
+    [K in keyof T]: {type: K extends string ? `${Name}/${K}` : K; payload: T[K] extends (...args: infer P) => void ? P[0] : never};
 }[keyof T];
 
 type DispatchActions = SliceActions<typeof treeDataSlice.actions, "treeData">

@@ -206,7 +206,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        goal.GoalType + "-" + goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
+        goal.GoalType + "-" + goal.instanceId, // Functional-8(goal-id)-1(instance-id)
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -214,7 +214,7 @@ export const renderFunction = (
         height,
         style
     );
-    console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
+    // console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
         graph.insertEdge(null, null, "", source, node);
     }

@@ -14,10 +14,10 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals } from './GraphHelpers';
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Button, Col, Container, Form, Row} from "react-bootstrap";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {
   registerCustomShapes,
 } from "./GraphShapes";
@@ -54,7 +54,7 @@ interface GlobObject {
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
+const GraphWorker: React.FC<{showGraphSection?: boolean}> = ({showGraphSection = false}) => {
   const divGraph = useRef<HTMLDivElement>(null);
   const {cluster, dispatch} = useFileContext();
   const {graph, setGraph} = useGraph();
@@ -69,7 +69,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     show: false,
     title: "",
     message: "",
-    onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
+    onHide: () => setErrorModal(prev => ({...prev, show: false})),
   });
 
 
@@ -80,14 +80,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
 const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const cells = deletingItemRef.current
-  console.log("removeCellRecursively: selected ",cells)
   if(!cells||!graph) return
   const deletedCells: Cell[] = [];
   
   // selected cell
   const removeCellRecursively = (cell: Cell) => {
-    
-    console.log("removeCellRecursively: iterate ",cell)
     // check the children
     const outgoingEdges = graph.getOutgoingEdges(cell,null);
 
@@ -97,19 +94,34 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       });
     }
     const removed = graph.removeCells([cell], removeChildrenFlag);
-    console.log("removeCellRecursively: removed ",removed)
     deletedCells.push(...removed);
   };
+  
+  function parseCellId(idStr: string) {
+    if (!idStr) throw new Error("Invalid cell id");
 
-  cells.forEach(cell => 
-      removeCellRecursively(cell));
-  deletedCells.forEach((cell) => {
-    // since the cell.getID is functionatype + the id
+    const parts = idStr.split("-"); // ["Functional", "8", "1"]
 
-    const idStr = cell.getId(); // i.e "Functional-8"
-    const numericId = Number(idStr?.split("-").pop()); // 8
-    dispatch(removeGoalIdFromTree({ id: numericId, removeChildren: removeChildrenFlag }));
-  });
+    if (parts.length < 3) throw new Error("Unexpected cell id format");
+
+    // Remove prefix
+    parts.shift(); // remove "Functional"
+
+    const goalId = Number(parts[0]);   // first number part: 8
+    const instanceId = parts.join("-"); // join the rest: "8-1"
+
+    // console.log("Parsed cellId:", { goalId, instanceId });
+
+    return { goalId, instanceId };
+}
+
+  cells.forEach(
+    cell => removeCellRecursively(cell));
+    deletedCells.forEach((cell) => {
+        const { goalId, instanceId } = parseCellId(cell.getId()!);
+        dispatch(removeGoalIdFromTree({id:goalId, instanceId:instanceId,removeChildren: removeChildrenFlag}));
+    }
+    );
 
   setShowDeleteWarning(false);
 };
@@ -135,7 +147,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
 
   const recentreView = () => {
-    if (graph) {
+      if (graph) {
       graph.fit();
       graph.center();
     }
