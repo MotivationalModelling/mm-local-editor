@@ -31,6 +31,7 @@ import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
+import { fixEditorPosition } from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -532,6 +533,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
       setGraphStyle(graphInstance);
       graphListener(graphInstance);
+      fixEditorPosition(graphInstance);
       supportFunctions(graphInstance);
       registerCustomShapes();
       setGraph(graphInstance);
