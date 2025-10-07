@@ -17,7 +17,7 @@ import '@maxgraph/core/css/common.css';
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Button, Col, Container, Form, Row} from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import {associateNonFunctions, layoutFunctions, renderGoals} from './GraphHelpers';
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {
   registerCustomShapes,
 } from "./GraphShapes";
@@ -270,6 +270,18 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             else if (change.constructor.name == "ValueChange") {
               const cell: Cell = change.cell;
               // goal id
+
+              if (isGoalNameEmpty(change.value)) {
+                graph.getDataModel().setValue(cell, change.previous);
+                setErrorModal({
+                  show: true,
+                  title: "Input Error",
+                  message: "Goal name cannot be empty.",
+                  onHide: () => setErrorModal(prev => ({ ...prev, show: false}))
+                })
+                return;
+              }
+
               const cellID = cell.getId()?.split(",") ?? [];
               // goal value
               const newContent = change.value.split(",");
