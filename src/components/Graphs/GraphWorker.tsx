@@ -14,10 +14,10 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Button, Col, Container, Form, Row} from "react-bootstrap";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
+import {associateNonFunctions, layoutFunctions, renderGoals} from './GraphHelpers';
 import {
   registerCustomShapes,
 } from "./GraphShapes";
@@ -31,7 +31,7 @@ import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
-import { returnFocusToGraph } from "../utils/GraphUtils.tsx";
+import {returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
 
