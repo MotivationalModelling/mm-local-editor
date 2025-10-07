@@ -404,6 +404,17 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     };
   };
 
+    // Ensure mouse interactions restore focus so keyboard shortcuts (e.g., Delete) work reliably
+    if(graph){
+        graph.addListener(InternalEvent.CLICK, (_sender: string, _evt: EventObject) => {
+            returnFocusToGraph();
+            graph.refresh();
+        });
+        graph.getSelectionModel().addListener(InternalEvent.CHANGE, (_sender: string, _evt: EventObject) => {
+        returnFocusToGraph();
+        });
+    }
+
   /**
    * Sidebar
    */
@@ -502,12 +513,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     );
     graph.getDataModel().endUpdate();
 
-    if (showGraphSection) {
-      // Use setTimeout to ensure focus is set after DOM updates
-      setTimeout(() => {
-        returnFocusToGraph();
-      }, 0);
-    }
   }, [graph, cluster, showGraphSection]);
 
   // First useEffect to set up graph. Only run on mount.
