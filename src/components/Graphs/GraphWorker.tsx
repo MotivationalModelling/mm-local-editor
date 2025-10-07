@@ -81,7 +81,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
 const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const cells = deletingItemRef.current
-  console.log("removeCellRecursively: selected ",cells)
+//   console.log("removeCellRecursively: selected ",cells)
   if(!cells||!graph) return
   const deletedCells: Cell[] = [];
   
@@ -98,7 +98,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       });
     }
     const removed = graph.removeCells([cell], removeChildrenFlag);
-    console.log("removeCellRecursively: removed ",removed)
+    // console.log("removeCellRecursively: removed ",removed)
     deletedCells.push(...removed);
   };
 
@@ -140,7 +140,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       graph.fit();
       graph.center();
     }
-    console.log("center")
+    // console.log("center")
   };
   
   const initRecentreView = useCallback(() => {
@@ -148,7 +148,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       graph.fit();
       graph.center();
     }
-    console.log("center")
+    // console.log("center")
   }, [graph]);
 
   const adjustFontSize = (
@@ -220,7 +220,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     graph
       .getDataModel()
       .addListener(InternalEvent.CHANGE, (_sender: string, evt: EventObject) => {
-        console.log("graph changed");
+        // console.log("graph changed");
         graph.getDataModel().beginUpdate();
         evt.consume();
         try {
@@ -230,7 +230,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
-              console.log("change, ",cell)
+            //   console.log("change, ",cell)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
@@ -289,8 +289,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                   const id = Number(cellID[i]);
                   const text = newContent[i].trim("");
 
-                  console.log("FileProvider state updated: cellid: ", id);
-                  console.log("FileProvider state updated: content: ", text);
+                //   console.log("FileProvider state updated: cellid: ", id);
+                //   console.log("FileProvider state updated: content: ", text);
 
                   dispatch({
                     type: "treeData/updateTextForGoalId",
@@ -357,7 +357,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     });
     keyHandler.bindKey(DELETE_KEYBINDING2, () => {
       if (graph.isEnabled()) {
-        console.log("--------------- DELETE CELL ---------------");
+        // console.log("--------------- DELETE CELL ---------------");
         const cells = graph.removeCells();
         graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cell and text
       }
@@ -447,7 +447,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const renderGraph = useCallback(() => {
     if (!graph) return;
 
-    console.log("Rendering Graph");
+    // console.log("Rendering Graph");
 
     // Declare necessary variables
     // Use rootGoalWrapper to be able to update its value
@@ -469,7 +469,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
     // Check if the browser is supported
     if (!Client.isBrowserSupported()) {
-      console.log("Logging: browser not supported");
+    //   console.log("Logging: browser not supported");
       error("Browser not supported!", 200, false);
       return;
     }
@@ -535,8 +535,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       // Cleanup function to destroy graph
       return () => {
         if (graphInstance) {
-          console.log("Destroy");
-          graphInstance.destroy(); 
+        //   console.log("Destroy");
+          graphInstance.destroy();
         }
         setGraph(null); // Reset state
       };
@@ -546,27 +546,27 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   // Handle graph rendering when cluster or graph changes
   if (graph) {
     if (cluster.ClusterGoals.length > 0) {
-      console.log("re render");
+    //   console.log("re render");
       renderGraph();
     } else {
       graph.getDataModel().clear();
-      console.log("Graph is empty");
+    //   console.log("Graph is empty");
     }
   }
 
   // Trigger centering when entering render section
   useEffect(() => {
-    console.log("useEffect triggered:", {
-      showGraphSection,
-      prevShowGraphSection: prevShowGraphSectionRef.current,
-      hasGraph: !!graph,
-      goalsLength: cluster.ClusterGoals.length,
-      hasCentered: hasCenteredOnEntryRef.current
-    });
+    // console.log("useEffect triggered:", {
+    //   showGraphSection,
+    //   prevShowGraphSection: prevShowGraphSectionRef.current,
+    //   hasGraph: !!graph,
+    //   goalsLength: cluster.ClusterGoals.length,
+    //   hasCentered: hasCenteredOnEntryRef.current
+    // });
 
     // Only center when showGraphSection changes from false to true
     if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-      console.log("Centering graph on first entry");
+    //   console.log("Centering graph on first entry");
       // Use setTimeout to ensure centering happens after layout is complete
       setTimeout(() => {
         initRecentreView();
