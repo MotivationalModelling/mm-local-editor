@@ -30,6 +30,14 @@ export function fixEditorPosition(graph: Graph) {
         if (el.parentElement !== container) {
           container.appendChild(el);
         }
+
+        // Press "Enter" to save editing
+        el.addEventListener("keydown", (e: KeyboardEvent) => {
+            if (e.key === "Enter") {
+                e.preventDefault();     // prevent press Enter to start a newline
+                graph.stopEditing(false);
+            }
+        });
     };
 
     const findEditorEl = (): HTMLElement | null => {
