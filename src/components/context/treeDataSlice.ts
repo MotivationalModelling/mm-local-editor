@@ -9,6 +9,7 @@ import {
   TreeNode
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
+import { parseInstanceId } from "../utils/GraphUtils.tsx";
 
 
 
@@ -144,20 +145,19 @@ const removeAllReferenceFromHierarchy = (
 const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
     const list = treeIds[goalId];
     if (!list || list.length === 0) return 0;
-    
     return Math.max(
         ...list.map(it => {
-        const parts = it.split("-");
-        return Number(parts.pop()); // extract last number
+        const maxSuffix = parseInstanceId(it)
+        return maxSuffix; // extract last number
         })
     );
 }
 
+
 const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
   // give it new instance id 
-  const maxSuffix = generateMaxSuffix(treeIds, goalId)
-  console.log("goalid-instanceid-: "+maxSuffix)
-  return `${goalId}-${maxSuffix + 1}`
+  const maxSuffix = generateMaxSuffix(treeIds, goalId)+1
+  return `${goalId}-${maxSuffix}`
 }
 
 //

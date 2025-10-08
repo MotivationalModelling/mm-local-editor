@@ -32,6 +32,8 @@ import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
+import {parseCellId} from "../utils/GraphUtils";
+
 // ---------------------------------------------------------------------------
 
 //Graph id & Side bar id
@@ -97,28 +99,14 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     deletedCells.push(...removed);
   };
   
-  function parseCellId(idStr: string) {
-    if (!idStr) throw new Error("Invalid cell id");
-
-    const parts = idStr.split("-"); // ["Functional", "8", "1"]
-
-    if (parts.length < 3) throw new Error("Unexpected cell id format");
-
-    // Remove prefix
-    parts.shift(); // remove "Functional"
-
-    const goalId = Number(parts[0]);   // first number part: 8
-    const instanceId = parts.join("-"); // join the rest: "8-1"
-
-    // console.log("Parsed cellId:", { goalId, instanceId });
-
-    return { goalId, instanceId };
-}
 
   cells.forEach(
     cell => removeCellRecursively(cell));
     deletedCells.forEach((cell) => {
         const { goalId, instanceId } = parseCellId(cell.getId()!);
+        if (goalId === -1) {
+            return;
+        }
         dispatch(removeGoalIdFromTree({id:goalId, instanceId:instanceId,removeChildren: removeChildrenFlag}));
     }
     );
