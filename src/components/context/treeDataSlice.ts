@@ -142,14 +142,15 @@ const removeAllReferenceFromHierarchy = (
 };
 
 const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
-  return treeIds[goalId].length > 0
-    ? Math.max(
-      ...treeIds[goalId].map(it => {
+    const list = treeIds[goalId];
+    if (!list || list.length === 0) return 0;
+    
+    return Math.max(
+        ...list.map(it => {
         const parts = it.split("-");
-        return Number(parts.pop()); // extract the last number
-      })
-    )
-    : 0;
+        return Number(parts.pop()); // extract last number
+        })
+    );
 }
 
 const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
@@ -201,6 +202,7 @@ export const treeDataSlice = createSlice({
     },
     addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
         const node = newTreeNode({goalId: action.payload.id}, state.treeIds);
+        console.log("newTreeNode: ",node)
         state.tree.push(node);
     },
     // remove goal(s) and its children from canvas
