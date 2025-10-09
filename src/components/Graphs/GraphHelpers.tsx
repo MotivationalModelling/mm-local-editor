@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import { getSymbolKeyByType,formatCellId } from "../utils/GraphUtils";
+import { getSymbolKeyByType, formatFunGoalRefId } from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -199,7 +199,7 @@ export const renderFunction = (
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
 
-    const goalName = formatCellId(goal)
+    const goalName = formatFunGoalRefId(goal)
     // insert new vertex and edge into graph
     // between functional goal, should connect with edge, rather than cell hierachy
     // Using null ensures the coordinates (SYMBOL_X_COORD, SYMBOL_Y_COORD) are absolute, 
@@ -429,7 +429,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        "NonFunctional"+descriptions.map(x => x.id).join(delimiter),
+        "NonFunctional" + descriptions.map(x => x.id).join(delimiter),
         squareLabel,
         x,
         y,
@@ -437,7 +437,7 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("nonFunctional node: ",node)
+    console.log("nonFunctional node: ", node)
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
     edge.visible = false; // Make the edge invisible - used in auto layout
@@ -460,7 +460,7 @@ export const renderNonFunction = (
         } else if (ratio < 0.67) {
             maxLineWidth = nodeGeo.height * 0.67;
         }
-        
+
         nodeGeo.width = Math.max(maxLineWidth, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
         nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
     }
@@ -613,10 +613,10 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeSquareLable (
+export function makeSquareLable(
     items: Array<string>,
     sep = ", "
-  ): string {
+): string {
     const n = items.length;
 
     if (n === 0) {
@@ -628,12 +628,12 @@ export function makeSquareLable (
     const lines: string[] = [];
 
     for (let r = 0; r < rows; r++) {
-      const slice = items.slice(r * cols, (r + 1) * cols);
-      lines.push(slice.join(sep));
+        const slice = items.slice(r * cols, (r + 1) * cols);
+        lines.push(slice.join(sep));
     }
 
     return lines.join(", \n");
-  }
+}
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";
