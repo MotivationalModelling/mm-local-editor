@@ -80,39 +80,87 @@ const GraphWorker: React.FC<{showGraphSection?: boolean}> = ({showGraphSection =
   const deletingItemRef = useRef<Cell[] | null>(null);
 
 
-const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
-  const cells = deletingItemRef.current
-  if(!cells||!graph) return
-  const deletedCells: Cell[] = [];
-  
-  // selected cell
-  const removeCellRecursively = (cell: Cell) => {
-    // check the children
-    const outgoingEdges = graph.getOutgoingEdges(cell,null);
+const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean) => {
+  const cells = deletingItemRef.current;
+  if (!cells || !graph) return;
 
-    if (removeChildrenFlag && outgoingEdges.length) {
-      outgoingEdges.forEach(edge => {
-        if (edge.target) removeCellRecursively(edge.target);
+  // 1) Collect all cells that would be removed (including children)
+  const toRemoveSet = new Set<Cell>();
+  const collect = (cell: Cell) => {
+    if (toRemoveSet.has(cell)) return;
+    toRemoveSet.add(cell);
+    const outgoing = graph.getOutgoingEdges(cell, null) || [];
+    if (removeChildrenFlag && outgoing.length) {
+      outgoing.forEach(edge => { if (edge.target) collect(edge.target); });
+    }
+  };
+  cells.forEach(collect);
+  const toRemove = Array.from(toRemoveSet);
+
+  // 2) Validate all IDs up-front
+  type InvalidInfo = { id: string | null, reason: string };
+  const invalids: InvalidInfo[] = [];
+  const parsedById = new Map<string, { goalId: number; instanceId: string }>();
+
+  toRemove.forEach(cell => {
+    const id = cell.getId();
+    try {
+      const { goalId, instanceId } = parseCellId(id!); // parse throws on invalid
+      parsedById.set(id!, { goalId, instanceId });
+    } catch (err) {
+      invalids.push({
+        id: id ?? 'unknown',
+        reason: err instanceof Error ? err.message : 'Unknown parsing error',
       });
     }
-    const removed = graph.removeCells([cell], removeChildrenFlag);
+  });
+
+  // 3) If any invalid, show ONE modal and abort (do not touch the graph)
+  if (invalids.length > 0) {
+    const message = invalids
+      .map(inv => inv.reason)
+      .join('\n\n'); // keep \n, and render with pre-wrap (see Modal)
+    setErrorModal({
+      show: true,
+      title: 'Invalid Cell IDs',
+      message,
+      onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
+    });
+    return; // abort deletion
+  }
+
+  // 4) All valid → proceed to remove from graph (same recursive removal you used)
+  const deletedCells: Cell[] = [];
+  const removeCellRecursively = (cell: Cell) => {
+    const outgoing = graph.getOutgoingEdges(cell, null) || [];
+    if (removeChildrenFlag && outgoing.length) {
+      outgoing.forEach(edge => { if (edge.target) removeCellRecursively(edge.target); });
+    }
+    const removed = graph.removeCells([cell], removeChildrenFlag) || [];
     deletedCells.push(...removed);
   };
-  
+  cells.forEach(cell => removeCellRecursively(cell));
 
-  cells.forEach(
-    cell => removeCellRecursively(cell));
-    deletedCells.forEach((cell) => {
-        const { goalId, instanceId } = parseCellId(cell.getId()!);
-        if (goalId === -1) {
-            return;
-        }
-        dispatch(removeGoalIdFromTree({id:goalId, instanceId:instanceId,removeChildren: removeChildrenFlag}));
+  // 5) Dispatch Redux actions only for actually deleted cells,
+  //    map by id to use parsed info we saved earlier.
+  deletedCells.forEach(cell => {
+    const id = cell.getId();
+    if (!id) return;
+    const parsed = parsedById.get(id);
+    if (!parsed) {
+      console.warn('Deleted cell has no parsed info (unexpected):', id);
+      return;
     }
-    );
+    dispatch(removeGoalIdFromTree({
+      id: parsed.goalId,
+      instanceId: parsed.instanceId,
+      removeChildren: removeChildrenFlag,
+    }));
+  });
 
   setShowDeleteWarning(false);
 };
+
 
    // Function to reset the graph to empty
   //  const resetEmptyGraph = () => {

@@ -21,27 +21,22 @@ export function formatGoalTag(goal:ClusterGoal): string {
     return `${goal.GoalType}-${goal.instanceId}`;
 }
 
-// covert the cell id in maxgraph
+// Convert the cell id in MaxGraph
 export function parseCellId(idStr: string) {
-  if (!idStr) {
-    console.warn("parseCellId: missing cellId");
-    return { type: "unknown", goalId: -1, instanceId: "unknown" };
-  }
+  if (!idStr) throw new Error("Cell ID is missing.");
 
   const parts = idStr.split("-");
   if (parts.length < 3) {
-    console.warn(`parseCellId: unexpected cellId format "${idStr}"`);
-    return { type: "invalid", goalId: -1, instanceId: "invalid" };
+    throw new Error(`Cell ID format is invalid: expected format "Type-GoalId-InstanceId", got "${idStr}".`);
   }
 
-  const type = parts[0].trim();         // first part = goal type
-  const goalId = Number(parts[1].trim()); // second part = goal ID
+  const type = parts[0].trim();
+  const goalId = Number(parts[1].trim());
   if (isNaN(goalId)) {
-    console.warn(`parseCellId: goalId is not a number in "${idStr}"`);
-    return { type, goalId: -1, instanceId: "invalid" };
+    throw new Error(`Goal ID must be a number, got "${parts[1]}".`);
   }
 
-  const instanceId = parts.slice(1).join("-"); // everything after type
+  const instanceId = parts.slice(1).join("-");
   return { type, goalId, instanceId };
 }
 
