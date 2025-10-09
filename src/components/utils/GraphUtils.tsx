@@ -21,7 +21,7 @@ export function formatGoalTag(goal:ClusterGoal): string {
     return `${goal.GoalType}-${goal.instanceId}`;
 }
 
-// Convert the cell id in MaxGraph
+// Convert the cell id in MaxGraph 'Functional-8-1'
 export function parseCellId(idStr: string) {
   if (!idStr) throw new Error("Cell ID is missing.");
 
@@ -40,6 +40,7 @@ export function parseCellId(idStr: string) {
   return { type, goalId, instanceId };
 }
 
+// Treeid stored in the state '8-1'
 export function parseInstanceId(instanceId: string) {
   const parts = instanceId.split("-");
   const suffixStr = parts.pop();
