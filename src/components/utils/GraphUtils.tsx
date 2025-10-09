@@ -17,7 +17,7 @@ export const returnFocusToGraph = () => {
 };
 
 // Functional-8-1
-export function formatGoalTag(goal:ClusterGoal): string {
+export function formatCellId(goal:ClusterGoal): string {
     return `${goal.GoalType}-${goal.instanceId}`;
 }
 

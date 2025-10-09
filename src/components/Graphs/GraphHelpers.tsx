@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import { getSymbolKeyByType,formatGoalTag } from "../utils/GraphUtils";
+import { getSymbolKeyByType,formatCellId } from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -199,7 +199,7 @@ export const renderFunction = (
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
 
-    const goalName = formatGoalTag(goal)
+    const goalName = formatCellId(goal)
     // insert new vertex and edge into graph
     // between functional goal, should connect with edge, rather than cell hierachy
     // Using null ensures the coordinates (SYMBOL_X_COORD, SYMBOL_Y_COORD) are absolute, 
