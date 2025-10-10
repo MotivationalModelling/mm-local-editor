@@ -1,7 +1,6 @@
 import {ClusterGoal} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey} from './GraphConstants';
 import { Graph, InternalEvent } from '@maxgraph/core';
-import { SYMBOL_CONFIGS, SymbolKey } from './GraphConstants';
 import { update } from 'idb-keyval';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
