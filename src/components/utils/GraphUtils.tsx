@@ -1,6 +1,6 @@
 import {Cell} from "@maxgraph/core";
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
-import {ClusterGoal, ParsedNonFunctionalId} from "../types.ts";
+import {ClusterGoal, ParsedFunctionalId, ParsedNonFunctionalId} from "../types.ts";
 
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
@@ -71,22 +71,20 @@ export function parseNonFunctionalId(idStr: string):ParsedNonFunctionalId {
 }
 
 // Convert the cell id in MaxGraph 'Functional-8-1'
-export function parseFuncGoalRefId(idStr: string){
+export function parseFuncGoalRefId(idStr: string):ParsedFunctionalId{
     if (!idStr) throw new Error("Cell ID is missing.");
 
     const parts = idStr.split("-");
     if (parts.length < 3) {
         throw new Error(`Cell ID format is invalid: expected format "Type-GoalId-InstanceId", got "${idStr}".`);
     }
-
-    const type = parts[0].trim();
     const goalId = Number(parts[1].trim());
     if (isNaN(goalId)) {
         throw new Error(`Goal ID must be a number, got "${parts[1]}".`);
     }
 
     const instanceId = parts.slice(1).join("-");
-    return {type, goalId, instanceId};
+    return {type: "Functional", goalId, instanceId};
 }
 
 // Treeid stored in the state '8-1'

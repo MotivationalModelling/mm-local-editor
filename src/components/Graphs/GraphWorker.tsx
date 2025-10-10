@@ -24,7 +24,7 @@ import {
 import "./GraphWorker.css";
 import {Label, newTreeItem, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster, ParsedNonFunctionalId} from "../types.ts";
+import {Cluster, ParsedGoalId, ParsedNonFunctionalId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
@@ -99,7 +99,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         });
 
         // --- Step 2: Handle nonfunctional (no edges, direct delete) ---
-        const parsedById = new Map<string, ParsedNonFunctionalId>();
+        const parsedById = new Map<string, ParsedGoalId>();
         const invalids: { id: string | null; reason: string }[] = [];
 
         nonFuncCells.forEach(cell => {
@@ -115,7 +115,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 });
             }
         });
-        console.log("parsedById.set(id, parsed); ",parsedById)
         // --- Step 3: Handle functional (with edges and recursion) ---
         const funcToRemoveSet = new Set<Cell>();
         const collect = (cell: Cell) => {

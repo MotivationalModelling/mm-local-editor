@@ -71,7 +71,7 @@ export const GoalTypeSchema = z.enum(
 
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
-    instanceId: z.number(),
+    instanceId: z.string(),
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string()
