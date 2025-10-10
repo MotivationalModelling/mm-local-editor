@@ -32,7 +32,7 @@ import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
-import {parseFunsGoalRefId} from "../utils/GraphUtils";
+import {parseFuncGoalRefId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 
@@ -105,7 +105,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         toRemove.forEach(cell => {
             const id = cell.getId();
             try {
-                const {goalId, instanceId} = parseFunsGoalRefId(id!); // parse throws on invalid
+                const {goalId, instanceId} = parseFuncGoalRefId(id!); // parse throws on invalid
                 parsedById.set(id!, {goalId, instanceId});
             } catch (err) {
                 invalids.push({

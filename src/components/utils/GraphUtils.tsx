@@ -22,7 +22,7 @@ export function formatFunGoalRefId(goal: ClusterGoal): string {
 }
 
 // Convert the cell id in MaxGraph 'Functional-8-1'
-export function parseFunsGoalRefId(idStr: string) {
+export function parseFuncGoalRefId(idStr: string) {
     if (!idStr) throw new Error("Cell ID is missing.");
 
     const parts = idStr.split("-");
