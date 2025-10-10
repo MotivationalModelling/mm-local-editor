@@ -14,58 +14,23 @@ export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined 
 };
 
 /**
- * Ensures that the cell's ID(s) are in the correct format:
- * - Format: "Functional-1,2,3" or "Nonfunctional-12,2,3"
- * - A cell ID may contain multiple numeric IDs separated by commas.
- * - If an ID is just a number, it will be automatically prefixed with the correct type.
+ * Extracts ID strings from a cell:
+ * - Supports multiple comma-separated IDs like: "Functional-123-1,123-2,123-3"
+ * - Returns an array of strings, e.g. ["123-1", "123-2", "123-3"]
  */
-export function ensureCellIdFormat(cell: Cell): Cell {
-  const cellId = cell.getId();
-
-  const goalTypeRaw = getSymbolConfigByShape(String(cell.style.shape))?.type;
-  const functionalType = goalTypeRaw === "Functional" ? "Functional" : "Nonfunctional";
-
-  if (!cellId) {
-    // Generate a new ID if none exists
-    const newId = `${functionalType}-${Date.now()}`;
-    cell.setId(newId);
-    return cell;
-  }
-
-  // Split by comma and normalize each part
-  const parts = cellId.split(",").map(p => p.trim()).filter(p => p.length > 0);
-  const numericIds: number[] = parts.map(part => {
-    const match = part.match(/^(Functional|Nonfunctional)-?(-?\d+)$/);
-    if (match) return Number(match[2]);
-    else if (/^-?\d+$/.test(part)) return Number(part);
-    else throw new Error(`Invalid cell ID format: ${part}`);
-  });
-
-  // Join numeric IDs with comma, only first one has prefix
-  const newId = `${functionalType}-${numericIds.join(",")}`;
-  cell.setId(newId);
-  return cell;
-}
-
-/**
- * Extracts numeric ID(s) from a cell:
- * - Supports multiple comma-separated IDs in format: "Functional-1,2,3"
- * - Returns an array of numbers, e.g. [1, 2, 3]
- */
-export function getCellNumericIds(cell: Cell): number[] {
-  ensureCellIdFormat(cell);
-
+export function getCellNumericIds(cell: Cell): string[] {
   const cellId = cell.getId();
   if (cellId) {
     const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
     if (match) {
       return match[2]
         .split(",")
-        .map(s => Number(s.trim()))
+        .map(s => s.trim())
     }
   }
   return [];
 }
+
 
 
 
@@ -103,8 +68,14 @@ export function parseFuncGoalRefId(idStr: string) {
 }
 
 // Treeid stored in the state '8-1'
-export function parseGoalRefId(instanceId: string) {
+export function getRefIdFromInstanceId(instanceId: string) {
     const parts = instanceId.split("-");
     const suffixStr = parts.pop();
     return Number(suffixStr);
+}
+
+export function getGoalIdFromInstanceId(instanceId: string) {
+  const parts = instanceId.split("-");
+  const prefixStr = parts.shift(); 
+  return Number(prefixStr);
 }

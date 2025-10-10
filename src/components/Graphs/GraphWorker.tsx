@@ -331,36 +331,32 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 return;
                             }
 
-                            const cellID = cell.getId()?.split(",") ?? [];
+                            const numericCellIds = getCellNumericIds(cell);
                             // goal value
                             const newContent = change.value.split(",");
 
-                            const lengthUpdated = cellID.length
                             // Check if the number of items matches
-                            if (lengthUpdated !== newContent.length) {
+                            if (numericCellIds.length !== newContent.length) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
                                     show: true,
                                     title: "Input Error",
-                                    message: `Please provide ${lengthUpdated} items split by comma`,
+                                    message: `Please provide ${numericCellIds.length} items split by comma`,
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
-                                for (let i = 0; i < lengthUpdated; i++) {
-                                    const id = Number(cellID[i]);
-                                    const text = newContent[i].trim("");
-
-                                    console.log("FileProvider state updated: cellid: ", id);
-                                    console.log("FileProvider state updated: content: ", text);
-
-                                    dispatch({
-                                        type: "treeData/updateTextForGoalId",
-                                        payload: {
-                                            id,
-                                            text,
-                                        },
-                                    });
-                                }
+                                console.log("!!!numericCellIds", numericCellIds);
+                                numericCellIds.forEach((instanceId, index) => {
+                                  
+                                  const text = newContent[index];
+                                  dispatch({
+                                    type: "treeData/updateTextForInstanceId",
+                                    payload: {
+                                      instanceId,
+                                      text,
+                                    },
+                                  });
+                                });
                             }
 
 
