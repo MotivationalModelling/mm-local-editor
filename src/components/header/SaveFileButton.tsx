@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { Button } from "react-bootstrap";
-import { JSONData, useFileContext } from "../context/FileProvider";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal";
-import { returnFocusToGraph } from "../utils/GraphUtils";
+import {useState} from "react";
+import {Button} from "react-bootstrap";
+import {JSONData, useFileContext} from "../context/FileProvider";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal";
+import {returnFocusToGraph} from "../utils/GraphUtils";
 
 const SaveFileButton = () => {
-	const { setJsonFileHandle, treeData, tabData, goals } = useFileContext();
+	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();
 
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
 		title: "",
 		message: "",
-		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+		onHide: () => setErrorModal(prev => ({...prev, show: false}))
 	});
 
 	// Function to check if there are any goals with content
@@ -26,7 +26,7 @@ const SaveFileButton = () => {
 			show: true,
 			title: "Cannot Save Model",
 			message: "No goals have been added. Please add at least one goal before saving.",
-			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+			onHide: () => setErrorModal(prev => ({...prev, show: false}))
 		});
 	};
 
@@ -36,7 +36,7 @@ const SaveFileButton = () => {
 			show: true,
 			title: "Invalid File Name",
 			message: "Please enter the file name",
-			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+			onHide: () => setErrorModal(prev => ({...prev, show: false}))
 		});
 	};
 

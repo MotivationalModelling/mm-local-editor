@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 
 // Define a generic type for the initial value
 type InitialValueType<T> = T | (() => T);
