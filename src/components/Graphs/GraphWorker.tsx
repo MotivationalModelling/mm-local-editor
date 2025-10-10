@@ -345,7 +345,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
-                                console.log("!!!numericCellIds", numericCellIds);
                                 numericCellIds.forEach((instanceId, index) => {
                                   
                                   const text = newContent[index];
