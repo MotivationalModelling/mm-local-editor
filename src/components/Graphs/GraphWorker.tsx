@@ -24,11 +24,11 @@ import {
 import "./GraphWorker.css";
 import {Label, newTreeItem, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster} from "../types.ts";
+import {Cluster, ParsedNonFunctionalId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getSymbolConfigByShape, ensureCellIdFormat, getCellNumericIds} from "../utils/GraphUtils";
+import {getSymbolConfigByShape, ensureCellIdFormat, getCellNumericIds, parseNonFunctionalId} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
@@ -85,82 +85,123 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         const cells = deletingItemRef.current;
         if (!cells || !graph) return;
 
-        // 1) Collect all cells that would be removed (including children)
-        const toRemoveSet = new Set<Cell>();
+        // --- Step 1: Separate cells into functional vs nonfunctional ---
+        const funcCells: Cell[] = [];
+        const nonFuncCells: Cell[] = [];
+
+        cells.forEach(cell => {
+            const id = cell.getId();
+            if (id && id.startsWith("Nonfunctional-[")) {
+                nonFuncCells.push(cell);
+            } else {
+                funcCells.push(cell);
+            }
+        });
+
+        // --- Step 2: Handle nonfunctional (no edges, direct delete) ---
+        const parsedById = new Map<string, ParsedNonFunctionalId>();
+        const invalids: { id: string | null; reason: string }[] = [];
+
+        nonFuncCells.forEach(cell => {
+            const id = cell.getId();
+            if (!id) return;
+            try {
+                const parsed = parseNonFunctionalId(id);
+                parsedById.set(id, parsed);
+            } catch (err) {
+                invalids.push({
+                    id,
+                    reason: err instanceof Error ? err.message : 'Invalid Nonfunctional ID',
+                });
+            }
+        });
+        console.log("parsedById.set(id, parsed); ",parsedById)
+        // --- Step 3: Handle functional (with edges and recursion) ---
+        const funcToRemoveSet = new Set<Cell>();
         const collect = (cell: Cell) => {
-            if (toRemoveSet.has(cell)) return;
-            toRemoveSet.add(cell);
+            if (funcToRemoveSet.has(cell)) return;
+            funcToRemoveSet.add(cell);
             const outgoing = graph.getOutgoingEdges(cell, null) || [];
             if (removeChildrenFlag && outgoing.length) {
                 outgoing.forEach(edge => { if (edge.target) collect(edge.target); });
             }
         };
-        cells.forEach(collect);
-        const toRemove = Array.from(toRemoveSet);
+        funcCells.forEach(collect);
+        const funcToRemove = Array.from(funcToRemoveSet);
 
-        // 2) Validate all IDs up-front
-        type InvalidInfo = { id: string | null, reason: string };
-        const invalids: InvalidInfo[] = [];
-        const parsedById = new Map<string, { goalId: number; instanceId: string }>();
-
-        toRemove.forEach(cell => {
+        funcToRemove.forEach(cell => {
             const id = cell.getId();
+            if (!id) return;
             try {
-                const {goalId, instanceId} = parseFuncGoalRefId(id!); // parse throws on invalid
-                parsedById.set(id!, {goalId, instanceId});
+                const parsed = parseFuncGoalRefId(id);
+                parsedById.set(id, parsed);
             } catch (err) {
                 invalids.push({
-                    id: id ?? 'unknown',
-                    reason: err instanceof Error ? err.message : 'Unknown parsing error',
+                    id,
+                    reason: err instanceof Error ? err.message : 'Invalid Functional ID',
                 });
             }
         });
 
-        // 3) If any invalid, show ONE modal and abort (do not touch the graph)
+        // --- Step 4: Show errors if any ---
         if (invalids.length > 0) {
-            const message = invalids
-                .map(inv => inv.reason)
-                .join('\n\n'); // keep \n, and render with pre-wrap (see Modal)
+            const message = invalids.map(inv => `${inv.id}: ${inv.reason}`).join('\n');
             setErrorModal({
                 show: true,
                 title: 'Invalid Cell IDs',
                 message,
                 onHide: () => setErrorModal(prev => ({...prev, show: false})),
             });
-            return; // abort deletion
+            return;
         }
 
-        // 4) All valid → proceed to remove from graph (same recursive removal you used)
-        const deletedCells: Cell[] = [];
+        // --- Step 5: Delete from graph ---
+        // Nonfunctional: simple remove
+        const nonFuncDeleted = graph.removeCells(nonFuncCells, false) || [];
+
+        // Functional: recursive remove
+        const funcDeleted: Cell[] = [];
         const removeCellRecursively = (cell: Cell) => {
             const outgoing = graph.getOutgoingEdges(cell, null) || [];
             if (removeChildrenFlag && outgoing.length) {
                 outgoing.forEach(edge => { if (edge.target) removeCellRecursively(edge.target); });
             }
             const removed = graph.removeCells([cell], removeChildrenFlag) || [];
-            deletedCells.push(...removed);
+            funcDeleted.push(...removed);
         };
-        cells.forEach(cell => removeCellRecursively(cell));
+        funcCells.forEach(removeCellRecursively);
 
-        // 5) Dispatch Redux actions only for actually deleted cells,
-        //    map by id to use parsed info we saved earlier.
-        deletedCells.forEach(cell => {
+        // --- Step 6: Dispatch Redux actions ---
+        const allDeleted = [...nonFuncDeleted, ...funcDeleted];
+        allDeleted.forEach(cell => {
             const id = cell.getId();
             if (!id) return;
             const parsed = parsedById.get(id);
-            if (!parsed) {
-                console.warn('Deleted cell has no parsed info (unexpected):', id);
-                return;
+            if (!parsed) return;
+
+            if ("pairs" in parsed) {
+                // Nonfunctional
+                parsed.pairs.forEach(p => {
+                    dispatch(removeGoalIdFromTree({
+                        id: p.goalId,
+                        instanceId: p.instanceId,
+                        removeChildren: false, // always false for nonfunctional
+                    }));
+                });
+            } else {
+                // Functional
+                dispatch(removeGoalIdFromTree({
+                    id: parsed.goalId,
+                    instanceId: parsed.instanceId,
+                    removeChildren: removeChildrenFlag,
+                }));
             }
-            dispatch(removeGoalIdFromTree({
-                id: parsed.goalId,
-                instanceId: parsed.instanceId,
-                removeChildren: removeChildrenFlag,
-            }));
         });
 
         setShowDeleteWarning(false);
     };
+
+
 
 
     // Function to reset the graph to empty

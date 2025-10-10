@@ -1,6 +1,6 @@
 import {Cell} from "@maxgraph/core";
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
-import {ClusterGoal} from "../types.ts";
+import {ClusterGoal, ParsedNonFunctionalId} from "../types.ts";
 
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
@@ -10,7 +10,7 @@ export function getSymbolKeyByType(type: string): SymbolKey | undefined {
 }
 
 export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined => {
-  return Object.values(SYMBOL_CONFIGS).find(config => config.shape === shape);
+    return Object.values(SYMBOL_CONFIGS).find(config => config.shape === shape);
 };
 
 /**
@@ -19,16 +19,16 @@ export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined 
  * - Returns an array of strings, e.g. ["123-1", "123-2", "123-3"]
  */
 export function getCellNumericIds(cell: Cell): string[] {
-  const cellId = cell.getId();
-  if (cellId) {
-    const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
-    if (match) {
-      return match[2]
-        .split(",")
-        .map(s => s.trim())
+    const cellId = cell.getId();
+    if (cellId) {
+        const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
+        if (match) {
+            return match[2]
+                .split(",")
+                .map(s => s.trim())
+        }
     }
-  }
-  return [];
+    return [];
 }
 
 
@@ -44,12 +44,34 @@ export const returnFocusToGraph = () => {
 };
 
 // Functional-8-1
-export function formatFunGoalRefId(goal: ClusterGoal): string {
+export function formatFuncGoalRefId(goal: ClusterGoal): string {
     return `${goal.GoalType}-${goal.instanceId}`;
 }
 
+export function formatNonFuncGoalRefId(descriptions: { instanceId: string; content: string }[]): string {
+  const list = descriptions.map(d => d.instanceId).join(";");
+  return `Nonfunctional-[${list}]`;
+}
+
+export function parseNonFunctionalId(idStr: string):ParsedNonFunctionalId {
+
+  const inside = idStr.match(/\[(.*)\]/)?.[1];
+  if (!inside) throw new Error(`Failed to extract contents from: ${idStr}`);
+
+  const pairs = inside.split(";").map(instanceId => {
+    const goalIdStr = instanceId.split("-")[0];
+    const goalId = Number(goalIdStr.trim());
+    if (isNaN(goalId)) {
+      throw new Error(`Invalid sub-ID pair: ${instanceId}`);
+    }
+    return {goalId, instanceId};
+  });
+
+  return {type: "Nonfunctional", pairs};
+}
+
 // Convert the cell id in MaxGraph 'Functional-8-1'
-export function parseFuncGoalRefId(idStr: string) {
+export function parseFuncGoalRefId(idStr: string){
     if (!idStr) throw new Error("Cell ID is missing.");
 
     const parts = idStr.split("-");
@@ -75,7 +97,7 @@ export function getRefIdFromInstanceId(instanceId: string) {
 }
 
 export function getGoalIdFromInstanceId(instanceId: string) {
-  const parts = instanceId.split("-");
-  const prefixStr = parts.shift(); 
-  return Number(prefixStr);
+    const parts = instanceId.split("-");
+    const prefixStr = parts.shift();
+    return Number(prefixStr);
 }
