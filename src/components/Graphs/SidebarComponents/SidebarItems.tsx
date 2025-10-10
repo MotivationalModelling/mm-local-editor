@@ -14,7 +14,6 @@ import {
   SYMBOL_CONFIGS,
 } from "../../utils/GraphConstants";
 
-
 type SidebarItemsProps = {
     graph: Graph
     className?: string
@@ -96,7 +95,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         const point = graph.getPointForEvent(evt);
         const goal = graph.cloneCell(prototype);
         
-        if (goal) {//&& goal.geometry
+        if (goal) {
           const treeItem = newTreeItem({
             type: getSymbolConfigByShape(String(goal.style.shape))?.label as Label
           });

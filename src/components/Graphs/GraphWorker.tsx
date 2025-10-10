@@ -29,7 +29,6 @@ import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
-
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
