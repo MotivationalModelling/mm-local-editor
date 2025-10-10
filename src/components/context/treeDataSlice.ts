@@ -232,7 +232,6 @@ export const treeDataSlice = createSlice({
         }>) => {
             const {instanceId, text} = action.payload;
             const goalId = getGoalIdFromInstanceId(instanceId);
-            console.log("!!!updateTextForInstanceId", instanceId, goalId, text);
             state.goals[goalId] = {
                 ...state.goals[goalId],
                 content: text
