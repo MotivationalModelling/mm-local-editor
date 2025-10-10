@@ -31,7 +31,6 @@ import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getSymbolConfigByShape, ensureCellIdFormat, getCellNumericIds} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
-
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------

@@ -439,7 +439,7 @@ export const renderNonFunction = (
     );
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
-    edge.visible = true; // Make the edge invisible - used in auto layout
+    edge.visible = false; // Make the edge invisible - used in auto layout
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
