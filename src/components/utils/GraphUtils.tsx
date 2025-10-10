@@ -17,7 +17,12 @@ export const returnFocusToGraph = () => {
     }
 };
 
-// Keep the in-place text editor at correct position 
+/**
+ * Keeps the inline text editor at the center of the cell.
+ * Uses a MutationObserver to detect when `.mxCellEditor` is added to the DOM,
+ * then adjusts its position and keyboard behavior (Enter = save)
+ * without modifying mxGraph’s internal event listeners.
+ */
 export function fixEditorPosition(graph: Graph) {
     const container = graph.container as HTMLElement;
     container.style.position = 'relative';
