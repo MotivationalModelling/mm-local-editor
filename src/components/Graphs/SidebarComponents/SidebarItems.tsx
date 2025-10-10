@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils } from "@maxgraph/core";
+import {useEffect, useRef} from "react";
+import {Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils} from "@maxgraph/core";
 
 import {
   LINE_IMAGE_PATH,

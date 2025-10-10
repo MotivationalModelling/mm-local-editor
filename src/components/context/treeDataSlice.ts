@@ -2,25 +2,51 @@ import {createSlice, current, PayloadAction} from "@reduxjs/toolkit";
 import {
     createTabDataFromTabs,
     createTreeDataFromTreeNode,
-    createTreeIdsFromTreeData, createTreeIdsFromTreeNode,
+    createTreeIdsFromTreeData,
     Label,
     TabContent,
     TreeItem,
     TreeNode
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
+import {parseGoalRefId} from "../utils/GraphUtils.tsx";
 
-export const newTreeNode = ({goalId, children = []}: {
-    goalId: TreeItem["id"],
-    children?: TreeNode[]
-}) => ({
+
+
+export const newTreeNode = (
+    treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>,
+  {
     goalId,
-    children
-});
+    instanceId = generateInstanceId(treeIds, goalId),
+    children = [],
+  }: {
+    goalId: TreeItem["id"];
+    instanceId?: TreeItem["instanceId"];
+    children?: TreeNode[];
+  },
+) => {
+  // Update treeIds mapping
+  if (treeIds[goalId]) {
+    treeIds[goalId].push(instanceId);
+  } else {
+    treeIds[goalId] = [instanceId];
+  }
 
-export const createTreeFromTreeData = (treeData: TreeItem[]): TreeNode[] => {
+  return {
+    goalId,
+    instanceId,
+    children,
+  };
+};
+
+
+export const createTreeFromTreeData = (
+    treeData: TreeItem[],
+): TreeNode[] => {
     return treeData.map((ti) => ({
         goalId: ti.id,
+        // if ti.instanceId exists, use it, else compute one
+        instanceId: ti.instanceId,
         children: createTreeFromTreeData(ti.children ?? [])
     }));
 };
@@ -42,33 +68,30 @@ const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
     return {goals, tabs};
 };
 
-// return the reduced Treenode
+// remove each item from tree
 export const removeItemIdFromTree = (
-  items: TreeNode[],
-  id: TreeNode["goalId"],
-  removeChildren: boolean=true
+    items: TreeNode[],
+    id: TreeNode["goalId"],
+    instanceId?: TreeNode["instanceId"],
+    removeChildren: boolean = true
 ): TreeNode[] => {
-  return items.reduce((acc, item) => {
+    return items.reduce((acc, item) => {
+        if (item.goalId === id && item.instanceId === instanceId) {
 
-    console.log("removeCellRecursively: item.goalID ",item.goalId)
-    console.log("removeCellRecursively: id ",id)
-    if (item.goalId === id) {
-        console.log("removeCellRecursively: item ",item)
-      if (!removeChildren && item.children) {
-        // Promote children to parent level
-        acc.push(...item.children);
-      }
-      return acc; // skip this item
-    }
+            if (!removeChildren && item.children) {
+                // Promote children to parent level
+                acc.push(...item.children);
+            }
+            return acc; // skip this item
+        }
 
-    if (item.children) {
-      item.children = removeItemIdFromTree(item.children, id, removeChildren);
-    }
-    
-    acc.push(item);
-    console.log("removeCellRecursively: acc ",acc)
-    return acc;
-  }, [] as TreeNode[]);
+        if (item.children) {
+            item.children = removeItemIdFromTree(item.children, id, instanceId, removeChildren);
+        }
+
+        acc.push(item);
+        return acc;
+    }, [] as TreeNode[]);
 };
 
 export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): TabContent[] => {
@@ -78,9 +101,50 @@ export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): Ta
     }));
 };
 
+const removeAllReferenceFromHierarchy = (
+    tree: TreeNode[],
+    goalId: TreeItem["id"],
+    instanceId?: TreeItem["instanceId"],
+): TreeNode[] => {
+    return tree
+        .filter(node => {
+            if (instanceId !== undefined) {
+                // keep nodes that are not this specific instance
+                return !(node.goalId === goalId && node.instanceId === instanceId);
+            } else {
+                // keep nodes that do not match the goalId
+                return node.goalId !== goalId;
+            }
+        })
+        .map(node => ({
+            ...node,
+            children: node.children
+                ? removeAllReferenceFromHierarchy(node.children, goalId, instanceId)
+                : []
+        }));
+};
+
+const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
+    const ids = treeIds[goalId];
+    if (!ids || ids.length === 0) return 0;
+    return Math.max(
+        ...ids.map(id => {
+            const maxSuffix = parseGoalRefId(id)
+            return maxSuffix; // extract last number
+        })
+    );
+}
+
+
+const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
+    // give it new instance id 
+    const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1
+    return `${goalId}-${maxSuffix}`
+}
+
+//
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
-    console.log("tabData: ",tabData)
-    console.log("treeData: ",treeData)
+
     const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
@@ -98,7 +162,7 @@ export const treeDataSlice = createSlice({
         tree: [] as TreeNode[],
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeItem["id"], TreeItem>,
-        treeIds: [] as TreeItem["id"][]
+        treeIds: {} as Record<TreeItem["id"], TreeItem["instanceId"][]>
     },
     reducers: {
         // setTreeData: (state, action: PayloadAction<TreeItem[]>) => {
@@ -119,27 +183,40 @@ export const treeDataSlice = createSlice({
             state.tree = createTreeFromTreeData(action.payload);
         },
         addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
-            state.tree.push(newTreeNode({goalId: action.payload.id}));
-            state.treeIds.push(action.payload.id);
+            const node = newTreeNode(state.treeIds,{goalId: action.payload.id});
+            state.tree.push(node);
         },
-        // remove goal(s) and its children from hierachy
+        // remove goal(s) and its children from canvas
         removeGoalIdFromTree: (state, action: PayloadAction<{
             id: TreeItem["id"],
+            instanceId: TreeItem["instanceId"]
             removeChildren: boolean
         }>) => {
-            state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.removeChildren);
-            state.treeIds = createTreeIdsFromTreeNode(state.tree);
+            state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.instanceId, action.payload.removeChildren);
+            // state.treeIds = createTreeIdsFromTreeNode(state.tree);
         },
-        deleteGoal: (state, action: PayloadAction<TreeItem>) => {
-            const tabContent = state.tabs.get(action.payload.type);
+        // delete it will also delete the reference in the tree
+        deleteGoalFromGoalList: (state, action: PayloadAction<{
+            item: TreeItem
+        }>) => {
+            const tabContent = state.tabs.get(action.payload.item.type);
             if (tabContent) {
-                tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.id);
+                tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.item.id);
             }
-            // reassign the value
-            state.tree = removeItemIdFromTree(state.tree, action.payload.id);
-            state.treeIds = state.treeIds.filter((treeId) => treeId !== action.payload.id);
-            delete state.goals[action.payload.id];
+            delete state.goals[action.payload.item.id];
+            // remove it and its reference
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.item.id, undefined)
+            delete state.treeIds[action.payload.item.id];
         },
+        // delete it will not affect the orginal and other reference
+        deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<{
+            item: TreeItem
+        }>) => {
+            // only itself
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.item.id, action.payload.item.instanceId)
+            state.treeIds[action.payload.item.id] = state.treeIds[action.payload.item.id].filter(node => node !== action.payload.item.instanceId);
+        },
+
         updateTextForGoalId: (state, action: PayloadAction<{
             id: TreeItem["id"],
             text: string
@@ -172,6 +249,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset, removeGoalIdFromTree} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
