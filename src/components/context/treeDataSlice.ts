@@ -72,7 +72,7 @@ const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
 export const removeItemIdFromTree = (
     items: TreeNode[],
     id: TreeNode["goalId"],
-    instanceId: TreeNode["instanceId"],
+    instanceId?: TreeNode["instanceId"],
     removeChildren: boolean = true
 ): TreeNode[] => {
     return items.reduce((acc, item) => {
@@ -87,29 +87,6 @@ export const removeItemIdFromTree = (
 
         if (item.children) {
             item.children = removeItemIdFromTree(item.children, id, instanceId, removeChildren);
-        }
-
-        acc.push(item);
-        return acc;
-    }, [] as TreeNode[]);
-};
-export const removeGoalFromGoalList = (
-    items: TreeNode[],
-    id: TreeNode["goalId"],
-): TreeNode[] => {
-    return items.reduce((acc, item) => {
-
-        if (item.goalId === id) {
-
-            if (item.children) {
-                // Promote children to parent level
-                acc.push(...item.children);
-            }
-            return acc; // skip this item
-        }
-
-        if (item.children) {
-            item.children = removeGoalFromGoalList(item.children, id);
         }
 
         acc.push(item);
