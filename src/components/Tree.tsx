@@ -1,15 +1,15 @@
-import React, { useRef, useState } from "react";
+import React, {useRef, useState} from "react";
 import WhoIcon from "/img/Stakeholder.png";
 import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
-import Nestable, { NestableProps } from "react-nestable";
-import { FaPlus, FaMinus } from "react-icons/fa";
-import { TreeItem } from "./context/FileProvider";
-import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
-import { Label } from "./context/FileProvider";
-import { useFileContext } from "./context/FileProvider";
+import Nestable, {NestableProps} from "react-nestable";
+import {FaPlus, FaMinus} from "react-icons/fa";
+import {TreeItem} from "./context/FileProvider";
+import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
+import {Label} from "./context/FileProvider";
+import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
   isEmptyGoal,
@@ -20,7 +20,7 @@ import {
 } from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
-import { deleteGoalReferenceFromHierarchy, setTreeData } from "./context/treeDataSlice.ts";
+import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -69,7 +69,7 @@ type TreeProps = {
 };
 
 // Goal icon in the tree
-const IconComponent = ({ type }: { type: Label }) => {
+const IconComponent = ({type}: { type: Label }) => {
   return (
     <img
       src={iconFromType(type)}
@@ -96,12 +96,12 @@ const Tree: React.FC<TreeProps> = ({
   const deletingItemRef = useRef<TreeItem | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const { treeData, dispatch } = useFileContext();
+  const {treeData, dispatch} = useFileContext();
 
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoalReferenceFromHierarchy({ item: deletingItemRef.current }));
+      dispatch(deleteGoalReferenceFromHierarchy({item: deletingItemRef.current}));
     }
     setShowDeleteWarning(false);
   };
@@ -145,7 +145,7 @@ const Tree: React.FC<TreeProps> = ({
   // };
 
   const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[] => {
-    const result = [{ goalId: item.id, instanceId: item.instanceId }];
+    const result = [{goalId: item.id, instanceId: item.instanceId}];
 
     if (item.children) {
       item.children.forEach((child) => {
@@ -157,7 +157,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   // Function for rendering every item
-  const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
+  const renderItem: NestableProps["renderItem"] = ({item, collapseIcon}) => {
     const treeItem = item as TreeItem;
     const isEditing = editingItemId === treeItem.id;
 
@@ -332,7 +332,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   // Button for collapse and expand
-  const Collapser = ({ isCollapsed }: { isCollapsed: boolean }) => {
+  const Collapser = ({isCollapsed}: { isCollapsed: boolean }) => {
     const iconSize = 13;
     return (
       <div
@@ -348,7 +348,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", alignSelf: "flex-start", position: "relative" }}>
+    <div style={{width: "100%", height: "100%", alignSelf: "flex-start", position: "relative"}}>
       <ConfirmModal
         show={showDeleteWarning}
         title="Delete Warning"
@@ -357,11 +357,11 @@ const Tree: React.FC<TreeProps> = ({
         onConfirm={deleteItem}
       />
       <Nestable
-        onChange={({ items }) => dispatch(setTreeData(items as TreeItem[]))}
+        onChange={({items}) => dispatch(setTreeData(items as TreeItem[]))}
         items={treeData}
         renderItem={renderItem}
         idProp="instanceId"
-        renderCollapseIcon={({ isCollapsed }) => (
+        renderCollapseIcon={({isCollapsed}) => (
           <Collapser isCollapsed={isCollapsed} />
         )}
       />

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import Card from "react-bootstrap/Card";
-import { BsCaretDownFill, BsCaretRightFill } from "react-icons/bs";
+import {BsCaretDownFill, BsCaretRightFill} from "react-icons/bs";
 import Collapse from "react-bootstrap/Collapse";
 
 interface Props {

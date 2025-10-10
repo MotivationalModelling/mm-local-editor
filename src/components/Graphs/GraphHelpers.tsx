@@ -3,8 +3,8 @@ import {
     Rectangle,
     Cell,
 } from "@maxgraph/core";
-import { ClusterGoal, GlobObject } from "../types.ts";
-import { GoalModelLayout } from "./GoalModelLayout";
+import {ClusterGoal, GlobObject} from "../types.ts";
+import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
     VERTEX_FONT,
@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import { getSymbolKeyByType, formatFunGoalRefId } from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -100,13 +100,13 @@ export const renderGoals = (
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
-            emotions.push({ id, content });
+            emotions.push({id, content});
         } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-            concerns.push({ id, content });
+            concerns.push({id, content});
         } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
-            qualities.push({ id, content });
+            qualities.push({id, content});
         } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
-            stakeholders.push({ id, content });
+            stakeholders.push({id, content});
         } else {
             console.log("Logging: goal of unknown type received: " + type);
         }
@@ -194,7 +194,7 @@ export const renderFunction = (
 
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
-    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
+    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -409,7 +409,7 @@ export const renderNonFunction = (
     }
 
     // Clone style to avoid modifying the default
-    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
+    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.shape = shape;
     style.align = "center";
     style.verticalAlign = "middle";
@@ -506,7 +506,7 @@ export const renderLegend = (graph: Graph): Cell => {
         startY,
         fWidth * 1.5,
         fHeight * legendTypes.length * 1.5,
-        { shape: "rect", strokeColor: "black", fillColor: "transparent" }
+        {shape: "rect", strokeColor: "black", fillColor: "transparent"}
     );
 
     legendTypes.forEach((symbolKey, index) => {

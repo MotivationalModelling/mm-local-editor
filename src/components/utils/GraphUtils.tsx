@@ -1,5 +1,5 @@
-import { ClusterGoal } from '../types';
-import { SYMBOL_CONFIGS, SymbolKey } from './GraphConstants';
+import {ClusterGoal} from '../types';
+import {SYMBOL_CONFIGS, SymbolKey} from './GraphConstants';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -37,7 +37,7 @@ export function parseFunGoalRefId(idStr: string) {
     }
 
     const instanceId = parts.slice(1).join("-");
-    return { type, goalId, instanceId };
+    return {type, goalId, instanceId};
 }
 
 // Treeid stored in the state '8-1'

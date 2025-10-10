@@ -307,7 +307,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										src={tab.icon}
 										alt={`${tab.label} icon`}
 										className={styles.icon}
-										style={{ width: tab.label === "Who" ? "0.7cm" : "1.5cm" }}
+										style={{width: tab.label === "Who" ? "0.7cm" : "1.5cm"}}
 									/>
 									<span className={styles.labelBelowIcon}>{tab.label}</span>
 								</Nav.Link>
@@ -320,7 +320,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 								<Table striped bordered hover>
 									<thead>
 										<tr>
-											<th style={{ width: '1px', whiteSpace: 'nowrap' }}>
+											<th style={{width: '1px', whiteSpace: 'nowrap'}}>
 											<Form.Group as={Row}>
 														<Form.Check
 														type="checkbox"
@@ -329,7 +329,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 														/>
 													</Form.Group>
 											</th>
-											<th style={{ display: 'flex' }}>
+											<th style={{display: 'flex'}}>
                                                 {goalDescriptionForLabel(label)}
 											</th>
 										</tr>

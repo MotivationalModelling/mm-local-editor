@@ -1,4 +1,4 @@
-import { createSlice, current, PayloadAction } from "@reduxjs/toolkit";
+import {createSlice, current, PayloadAction} from "@reduxjs/toolkit";
 import {
     createTabDataFromTabs,
     createTreeDataFromTreeNode,
@@ -8,32 +8,37 @@ import {
     TreeItem,
     TreeNode
 } from "./FileProvider.tsx";
-import { InitialTab, initialTabs } from "../../data/initialTabs.ts";
-import { parseGoalRefId } from "../utils/GraphUtils.tsx";
+import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
+import {parseGoalRefId} from "../utils/GraphUtils.tsx";
 
 
 
 export const newTreeNode = (
-    { goalId, instanceId, children = [] }: {
-        goalId: TreeItem["id"];
-        instanceId?: TreeItem["instanceId"];
-        children?: TreeNode[];
-    },
-    treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>
+    treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>,
+  {
+    goalId,
+    instanceId = generateInstanceId(treeIds, goalId),
+    children = [],
+  }: {
+    goalId: TreeItem["id"];
+    instanceId?: TreeItem["instanceId"];
+    children?: TreeNode[];
+  },
 ) => {
-    const id = instanceId ?? generateInstanceId(treeIds, goalId);
-    // Update treeIds mapping
-    if (treeIds[goalId]) {
-        treeIds[goalId].push(id);
-    } else {
-        treeIds[goalId] = [id];
-    }
-    return {
-        goalId,
-        instanceId: id,
-        children
-    };
+  // Update treeIds mapping
+  if (treeIds[goalId]) {
+    treeIds[goalId].push(instanceId);
+  } else {
+    treeIds[goalId] = [instanceId];
+  }
+
+  return {
+    goalId,
+    instanceId,
+    children,
+  };
 };
+
 
 export const createTreeFromTreeData = (
     treeData: TreeItem[],
@@ -46,7 +51,7 @@ export const createTreeFromTreeData = (
     }));
 };
 
-export const createTabContentFromInitialTab = ({ label, icon, rows }: InitialTab): TabContent => ({
+export const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
     label,
     icon,
     goalIds: rows.map((goal) => goal.id)
@@ -60,7 +65,7 @@ const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
     const allGoals = initialTabs.map((tab) => tab.rows).flat();
     const goals = Object.fromEntries(allGoals.map((goal) => [goal.id, goal]));
 
-    return { goals, tabs };
+    return {goals, tabs};
 };
 
 // remove each item from tree
@@ -163,7 +168,7 @@ const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
 
-    const { goals, tabs } = createGoalsAndTabsFromTabContent(tabData);
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
     return {
@@ -201,8 +206,7 @@ export const treeDataSlice = createSlice({
             state.tree = createTreeFromTreeData(action.payload);
         },
         addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
-            const node = newTreeNode({ goalId: action.payload.id }, state.treeIds);
-            console.log("newTreeNode: ", node)
+            const node = newTreeNode(state.treeIds,{goalId: action.payload.id});
             state.tree.push(node);
         },
         // remove goal(s) and its children from canvas
@@ -268,6 +272,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const { addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree } = treeDataSlice.actions;
-export const { selectGoalsForLabel } = treeDataSlice.selectors;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree} = treeDataSlice.actions;
+export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

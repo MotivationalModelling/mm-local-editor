@@ -1,7 +1,7 @@
-import React, { createContext, PropsWithChildren, useContext, useEffect, useReducer, useState } from "react";
-import { createInitialState, treeDataSlice } from "./treeDataSlice.ts";
-import { initialTabs } from "../../data/initialTabs.ts";
-import { Cluster, ClusterGoal, GoalType } from "../types.ts";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
+import {initialTabs} from "../../data/initialTabs.ts";
+import {Cluster, ClusterGoal, GoalType} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
 
 // This hook manages the goals that are in use in the motivational model.
@@ -82,7 +82,7 @@ export type TabContent = {
 
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
-export const DataType = { JSON: "AMMBER_JSON" };
+export const DataType = {JSON: "AMMBER_JSON"};
 
 export const LocalStorageType = {
     TREE: "ammber/treeData",
@@ -114,7 +114,7 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
         const goal = goals[tn.goalId];
-        return newTreeItem({ ...goal, instanceId: tn.instanceId, ...(tn.children) ? { children: createTreeDataFromTreeNode(goals, tn.children) } : {} });
+        return newTreeItem({...goal, instanceId: tn.instanceId, ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
     });
 };
 
@@ -167,7 +167,7 @@ const FileContext = createContext<FileContextProps>({
     setJsonFileHandle: () => { },
     tabData: [],
     treeData: [],
-    cluster: { ClusterGoals: [] },
+    cluster: {ClusterGoals: []},
     xmlData: "",
     dispatch: (() => { }) as React.Dispatch<DispatchActions>, // Fix: provide proper dispatch type
     // setTabData: () => {},
@@ -209,7 +209,7 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
     };
 };
 
-const FileProvider: React.FC<PropsWithChildren> = ({ children }) => {
+const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     // const treeDataSlice = createTreeDataSlice();
     // XXX note: we should pass in initialTabs and tree if they exist in localStorage
 

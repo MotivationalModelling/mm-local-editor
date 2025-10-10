@@ -14,25 +14,25 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals } from './GraphHelpers';
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Button, Col, Container, Form, Row} from "react-bootstrap";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {
     registerCustomShapes,
 } from "./GraphShapes";
 import "./GraphWorker.css";
-import { useFileContext } from "../context/FileProvider.tsx";
-import { useGraph } from "../context/GraphContext";
-import { Cluster } from "../types.ts";
+import {useFileContext} from "../context/FileProvider.tsx";
+import {useGraph} from "../context/GraphContext";
+import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
-import { VERTEX_FONT } from "../utils/GraphConstants.tsx"
-import { removeGoalIdFromTree } from "../context/treeDataSlice.ts";
+import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
-import { parseFunGoalRefId } from "../utils/GraphUtils";
+import {parseFunGoalRefId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 
@@ -56,10 +56,10 @@ interface GlobObject {
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
+const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const { cluster, dispatch } = useFileContext();
-    const { graph, setGraph } = useGraph();
+    const {cluster, dispatch} = useFileContext();
+    const {graph, setGraph} = useGraph();
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -71,7 +71,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         show: false,
         title: "",
         message: "",
-        onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
+        onHide: () => setErrorModal(prev => ({...prev, show: false})),
     });
 
 
@@ -105,8 +105,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         toRemove.forEach(cell => {
             const id = cell.getId();
             try {
-                const { goalId, instanceId } = parseFunGoalRefId(id!); // parse throws on invalid
-                parsedById.set(id!, { goalId, instanceId });
+                const {goalId, instanceId} = parseFunGoalRefId(id!); // parse throws on invalid
+                parsedById.set(id!, {goalId, instanceId});
             } catch (err) {
                 invalids.push({
                     id: id ?? 'unknown',
@@ -124,7 +124,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                 show: true,
                 title: 'Invalid Cell IDs',
                 message,
-                onHide: () => setErrorModal(prev => ({ ...prev, show: false })),
+                onHide: () => setErrorModal(prev => ({...prev, show: false})),
             });
             return; // abort deletion
         }
@@ -324,7 +324,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                                     show: true,
                                     title: "Input Error",
                                     message: "Goal name cannot be empty.",
-                                    onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+                                    onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 })
                                 return;
                             }
@@ -341,7 +341,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                                     show: true,
                                     title: "Input Error",
                                     message: `Please provide ${lengthUpdated} items split by comma`,
-                                    onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+                                    onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
                                 for (let i = 0; i < lengthUpdated; i++) {
@@ -511,7 +511,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
         let rootGoal: Cell | null = null;
-        const rootGoalWrapper = { value: null as Cell | null };
+        const rootGoalWrapper = {value: null as Cell | null};
         const emotionsGlob: GlobObject = {};
         const negativesGlob: GlobObject = {};
         const qualitiesGlob: GlobObject = {};
@@ -637,7 +637,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     // --------------------------------------------------------------------------------------------------------------------------------------------------
 
     return (
-        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <div style={{position: "relative", width: "100%", height: "100%"}}>
             <ErrorModal {...errorModal} />
             <ConfirmModal
                 show={showDeleteWarning}
@@ -664,7 +664,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             <Container>
                 <Row className="row">
                     <Col md={10}>
-                        <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{ outline: 'none' }} />
+                        <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
                     <Col md={2}>
                         <GraphSidebar graph={graph} recentreView={recentreView} />

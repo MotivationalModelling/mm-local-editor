@@ -1,6 +1,6 @@
 import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
-import { Popover, OverlayTrigger } from "react-bootstrap";
+import {Popover, OverlayTrigger} from "react-bootstrap";
 import {BsInfoCircleFill} from "react-icons/bs";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
 
@@ -35,7 +35,7 @@ const ProgressBar = ({
   };
 
   const clusterInfoPopover = (
-    <Popover style={{ maxWidth: "max-content" }}>
+    <Popover style={{maxWidth: "max-content"}}>
       <Popover.Body>
         • Click the goal and use{" "}
         <strong>
@@ -56,7 +56,7 @@ const ProgressBar = ({
   );
 
   const graphInfoPopover = (
-    <Popover style={{ maxWidth: "max-content" }}>
+    <Popover style={{maxWidth: "max-content"}}>
       <Popover.Body>
         • Click{" "}
         <strong>

@@ -15,7 +15,7 @@ describe('Goal Input Automation', () => {
         .scrollIntoView()
         .should("be.visible")
         .parent() // get the <a> or clickable container
-        .click({ force: true });
+        .click({force: true});
     }
   
   
