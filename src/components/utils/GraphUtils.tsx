@@ -1,5 +1,7 @@
 import {Cell} from "@maxgraph/core";
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
+import {ClusterGoal} from "../types.ts";
+
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -10,8 +12,6 @@ export function getSymbolKeyByType(type: string): SymbolKey | undefined {
 export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined => {
   return Object.values(SYMBOL_CONFIGS).find(config => config.shape === shape);
 };
-
-
 
 /**
  * Ensures that the cell's ID(s) are in the correct format:

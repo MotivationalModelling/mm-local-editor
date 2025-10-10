@@ -56,17 +56,12 @@ interface GlobObject {
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
-  const divGraph = useRef<HTMLDivElement>(null);
-  const {cluster, dispatch, treeIds} = useFileContext();
-  const treeIdsRef = useRef(treeIds);
-  treeIdsRef.current = treeIds;
-
-  const {graph, setGraph} = useGraph();
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const {cluster, dispatch} = useFileContext();
+    const {cluster, dispatch, treeIds} = useFileContext();
     const {graph, setGraph} = useGraph();
+    const treeIdsRef = useRef(treeIds);
+    treeIdsRef.current = treeIds;
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
