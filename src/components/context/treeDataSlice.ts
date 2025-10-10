@@ -9,7 +9,7 @@ import {
     TreeNode
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {parseGoalRefId} from "../utils/GraphUtils.tsx";
+import {getRefIdFromInstanceId, getGoalIdFromInstanceId} from "../utils/GraphUtils.tsx";
 
 
 
@@ -129,7 +129,7 @@ const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"
     if (!ids || ids.length === 0) return 0;
     return Math.max(
         ...ids.map(id => {
-            const maxSuffix = parseGoalRefId(id)
+            const maxSuffix = getRefIdFromInstanceId(id)
             return maxSuffix; // extract last number
         })
     );
@@ -224,6 +224,18 @@ export const treeDataSlice = createSlice({
             state.goals[action.payload.id] = {
                 ...state.goals[action.payload.id],
                 content: action.payload.text
+            };
+        },
+        updateTextForInstanceId: (state, action: PayloadAction<{
+            instanceId: string,
+            text: string
+        }>) => {
+            const {instanceId, text} = action.payload;
+            const goalId = getGoalIdFromInstanceId(instanceId);
+            console.log("!!!updateTextForInstanceId", instanceId, goalId, text);
+            state.goals[goalId] = {
+                ...state.goals[goalId],
+                content: text
             };
         },
         reset: (state, action: PayloadAction<{

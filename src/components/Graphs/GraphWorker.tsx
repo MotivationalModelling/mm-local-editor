@@ -335,18 +335,17 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 return;
                             }
 
-                            const cellID = cell.getId()?.split(",") ?? [];
+                            const numericCellIds = getCellNumericIds(cell);
                             // goal value
                             const newContent = change.value.split(",");
 
-                            const lengthUpdated = cellID.length
                             // Check if the number of items matches
-                            if (lengthUpdated !== newContent.length) {
+                            if (numericCellIds.length !== newContent.length) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
                                     show: true,
                                     title: "Input Error",
-                                    message: `Please provide ${lengthUpdated} items split by comma`,
+                                    message: `Please provide ${numericCellIds.length} items split by comma`,
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {

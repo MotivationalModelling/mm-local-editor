@@ -108,7 +108,7 @@ export function parseFuncGoalRefId(idStr: string) {
 }
 
 // Treeid stored in the state '8-1'
-export function parseGoalRefId(instanceId: string) {
+export function getRefIdFromInstanceId(instanceId: string) {
     const parts = instanceId.split("-");
     const suffixStr = parts.pop();
     return Number(suffixStr);
@@ -143,3 +143,8 @@ export const parseInstanceId = (instanceId: string) => {
         refId: bits.length > 1 ? Number(bits[1]) : undefined
     };
 };
+export function getGoalIdFromInstanceId(instanceId: string) {
+  const parts = instanceId.split("-");
+  const prefixStr = parts.shift(); 
+  return Number(prefixStr);
+}
