@@ -33,6 +33,7 @@ import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
+import { fixEditorPosition } from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -578,11 +579,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             // Creates the graph with the custom plugins
             const graphInstance = new Graph(graphContainer, undefined, plugins);
 
-            setGraphStyle(graphInstance);
-            graphListener(graphInstance);
-            supportFunctions(graphInstance);
-            registerCustomShapes();
-            setGraph(graphInstance);
+      setGraphStyle(graphInstance);
+      graphListener(graphInstance);
+      fixEditorPosition(graphInstance);
+      supportFunctions(graphInstance);
+      registerCustomShapes();
+      setGraph(graphInstance);
 
             // Cleanup function to destroy graph
             return () => {
