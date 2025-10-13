@@ -27,7 +27,8 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
+import {getCellNumericIds} from "../utils/GraphUtils";
+import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
@@ -348,17 +349,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
-                                for (let i = 0; i < lengthUpdated; i++) {
-                                    const id = Number(cellID[i]);
-                                    const text = newContent[i].trim("");
-                                    dispatch({
-                                        type: "treeData/updateTextForGoalId",
-                                        payload: {
-                                            id,
-                                            text,
-                                        },
-                                    });
-                                }
+                                numericCellIds.forEach((instanceId, index) => {
+                                    
+                                    const text = newContent[index];
+                                    dispatch(updateTextForInstanceId({instanceId, text}));
+                                });
                             }
 
 

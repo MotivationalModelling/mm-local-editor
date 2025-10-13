@@ -143,8 +143,3 @@ export const parseInstanceId = (instanceId: string) => {
         refId: bits.length > 1 ? Number(bits[1]) : undefined
     };
 };
-export function getGoalIdFromInstanceId(instanceId: string) {
-  const parts = instanceId.split("-");
-  const prefixStr = parts.shift(); 
-  return Number(prefixStr);
-}
