@@ -28,8 +28,8 @@ import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getSymbolConfigByShape, ensureCellIdFormat, getCellNumericIds} from "../utils/GraphUtils";
-import {removeGoalIdFromTree, addGoalToTree, addGoal} from "../context/treeDataSlice.ts";
+import {getCellNumericIds} from "../utils/GraphUtils";
+import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
 
@@ -347,13 +347,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 numericCellIds.forEach((instanceId, index) => {
                                   
                                   const text = newContent[index];
-                                  dispatch({
-                                    type: "treeData/updateTextForInstanceId",
-                                    payload: {
-                                      instanceId,
-                                      text,
-                                    },
-                                  });
+                                  dispatch(updateTextForInstanceId({instanceId, text}));
                                 });
                             }
 

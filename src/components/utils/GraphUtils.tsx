@@ -19,16 +19,16 @@ export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined 
  * - Returns an array of strings, e.g. ["123-1", "123-2", "123-3"]
  */
 export function getCellNumericIds(cell: Cell): string[] {
-  const cellId = cell.getId();
-  if (cellId) {
-    const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
-    if (match) {
-      return match[2]
-        .split(",")
-        .map(s => s.trim())
+    const cellId = cell.getId();
+    if (cellId) {
+        const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
+        if (match) {
+        return match[2]
+            .split(",")
+            .map(s => s.trim())
+        }
     }
-  }
-  return [];
+    return [];
 }
 
 
@@ -67,15 +67,10 @@ export function parseFuncGoalRefId(idStr: string) {
     return {type, goalId, instanceId};
 }
 
-// Treeid stored in the state '8-1'
-export function getRefIdFromInstanceId(instanceId: string) {
-    const parts = instanceId.split("-");
-    const suffixStr = parts.pop();
-    return Number(suffixStr);
-}
-
-export function getGoalIdFromInstanceId(instanceId: string) {
-  const parts = instanceId.split("-");
-  const prefixStr = parts.shift(); 
-  return Number(prefixStr);
-}
+export const parseInstanceId = (instanceId: string) => {
+    const bits = instanceId.split("-").map(s => s.trim());
+    return {
+        goalId: Number(bits[0]),
+        refId: bits.length > 1 ? Number(bits[1]) : undefined
+    };
+};
