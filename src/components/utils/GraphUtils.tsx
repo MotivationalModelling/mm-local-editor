@@ -114,12 +114,12 @@ export function parseGoalRefId(instanceId: string) {
     return Number(suffixStr);
 }
 
-export const generateFunctionalCellId = (goal: number): string => {
-    return `Functional-${goal}`;
-};
-
-export const generateNonFunctionalCellId = (ids: number[]): string => {
-    return `Nonfunctional-${ids.join(",")}`;
+export const generateCellId = (
+  functionalType: "Functional" | "Nonfunctional",
+  ids: number | number[]
+): string => {
+  const idArray = Array.isArray(ids) ? ids : [ids];
+  return `${functionalType}-${idArray.join(",")}`;
 };
 
 export const parseInstanceId = (instanceId: string) => {

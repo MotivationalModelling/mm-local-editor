@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateFunctionalCellId, generateNonFunctionalCellId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -62,7 +62,7 @@ export const renderGoals = (
     //  the functional goal is the child of the parent goal
     //       the non-functional goal is to describe the parent goal
 
-    // 
+    //
 
     // Goals: all root goal (include functional and functional goal)
     console.log("Logging: renderGoals() called on list: ", goals);
@@ -207,7 +207,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        generateFunctionalCellId(goal),
+        generateCellId("Functional", goal.GoalID),
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -429,7 +429,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        generateNonFunctionalCellId(descriptions.map(d => d.id)),
+        generateCellId("Nonfunctional", descriptions.map(d => d.id)),
         squareLabel,
         x,
         y,
