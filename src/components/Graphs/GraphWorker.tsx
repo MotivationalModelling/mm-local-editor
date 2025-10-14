@@ -81,14 +81,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
 const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const cells = deletingItemRef.current
-//   console.log("removeCellRecursively: selected ",cells)
   if(!cells||!graph) return
   const deletedCells: Cell[] = [];
   
   // selected cell
   const removeCellRecursively = (cell: Cell) => {
-    
-    console.log("removeCellRecursively: iterate ",cell)
     // check the children
     const outgoingEdges = graph.getOutgoingEdges(cell,null);
 
@@ -98,7 +95,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       });
     }
     const removed = graph.removeCells([cell], removeChildrenFlag);
-    // console.log("removeCellRecursively: removed ",removed)
     deletedCells.push(...removed);
   };
 
@@ -140,7 +136,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       graph.fit();
       graph.center();
     }
-    // console.log("center")
   };
   
   const initRecentreView = useCallback(() => {
@@ -148,7 +143,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       graph.fit();
       graph.center();
     }
-    // console.log("center")
   }, [graph]);
 
   const adjustFontSize = (
@@ -220,7 +214,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     graph
       .getDataModel()
       .addListener(InternalEvent.CHANGE, (_sender: string, evt: EventObject) => {
-        // console.log("graph changed");
         graph.getDataModel().beginUpdate();
         evt.consume();
         try {
@@ -230,7 +223,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
-            //   console.log("change, ",cell)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
@@ -301,8 +293,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                   const id = Number(cellID[i]);
                   const text = newContent[i].trim("");
 
-                //   console.log("FileProvider state updated: cellid: ", id);
-                //   console.log("FileProvider state updated: content: ", text);
 
                   dispatch({
                     type: "treeData/updateTextForGoalId",
@@ -363,15 +353,12 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
         // cells.forEach(cell => {
         //   dispatch(removeGoalIdFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
         // });
-        // graph.removeCells(cells, true); remove children
-        // graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text redundant
       }
     });
     keyHandler.bindKey(DELETE_KEYBINDING2, () => {
       if (graph.isEnabled()) {
-        // console.log("--------------- DELETE CELL ---------------");
         const cells = graph.removeCells();
-        graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cell and text
+        graph.removeStateForCell(cells[0]);
       }
     });
 
@@ -437,8 +424,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     x: number,
     y: number
   ): Cell | null => {
-    // console.log("getDrop Target in ==========================")
-    // console.log(x,y)
     const cell = graph.getCellAt(x, y);
     return cell && !graph.isValidDropTarget(cell) ? cell : null;
   };
@@ -454,10 +439,10 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     // Reset - remove any existing graph if render is called
     graph.removeCells(graph.getChildVertices(graph.getDefaultParent()));
     graph.removeCells(graph.getChildEdges(graph.getDefaultParent()));
-  
+
     // Reset the root goal
     rootGoalWrapper.value = null;
-  
+
     // Clear the accumulators for non-functional goals
     Object.keys(emotionsGlob).forEach(key => delete emotionsGlob[key]);
     Object.keys(negativesGlob).forEach(key => delete negativesGlob[key]);
@@ -468,7 +453,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const renderGraph = useCallback(() => {
     if (!graph) return;
 
-    // console.log("Rendering Graph");
 
     // Declare necessary variables
     // Use rootGoalWrapper to be able to update its value
@@ -490,7 +474,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
     // Check if the browser is supported
     if (!Client.isBrowserSupported()) {
-    //   console.log("Logging: browser not supported");
       error("Browser not supported!", 200, false);
       return;
     }
@@ -532,12 +515,12 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
-  
+
       const plugins = [
-        ...getDefaultPlugins(), 
+        ...getDefaultPlugins(),
         RubberBandHandler,
       ];
-      
+
       // Creates the graph with the custom plugins
       const graphInstance = new Graph(graphContainer, undefined, plugins);
 
@@ -550,7 +533,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       // Cleanup function to destroy graph
       return () => {
         if (graphInstance) {
-        //   console.log("Destroy");
           graphInstance.destroy();
         }
         setGraph(null); // Reset state
@@ -561,27 +543,17 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   // Handle graph rendering when cluster or graph changes
   if (graph) {
     if (cluster.ClusterGoals.length > 0) {
-    //   console.log("re render");
       renderGraph();
     } else {
       graph.getDataModel().clear();
-    //   console.log("Graph is empty");
     }
   }
 
   // Trigger centering when entering render section
   useEffect(() => {
-    // console.log("useEffect triggered:", {
-    //   showGraphSection,
-    //   prevShowGraphSection: prevShowGraphSectionRef.current,
-    //   hasGraph: !!graph,
-    //   goalsLength: cluster.ClusterGoals.length,
-    //   hasCentered: hasCenteredOnEntryRef.current
-    // });
 
     // Only center when showGraphSection changes from false to true
     if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-    //   console.log("Centering graph on first entry");
       // Use setTimeout to ensure centering happens after layout is complete
       setTimeout(() => {
         initRecentreView();
