@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import { generateFunctionalCellId, generateNonFunctionalCellId, getSymbolKeyByType } from "../utils/GraphUtils";
+import { generateCellId, getSymbolKeyByType } from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -206,7 +206,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        generateFunctionalCellId(goal), 
+        generateCellId("Functional", goal.GoalID), 
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -428,7 +428,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        generateNonFunctionalCellId(descriptions.map(d => d.id)), 
+        generateCellId("Nonfunctional", descriptions.map(d => d.id)), 
         squareLabel,
         x,
         y,
