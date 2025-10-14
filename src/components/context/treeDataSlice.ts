@@ -81,47 +81,6 @@ export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): Ta
     }));
 };
 
-const removeAllReferenceFromHierarchy = (
-    tree: TreeNode[],
-    goalId: TreeItem["id"],
-    instanceId?: TreeItem["instanceId"],
-): TreeNode[] => {
-    return tree
-        .filter(node => {
-            if (instanceId !== undefined) {
-                // keep nodes that are not this specific instance
-                return !(node.goalId === goalId && node.instanceId === instanceId);
-            } else {
-                // keep nodes that do not match the goalId
-                return node.goalId !== goalId;
-            }
-        })
-        .map(node => ({
-            ...node,
-            children: node.children
-                ? removeAllReferenceFromHierarchy(node.children, goalId, instanceId)
-                : []
-        }));
-};
-
-const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
-    const ids = treeIds[goalId];
-    if (!ids || ids.length === 0) return 0;
-    return Math.max(
-        ...ids.map(id => {
-            const maxSuffix = parseInstanceId(id).refId;
-            return maxSuffix; // extract last number
-        })
-    );
-}
-
-
-const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
-    // give it new instance id 
-    const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1
-    return `${goalId}-${maxSuffix}`
-}
-
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
     console.log("tabData: ",tabData)
