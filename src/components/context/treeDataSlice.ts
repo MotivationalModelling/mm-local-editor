@@ -137,7 +137,7 @@ const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"
 
 
 const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
-    // give it new instance id 
+    // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1
     return `${goalId}-${maxSuffix}`
 }
