@@ -48,7 +48,7 @@ export const returnFocusToGraph = () => {
 export function fixEditorPosition(graph: Graph) {
     const container = graph.container as HTMLElement;
     container.style.position = 'relative';
-    
+
     // Apply the correct position to the text editor element
     const updateEditor = (el: HTMLElement) => {
         el.style.position = 'absolute';
@@ -113,16 +113,13 @@ export function parseGoalRefId(instanceId: string) {
     const suffixStr = parts.pop();
     return Number(suffixStr);
 }
-export const generateFunctionalCellId = (goal: ClusterGoal): string => {
-    if (goal.GoalType === 'Functional'){
-        return goal.GoalType + "-" + goal.GoalID;
-    } else {
-        throw new Error("Functional goal expected");
-    }
+
+export const generateFunctionalCellId = (goal: number): string => {
+    return `Functional-${goal}`;
 };
 
 export const generateNonFunctionalCellId = (ids: number[]): string => {
-    return "Nonfunctional-" + ids.join(",");
+    return `Nonfunctional-${ids.join(",")}`;
 };
 
 export const parseInstanceId = (instanceId: string) => {
