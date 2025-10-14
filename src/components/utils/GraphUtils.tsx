@@ -39,6 +39,18 @@ export const returnFocusToGraph = () => {
     }
 };
 
+export const generateFunctionalCellId = (goal: ClusterGoal): string => {
+    if (goal.GoalType === 'Functional'){
+        return goal.GoalType + "-" + goal.GoalID;
+    } else {
+        throw new Error("Functional goal expected");
+    }
+};
+
+export const generateNonFunctionalCellId = (ids: number[]): string => {
+    return "Nonfunctional-" + ids.join(",");
+};
+
 export const parseInstanceId = (instanceId: string) => {
     const bits = instanceId.split("-").map(s => s.trim());
     // TODO: raise an exception here if bits.length > 2
