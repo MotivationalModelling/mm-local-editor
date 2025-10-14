@@ -29,9 +29,6 @@ import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
-
-import {parseFuncGoalRefId} from "../utils/GraphUtils";
-import {fixEditorPosition} from "../utils/GraphUtils.tsx";
 import {returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
