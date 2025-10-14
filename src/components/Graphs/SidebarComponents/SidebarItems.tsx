@@ -1,5 +1,5 @@
-import {useEffect, useRef} from "react";
-import {Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils} from "@maxgraph/core";
+import { useEffect, useRef } from "react";
+import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils } from "@maxgraph/core";
 
 import {getSymbolConfigByShape} from "../../utils/GraphUtils";
 import {Label, newTreeItem, useFileContext} from "../../context/FileProvider.tsx";

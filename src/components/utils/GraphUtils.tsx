@@ -4,8 +4,8 @@ import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
-    return (Object.entries(SYMBOL_CONFIGS) as [SymbolKey, typeof SYMBOL_CONFIGS[SymbolKey]][])
-        .find(([_, config]) => config.type === type)?.[0];
+  return (Object.entries(SYMBOL_CONFIGS) as [SymbolKey, typeof SYMBOL_CONFIGS[SymbolKey]][])
+    .find(([_, config]) => config.type === type)?.[0];
 }
 
 export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined => {
@@ -112,6 +112,7 @@ export function parseFuncGoalRefId(idStr: string) {
 
 export const parseInstanceId = (instanceId: string) => {
     const bits = instanceId.split("-").map(s => s.trim());
+    // TODO: raise an exception here if bits.length > 2
     return {
         goalId: Number(bits[0]),
         refId: bits.length > 1 ? Number(bits[1]) : undefined

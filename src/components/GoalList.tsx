@@ -12,7 +12,7 @@ import {TreeItem, useFileContext, newTreeItem, Label} from "./context/FileProvid
 import styles from "./TabButtons.module.css";
 import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
 import {isEmptyGoal,isGoalDraggable,isTextEmpty,handleGoalKeyPress,handleGoalBlur} from "./utils/GoalHint.tsx"
-import {addGoalToTab,deleteGoalFromGoalList, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {addGoalToTab, deleteGoal, selectGoalsForLabel, updateTextForGoalId} from "./context/treeDataSlice.ts";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -178,7 +178,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 		const handleDeleteRow = (row: TreeItem) => {
-			dispatch(deleteGoalFromGoalList({item:row}));
+			dispatch(deleteGoal(row));
 			const filteredGroupSelected = groupSelected.filter(
 				(item) => item.id !== row.id
 			);
@@ -259,8 +259,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			// 	});
 			//
 			// 	setTabData(newTabData);
-
-				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoalFromGoalList({item:item})));
+				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoal(item)));
 				setGroupSelected([]); 
 			}
 		};
@@ -307,7 +306,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 										src={tab.icon}
 										alt={`${tab.label} icon`}
 										className={styles.icon}
-										style={{width: tab.label === "Who" ? "0.7cm" : "1.5cm"}}
+										style={{ width: tab.label === "Who" ? "0.7cm" : "1.5cm" }}
 									/>
 									<span className={styles.labelBelowIcon}>{tab.label}</span>
 								</Nav.Link>
@@ -320,7 +319,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 								<Table striped bordered hover>
 									<thead>
 										<tr>
-											<th style={{width: '1px', whiteSpace: 'nowrap'}}>
+											<th style={{ width: '1px', whiteSpace: 'nowrap' }}>
 											<Form.Group as={Row}>
 														<Form.Check
 														type="checkbox"
@@ -329,7 +328,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 														/>
 													</Form.Group>
 											</th>
-											<th style={{display: 'flex'}}>
+											<th style={{ display: 'flex' }}>
                                                 {goalDescriptionForLabel(label)}
 											</th>
 										</tr>

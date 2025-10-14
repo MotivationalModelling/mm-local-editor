@@ -1,22 +1,22 @@
-import {Canvg} from 'canvg';
+import { Canvg } from 'canvg';
 import * as d3 from 'd3';
-import {useState} from "react";
-import {Dropdown, OverlayTrigger, Tooltip} from "react-bootstrap";
-import ErrorModal, {ErrorModalProps} from "../ErrorModal";
-import {useFileContext} from "../context/FileProvider";
-import {useGraph} from "../context/GraphContext";
-import {returnFocusToGraph} from "../utils/GraphUtils";
+import { useState } from "react";
+import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
+import ErrorModal, { ErrorModalProps } from "../ErrorModal";
+import { useFileContext } from "../context/FileProvider";
+import { useGraph } from "../context/GraphContext";
+import { returnFocusToGraph } from "../utils/GraphUtils";
 
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
-const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => {
-	const {graph} = useGraph(); // Use the context to get the graph instance
-	const {cluster} = useFileContext(); // Get goals and cluster from file context
+const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) => {
+	const { graph } = useGraph(); // Use the context to get the graph instance
+	const {cluster } = useFileContext(); // Get goals and cluster from file context
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
 		title: "",
 		message: "",
-		onHide: () => setErrorModal(prev => ({...prev, show: false}))
+		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
 	});
 
 	// Simplified logic: Export is only available when showGraphSection is true
@@ -47,7 +47,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 			show: true,
 			title: "Cannot Export Model",
 			message: "No goals have been added. Please add at least one goal before exporting.",
-			onHide: () => setErrorModal(prev => ({...prev, show: false}))
+			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
 		});
 	};
 
@@ -67,7 +67,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 				show: true,
 				title: "Cannot Export Model",
 				message: getTooltipMessage(),
-				onHide: () => setErrorModal(prev => ({...prev, show: false}))
+				onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
 			});
 			return;
 		}
@@ -105,14 +105,14 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 				};
 				const handle = await self.showSaveFilePicker(options);
 				const writable = await handle.createWritable();
-				await writable.write(new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'}));
+				await writable.write(new Blob([svgString], {type: 'image/svg+xml;charset=utf-8' }));
 				await writable.close();
 			
 			}
 			// Fallback for non chromium browsers
 			else {
 				// Create a Blob and trigger download
-				const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+				const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
 				const url = URL.createObjectURL(blob);
 			
 				const link = document.createElement('a');
@@ -140,7 +140,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 				show: true,
 				title: "Cannot Export Model",
 				message: getTooltipMessage(),
-				onHide: () => setErrorModal(prev => ({...prev, show: false}))
+				onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
 			});
 			return;
 		}

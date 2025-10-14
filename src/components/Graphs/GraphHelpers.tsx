@@ -3,8 +3,8 @@ import {
     Rectangle,
     Cell,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject} from "../types.ts";
-import {GoalModelLayout} from "./GoalModelLayout";
+import { ClusterGoal, GlobObject } from "../types.ts";
+import { GoalModelLayout } from "./GoalModelLayout";
 
 import {
     VERTEX_FONT,
@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId} from "../utils/GraphUtils";
+import { getSymbolKeyByType } from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -100,13 +100,13 @@ export const renderGoals = (
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
-            emotions.push({id, content});
+            emotions.push({ id, content });
         } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-            concerns.push({id, content});
+            concerns.push({ id, content });
         } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
-            qualities.push({id, content});
+            qualities.push({ id, content });
         } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
-            stakeholders.push({id, content});
+            stakeholders.push({ id, content });
         } else {
             console.log("Logging: goal of unknown type received: " + type);
         }
@@ -194,12 +194,11 @@ export const renderFunction = (
 
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
 
-    const goalName = formatFunGoalRefId(goal)
     // insert new vertex and edge into graph
     // between functional goal, should connect with edge, rather than cell hierachy
     // Using null ensures the coordinates (SYMBOL_X_COORD, SYMBOL_Y_COORD) are absolute, 
@@ -207,7 +206,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        goalName, // Functional-8(goal-id)-1(instance-id)
+        goal.GoalType + "-" + goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -215,7 +214,7 @@ export const renderFunction = (
         height,
         style
     );
-    // console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
+    console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
         graph.insertEdge(null, null, "", source, node);
     }
@@ -409,7 +408,7 @@ export const renderNonFunction = (
     }
 
     // Clone style to avoid modifying the default
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    const style = { ...graph.getStylesheet().getDefaultVertexStyle() };
     style.shape = shape;
     style.align = "center";
     style.verticalAlign = "middle";
@@ -459,7 +458,7 @@ export const renderNonFunction = (
         } else if (ratio < 0.67) {
             maxLineWidth = nodeGeo.height * 0.67;
         }
-
+        
         nodeGeo.width = Math.max(maxLineWidth, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
         nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
     }
@@ -505,7 +504,7 @@ export const renderLegend = (graph: Graph): Cell => {
         startY,
         fWidth * 1.5,
         fHeight * legendTypes.length * 1.5,
-        {shape: "rect", strokeColor: "black", fillColor: "transparent"}
+        { shape: "rect", strokeColor: "black", fillColor: "transparent" }
     );
 
     legendTypes.forEach((symbolKey, index) => {
@@ -612,10 +611,10 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeSquareLable(
+export function makeSquareLable (
     items: Array<string>,
     sep = ", "
-): string {
+  ): string {
     const n = items.length;
 
     if (n === 0) {
@@ -627,12 +626,12 @@ export function makeSquareLable(
     const lines: string[] = [];
 
     for (let r = 0; r < rows; r++) {
-        const slice = items.slice(r * cols, (r + 1) * cols);
-        lines.push(slice.join(sep));
+      const slice = items.slice(r * cols, (r + 1) * cols);
+      lines.push(slice.join(sep));
     }
 
     return lines.join(", \n");
-}
+  }
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";

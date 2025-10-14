@@ -1,5 +1,5 @@
 import React from "react";
-import {Modal, Button} from "react-bootstrap";
+import { Modal, Button } from "react-bootstrap";
 
 export type ConfirmModalProps = {
 	show: boolean;
@@ -31,7 +31,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 				<Button variant="secondary" onClick={onHide}>
 					Cancel
 				</Button>
-				<Button variant="warning" onClick={onConfirm} style={{backgroundColor:"red"}}>
+				<Button variant="warning" onClick={onConfirm} style={{ backgroundColor:"red" }}>
 					Confirm
 				</Button>
 			</Modal.Footer>

@@ -1,4 +1,4 @@
-import {IoCloseCircle} from "react-icons/io5";
+import { IoCloseCircle } from "react-icons/io5";
 
 type FileUploadSectionProps = {
 	file: File;
@@ -13,7 +13,7 @@ const FileUploadSection = ({
 	onUpload,
 }: FileUploadSectionProps) => {
 	return (
-		<div className="mt-3 border border-primary-subtle rounded file-container p-4 align-content-center mx-5">
+		<div className="mt-3 border border-primary-subtle rounded file-container py-2 px-4 align-content-center mx-5">
 			{/* File remove button */}
 			<div
 				onClick={onRemove}
@@ -24,7 +24,7 @@ const FileUploadSection = ({
 					right: "-35px",
 				}}
 			>
-				<IoCloseCircle style={{cursor: "pointer"}} size={20} />
+				<IoCloseCircle style={{ cursor: "pointer" }} size={20} />
 			</div>
 			<div onClick={onUpload} className="fs-5">
 				{file.type === "application/json" && (

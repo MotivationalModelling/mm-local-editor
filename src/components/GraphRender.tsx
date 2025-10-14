@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Graph,
   Codec,
@@ -9,7 +9,7 @@ import {
   Cell,
 } from "@maxgraph/core";
 
-const GraphRender: React.FC<{ xml: string }> = ({xml}) => {
+const GraphRender: React.FC<{ xml: string }> = ({ xml }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // useEffect is called twice under <React.StrictMode> mode
   const mountRef = useRef(false);

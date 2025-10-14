@@ -572,7 +572,7 @@ export class GoalModelLayout extends GraphLayout {
     dy: number,
     next: any = null
   ): _mxCompactTreeLayoutLine {
-    const line = {dx, dy, next};
+    const line = { dx, dy, next };
 
     return line;
   }
