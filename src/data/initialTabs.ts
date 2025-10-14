@@ -1,4 +1,4 @@
-import {Label, TreeItem, newTreeItem} from "../components/context/FileProvider.tsx";
+import { Label, TreeItem } from "../components/context/FileProvider.tsx";
 
 import BeIcon from "/img/Cloud.png";
 import DoIcon from "/img/Function.png";
@@ -12,54 +12,53 @@ export interface InitialTab {
     rows: TreeItem[]
 }
 
+// TODO: this is a duplicate copy of this function to avoid a circular import -- fix this!!
+const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => ({
+    content: "",
+    id: initFields.id ?? Date.now(),
+    ...initFields
+});
+
 // Predefined constant cluster to use for the example graph
 export const defaultTreeData: TreeItem[] = [{
     id: 1,
     content: "Do",
     type: "Do",
-    instanceId: "1-1",
     children: [{
         id: 6,
         content: "Do1",
         type: "Do",
-        instanceId: "6-1",
         children: [{
             id: 7,
             content: "Do2",
             type: "Do",
-            instanceId: "7-1",
             children: []
         }]
     }, {
         id: 8,
         content: "Do3",
         type: "Do",
-        instanceId: "8-1",
         children: []
     }]
 }, {
     id: 2,
     content: "Be",
     type: "Be",
-    instanceId: "2-1",
     children: []
 }, {
     id: 3,
     content: "Feel",
     type: "Feel",
-    instanceId: "3-1",
     children: []
 }, {
     id: 4,
     content: "Who",
     type: "Who",
-    instanceId: "4-1",
     children: []
 }, {
     id: 5,
     content: "Concern",
     type: "Concern",
-    instanceId: "5-1",
     children: []
 }];
 

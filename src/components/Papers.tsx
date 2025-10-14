@@ -8,7 +8,7 @@ import {papers} from "../data/papers.ts";
 
 const Papers = () => {
     return (
-        <div id="bg" style={{minHeight: "100vh"}} className="d-flex flex-column">
+        <div id="bg" style={{ minHeight: "100vh" }} className="d-flex flex-column">
             <WelcomeHeader/>
                 <Container style={{overflow: "auto", height: "90vh"}}>
                     <PaperReferenceList references={papers}/>

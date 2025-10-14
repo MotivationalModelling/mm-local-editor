@@ -5,11 +5,11 @@ type LayoutProps = {
 	children: React.ReactNode;
 };
 
-const Layout: React.FC<LayoutProps> = ({children}) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
 	return (
 		<>
 			{/* Possible header content */}
-			<div style={{minHeight: "100vh"}}>{children}</div>
+			<div style={{ minHeight: "100vh" }}>{children}</div>
 			<Footer />
 		</>
 	);

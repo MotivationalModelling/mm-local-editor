@@ -14,6 +14,5 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
-    'object-curly-spacing': ['error', 'never'],
   },
-};
+}

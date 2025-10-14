@@ -4,7 +4,6 @@ export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "
 
 export interface GoalBase {
     GoalID: number
-    instanceId: string
     GoalType: GoalType
     GoalContent: string
     GoalNote: string
@@ -15,7 +14,7 @@ export interface Goal extends GoalBase {
 }
 
 export interface GlobObject {
-    [key: string]: Array<{ id: number; content: string }>;
+  [key: string]: Array<{ id: number; content: string }>;
 }
 
 
@@ -50,7 +49,6 @@ export const GoalTypeSchema = z.enum(
 
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
-    instanceId: z.number(),
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string()
