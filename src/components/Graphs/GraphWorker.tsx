@@ -16,11 +16,9 @@ import '@maxgraph/core/css/common.css';
 
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Button, Col, Container, Form, Row} from "react-bootstrap";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
-import {
-  registerCustomShapes,
-} from "./GraphShapes";
+import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
@@ -83,7 +81,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const cells = deletingItemRef.current
   if(!cells||!graph) return
   const deletedCells: Cell[] = [];
-  
+
   // selected cell
   const removeCellRecursively = (cell: Cell) => {
     // check the children
@@ -98,7 +96,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     deletedCells.push(...removed);
   };
 
-  cells.forEach(cell => 
+  cells.forEach(cell =>
       removeCellRecursively(cell));
   deletedCells.forEach((cell) => {
     // since the cell.getID is functionatype + the id
@@ -124,7 +122,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   //     onResetDefault();
   //   }
   // };
-  
+
   // Track if we have already centered on first entry
   const hasCenteredOnEntryRef = useRef(false);
   const prevShowGraphSectionRef = useRef(false);
@@ -137,7 +135,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       graph.center();
     }
   };
-  
+
   const initRecentreView = useCallback(() => {
     if (graph) {
       graph.fit();
@@ -330,13 +328,13 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     const keyHandler = new KeyHandler(graph);
     keyHandler.bindKey(DELETE_KEYBINDING, () => {
       if (graph.isEnabled()) {
-        
+
         const selectedCells = graph.getSelectionCells();
         if (!selectedCells || selectedCells.length === 0) return;
 
         deletingItemRef.current = selectedCells;
 
-      
+
 
         const outgoingEdges = graph.getOutgoingEdges(selectedCells[0],null);
         const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
@@ -349,7 +347,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
         }
 
         // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
-        // graph.removeStateForCell(cells[0]); 
+        // graph.removeStateForCell(cells[0]);
         // cells.forEach(cell => {
         //   dispatch(removeGoalIdFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
         // });
