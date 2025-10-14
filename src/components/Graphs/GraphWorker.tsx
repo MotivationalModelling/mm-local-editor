@@ -417,14 +417,12 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   };
 
     // Ensure mouse interactions restore focus so keyboard shortcuts (e.g., Delete) work reliably
-    if(graph){
+    if (graph) {
         graph.addListener(InternalEvent.CLICK, (_sender: string, _evt: EventObject) => {
             returnFocusToGraph();
             graph.refresh();
         });
-        graph.getSelectionModel().addListener(InternalEvent.CHANGE, (_sender: string, _evt: EventObject) => {
-        returnFocusToGraph();
-        });
+        graph.getSelectionModel().addListener(InternalEvent.CHANGE, () => returnFocusToGraph());
     }
 
   /**
