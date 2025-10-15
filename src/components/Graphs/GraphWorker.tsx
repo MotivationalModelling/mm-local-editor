@@ -272,11 +272,11 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 return;
               }
 
-              const cellID = cell.getId()?.split(",") ?? [];
+              const cellIDs = cell.getId()?.split(",") ?? [];
               // goal value
               const newContent = change.value.split(",");
 
-              const nUpdated = cellID.length
+              const nUpdated = cellIDs.length
               // Check if the number of items matches
               if (nUpdated !== newContent.length) {
                 graph.getDataModel().setValue(cell, change.previous);
@@ -288,7 +288,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 });
               } else {
                 for (let i = 0; i < nUpdated; i++) {
-                  const id = Number(cellID[i]);
+                  const id = Number(cellIDs[i]);
                   const text = newContent[i].trim("");
 
 
