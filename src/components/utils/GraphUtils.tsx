@@ -51,11 +51,11 @@ type IdsForType = {
 
 export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForType[T]): string {
     switch (type) {
-        case "Functional":
+    case "Functional":
         return `${type}-${ids}`;
-        case "Nonfunctional":
+    case "Nonfunctional":
         return `${type}-${(ids as number[]).join(",")}`;
-        default:
+    default:
         throw new Error(`Unexpected type: ${type}`);
     }
 }
