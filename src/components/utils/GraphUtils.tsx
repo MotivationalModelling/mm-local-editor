@@ -39,13 +39,26 @@ export const returnFocusToGraph = () => {
     }
 };
 
-export const generateCellId = (
-  functionalType: "Functional" | "Nonfunctional",
-  ids: number | number[]
-): string => {
-  const idArray = Array.isArray(ids) ? ids : [ids];
-  return `${functionalType}-${idArray.join(",")}`;
+/**
+ * Mapping from goal type to allowed ID type:
+ * - "Functional" expects a single number, e.g., "Functional-1"
+ * - "Nonfunctional" expects an array of numbers, e.g., "Nonfunctional-1,2,3"
+ */
+type IdsForType = {
+    Functional: number;
+    Nonfunctional: number[];
 };
+
+export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForType[T]): string {
+    switch (type) {
+        case "Functional":
+        return `${type}-${ids}`;
+        case "Nonfunctional":
+        return `${type}-${(ids as number[]).join(",")}`;
+        default:
+        throw new Error(`Unexpected type: ${type}`);
+    }
+}
 
 export const parseInstanceId = (instanceId: string) => {
     const bits = instanceId.split("-").map(s => s.trim());
