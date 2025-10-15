@@ -14,13 +14,11 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Col, Container, Form, Row } from "react-bootstrap";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, layoutFunctions, renderGoals } from './GraphHelpers';
-import {
-  registerCustomShapes,
-} from "./GraphShapes";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Button, Col, Container, Form, Row} from "react-bootstrap";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
+import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
@@ -31,6 +29,7 @@ import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
+import {returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -80,14 +79,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
 const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const cells = deletingItemRef.current
-  console.log("removeCellRecursively: selected ",cells)
   if(!cells||!graph) return
   const deletedCells: Cell[] = [];
-  
+
   // selected cell
   const removeCellRecursively = (cell: Cell) => {
-    
-    console.log("removeCellRecursively: iterate ",cell)
     // check the children
     const outgoingEdges = graph.getOutgoingEdges(cell,null);
 
@@ -97,11 +93,10 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       });
     }
     const removed = graph.removeCells([cell], removeChildrenFlag);
-    console.log("removeCellRecursively: removed ",removed)
     deletedCells.push(...removed);
   };
 
-  cells.forEach(cell => 
+  cells.forEach(cell =>
       removeCellRecursively(cell));
   deletedCells.forEach((cell) => {
     // since the cell.getID is functionatype + the id
@@ -127,7 +122,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   //     onResetDefault();
   //   }
   // };
-  
+
   // Track if we have already centered on first entry
   const hasCenteredOnEntryRef = useRef(false);
   const prevShowGraphSectionRef = useRef(false);
@@ -139,15 +134,13 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       graph.fit();
       graph.center();
     }
-    console.log("center")
   };
-  
+
   const initRecentreView = useCallback(() => {
     if (graph) {
       graph.fit();
       graph.center();
     }
-    console.log("center")
   }, [graph]);
 
   const adjustFontSize = (
@@ -219,7 +212,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     graph
       .getDataModel()
       .addListener(InternalEvent.CHANGE, (_sender: string, evt: EventObject) => {
-        console.log("graph changed");
         graph.getDataModel().beginUpdate();
         evt.consume();
         try {
@@ -229,7 +221,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             if (change.constructor.name == "GeometryChange") {
               const cell: Cell = changes[i].cell;
               const cellID = cell.getId();
-              console.log("change, ",cell)
               const oldStyle = cell.getStyle();
               const newWidth = cell.getGeometry()?.height;
               const newHeight = cell.getGeometry()?.width;
@@ -269,6 +260,18 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             else if (change.constructor.name == "ValueChange") {
               const cell: Cell = change.cell;
               // goal id
+
+              if (isGoalNameEmpty(change.value)) {
+                graph.getDataModel().setValue(cell, change.previous);
+                setErrorModal({
+                  show: true,
+                  title: "Input Error",
+                  message: "Goal name cannot be empty.",
+                  onHide: () => setErrorModal(prev => ({ ...prev, show: false}))
+                })
+                return;
+              }
+
               const cellID = cell.getId()?.split(",") ?? [];
               // goal value
               const newContent = change.value.split(",");
@@ -288,8 +291,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                   const id = Number(cellID[i]);
                   const text = newContent[i].trim("");
 
-                  console.log("FileProvider state updated: cellid: ", id);
-                  console.log("FileProvider state updated: content: ", text);
 
                   dispatch({
                     type: "treeData/updateTextForGoalId",
@@ -327,13 +328,13 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     const keyHandler = new KeyHandler(graph);
     keyHandler.bindKey(DELETE_KEYBINDING, () => {
       if (graph.isEnabled()) {
-        
+
         const selectedCells = graph.getSelectionCells();
         if (!selectedCells || selectedCells.length === 0) return;
 
         deletingItemRef.current = selectedCells;
 
-      
+
 
         const outgoingEdges = graph.getOutgoingEdges(selectedCells[0],null);
         const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
@@ -346,19 +347,16 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
         }
 
         // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
-        // graph.removeStateForCell(cells[0]); 
+        // graph.removeStateForCell(cells[0]);
         // cells.forEach(cell => {
         //   dispatch(removeGoalIdFromTree({ id: Number(cell.getId()),removeChildren:true})); // or with removeChildren
         // });
-        // graph.removeCells(cells, true); remove children
-        // graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cells and text redundant
       }
     });
     keyHandler.bindKey(DELETE_KEYBINDING2, () => {
       if (graph.isEnabled()) {
-        console.log("--------------- DELETE CELL ---------------");
         const cells = graph.removeCells();
-        graph.removeStateForCell(cells[0]); // ERROR ON CONSOLE LOG, but can delete cell and text
+        graph.removeStateForCell(cells[0]);
       }
     });
 
@@ -403,6 +401,15 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     };
   };
 
+    // Ensure mouse interactions restore focus so keyboard shortcuts (e.g., Delete) work reliably
+    if (graph) {
+        graph.addListener(InternalEvent.CLICK, (_sender: string, _evt: EventObject) => {
+            returnFocusToGraph();
+            graph.refresh();
+        });
+        graph.getSelectionModel().addListener(InternalEvent.CHANGE, () => returnFocusToGraph());
+    }
+
   /**
    * Sidebar
    */
@@ -415,8 +422,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     x: number,
     y: number
   ): Cell | null => {
-    // console.log("getDrop Target in ==========================")
-    // console.log(x,y)
     const cell = graph.getCellAt(x, y);
     return cell && !graph.isValidDropTarget(cell) ? cell : null;
   };
@@ -432,10 +437,10 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
     // Reset - remove any existing graph if render is called
     graph.removeCells(graph.getChildVertices(graph.getDefaultParent()));
     graph.removeCells(graph.getChildEdges(graph.getDefaultParent()));
-  
+
     // Reset the root goal
     rootGoalWrapper.value = null;
-  
+
     // Clear the accumulators for non-functional goals
     Object.keys(emotionsGlob).forEach(key => delete emotionsGlob[key]);
     Object.keys(negativesGlob).forEach(key => delete negativesGlob[key]);
@@ -446,7 +451,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
   const renderGraph = useCallback(() => {
     if (!graph) return;
 
-    console.log("Rendering Graph");
 
     // Declare necessary variables
     // Use rootGoalWrapper to be able to update its value
@@ -468,7 +472,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
     // Check if the browser is supported
     if (!Client.isBrowserSupported()) {
-      console.log("Logging: browser not supported");
       error("Browser not supported!", 200, false);
       return;
     }
@@ -500,7 +503,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       stakeholdersGlob
     );
     graph.getDataModel().endUpdate();
-  }, [graph, cluster, initRecentreView]);
+
+  }, [graph, cluster, showGraphSection]);
 
   // First useEffect to set up graph. Only run on mount.
   useEffect(() => {
@@ -509,12 +513,12 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
 
     if (graphContainer) {
       InternalEvent.disableContextMenu(graphContainer);
-  
+
       const plugins = [
-        ...getDefaultPlugins(), 
+        ...getDefaultPlugins(),
         RubberBandHandler,
       ];
-      
+
       // Creates the graph with the custom plugins
       const graphInstance = new Graph(graphContainer, undefined, plugins);
 
@@ -527,45 +531,31 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
       // Cleanup function to destroy graph
       return () => {
         if (graphInstance) {
-          console.log("Destroy");
-          graphInstance.destroy(); 
+          graphInstance.destroy();
         }
         setGraph(null); // Reset state
       };
     }
   }, [graphListener, setGraph]);
 
-  // Separate useEffect to render / update the graph.
-  useEffect(() => {
-    if (graph) {
-      // If user has goals defined, draw the graph
-      if (cluster.ClusterGoals.length > 0) {
-        console.log("re render");
-        renderGraph();
-      } 
-      else {
-        graph.getDataModel().clear();
-        console.log("Graph is empty");
-      }
+  // Handle graph rendering when cluster or graph changes
+  if (graph) {
+    if (cluster.ClusterGoals.length > 0) {
+      renderGraph();
+    } else {
+      graph.getDataModel().clear();
     }
-  }, [cluster, graph, renderGraph]);
+  }
 
   // Trigger centering when entering render section
   useEffect(() => {
-    console.log("useEffect triggered:", {
-      showGraphSection,
-      prevShowGraphSection: prevShowGraphSectionRef.current,
-      hasGraph: !!graph,
-      goalsLength: cluster.ClusterGoals.length,
-      hasCentered: hasCenteredOnEntryRef.current
-    });
 
     // Only center when showGraphSection changes from false to true
     if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-      console.log("Centering graph on first entry");
       // Use setTimeout to ensure centering happens after layout is complete
       setTimeout(() => {
         initRecentreView();
+        returnFocusToGraph();
       }, 200);
       hasCenteredOnEntryRef.current = true;
     }
