@@ -18,9 +18,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Button, Col, Container, Form, Row} from "react-bootstrap";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
-import {
-    registerCustomShapes,
-} from "./GraphShapes";
+import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
@@ -588,12 +586,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             // Creates the graph with the custom plugins
             const graphInstance = new Graph(graphContainer, undefined, plugins);
 
-      setGraphStyle(graphInstance);
-      graphListener(graphInstance);
-      fixEditorPosition(graphInstance);
-      supportFunctions(graphInstance);
-      registerCustomShapes();
-      setGraph(graphInstance);
+        setGraphStyle(graphInstance);
+        graphListener(graphInstance);
+        fixEditorPosition(graphInstance);
+        supportFunctions(graphInstance);
+        registerCustomShapes();
+        setGraph(graphInstance);
 
             // Cleanup function to destroy graph
             return () => {
