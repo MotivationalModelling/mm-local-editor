@@ -287,9 +287,9 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                   onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
                 });
               } else {
-                for (let i = 0; i < nUpdated; i++) {
-                  const id = Number(cellIDs[i]);
-                  const text = newContent[i].trim("");
+                for (const [index, cellID] of cellIDs.map(Number).entries()) {
+                  const id = Number(cellID);
+                  const text = newContent[index].trim("");
 
 
                   dispatch({
