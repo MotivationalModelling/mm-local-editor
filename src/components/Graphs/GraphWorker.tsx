@@ -33,7 +33,7 @@ import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 
 import {parseFuncGoalRefId} from "../utils/GraphUtils";
-import { fixEditorPosition } from "../utils/GraphUtils.tsx";
+import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
 
@@ -263,6 +263,15 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
     };
 
+    // Ensure mouse interactions restore focus so keyboard shortcuts (e.g., Delete) work reliably
+    if (graph) {
+        graph.addListener(InternalEvent.CLICK, (_sender: string, _evt: EventObject) => {
+            returnFocusToGraph();
+            graph.refresh();
+        });
+        graph.getSelectionModel().addListener(InternalEvent.CHANGE, () => returnFocusToGraph());
+    }
+    
     const graphListener = useCallback((graph: Graph) => {
         const cellHistory: CellHistory = {};
         graph
