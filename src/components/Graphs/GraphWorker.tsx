@@ -20,14 +20,14 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
-import {useFileContext} from "../context/FileProvider.tsx";
+import {Label, newTreeItem, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
-
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {removeGoalIdFromTree} from "../context/treeDataSlice.ts";
+import {getCellNumericIds} from "../utils/GraphUtils";
+import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
@@ -53,10 +53,12 @@ interface GlobObject {
 
 // ---------------------------------------------------------------------------
 
-const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
-  const divGraph = useRef<HTMLDivElement>(null);
-  const {cluster, dispatch} = useFileContext();
-  const {graph, setGraph} = useGraph();
+const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
+    const divGraph = useRef<HTMLDivElement>(null);
+    const {cluster, dispatch, treeIds} = useFileContext();
+    const {graph, setGraph} = useGraph();
+    const treeIdsRef = useRef(treeIds);
+    treeIdsRef.current = treeIds;
 
 
   const hasFunctionalGoal = (cluster: Cluster) => (
@@ -272,35 +274,26 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 return;
               }
 
-              const cellID = cell.getId()?.split(",") ?? [];
-              // goal value
-              const newContent = change.value.split(",");
+                            const numericCellIds = getCellNumericIds(cell);
+                            // goal value
+                            const newContent = change.value.split(",");
 
-              const lengthUpdated = cellID.length
-              // Check if the number of items matches
-              if (lengthUpdated !== newContent.length) {
-                graph.getDataModel().setValue(cell, change.previous);
-                setErrorModal({
-                  show: true,
-                  title: "Input Error",
-                  message: `Please provide ${lengthUpdated} items split by comma`,
-                  onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
-                });
-              } else {
-                for (let i = 0; i < lengthUpdated; i++) {
-                  const id = Number(cellID[i]);
-                  const text = newContent[i].trim("");
-
-
-                  dispatch({
-                    type: "treeData/updateTextForGoalId",
-                    payload: {
-                      id,
-                      text,
-                    },
-                  });
-                }
-              }
+                            // Check if the number of items matches
+                            if (numericCellIds.length !== newContent.length) {
+                                graph.getDataModel().setValue(cell, change.previous);
+                                setErrorModal({
+                                    show: true,
+                                    title: "Input Error",
+                                    message: `Please provide ${numericCellIds.length} items split by comma`,
+                                    onHide: () => setErrorModal(prev => ({...prev, show: false}))
+                                });
+                            } else {
+                                numericCellIds.forEach((instanceId, index) => {
+                                  
+                                  const text = newContent[index];
+                                  dispatch(updateTextForInstanceId({instanceId, text}));
+                                });
+                            }
 
 
             }
