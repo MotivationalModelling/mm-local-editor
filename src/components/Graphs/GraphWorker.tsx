@@ -261,13 +261,19 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
     };
 
-    // Ensure mouse interactions restore focus so keyboard shortcuts (e.g., Delete) work reliably
+    // Ensure mouse interactions restore focus so keyboard shortcuts work, without breaking in-place editing
     if (graph) {
-        graph.addListener(InternalEvent.CLICK, (_sender: string, _evt: EventObject) => {
-            returnFocusToGraph();
-            graph.refresh();
+        graph.addListener(InternalEvent.CLICK, (_sender: string, evt: EventObject) => {
+            const cell = evt.getProperty('cell') as Cell | null;
+            if (!cell && !graph.isEditing()) {
+                returnFocusToGraph();
+            }
         });
-        graph.getSelectionModel().addListener(InternalEvent.CHANGE, () => returnFocusToGraph());
+        graph.getSelectionModel().addListener(InternalEvent.CHANGE, () => {
+            if (!graph.isEditing()) {
+                returnFocusToGraph();
+            }
+        });
     }
 
     const graphListener = useCallback((graph: Graph) => {
