@@ -272,13 +272,12 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 return;
               }
 
-              const cellIDs = cell.getId()?.split(",") ?? [];
-              // goal value
-              const newContent = change.value.split(",");
+              const cellIds = cell.getId()?.split(",") ?? [];
+              const newGoalValues = change.value.split(",");
 
-              const nUpdated = cellIDs.length
+              const nUpdated = cellIds.length
               // Check if the number of items matches
-              if (nUpdated !== newContent.length) {
+              if (nUpdated !== newGoalValues.length) {
                 graph.getDataModel().setValue(cell, change.previous);
                 setErrorModal({
                   show: true,
@@ -287,10 +286,9 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                   onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
                 });
               } else {
-                for (const [index, cellID] of cellIDs.map(Number).entries()) {
-                  const id = Number(cellID);
-                  const text = newContent[index].trim("");
-
+                cellIds.map(Number).forEach((cellId, i) => {
+                  const id = Number(cellId);
+                  const text = newGoalValues[i].trim();   
 
                   dispatch({
                     type: "treeData/updateTextForGoalId",
@@ -299,7 +297,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                       text,
                     },
                   });
-                }
+                });
               }
 
 
