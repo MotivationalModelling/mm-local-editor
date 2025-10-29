@@ -290,7 +290,7 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
               } else {
                   numericCellIds.forEach((instanceId, index) => {
 
-                    const text = newContent[index];
+                    const text = newGoalValues[index];
                     dispatch(updateTextForInstanceId({instanceId, text}));
                   });
               }
