@@ -30,6 +30,7 @@ import {getCellNumericIds} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {returnFocusToGraph} from "../utils/GraphUtils.tsx";
+import { GlobObject } from "../types.ts";
 
 // ---------------------------------------------------------------------------
 
@@ -45,10 +46,6 @@ const DELETE_KEYBINDING2 = 46;
 
 interface CellHistory {
   [cellID: string]: [width: number | undefined, height: number | undefined];
-}
-
-interface GlobObject {
-  [key: string]: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +258,6 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
             }
             else if (change.constructor.name == "ValueChange") {
               const cell: Cell = change.cell;
-              // goal id
 
               if (isGoalNameEmpty(change.value)) {
                 graph.getDataModel().setValue(cell, change.previous);
