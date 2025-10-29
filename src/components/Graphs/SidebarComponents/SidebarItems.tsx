@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils } from "@maxgraph/core";
 
+import {getSymbolConfigByShape} from "../../utils/GraphUtils";
+import {Label, newTreeItem, useFileContext} from "../../context/FileProvider.tsx";
+import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
+
 import {
   LINE_IMAGE_PATH,
   VERTEX_FONT,
@@ -17,6 +21,8 @@ type SidebarItemsProps = {
 
 const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
     const divSidebar = useRef<HTMLDivElement>(null);
+    const {dispatch} = useFileContext();
+
     const addSidebarItem = (
       graph: Graph,
       sidebar: MaxToolbar,
@@ -26,7 +32,6 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
       isEdge: boolean
     ) => {
       let prototype: Cell;
-
       if (!isEdge) {
         // Try to find matching symbol config by image path
         const symbolEntry = Object.entries(SYMBOL_CONFIGS).find(
@@ -88,11 +93,13 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         graph.stopEditing(false);
         const point = graph.getPointForEvent(evt);
         const goal = graph.cloneCell(prototype);
-
-        if (goal && goal.geometry) {
-          goal.geometry.x = point.x;
-          goal.geometry.y = point.y;
-          graph.importCells([goal], 0, 0, cell);
+        
+        if (goal) {
+          const treeItem = newTreeItem({
+            type: getSymbolConfigByShape(String(goal.style.shape))?.label as Label
+          });
+          dispatch(addGoal(treeItem));
+          dispatch(addGoalToTree(treeItem));
         }
       };
 

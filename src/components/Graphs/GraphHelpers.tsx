@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import { getSymbolKeyByType } from "../utils/GraphUtils";
+import { generateCellId, getSymbolKeyByType } from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -206,7 +206,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        goal.GoalType + "-" + goal.GoalID, // give just goal id, this will be replaced by maxgraph self id if conflict
+        generateCellId("Functional", goal.GoalID), 
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,
@@ -428,7 +428,7 @@ export const renderNonFunction = (
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        "NonFunctional"+descriptions.map(x => x.id).join(delimiter),
+        generateCellId("Nonfunctional", descriptions.map(d => d.id)), 
         squareLabel,
         x,
         y,
@@ -436,7 +436,6 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("nonFunctional node: ",node)
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
     edge.visible = false; // Make the edge invisible - used in auto layout

@@ -9,6 +9,9 @@ import {
     TreeNode
 } from "./FileProvider.tsx";
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
+import {parseInstanceId} from "../utils/GraphUtils.tsx";
+
+
 
 export const newTreeNode = ({goalId, children = []}: {
     goalId: TreeItem["id"],
@@ -78,6 +81,7 @@ export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): Ta
     }));
 };
 
+//
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
     console.log("tabData: ",tabData)
     console.log("treeData: ",treeData)
@@ -149,6 +153,17 @@ export const treeDataSlice = createSlice({
                 content: action.payload.text
             };
         },
+        updateTextForInstanceId: (state, action: PayloadAction<{
+            instanceId: string,
+            text: string
+        }>) => {
+            const {instanceId, text} = action.payload;
+            const goalId = parseInstanceId(instanceId).goalId;
+            state.goals[goalId] = {
+                ...state.goals[goalId],
+                content: text
+            };
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeItem[]
@@ -172,6 +187,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset, removeGoalIdFromTree} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoal, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
