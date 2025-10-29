@@ -288,10 +288,8 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                       onHide: () => setErrorModal(prev => ({...prev, show: false}))
                   });
               } else {
-                  numericCellIds.forEach((instanceId, index) => {
-
-                    const text = newGoalValues[index];
-                    dispatch(updateTextForInstanceId({instanceId, text}));
+                  numericCellIds.forEach((instanceId, i) => {
+                    dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                   });
               }
             }
