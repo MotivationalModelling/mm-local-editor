@@ -274,28 +274,26 @@ const deleteItemFromGraph = (graph:Graph, removeChildrenFlag: boolean) => {
                 return;
               }
 
-                            const numericCellIds = getCellNumericIds(cell);
-                            // goal value
-                            const newContent = change.value.split(",");
+              const numericCellIds = getCellNumericIds(cell);
+              // goal value
+              const newGoalValues = change.value.split(",");
 
-                            // Check if the number of items matches
-                            if (numericCellIds.length !== newContent.length) {
-                                graph.getDataModel().setValue(cell, change.previous);
-                                setErrorModal({
-                                    show: true,
-                                    title: "Input Error",
-                                    message: `Please provide ${numericCellIds.length} items split by comma`,
-                                    onHide: () => setErrorModal(prev => ({...prev, show: false}))
-                                });
-                            } else {
-                                numericCellIds.forEach((instanceId, index) => {
-                                  
-                                  const text = newContent[index];
-                                  dispatch(updateTextForInstanceId({instanceId, text}));
-                                });
-                            }
+              // Check if the number of items matches
+              if (numericCellIds.length !== newGoalValues.length) {
+                  graph.getDataModel().setValue(cell, change.previous);
+                  setErrorModal({
+                      show: true,
+                      title: "Input Error",
+                      message: `Please provide ${numericCellIds.length} items split by comma`,
+                      onHide: () => setErrorModal(prev => ({...prev, show: false}))
+                  });
+              } else {
+                  numericCellIds.forEach((instanceId, index) => {
 
-
+                    const text = newContent[index];
+                    dispatch(updateTextForInstanceId({instanceId, text}));
+                  });
+              }
             }
           }
 
