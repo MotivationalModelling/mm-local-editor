@@ -137,9 +137,10 @@ export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForTy
 
 export const parseInstanceId = (instanceId: string) => {
     const bits = instanceId.split("-").map(s => s.trim());
-    // TODO: raise an exception here if bits.length > 2
-    return {
-        goalId: Number(bits[0]),
-        refId: bits.length > 1 ? Number(bits[1]) : undefined
-    };
+    if (bits.length !== 2) {
+        throw new Error(`badly formatted instanceId "${instanceId}"`);
+    }
+    const [goalId, refId] = bits.map(Number);
+
+    return {goalId, refId};
 };
