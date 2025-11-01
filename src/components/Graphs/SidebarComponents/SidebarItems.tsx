@@ -5,10 +5,6 @@ import {getSymbolConfigByShape} from "../../utils/GraphUtils";
 import {Label, newTreeItem, useFileContext} from "../../context/FileProvider.tsx";
 import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
 
-import {getSymbolConfigByShape} from "../../utils/GraphUtils";
-import {Label, newTreeItem, useFileContext} from "../../context/FileProvider.tsx";
-import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
-
 import {
   LINE_IMAGE_PATH,
   VERTEX_FONT,
