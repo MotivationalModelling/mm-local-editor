@@ -103,8 +103,8 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem
                 accumulate(node.children);
             }
         })
-    }
-    accumulate(treeData)
+    };
+    accumulate(treeData);
     return treeIds
 };
 
