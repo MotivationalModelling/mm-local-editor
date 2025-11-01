@@ -15,14 +15,14 @@ import {
 import '@maxgraph/core/css/common.css';
 
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Button, Col, Container, Form, Row} from "react-bootstrap";
+import {Col, Container, Form, Row} from "react-bootstrap";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster} from "../types.ts";
+import {Cluster, GlobObject} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
@@ -550,7 +550,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob
         );
         graph.getDataModel().endUpdate();
-    }, [graph, cluster, initRecentreView]);
+    }, [graph, cluster]);
 
     // First useEffect to set up graph. Only run on mount.
     useEffect(() => {
