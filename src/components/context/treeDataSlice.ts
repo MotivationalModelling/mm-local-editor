@@ -128,19 +128,16 @@ const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"
     const ids = treeIds[goalId];
     if (!ids || ids.length === 0) return 0;
     return Math.max(
-        ...ids.map(id => {
-            const maxSuffix = parseInstanceId(id).refId;
-            return maxSuffix; // extract last number
-        })
+        ...ids.map((id) => parseInstanceId(id).refId)
     );
-}
+};
 
 
 const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
     // give it new instance id
-    const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1
+    const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
     return `${goalId}-${maxSuffix}`
-}
+};
 
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
