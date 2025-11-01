@@ -1,15 +1,15 @@
-import React, { useRef, useState } from "react";
+import React, {useRef, useState} from "react";
 import WhoIcon from "/img/Stakeholder.png";
 import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
-import Nestable, { NestableProps } from "react-nestable";
-import { FaPlus, FaMinus } from "react-icons/fa";
-import { TreeItem } from "./context/FileProvider";
-import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
-import { Label } from "./context/FileProvider";
-import { useFileContext } from "./context/FileProvider";
+import Nestable, {NestableProps} from "react-nestable";
+import {FaPlus, FaMinus} from "react-icons/fa";
+import {TreeItem} from "./context/FileProvider";
+import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
+import {Label} from "./context/FileProvider";
+import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
   isEmptyGoal,
@@ -20,7 +20,7 @@ import {
 } from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
-import {deleteGoal, setTreeData} from "./context/treeDataSlice.ts";
+import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -61,13 +61,15 @@ const iconFromType = (type: Label) => {
 };
 
 type TreeProps = {
-  existingItemIds: number[];
+  // existingItemIds: number[];
   handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
-  setExistingItemIds: (existingItemIds: number[]) => void;
+  // setExistingItemIds: (existingItemIds: number[]) => void;
+  existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[];
+  setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[]) => void
 };
 
 // Goal icon in the tree
-const IconComponent = ({ type }: { type: Label }) => {
+const IconComponent = ({type}: { type: Label }) => {
   return (
     <img
       src={iconFromType(type)}
@@ -81,9 +83,11 @@ const IconComponent = ({ type }: { type: Label }) => {
 };
 
 const Tree: React.FC<TreeProps> = ({
-  existingItemIds,
+  // existingItemIds,
   handleSynTableTree,
-  setExistingItemIds,
+  // setExistingItemIds,
+  existingGoalReferenceInstanceId,
+  setExistingGoalReferenceInstanceId,
 }) => {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState<string>("");
@@ -97,19 +101,22 @@ const Tree: React.FC<TreeProps> = ({
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoal(deletingItemRef.current));
+      dispatch(deleteGoalReferenceFromHierarchy({item: deletingItemRef.current}));
     }
     setShowDeleteWarning(false);
   };
 
-  
+
 
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeItem) => {
     deletingItemRef.current = item;
-    const deletingIds = getAllIds(item);
+    // const deletingIds = getAllIds(item);
+
+    const deletinginstanceId = getAllGoalInstances(item)
     if (item.children && item.children.length > 0) {
-      setExistingItemIds([...existingItemIds, ...deletingIds]);
+      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletinginstanceId])
+      // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {
       deleteItem();
@@ -119,25 +126,38 @@ const Tree: React.FC<TreeProps> = ({
   // Handle cancel deleting goal with children(s)
   const handleDeleteCancel = () => {
     setShowDeleteWarning(false);
-    setExistingItemIds([]);
+    // setExistingItemIds([]);
+    setExistingGoalReferenceInstanceId([])
   };
 
-  // Get ids from the tree item
-  const getAllIds = (item: TreeItem) => {
-    const ids: number[] = [item.id];
+  // // Get ids from the tree item
+  // const getAllIds = (item: TreeItem) => {
+  //   const ids: number[] = [item.id];
 
-    // If the item has children, recursively collect their ids
+  //   // If the item has children, recursively collect their ids
+  //   if (item.children) {
+  //     item.children.forEach((child) => {
+  //       ids.push(...getAllIds(child));
+  //     });
+  //   }
+
+  //   return ids;
+  // };
+
+  const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[] => {
+    const result = [{goalId: item.id, instanceId: item.instanceId}];
+
     if (item.children) {
       item.children.forEach((child) => {
-        ids.push(...getAllIds(child));
+        result.push(...getAllGoalInstances(child)); // recurse into children
       });
     }
 
-    return ids;
+    return result;
   };
 
   // Function for rendering every item
-  const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
+  const renderItem: NestableProps["renderItem"] = ({item, collapseIcon}) => {
     const treeItem = item as TreeItem;
     const isEditing = editingItemId === treeItem.id;
 
@@ -147,7 +167,7 @@ const Tree: React.FC<TreeProps> = ({
       if (isEmptyGoal(treeItem)) {
         return;
       }
-      
+
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -230,6 +250,9 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     const ICON_SIZE = 25;
+    const isReference = existingGoalReferenceInstanceId.some(
+      ref => ref.goalId === treeItem.id && ref.instanceId === treeItem.instanceId
+    );
     return (
       // While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
       <div
@@ -237,9 +260,9 @@ const Tree: React.FC<TreeProps> = ({
           ...treeListStyle,
           backgroundColor: isEditing
             ? "#e0e0e0"
-            : existingItemIds.includes(treeItem.id)
-            ? "#FF474C"
-            : "white",
+            : isReference
+              ? "#FF474C"
+              : "white",
         }}
         className="tree-list"
         onDoubleClick={handleDoubleClick}
@@ -309,7 +332,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   // Button for collapse and expand
-  const Collapser = ({ isCollapsed }: { isCollapsed: boolean }) => {
+  const Collapser = ({isCollapsed}: { isCollapsed: boolean }) => {
     const iconSize = 13;
     return (
       <div
@@ -325,7 +348,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", alignSelf: "flex-start", position: "relative" }}>
+    <div style={{width: "100%", height: "100%", alignSelf: "flex-start", position: "relative"}}>
       <ConfirmModal
         show={showDeleteWarning}
         title="Delete Warning"
@@ -334,10 +357,11 @@ const Tree: React.FC<TreeProps> = ({
         onConfirm={deleteItem}
       />
       <Nestable
-        onChange={({ items }) => dispatch(setTreeData(items as TreeItem[]))}
+        onChange={({items}) => dispatch(setTreeData(items as TreeItem[]))}
         items={treeData}
         renderItem={renderItem}
-        renderCollapseIcon={({ isCollapsed }) => (
+        idProp="instanceId"
+        renderCollapseIcon={({isCollapsed}) => (
           <Collapser isCollapsed={isCollapsed} />
         )}
       />
