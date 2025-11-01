@@ -1,13 +1,9 @@
 import React, {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
-import {Button, ButtonGroup, Col, Container, Row} from "react-bootstrap";
+import {ButtonGroup, Col, Container, Row} from "react-bootstrap";
 
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
-import {useFileContext} from "../context/FileProvider";
 import {isChrome, isEdge, isOpera} from "react-device-detect";
-import {reset} from "../context/treeDataSlice.ts";
-import {initialTabs} from "../../data/initialTabs.ts";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
 import HomeButton from "./HomeButton.tsx";
