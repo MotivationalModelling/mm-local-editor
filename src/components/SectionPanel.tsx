@@ -57,11 +57,12 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const {dispatch, treeIds} = useFileContext();
+    const {dispatch, treeIds, tree} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
+    const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"]}[]>([])
   const [existingError, setExistingError] = useState<boolean>(false);
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
@@ -86,16 +87,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
     setSectionOneWidth(ref.offsetWidth);
-    // If the width sum exceed the parent total width, auto resize the section three until reach the minimum
-    if (
-      sectionTwoRef.current &&
-      ref.offsetWidth + sectionTwoRef.current.offsetWidth + sectionThreeWidth >=
-        parentWidth
-    ) {
+        if (sectionTwoRef.current) {
+            const totalWidth =
+                ref.offsetWidth + sectionTwoRef.current.offsetWidth + sectionThreeWidth;
+
+            if (totalWidth >= parentWidth) {
       setSectionThreeWidth(
         parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
       );
     }
+        }
   };
   // Clear timeout when component unmounts
   useEffect(() => {
@@ -153,13 +154,13 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
 
       if (draggedItem && draggedItem.content) {
-          if (!treeIds.includes(draggedItem.id)) {
+            // the first hierachy does not contain the dragged item
+            if (!tree.map((index) => index.goalId).includes(draggedItem.id)) {
               dispatch(addGoalToTree(draggedItem));
           } else {
               setExistingItemIds([...existingItemIds, draggedItem.id]);
               setExistingError(true);
               hideErrorModalTimeout();
-
           }
       }
   };
@@ -169,7 +170,10 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     
     // Filter groupSelected to get only objects whose IDs are not in treeData
     const newItemsToAdd = groupSelected.filter(
-      (item) => !treeIds.includes(item.id)
+            // current hierachy
+            (item) => !tree.some(
+                ref => ref.goalId === item.id
+            )
     );
 
     // If all items are in the tree, then show the warning
@@ -243,8 +247,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       <ErrorModal
         show={existingError}
         title="Drop Failed"
-        message={`The selected ${
-          (groupSelected.length > 1) ? "goals" : "goal"
+        message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
         } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />
@@ -293,10 +296,13 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         ref={sectionTwoRef}
       >
         <Tree
-          existingItemIds={existingItemIds}
+
+          // existingItemIds={existingItemIds}
           // setTreeIds={setTreeIds}
           handleSynTableTree={handleSynTableTree}
-          setExistingItemIds={setExistingItemIds}
+          // setExistingItemIds={setExistingItemIds}
+          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
         />
       </div>
 
@@ -319,7 +325,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         onResize={handleResizeSectionThree}
       >
         {/* Third Panel Content */}
-        
         <GraphWorker showGraphSection={showGraphSection}/>
       </Resizable>
     </div>
