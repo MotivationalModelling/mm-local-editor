@@ -338,23 +338,21 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             const numericCellIds = getCellNumericIds(cell);
-                            // goal value
-                            const newContent = change.value.split(",");
+                            const newGoalValues = change.value.split(",");
 
                             // Check if the number of items matches
-                            if (numericCellIds.length !== newContent.length) {
+                            const nUpdated = numericCellIds.length
+                            if (nUpdated !== newGoalValues.length) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
                                     show: true,
                                     title: "Input Error",
-                                    message: `Please provide ${numericCellIds.length} items split by comma`,
+                                    message: `Please provide ${nUpdated} ${(nUpdated === 1) ? "item" : "items"} separated by commas`,
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
-                                numericCellIds.forEach((instanceId, index) => {
-
-                                    const text = newContent[index];
-                                    dispatch(updateTextForInstanceId({instanceId, text}));
+                                numericCellIds.forEach((instanceId, i) => {
+                                    dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
                             }
 
