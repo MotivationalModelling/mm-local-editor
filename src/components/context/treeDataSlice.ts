@@ -125,7 +125,7 @@ const removeAllReferenceFromHierarchy = (
 };
 
 const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
-    const ids = treeIds[goalId].filter((id) => id ?? 0);  // undefined & null become 0
+    const ids = treeIds[goalId]?.filter((id) => id ?? 0);  // undefined & null become 0
     if (!ids || ids.length === 0) return 0;
     return Math.max(
         ...ids.map((id) => parseInstanceId(id).refId)
