@@ -207,7 +207,7 @@ export const renderFunction = (
     // The actual layout/positioning is corrected later in: layoutfunction
     const node = graph.insertVertex(
         null,
-        generateCellId("Functional", goal.GoalID),
+        generateCellId("Functional", goal.instanceId),
         arr.join("\n"),
         SYMBOL_X_COORD,
         SYMBOL_Y_COORD,

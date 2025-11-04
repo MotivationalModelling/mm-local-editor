@@ -4,6 +4,7 @@ export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "
 
 export interface GoalBase {
     GoalID: number
+    instanceId: string
     GoalType: GoalType
     GoalContent: string
     GoalNote: string
@@ -14,8 +15,29 @@ export interface Goal extends GoalBase {
 }
 
 export interface GlobObject {
-  [key: string]: Array<{ id: number; content: string }>;
+    [key: string]: Array<{ instanceId: string; content: string }>;
 }
+
+// Common base for all goal reference info
+export interface GoalRefId {
+  goalId: number;
+  instanceId: string;
+}
+
+// Parsed structure for functional goals like "Functional-8-1"
+export interface ParsedFunctionalId extends GoalRefId {
+  type: "Functional";
+}
+
+// Parsed structure for nonfunctional goals like "Nonfunctional-[8-1;9-2]"
+export interface ParsedNonFunctionalId {
+  type: "Nonfunctional";
+  pairs: GoalRefId[];
+}
+
+// Union type for both kinds
+export type ParsedGoalId = ParsedFunctionalId | ParsedNonFunctionalId;
+
 
 
 export interface ClusterGoal extends GoalBase {
@@ -49,6 +71,7 @@ export const GoalTypeSchema = z.enum(
 
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
+    instanceId: z.string(),
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string()
