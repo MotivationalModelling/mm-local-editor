@@ -102,8 +102,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         toRemove.forEach(cell => {
             const id = cell.getId();
             try {
-                const {goalId, instanceId} = parseFuncGoalRefId(id!); // parse throws on invalid
-                parsedById.set(id!, {goalId, instanceId});
+                const pairs = parseFuncGoalRefId(id!); 
+                pairs!.forEach(({ goalId, instanceId }) => {
+                parsedById.set(id!, { goalId, instanceId });
+                });
+
             } catch (err) {
                 invalids.push({
                     id: id ?? 'unknown',

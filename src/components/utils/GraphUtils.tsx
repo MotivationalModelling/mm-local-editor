@@ -90,22 +90,55 @@ export function formatFunGoalRefId(goal: ClusterGoal): string {
 
 // Convert the cell id in MaxGraph 'Functional-8-1'
 export function parseFuncGoalRefId(idStr: string) {
-    if (!idStr) throw new Error("Cell ID is missing.");
 
+  if (!idStr) throw new Error("Cell ID is missing.");
+
+  const [typePart] = idStr.split("-", 1);
+  const type = typePart.trim();
+
+  if (type === "Functional") {
+    // Example: Functional-2-1
+    // goalId = 2, instanceId = "2-1"
     const parts = idStr.split("-");
     if (parts.length < 3) {
-        throw new Error(`Cell ID format is invalid: expected format "Type-GoalId-InstanceId", got "${idStr}".`);
+      throw new Error(
+        `Invalid Functional ID: expected "Functional-GoalId-InstanceId", got "${idStr}".`
+      );
     }
 
-    const type = parts[0].trim();
     const goalId = Number(parts[1].trim());
     if (isNaN(goalId)) {
-        throw new Error(`Goal ID must be a number, got "${parts[1]}".`);
+      throw new Error(`Goal ID must be a number, got "${parts[1]}".`);
     }
 
-    const instanceId = parts.slice(1).join("-");
-    return {type, goalId, instanceId};
+    // instanceId should include both goal and instance part
+    const instanceId = `${parts[1].trim()}-${parts[2].trim()}`;
+    return [{goalId, instanceId }];
+
+  } else if (type === "Nonfunctional") {
+    // Nonfunctional-[2-1,1762225479581-1]
+    const match = idStr.match(/^Nonfunctional-\[(.+)\]$/);
+    if (!match) {
+      throw new Error(
+        `Invalid Nonfunctional ID: expected "Nonfunctional-[goalId-instanceId,...]", got "${idStr}".`
+      );
+    }
+
+    const inner = match[1];
+    const pairs = inner.split(",").map(s => s.trim());
+
+    return pairs.map(pair => {
+      const [goalStr, instStr] = pair.split("-");
+      const goalId = Number(goalStr);
+      if (isNaN(goalId)) {
+        throw new Error(`Goal ID must be a number, got "${goalStr}"`);
+      }
+      const instanceId = `${goalStr}-${instStr}`;
+      return { goalId, instanceId };
+    });
+  }
 }
+
 
 // Treeid stored in the state '8-1'
 export function getRefIdFromInstanceId(instanceId: string) {
