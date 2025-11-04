@@ -81,7 +81,7 @@ export function fixEditorPosition(graph: Graph) {
 
     const observer = new MutationObserver(() => adjustOnce());
     observer.observe(container, { childList: true, subtree: true });
-};
+}
 
 // Functional-8-1
 export function formatFunGoalRefId(goal: ClusterGoal): string {
@@ -113,7 +113,7 @@ export function parseFuncGoalRefId(idStr: string) {
 
     // instanceId should include both goal and instance part
     const instanceId = `${parts[1].trim()}-${parts[2].trim()}`;
-    return [{goalId, instanceId }];
+    return [{goalId, instanceId}];
 
   } else if (type === "Nonfunctional") {
     // Nonfunctional-[2-1,1762225479581-1]
@@ -134,7 +134,7 @@ export function parseFuncGoalRefId(idStr: string) {
         throw new Error(`Goal ID must be a number, got "${goalStr}"`);
       }
       const instanceId = `${goalStr}-${instStr}`;
-      return { goalId, instanceId };
+      return {goalId, instanceId};
     });
   }
 }
