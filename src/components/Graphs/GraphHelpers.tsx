@@ -79,7 +79,7 @@ export const renderGoals = (
     for (let i = 0; i < goals.length; i++) {
         const goal = goals[i];
         const type = goal.GoalType;
-        const id = goal.GoalID
+        const instanceId = goal.instanceId;
         const content = goal.GoalContent;
         // recurse over functional goals
 
@@ -100,13 +100,13 @@ export const renderGoals = (
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
-            emotions.push({id, content});
+            emotions.push({instanceId, content});
         } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-            concerns.push({id, content});
+            concerns.push({instanceId, content});
         } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
-            qualities.push({id, content});
+            qualities.push({instanceId, content});
         } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
-            stakeholders.push({id, content});
+            stakeholders.push({instanceId, content});
         } else {
             console.log("Logging: goal of unknown type received: " + type);
         }
@@ -350,7 +350,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{ id: number; content: string }>,
+    descriptions: Array<{ instanceId: string; content: string; }>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None"
@@ -426,10 +426,11 @@ export const renderNonFunction = (
 
     const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
 
+    console.log("Nonfunctional-goal-dependencies:",descriptions)
     // Insert the vertex
     const node = graph.insertVertex(
         null,
-        generateCellId("Nonfunctional", descriptions.map(d => d.id)),
+        generateCellId("Nonfunctional", descriptions.map(d => d.instanceId)),
         squareLabel,
         x,
         y,
@@ -437,6 +438,7 @@ export const renderNonFunction = (
         height,
         style
     );
+    console.log("Nonfunctional-goal-node:",node)
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
     edge.visible = false; // Make the edge invisible - used in auto layout

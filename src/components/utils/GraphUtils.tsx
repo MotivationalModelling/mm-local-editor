@@ -121,7 +121,7 @@ export function getRefIdFromInstanceId(instanceId: string) {
  */
 type IdsForType = {
     Functional: string;
-    Nonfunctional: number[];
+    Nonfunctional: string[];
 };
 
 export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForType[T]): string {
@@ -129,7 +129,7 @@ export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForTy
     case "Functional":
         return `${type}-${ids}`;
     case "Nonfunctional":
-        return `${type}-${[ids].join(",")}`;
+         return `${type}-[${ids}]`;
     default:
         throw new Error(`Unexpected type: ${type}`);
     }
