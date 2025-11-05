@@ -623,7 +623,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             <ConfirmModal
                 show={showDeleteWarning}
                 title="Delete goal with children"
-                message="The selected goal has associate goal(s). Confirm you want to delete this goal"
+                message={
+                    <>
+                        The selected goal has associated goal(s). <br />
+                        Confirm you want to delete this goal.
+                    </>
+                }
                 onHide={() => setShowDeleteWarning(false)}
                 onConfirm={() => {
                     if (graph) {
