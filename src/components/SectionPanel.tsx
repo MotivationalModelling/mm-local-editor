@@ -1,29 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
 import { Resizable, ResizeCallback } from "re-resizable";
-
-import Button from "react-bootstrap/Button";
+import React, { useEffect, useRef, useState } from "react";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { Label, TreeItem, useFileContext } from "./context/FileProvider";
+import { TreeItem, useFileContext } from "./context/FileProvider";
 
-import GraphRender from "./GraphRender";
 import GraphWorker from "./Graphs/GraphWorker";
-// use for testing xml validation only
-const xmlData = `
-  <root>
-    <mxCell id="2" value="Hello," vertex="1">
-      <mxGeometry x="20" y="20" width="80" height="30" as="geometry"/>
-    </mxCell>
-    <mxCell id="3" value="World!" vertex="1">
-      <mxGeometry x="200" y="150" width="80" height="30" as="geometry"/>
-    </mxCell>
-    <mxCell id="4" value="" edge="1" source="2" target="3">
-       <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-  </root>
-`;
+import { addGoalToTree, updateTextForGoalId } from "./context/treeDataSlice.ts";
+import { isEmptyGoal } from "./utils/GoalHint.tsx";
+
 const defaultStyle = {
   display: "flex",
   alignItems: "flex-start",
@@ -41,7 +27,7 @@ const DEFINED_PROPORTIONS = {
 
 const INITIAL_PROPORTIONS = {
   sectionOne: 0.5,
-  sectionThree: 0.75,
+  sectionThree: 0.63,
   sectionsCombine: {
     sectionOne: 0.2,
     sectionThree: 0.5,
@@ -49,6 +35,8 @@ const INITIAL_PROPORTIONS = {
 };
 
 const DEFAULT_HEIGHT = "800px";
+
+
 
 type SectionPanelProps = {
   showGoalSection: boolean;
@@ -69,12 +57,12 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-  const { treeData, setTreeData, tabData, setTabData } = useFileContext();
-  const [treeIds, setTreeIds] = useState<number[]>([]);
+    const {dispatch, treeIds, tree} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
+    const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"]}[]>([])
   const [existingError, setExistingError] = useState<boolean>(false);
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
@@ -82,21 +70,33 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<number | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // // define a handler for deleting a cell and it children from the Graph Render Section
+  // const handleDeleteCellsFromGraph = (treeItems:TreeItem[]) => {
+  // // remove goal from treeData / cluster hierarchy
+  //   dispatch(removeItemIdFromTree);
+  // };
+
+
+
+
+
+
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
     setSectionOneWidth(ref.offsetWidth);
-    // If the width sum exceed the parent total width, auto resize the section three until reach the minimum
-    if (
-      sectionTwoRef.current &&
-      ref.offsetWidth + sectionTwoRef.current.offsetWidth + sectionThreeWidth >=
-        parentWidth
-    ) {
+        if (sectionTwoRef.current) {
+            const totalWidth =
+                ref.offsetWidth + sectionTwoRef.current.offsetWidth + sectionThreeWidth;
+
+            if (totalWidth >= parentWidth) {
       setSectionThreeWidth(
         parentWidth - ref.offsetWidth - sectionTwoRef.current.offsetWidth
       );
     }
+        }
   };
   // Clear timeout when component unmounts
   useEffect(() => {
@@ -107,30 +107,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (treeData.length) {
-      const ids = getIds(treeData);
-      setTreeIds(ids);
-    }
-  }, []);
-
-  // Initialize the tree ids from the created/selected json file
-  const getIds = (treeData: TreeItem[]) => {
-    const ids: number[] = [];
-    // Recursively get all the ids from the tree data
-    const traverse = (arr: TreeItem[]) => {
-      arr.forEach((item) => {
-        ids.push(item.id);
-
-        if (item.children && item.children.length > 0) {
-          traverse(item.children);
-        }
-      });
-    };
-    traverse(treeData);
-    return ids;
-  };
-
   // Handle section three resize and section one auto resize
   const handleResizeSectionThree: ResizeCallback = (
     _event,
@@ -138,7 +114,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     ref
   ) => {
     setSectionThreeWidth(ref.offsetWidth);
-    // If the width sum exceed the parent total width, auto resize the section one until reach the minimum
+    // If the width sum exceeds the parent total width, auto resize the section one until reach the minimum
     if (
       sectionTwoRef.current &&
       sectionOneWidth + sectionTwoRef.current.offsetWidth + ref.offsetWidth >=
@@ -169,34 +145,35 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   // Handle for goals drop on the nestable section
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+      e.preventDefault();
 
-    // Temporary Group drop
-    if (groupSelected.length > 1) {
-      handleDropGroupSelected();
-      return;
-    }
-
-    if (draggedItem && draggedItem.content) {
-      if (!treeIds.includes(draggedItem.id)) {
-        const newData: TreeItem[] = [...treeData, draggedItem];
-        setTreeData(newData);
-        setTreeIds([...treeIds, draggedItem.id]);
-        console.log("drop successful");
-      } else {
-        setExistingItemIds([...existingItemIds, draggedItem.id]);
-        setExistingError(true);
-        hideErrorModalTimeout();
-        console.log("drop failed");
+      // Temporary Group drop
+      if (groupSelected.length > 1) {
+          handleDropGroupSelected();
+          return;
       }
-    }
+
+      if (draggedItem && draggedItem.content) {
+            // the first hierachy does not contain the dragged item
+            if (!tree.map((index) => index.goalId).includes(draggedItem.id)) {
+              dispatch(addGoalToTree(draggedItem));
+          } else {
+              setExistingItemIds([...existingItemIds, draggedItem.id]);
+              setExistingError(true);
+              hideErrorModalTimeout();
+          }
+      }
   };
 
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
+    
     // Filter groupSelected to get only objects whose IDs are not in treeData
     const newItemsToAdd = groupSelected.filter(
-      (item) => !treeIds.includes(item.id)
+            // current hierachy
+            (item) => !tree.some(
+                ref => ref.goalId === item.id
+            )
     );
 
     // If all items are in the tree, then show the warning
@@ -204,21 +181,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       setExistingItemIds([...groupSelected.map((item) => item.id)]);
       setExistingError(true);
       hideErrorModalTimeout();
+     
       return;
     }
-    // Update treeData with new items, filter out the empty items
-    const filteredTreeData = [
-      ...treeData,
-      ...newItemsToAdd.filter((item) => item.content.trim() !== ""),
-    ];
-    setTreeData(filteredTreeData);
-    // Update Ids with new items, filter out the empjty items
-    setTreeIds((prevIds) => [
-      ...prevIds,
-      ...newItemsToAdd
-        .filter((item) => item.content.trim() !== "")
-        .map((item) => item.id),
-    ]);
+
+     // Update treeData with new items, filter out the empty items
+    const filteredNewItems = newItemsToAdd.filter((item) => !isEmptyGoal(item));
+    filteredNewItems.forEach(item => {
+      dispatch(addGoalToTree(item)); // Add each item individually
+    });
+
     setGroupSelected([]);
   };
 
@@ -228,61 +200,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     setGroupSelected([]);
   };
 
-  // Update the tab data if exist while the tree data changed
-  const updateTabDataContent = (label: Label, id: number, newText: string) => {
-    const updatedTabData = tabData.map((tabContent) => {
-      if (tabContent.label === label) {
-        return {
-          ...tabContent,
-          rows: tabContent.rows.map((row) => {
-            if (row.id === id) {
-              return {
-                ...row,
-                content: newText,
-              };
-            }
-            return row;
-          }),
-        };
-      }
-      return tabContent;
-    });
-
-    setTabData(updatedTabData);
-  };
-
-  // Update the tree recursively
-  const updateItemTextInTree = (
-    items: TreeItem[],
-    idToUpdate: number,
-    newText: string
-  ): TreeItem[] => {
-    if (!treeIds.includes(idToUpdate)) return items;
-
-    return items.map((currentItem) => {
-      if (currentItem.id === idToUpdate) {
-        return { ...currentItem, content: newText }; // Update text of this item
-      }
-      if (currentItem.children) {
-        currentItem.children = updateItemTextInTree(
-          currentItem.children,
-          idToUpdate,
-          newText
-        );
-      }
-      return currentItem;
-    });
-  };
-
   // Handle synchronize data in table data and tree data
   const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
-    const updatedTreeData = updateItemTextInTree(
-      treeData,
-      treeItem.id,
-      editedText
-    );
-    setTreeData(updatedTreeData);
-    updateTabDataContent(treeItem.type, treeItem.id, editedText);
+    dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -298,16 +218,19 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         setSectionThreeWidth(
           newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
         );
-      } else if (showGoalSection) {
+      } 
+      else if (showGoalSection) {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
-      } else if (showGraphSection) {
+      } 
+      else if (showGraphSection) {
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
-      } else {
+      } 
+      else {
         setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
         setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
       }
     }
-  }, [paddingX, showGoalSection, showGraphSection]);
+  }, [paddingX, showGoalSection, showGraphSection]); 
 
   return (
     <div
@@ -324,8 +247,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       <ErrorModal
         show={existingError}
         title="Drop Failed"
-        message={`The selected ${
-          groupSelected.length > 1 ? "goals" : "goal"
+        message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
         } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />
@@ -350,33 +272,37 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         <GoalList
           ref={goalListRef}
           setDraggedItem={setDraggedItem}
-          groupSelected={groupSelected}
+          groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={handleSynTableTree}
+          handleSynTableTree={(treeItem: TreeItem, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
 
-      {/* Cluster Hierachy Section */}
+      {/* Cluster Hierarchy Section */}
       <div
         style={{
           ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPORTIONS.minWidth,
           minHeight: DEFAULT_HEIGHT,
-          height: "100%",
+          height: DEFAULT_HEIGHT,
           padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
+          overflow: "auto",
         }}
         onDrop={handleDrop}
         onDragOver={(event) => event.preventDefault()}
         ref={sectionTwoRef}
       >
         <Tree
-          existingItemIds={existingItemIds}
-          setTreeIds={setTreeIds}
+
+          // existingItemIds={existingItemIds}
+          // setTreeIds={setTreeIds}
           handleSynTableTree={handleSynTableTree}
-          setExistingItemIds={setExistingItemIds}
+          // setExistingItemIds={setExistingItemIds}
+          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
         />
       </div>
 
@@ -399,17 +325,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         onResize={handleResizeSectionThree}
       >
         {/* Third Panel Content */}
-        Section 3
-        <GraphWorker />
-        {/*  <GraphRender xml={xmlData} /> */}
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={() => setShowGoalSection(!showGoalSection)}
-          style={{ marginLeft: "20px" }}
-        >
-          {showGoalSection ? "Hide section 1" : "Show section 1"}
-        </Button>
+        <GraphWorker showGraphSection={showGraphSection}/>
       </Resizable>
     </div>
   );

@@ -1,18 +1,26 @@
-import React, { useRef, useState } from "react";
+import React, {useRef, useState} from "react";
 import WhoIcon from "/img/Stakeholder.png";
 import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
-import Nestable, { NestableProps } from "react-nestable";
-import { FaPlus, FaMinus } from "react-icons/fa";
-import { TreeItem } from "./context/FileProvider";
-import { MdDelete, MdEdit, MdCheckCircle, MdCancel } from "react-icons/md";
-import { Label } from "./context/FileProvider";
-import { useFileContext } from "./context/FileProvider";
+import Nestable, {NestableProps} from "react-nestable";
+import {FaPlus, FaMinus} from "react-icons/fa";
+import {TreeItem} from "./context/FileProvider";
+import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
+import {Label} from "./context/FileProvider";
+import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
+import {
+  isEmptyGoal,
+  isTextEmpty,
+  handleContentSave,
+  handleGoalKeyPress,
+  handleGoalBlur
+} from "../components/utils/GoalHint.tsx"
 
 import "./Tree.css";
+import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -23,6 +31,7 @@ const treeListStyle: React.CSSProperties = {
   borderRadius: "5px",
   alignItems: "center",
   padding: "0.1rem",
+  minWidth: "100px",
 };
 
 const treeInputStyle: React.CSSProperties = {
@@ -52,14 +61,15 @@ const iconFromType = (type: Label) => {
 };
 
 type TreeProps = {
-  existingItemIds: number[];
-  setTreeIds: (value: React.SetStateAction<number[]>) => void;
+  // existingItemIds: number[];
   handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
-  setExistingItemIds: (existingItemIds: number[]) => void;
+  // setExistingItemIds: (existingItemIds: number[]) => void;
+  existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[];
+  setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[]) => void
 };
 
 // Goal icon in the tree
-const IconComponent = ({ type }: { type: Label }) => {
+const IconComponent = ({type}: { type: Label }) => {
   return (
     <img
       src={iconFromType(type)}
@@ -73,10 +83,11 @@ const IconComponent = ({ type }: { type: Label }) => {
 };
 
 const Tree: React.FC<TreeProps> = ({
-  existingItemIds,
-  setTreeIds,
+  // existingItemIds,
   handleSynTableTree,
-  setExistingItemIds,
+  // setExistingItemIds,
+  existingGoalReferenceInstanceId,
+  setExistingGoalReferenceInstanceId,
 }) => {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editedText, setEditedText] = useState<string>("");
@@ -85,51 +96,27 @@ const Tree: React.FC<TreeProps> = ({
   const deletingItemRef = useRef<TreeItem | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const { treeData, setTreeData } = useFileContext();
-
-  // Remove item recursively from tree data
-  const removeItemFromTree = (
-    items: TreeItem[],
-    idToRemove: number
-  ): TreeItem[] => {
-    return items.reduce((acc, currentItem) => {
-      if (currentItem.id === idToRemove) {
-        return acc; // Skip this item
-      }
-      if (currentItem.children) {
-        currentItem.children = removeItemFromTree(
-          currentItem.children,
-          idToRemove
-        );
-      }
-      acc.push(currentItem);
-      return acc;
-    }, [] as TreeItem[]);
-  };
+  const {treeData, dispatch} = useFileContext();
 
   // Delete item by its id
   const deleteItem = () => {
-    if (deletingItemRef && deletingItemRef.current) {
-      const updatedTreeData = removeItemFromTree(
-        treeData,
-        deletingItemRef.current.id
-      );
-      setTreeData(updatedTreeData);
-      setTreeIds((prevIds) =>
-        prevIds.filter((id) => id !== deletingItemRef.current?.id)
-      );
-    } else {
-      console.log("Deleting item not found.");
+    if (deletingItemRef?.current) {
+      dispatch(deleteGoalReferenceFromHierarchy({item: deletingItemRef.current}));
     }
     setShowDeleteWarning(false);
   };
 
+
+
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeItem) => {
     deletingItemRef.current = item;
-    const deletingIds = getAllIds(item);
+    // const deletingIds = getAllIds(item);
+
+    const deletinginstanceId = getAllGoalInstances(item)
     if (item.children && item.children.length > 0) {
-      setExistingItemIds([...existingItemIds, ...deletingIds]);
+      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletinginstanceId])
+      // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {
       deleteItem();
@@ -139,30 +126,48 @@ const Tree: React.FC<TreeProps> = ({
   // Handle cancel deleting goal with children(s)
   const handleDeleteCancel = () => {
     setShowDeleteWarning(false);
-    setExistingItemIds([]);
+    // setExistingItemIds([]);
+    setExistingGoalReferenceInstanceId([])
   };
 
-  // Get ids from the tree item
-  const getAllIds = (item: TreeItem) => {
-    const ids: number[] = [item.id];
+  // // Get ids from the tree item
+  // const getAllIds = (item: TreeItem) => {
+  //   const ids: number[] = [item.id];
 
-    // If the item has children, recursively collect their ids
+  //   // If the item has children, recursively collect their ids
+  //   if (item.children) {
+  //     item.children.forEach((child) => {
+  //       ids.push(...getAllIds(child));
+  //     });
+  //   }
+
+  //   return ids;
+  // };
+
+  const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[] => {
+    const result = [{goalId: item.id, instanceId: item.instanceId}];
+
     if (item.children) {
       item.children.forEach((child) => {
-        ids.push(...getAllIds(child));
+        result.push(...getAllGoalInstances(child)); // recurse into children
       });
     }
 
-    return ids;
+    return result;
   };
 
   // Function for rendering every item
-  const renderItem: NestableProps["renderItem"] = ({ item, collapseIcon }) => {
+  const renderItem: NestableProps["renderItem"] = ({item, collapseIcon}) => {
     const treeItem = item as TreeItem;
     const isEditing = editingItemId === treeItem.id;
 
     // Handle when edit button clicked
     const handleEdit = () => {
+      // Allow editing for any goal with content (same as original logic)
+      if (isEmptyGoal(treeItem)) {
+        return;
+      }
+
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -175,16 +180,26 @@ const Tree: React.FC<TreeProps> = ({
 
     // Handle double click to start editing
     const handleDoubleClick = () => {
-      if (!isEditing) {
+      if (!isEditing && !isEmptyGoal(treeItem)) {
         handleEdit();
       }
     };
 
-    // Handle saving edited text
-    // Update the edited text in both the tree data and tab data
+    // Handle saving edited text using GoalHint
     const handleSave = () => {
-      handleSynTableTree(treeItem, editedText);
-      setEditingItemId(null);
+      handleContentSave(
+        treeItem.content, // original content
+        editedText, // new content
+        (content) => {
+          // On save callback
+          handleSynTableTree(treeItem, content);
+          setEditingItemId(null);
+        },
+        () => {
+          // On cancel callback
+          handleCancel();
+        }
+      );
     };
 
     // Handle cancel edited text
@@ -197,22 +212,47 @@ const Tree: React.FC<TreeProps> = ({
       });
     };
 
-    // Handle saving edited text when lost focus
+    // Handle saving edited text when lost focus using GoalHint
     const handleBlur = () => {
-      // Save changes only if cancel button was not clicked
-      if (!disableOnBlur) {
-        handleSave();
-      }
+      handleGoalBlur(
+        treeItem.content, // original content
+        editedText, // current content
+        (content) => {
+          // On save callback
+          handleSynTableTree(treeItem, content);
+          setEditingItemId(null);
+        },
+        () => {
+          // On cancel callback
+          handleCancel();
+        },
+        disableOnBlur // should prevent blur
+      );
       setDisableOnBlur(false);
     };
 
-    // Handle save and cancel edited text when key pressed
+    // Handle save and cancel edited text when key pressed using GoalHint
     const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") handleSave();
-      else if (e.key === "Escape") handleCancel();
+      handleGoalKeyPress(
+        e,
+        treeItem.content, // original content
+        editedText, // current content
+        (content) => {
+          // On save callback
+          handleSynTableTree(treeItem, content);
+          setEditingItemId(null);
+        },
+        () => {
+          // On cancel callback
+          handleCancel();
+        }
+      );
     };
 
     const ICON_SIZE = 25;
+    const isReference = existingGoalReferenceInstanceId.some(
+      ref => ref.goalId === treeItem.id && ref.instanceId === treeItem.instanceId
+    );
     return (
       // While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
       <div
@@ -220,9 +260,9 @@ const Tree: React.FC<TreeProps> = ({
           ...treeListStyle,
           backgroundColor: isEditing
             ? "#e0e0e0"
-            : existingItemIds.includes(treeItem.id)
-            ? "#FF474C"
-            : "white",
+            : isReference
+              ? "#FF474C"
+              : "white",
         }}
         className="tree-list"
         onDoubleClick={handleDoubleClick}
@@ -233,6 +273,8 @@ const Tree: React.FC<TreeProps> = ({
           style={{
             padding: ".5rem",
             flex: 1,
+            overflowWrap: "break-word",
+            wordBreak: "break-word",
           }}
         >
           {isEditing ? (
@@ -243,7 +285,7 @@ const Tree: React.FC<TreeProps> = ({
               onChange={(event) => setEditedText(event.target.value)}
               onBlur={handleBlur}
               onKeyDown={handleEditKeyDown}
-              className="tree-input"
+              className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
               style={treeInputStyle}
             />
           ) : (
@@ -251,11 +293,22 @@ const Tree: React.FC<TreeProps> = ({
           )}
         </div>
 
+        {/* Visual feedback for empty content */}
+        {isEditing && isTextEmpty(editedText) && (
+          <div className="invalid-feedback d-block small">
+            Content cannot be empty
+          </div>
+        )}
+
         {/* The hover effect can only created with pure css, onMouseEnter will 
             replace the Nestable onMouseEnter code and break the dragging functionality */}
         <div
           className="edit-icon"
           onClick={isEditing ? handleSave : handleEdit}
+          style={{
+            opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
+            cursor: !isEditing && isEmptyGoal(treeItem) ? 'not-allowed' : 'pointer'
+          }}
         >
           {isEditing ? (
             <MdCheckCircle size={ICON_SIZE} />
@@ -279,7 +332,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   // Button for collapse and expand
-  const Collapser = ({ isCollapsed }: { isCollapsed: boolean }) => {
+  const Collapser = ({isCollapsed}: { isCollapsed: boolean }) => {
     const iconSize = 13;
     return (
       <div
@@ -295,7 +348,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", alignSelf: "flex-start" }}>
+    <div style={{width: "100%", height: "100%", alignSelf: "flex-start", position: "relative"}}>
       <ConfirmModal
         show={showDeleteWarning}
         title="Delete Warning"
@@ -304,10 +357,11 @@ const Tree: React.FC<TreeProps> = ({
         onConfirm={deleteItem}
       />
       <Nestable
-        onChange={({ items }) => setTreeData(items as TreeItem[])}
+        onChange={({items}) => dispatch(setTreeData(items as TreeItem[]))}
         items={treeData}
         renderItem={renderItem}
-        renderCollapseIcon={({ isCollapsed }) => (
+        idProp="instanceId"
+        renderCollapseIcon={({isCollapsed}) => (
           <Collapser isCollapsed={isCollapsed} />
         )}
       />

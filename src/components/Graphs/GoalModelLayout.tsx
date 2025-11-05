@@ -108,6 +108,7 @@ export class GoalModelLayout extends GraphLayout {
    * Overrides <root> if specified.
    */
   execute(parent: Cell, root?: Cell): void {
+    console.log("Executing layout with parent:", parent, "and root:", root);
     this.parent = parent;
     const model = this.graph.getDataModel();
 
@@ -589,7 +590,7 @@ function findTreeRoots(
   invert = false
 ) {
   const roots: Cell[] = [];
-
+  console.log("finding roots", parent);
   if (parent != null) {
     let best = null;
     let maxDiff = 0;

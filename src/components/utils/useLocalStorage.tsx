@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 // Define a generic type for the initial value
 type InitialValueType<T> = T | (() => T);
 
+const isEmptyObject = (obj: object) =>
+  obj && typeof obj === "object" && Object.keys(obj).length === 0;
+
 const getStoredData = <T,>(
 	key: string,
 	initialValue: InitialValueType<T>
@@ -16,6 +19,10 @@ const getStoredData = <T,>(
 	}
 
 	if (Array.isArray(data) && data.length === 0) {
+		return initialValue;
+	}
+
+	if (isEmptyObject(data)) {
 		return initialValue;
 	}
 

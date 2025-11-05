@@ -3,7 +3,7 @@ import { FiPlus } from "react-icons/fi";
 import "./FileDrop.css";
 
 type FileDropProps = {
-	onClick: (event: React.DragEvent<HTMLDivElement>) => void;
+	onClick: () => void; // Fix: onClick should be () => void, not DragEvent
 	onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
 	onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;

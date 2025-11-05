@@ -1,0 +1,60 @@
+name: Release Version
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Calculate next version
+        id: version
+        run: |
+          YEAR=$(date +'%Y')
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LATEST_TAG" ]; then
+            NEXT_VERSION="${YEAR}.1"
+          else
+            TAG_YEAR=$(echo $LATEST_TAG | cut -d. -f1)
+            TAG_SEQ=$(echo $LATEST_TAG | cut -d. -f2)
+
+            if [ "$TAG_YEAR" = "$YEAR" ]; then
+              NEXT_SEQ=$((TAG_SEQ + 1))
+              NEXT_VERSION="${YEAR}.${NEXT_SEQ}"
+            else
+              NEXT_VERSION="${YEAR}.1"
+            fi
+          fi
+
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+          # Update package.json version
+          jq --arg v "$NEXT_VERSION" '.version=$v' package.json > package.tmp && mv package.tmp package.json
+
+      - name: Commit package.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git push origin main
+
+      - name: Create Git tag
+        run: |
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
