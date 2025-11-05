@@ -8,7 +8,7 @@ import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
 import {TreeItem} from "./context/FileProvider";
 import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
-import {Label} from "./context/FileProvider";
+import {Label, isNonFunctional} from "./context/FileProvider";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
@@ -358,6 +358,16 @@ const Tree: React.FC<TreeProps> = ({
       />
       <Nestable
         onChange={({items}) => dispatch(setTreeData(items as TreeItem[]))}
+        confirmChange={(params) => {
+          const { destinationParent } = params;
+          if (
+            destinationParent &&
+            isNonFunctional(destinationParent.type)
+          ) {
+            return false;
+          }
+          return true;
+        }}
         items={treeData}
         renderItem={renderItem}
         idProp="instanceId"
