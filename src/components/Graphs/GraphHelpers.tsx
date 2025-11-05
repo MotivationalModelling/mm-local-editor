@@ -14,6 +14,8 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
+import {CrowdShape} from "./GraphShapes.tsx"
+
 import {getSymbolKeyByType, formatFunGoalRefId, generateCellId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
@@ -376,7 +378,13 @@ export const renderNonFunction = (
     const symbolKey = getSymbolKeyByType(type);
 
     if (symbolKey) {
-        const config = SYMBOL_CONFIGS[symbolKey];
+        var config = SYMBOL_CONFIGS[symbolKey];
+        
+        if (descriptions.length > 1 && config == SYMBOL_CONFIGS.STAKEHOLDER) {
+            // If there is more than one stakeholder, then change the shape to crowd shape
+            config = SYMBOL_CONFIGS.CROWD;
+        }
+        
         shape = config.shape;
         width *= config.scale.width;
         height *= config.scale.height;
@@ -399,6 +407,11 @@ export const renderNonFunction = (
                 delimiter = ", ";
                 break;
             case "STAKEHOLDER": // Bottom Left
+                x = geo.x - width - OFFSET_X;
+                y = geo.y + OFFSET_Y;
+                delimiter = "\n";
+                break;
+            case "CROWD": // Same as stakehoder
                 x = geo.x - width - OFFSET_X;
                 y = geo.y + OFFSET_Y;
                 delimiter = "\n";

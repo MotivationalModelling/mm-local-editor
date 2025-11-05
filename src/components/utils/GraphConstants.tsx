@@ -17,7 +17,7 @@ export const VERTEX_FONT = {
 
 // --- Valid Symbol Keys ---
 // These keys correspond to each supported symbol type in the diagram.
-export type SymbolKey = 'FUNCTIONAL' | 'EMOTIONAL' | 'NEGATIVE' | 'QUALITY' | 'STAKEHOLDER';
+export type SymbolKey = 'FUNCTIONAL' | 'EMOTIONAL' | 'NEGATIVE' | 'QUALITY' | 'STAKEHOLDER' | 'CROWD';
 
 // --- Symbol Configuration Interface ---
 // Each symbol type includes its visual representation and metadata.
@@ -70,6 +70,18 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
     STAKEHOLDER: {
         type: "Stakeholder",
         shape: "personShape",
+        imagePath: "img/Stakeholder.png",
+        scale: {width: 1, height: 1.2},
+        shapeStyle: {
+            verticalAlign: 'top',
+            verticalLabelPosition: 'bottom',
+            autoSize: false
+        },
+        label: "Who",
+    },
+    CROWD: {
+        type: "Stakeholder",
+        shape: "crowdShape",
         imagePath: "img/Stakeholder.png",
         scale: {width: 1, height: 1.2},
         shapeStyle: {
