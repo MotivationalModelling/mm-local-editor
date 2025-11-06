@@ -86,8 +86,10 @@ export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as con
 
 export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
 
-export const isNonFunctional = (label: Label): label is NonFunctionalGoalType =>
-  NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
+export const isNonFunctionalGoal = (
+  label: Label | undefined
+): label is NonFunctionalGoalType =>
+  !!label && NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
