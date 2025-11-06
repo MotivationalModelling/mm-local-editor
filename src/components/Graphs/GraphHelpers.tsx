@@ -349,6 +349,23 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
     graph.getDataModel().setGeometry(node, nodeGeo);
 };
 
+// Get the config type based on the type and the descriptions
+const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{instanceId: string; content: string;}>) => {
+    const symbolKey = getSymbolKeyByType(type);
+    if (symbolKey) {
+        const config = SYMBOL_CONFIGS[symbolKey];
+
+        if (config === SYMBOL_CONFIGS.STAKEHOLDER) {
+            // If there is more than one stakeholder, then change the shape to crowd shape
+            const isMultipleStakeholders = descriptions.length > 1;
+
+            return (isMultipleStakeholders) ? SYMBOL_CONFIGS.CROWD : config;
+        }
+        return config;
+    }
+    return null;
+}
+
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
@@ -370,21 +387,15 @@ export const renderNonFunction = (
     let y = 0;
     let width = geo.width;
     let height = geo.height;
-    let delimiter = "";
     let shape = "";
 
     // Set the position and size based on the type of non-functional goal
     // Get symbol key and config
     const symbolKey = getSymbolKeyByType(type);
 
-    if (symbolKey) {
-        var config = SYMBOL_CONFIGS[symbolKey];
-        
-        if (descriptions.length > 1 && config == SYMBOL_CONFIGS.STAKEHOLDER) {
-            // If there is more than one stakeholder, then change the shape to crowd shape
-            config = SYMBOL_CONFIGS.CROWD;
-        }
-        
+    const config = getConfigByTypeAndDescriptions(type, descriptions)
+
+    if (config) {
         shape = config.shape;
         width *= config.scale.width;
         height *= config.scale.height;
@@ -394,27 +405,19 @@ export const renderNonFunction = (
             case "EMOTIONAL": // Top Right
                 x = geo.x + width + OFFSET_X;
                 y = geo.y - height - OFFSET_Y;
-                delimiter = ", ";
                 break;
             case "NEGATIVE": // Bottom Right
                 x = geo.x + width + OFFSET_X;
                 y = geo.y + OFFSET_Y;
-                delimiter = ", ";
                 break;
             case "QUALITY": // Top Left
                 x = geo.x - width - OFFSET_X;
                 y = geo.y - height - OFFSET_Y;
-                delimiter = ", ";
                 break;
             case "STAKEHOLDER": // Bottom Left
+            case "CROWD":
                 x = geo.x - width - OFFSET_X;
                 y = geo.y + OFFSET_Y;
-                delimiter = "\n";
-                break;
-            case "CROWD": // Same as stakehoder
-                x = geo.x - width - OFFSET_X;
-                y = geo.y + OFFSET_Y;
-                delimiter = "\n";
                 break;
         }
     } else {
