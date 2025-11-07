@@ -74,6 +74,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [removeChildren, setRemoveChildren] = useState(false);
+    const [nAssociatedGoal,setNAssociateGoal] = useState(0);
     const deletingItemRef = useRef<Cell[] | null>(null);
 
 
@@ -157,7 +158,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 removeChildren: removeChildrenFlag,
             }));
         });
-
         setShowDeleteWarning(false);
     };
 
@@ -398,6 +398,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
                 // setRemoveChildren(hasChildren);
                 if (hasChildren) {
+                    setNAssociateGoal(outgoingEdges.length);
                     setShowDeleteWarning(true);
                 } else {
                     deleteItemFromGraph(graph, false);
@@ -625,8 +626,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 title="Delete goal with children"
                 message={
                     <>
-                        The selected goal has associated goal(s). <br />
-                        Confirm you want to delete this goal.
+                        The selected goal has {nAssociatedGoal} associated goal{nAssociatedGoal === 1 ? '' : 's'}. 
+                        <br/>
+                        Choose below if you also want to delete them.
                     </>
                 }
                 onHide={() => setShowDeleteWarning(false)}
