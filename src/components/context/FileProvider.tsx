@@ -22,6 +22,7 @@ export interface TreeNode {
     goalId: TreeItem["id"]
     instanceId: TreeItem["instanceId"]
     children?: TreeNode[]
+    color?: TreeItem["color"]
 }
 
 // require id and type fields, others optional.
@@ -50,6 +51,7 @@ export type TreeItem = {
     type: Label;
     instanceId: string;
     children?: TreeItem[];
+    color?: string;
 };
 
 // Define the structure for the content of each tab
@@ -114,7 +116,12 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
         const goal = goals[tn.goalId];
-        return newTreeItem({...goal, instanceId: tn.instanceId, ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
+        return newTreeItem({
+            ...goal,
+            instanceId: tn.instanceId,
+            ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {},
+            color: tn.color
+        });
     });
 };
 
@@ -201,6 +208,7 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
             GoalContent: goal.content,
             GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
             SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
+            GoalColor: item.color,
         };
     };
 

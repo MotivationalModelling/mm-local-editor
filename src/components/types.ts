@@ -8,6 +8,7 @@ export interface GoalBase {
     GoalType: GoalType
     GoalContent: string
     GoalNote: string
+    GoalColor?: string
 }
 
 export interface Goal extends GoalBase {
@@ -74,7 +75,8 @@ export const GoalBaseSchema = z.object({
     instanceId: z.string(),
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
-    GoalNote: z.string()
+    GoalNote: z.string(),
+    GoalColor: z.string()
 });
 
 export const GoalSchema = GoalBaseSchema.extend({

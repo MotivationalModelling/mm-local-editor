@@ -47,7 +47,8 @@ export const createTreeFromTreeData = (
         goalId: ti.id,
         // if ti.instanceId exists, use it, else compute one
         instanceId: ti.instanceId,
-        children: createTreeFromTreeData(ti.children ?? [])
+        children: createTreeFromTreeData(ti.children ?? []),
+        color: ti.color
     }));
 };
 
@@ -153,6 +154,18 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
     };
 };
 
+const updateTreeNodeColor = (nodes: TreeNode[], goalId: number, instanceId: string, color: string) => {
+    for (const node of nodes) {
+        if (node.goalId === goalId && node.instanceId === instanceId) {
+            node.color = color;
+            return;
+        }
+        if (node.children) {
+            updateTreeNodeColor(node.children, goalId, instanceId, color);
+        }
+    }
+}
+
 export const treeDataSlice = createSlice({
     name: "treeData",
     initialState: {
@@ -234,6 +247,14 @@ export const treeDataSlice = createSlice({
                 content: text
             };
         },
+        updateColorForInstanceId: (state, action: PayloadAction<{
+            instanceId: string,
+            color: string
+        }>) => {
+            const {instanceId, color} = action.payload;
+            const goalId = parseInstanceId(instanceId).goalId;
+            updateTreeNodeColor(state.tree, goalId, instanceId, color);
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeItem[]
@@ -257,6 +278,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
