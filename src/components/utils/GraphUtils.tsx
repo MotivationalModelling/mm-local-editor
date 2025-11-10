@@ -183,10 +183,10 @@ export const parseInstanceId = (instanceId: string) => {
 };
 
 // Check and retrieve if the non-functional goal has pre-defined color by instanceId
-export function getNonFunctionalGoalColor(
+export const getNonFunctionalGoalColor = (
     clusterGoals: ClusterGoal[],
     nonFunctionGoals: Array<{instanceId: string; content: string;}>,
-): string | undefined {
+): string | undefined => {
     const instanceId = nonFunctionGoals[0].instanceId;
     const goal = findGoalbyInstanceId(clusterGoals, instanceId);
     if (goal){
@@ -195,7 +195,7 @@ export function getNonFunctionalGoalColor(
     return undefined;
 }
 
-function findGoalbyInstanceId(clusterGoals: ClusterGoal[], instanceId: string): GoalBase | null{
+function findGoalbyInstanceId(clusterGoals: ClusterGoal[], instanceId: string): GoalBase | null {
     for (const goal of clusterGoals) {
         if (goal.instanceId === instanceId) return goal;
     }

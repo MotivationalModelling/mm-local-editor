@@ -155,7 +155,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
 };
 
 const updateTreeNodeColor = (nodes: TreeNode[], goalId: number, instanceId: string, color: string) => {
-    for (const node of nodes) {
+    nodes.forEach((node) => {
         if (node.goalId === goalId && node.instanceId === instanceId) {
             node.color = color;
             return;
@@ -163,7 +163,7 @@ const updateTreeNodeColor = (nodes: TreeNode[], goalId: number, instanceId: stri
         if (node.children) {
             updateTreeNodeColor(node.children, goalId, instanceId, color);
         }
-    }
+    });
 }
 
 export const treeDataSlice = createSlice({
