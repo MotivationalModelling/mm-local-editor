@@ -82,6 +82,15 @@ export type TabContent = {
 
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
+export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
+
+export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
+
+export const isNonFunctionalGoal = (
+  label: Label | undefined
+): label is NonFunctionalGoalType =>
+  NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
+
 export const DataType = {JSON: "AMMBER_JSON"};
 
 export const LocalStorageType = {
