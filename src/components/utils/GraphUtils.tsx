@@ -195,9 +195,6 @@ export const getNonFunctionalGoalColor = (
     return undefined;
 }
 
-function findGoalbyInstanceId(clusterGoals: ClusterGoal[], instanceId: string): GoalBase | null {
-    for (const goal of clusterGoals) {
-        if (goal.instanceId === instanceId) return goal;
-    }
-    return null;
+const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: string): GoalBase | undefined => {
+    return clusterGoals.find((goal) => goal.instanceId === instanceId);
 }

@@ -154,16 +154,24 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
     };
 };
 
-const updateTreeNodeColor = (nodes: TreeNode[], goalId: number, instanceId: string, color: string) => {
+const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: string): TreeNode | undefined => {
+    let result: TreeNode | undefined;
+
     nodes.forEach((node) => {
-        if (node.goalId === goalId && node.instanceId === instanceId) {
-            node.color = color;
+        if (result) {
             return;
         }
+        if (node.instanceId === instanceId) {
+            result = node;
+        }
         if (node.children) {
-            updateTreeNodeColor(node.children, goalId, instanceId, color);
+            const found = findTreeNodeByInstanceId(node.children, instanceId);
+            if (found) {
+                result = found;
+            }
         }
     });
+    return result;
 }
 
 export const treeDataSlice = createSlice({
@@ -253,7 +261,10 @@ export const treeDataSlice = createSlice({
         }>) => {
             const {instanceId, color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
-            updateTreeNodeColor(state.tree, goalId, instanceId, color);
+            const node = findTreeNodeByInstanceId(state.tree, instanceId);
+            if (node && node.goalId === goalId) {
+                node.color = color;
+            }
         },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],

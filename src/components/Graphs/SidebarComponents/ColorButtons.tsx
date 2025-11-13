@@ -22,7 +22,9 @@ const ColorButtons = ({graph}: ColorButtonsProps) => {
             graph.getSelectionCells().forEach((cell) => {           
                 const id = cell.getId();
                 const instanceId = parseFuncGoalRefId(id!)?.[0].instanceId;
-                if (instanceId) dispatch(updateColorForInstanceId({instanceId, color: color}));
+                if (instanceId) {
+                    dispatch(updateColorForInstanceId({instanceId, color}));
+                }
             });
         } finally {
             graph.getDataModel().endUpdate();
