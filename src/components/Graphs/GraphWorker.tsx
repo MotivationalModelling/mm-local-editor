@@ -74,7 +74,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [removeChildren, setRemoveChildren] = useState(false);
-    const [nAssociatedGoal,setNAssociateGoal] = useState(0);
     const deletingItemRef = useRef<Cell[] | null>(null);
 
 
@@ -379,6 +378,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
      * (1) Delete
      * (2) Undo
      */
+    const childrenOfSelectedNode = (graph: Graph, selectedCell: Cell): Cell[] => {
+            const outgoingEdges = graph.getOutgoingEdges(selectedCell,null);
+            return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
+    };
 
     const supportFunctions = (graph: Graph) => {
         // delete: add key-handler that listens for 'delete' key
@@ -393,12 +396,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
 
 
-                const outgoingEdges = graph.getOutgoingEdges(selectedCells[0], null);
-                const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
-
+                const outgoingEdges = childrenOfSelectedNode(graph,selectedCells[0]);
+                const nAssociatedGoal = outgoingEdges.length;
                 // setRemoveChildren(hasChildren);
-                if (hasChildren) {
-                    setNAssociateGoal(outgoingEdges.length);
+                if (nAssociatedGoal>0) {
+        
                     setShowDeleteWarning(true);
                 } else {
                     deleteItemFromGraph(graph, false);
@@ -617,6 +619,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
+    const nAssociatedGoal =
+    deletingItemRef.current && graph
+        ? childrenOfSelectedNode(graph, deletingItemRef.current[0]).length
+        : 0;
 
     return (
         <div style={{position: "relative", width: "100%", height: "100%"}}>
@@ -626,7 +632,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 title="Delete goal with children"
                 message={
                     <>
-                        The selected goal has {nAssociatedGoal} associated goal{nAssociatedGoal === 1 ? '' : 's'}. 
+                        The selected goal has {nAssociatedGoal} associated {(nAssociatedGoal === 1) ? 'goal' : 'goals'}
                         <br/>
                         Choose below if you also want to delete them.
                     </>
