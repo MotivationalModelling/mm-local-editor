@@ -74,11 +74,17 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [removeChildren, setRemoveChildren] = useState(false);
-    const deletingItemRef = useRef<Cell[] | null>(null);
+    const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
+
+
+    const childrenOfSelectedCell = (graph: Graph, selectedCell: Cell): Cell[] => {
+            const outgoingEdges = graph.getOutgoingEdges(selectedCell,null);
+            return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
+    };
 
 
     const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean) => {
-        const cells = deletingItemRef.current;
+        const cells = deletingCells;
         if (!cells || !graph) return;
 
         // 1) Collect all cells that would be removed (including children)
@@ -378,10 +384,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
      * (1) Delete
      * (2) Undo
      */
-    const childrenOfSelectedNode = (graph: Graph, selectedCell: Cell): Cell[] => {
-            const outgoingEdges = graph.getOutgoingEdges(selectedCell,null);
-            return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
-    };
 
     const supportFunctions = (graph: Graph) => {
         // delete: add key-handler that listens for 'delete' key
@@ -392,15 +394,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 const selectedCells = graph.getSelectionCells();
                 if (!selectedCells || selectedCells.length === 0) return;
 
-                deletingItemRef.current = selectedCells;
+                setDeletingCells(selectedCells);
 
-
-
-                const outgoingEdges = childrenOfSelectedNode(graph,selectedCells[0]);
+                const outgoingEdges = childrenOfSelectedCell(graph,selectedCells[0]);
                 const nAssociatedGoal = outgoingEdges.length;
                 // setRemoveChildren(hasChildren);
-                if (nAssociatedGoal>0) {
-        
+                if (nAssociatedGoal > 0) {
                     setShowDeleteWarning(true);
                 } else {
                     deleteItemFromGraph(graph, false);
@@ -620,8 +619,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
-    deletingItemRef.current && graph
-        ? childrenOfSelectedNode(graph, deletingItemRef.current[0]).length
+    deletingCells && graph
+        ? childrenOfSelectedCell(graph, deletingCells[0]).length
         : 0;
 
     return (
