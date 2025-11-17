@@ -3,11 +3,11 @@ import {
     createTabDataFromTabs,
     createTreeDataFromTreeNode,
     createTreeIdsFromTreeData,
-    Label,
+} from "./FileProvider.tsx";
+import {Label,
     TabContent,
     TreeItem,
-    TreeNode
-} from "./FileProvider.tsx";
+    TreeNode} from "../../data/dataModels.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 import {parseInstanceId} from "../utils/GraphUtils.tsx";
 
@@ -193,17 +193,15 @@ export const treeDataSlice = createSlice({
             // state.treeIds = createTreeIdsFromTreeNode(state.tree);
         },
         // delete it will also delete the reference in the tree
-        deleteGoalFromGoalList: (state, action: PayloadAction<{
-            item: TreeItem
-        }>) => {
-            const tabContent = state.tabs.get(action.payload.item.type);
+        deleteGoalFromGoalList: (state, action: PayloadAction<TreeItem>) => {
+            const tabContent = state.tabs.get(action.payload.type);
             if (tabContent) {
-                tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.item.id);
+                tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.id);
             }
-            delete state.goals[action.payload.item.id];
+            delete state.goals[action.payload.id];
             // remove it and its reference
-            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.item.id, undefined)
-            delete state.treeIds[action.payload.item.id];
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, undefined)
+            delete state.treeIds[action.payload.id];
         },
         // delete it will not affect the orginal and other reference
         deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<{
