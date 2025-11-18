@@ -3,12 +3,19 @@
 */
 // Leave this (^) or you will see "ReferenceError: document is not defined" from renderHook
 
-import {describe, it, expect, beforeEach, beforeAll} from "vitest";
+import {beforeAll, beforeEach, describe, expect, it} from "vitest";
 import {
     addGoal,
-    addGoalToTab, addGoalToTree,
-    createInitialState, createTreeFromTreeData,
-    deleteGoal, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
+    addGoalToTab,
+    addGoalToTree,
+    createInitialState,
+    createTreeFromTreeData,
+    deleteGoal,
+    findTreeNodeByInstanceId,
+    newTreeNode,
+    removeItemIdFromTree,
+    reset,
+    selectGoalsForLabel,
     treeDataSlice,
     updateTextForGoalId, findTreeNodeByInstanceId
 } from "./treeDataSlice";
@@ -179,10 +186,7 @@ describe('createTreeFromTreeData', () => {
 });
 
 describe('findTreeNodeByInstanceId', () => {
-    beforeAll(() => {
-        enableMapSet();
-    });
-    const treeIds: Record<number, string[]> = {};
+    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = {};
     const testTree = [
         newTreeNode(treeIds, {
             goalId: 1,
@@ -192,7 +196,13 @@ describe('findTreeNodeByInstanceId', () => {
             ],
         }),
         newTreeNode(treeIds, {goalId: 4})
-    ]
+    ];
+    it('should handle an empty tree', () => {
+        const treeData = [] as TreeItem[];
+        const tree = createTreeFromTreeData(treeData);
+        const instanceId = "2-3";
+        expect(findTreeNodeByInstanceId(tree, instanceId)).toBeUndefined();
+    });
     it('should return the tree node with correct Id', () => {
         const targetInstanceId = "1-1";
         const targetGoalId = 1;
