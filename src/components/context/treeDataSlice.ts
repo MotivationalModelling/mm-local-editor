@@ -1,4 +1,4 @@
-import {createSlice, current, PayloadAction} from "@reduxjs/toolkit";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {
     createTabDataFromTabs,
     createTreeDataFromTreeNode,
@@ -15,28 +15,28 @@ import {parseInstanceId} from "../utils/GraphUtils.tsx";
 
 export const newTreeNode = (
     treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>,
-  {
-    goalId,
-    instanceId = generateInstanceId(treeIds, goalId),
-    children = [],
-  }: {
-    goalId: TreeItem["id"];
-    instanceId?: TreeItem["instanceId"];
-    children?: TreeNode[];
-  },
+    {
+        goalId,
+        instanceId = generateInstanceId(treeIds, goalId),
+        children = [],
+    }: {
+        goalId: TreeItem["id"];
+        instanceId?: TreeItem["instanceId"];
+        children?: TreeNode[];
+    },
 ) => {
-  // Update treeIds mapping
-  if (treeIds[goalId]) {
-    treeIds[goalId].push(instanceId);
-  } else {
-    treeIds[goalId] = [instanceId];
-  }
+    // Update treeIds mapping
+    if (treeIds[goalId]) {
+        treeIds[goalId].push(instanceId);
+    } else {
+        treeIds[goalId] = [instanceId];
+    }
 
-  return {
-    goalId,
-    instanceId,
-    children,
-  };
+    return {
+        goalId,
+        instanceId,
+        children,
+    };
 };
 
 
@@ -154,25 +154,18 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
     };
 };
 
-export const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: string): TreeNode | undefined => {
-    let result: TreeNode | undefined;
-
-    nodes.forEach((node) => {
-        if (result) {
-            return;
-        }
+export const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: TreeNode["instanceId"]): TreeNode | undefined => {
+    for (const node of nodes) {
         if (node.instanceId === instanceId) {
-            result = node;
+            return node;
         }
-        if (node.children) {
-            const found = findTreeNodeByInstanceId(node.children, instanceId);
-            if (found) {
-                result = found;
-            }
+        const matchingNode = findTreeNodeByInstanceId(node.children ?? [], instanceId);
+        if (matchingNode) {
+            return matchingNode;
         }
-    });
-    return result;
-}
+    }
+    return undefined;
+};
 
 export const treeDataSlice = createSlice({
     name: "treeData",
