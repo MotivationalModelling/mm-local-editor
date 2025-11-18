@@ -1,4 +1,4 @@
-import {ClusterGoal} from '../types';
+import {ClusterGoal, GoalBase} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, InternalEvent, Cell} from '@maxgraph/core';
 
@@ -181,3 +181,20 @@ export const parseInstanceId = (instanceId: string) => {
 
     return {goalId, refId};
 };
+
+// Check and retrieve if the non-functional goal has pre-defined color by instanceId
+export const getNonFunctionalGoalColor = (
+    clusterGoals: ClusterGoal[],
+    nonFunctionGoals: Array<{instanceId: string; content: string;}>,
+): string | undefined => {
+    const instanceId = nonFunctionGoals[0].instanceId;
+    const goal = findGoalbyInstanceId(clusterGoals, instanceId);
+    if (goal){
+        return goal.GoalColor;
+    }
+    return undefined;
+}
+
+const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: string): GoalBase | undefined => {
+    return clusterGoals.find((goal) => goal.instanceId === instanceId);
+}

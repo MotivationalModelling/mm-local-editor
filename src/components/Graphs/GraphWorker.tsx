@@ -543,6 +543,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
         // render non-functional goals
         associateNonFunctions(
+            cluster.ClusterGoals,
             graph,
             rootGoal,
             emotionsGlob,
