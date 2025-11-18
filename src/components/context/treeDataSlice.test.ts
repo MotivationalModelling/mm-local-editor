@@ -8,25 +8,32 @@ import {
     addGoal,
     addGoalToTab, addGoalToTree,
     createInitialState, createTreeFromTreeData,
-    deleteGoal, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
+    deleteGoalFromGoalList, deleteGoalReferenceFromHierarchy, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
     treeDataSlice,
     updateTextForGoalId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeItem, TreeItem, TreeNode} from "./FileProvider.tsx";
+import {newTreeItem, TreeItem, TreeNode} from "../../data/dataModels.ts";
 
 describe('treeDataSlice', () => {
+    // turns on Map/Set support
     beforeAll(() => {
         enableMapSet();
     });
+
     let initialState: ReturnType<typeof createInitialState>;
+    
+    // every test gets a fresh clean initial state
+    // reducers must behave correctly starting from a known, predictable state
     beforeEach(() => {
         initialState = createInitialState(initialTabs, []);
     });
+
     it('should start with five tabs', () => {
         expect(initialState.tabs.size).toEqual(5);
     });
+
     it('should add a goal', () => {
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
@@ -38,22 +45,19 @@ describe('treeDataSlice', () => {
     });
     it('removes a goal', () => {
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
-
         expect(initialState.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
 
         const state1 = treeDataSlice.reducer(initialState, addGoal(goal));
-
         expect(state1.tabs.get(goal.type)?.goalIds).toContain(goal.id);
 
-        const state2 = treeDataSlice.reducer(initialState, deleteGoal(goal));
-
+        const state2 = treeDataSlice.reducer(initialState, deleteGoalFromGoalList(goal));
         expect(state2.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
     });
     it('ignores removing an nx goal', () => {
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
-
         expect(initialState.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
-        const state2 = treeDataSlice.reducer(initialState, deleteGoal(goal));
+
+        const state2 = treeDataSlice.reducer(initialState, deleteGoalFromGoalList(goal));
         expect(state2.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
     });
     it('should revert on reset', () => {
@@ -114,58 +118,70 @@ describe('treeDataSlice', () => {
     });
     it('should add a goal to the tree', () => {
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
-
-        expect(initialState.goals).not.toContain(goal.id);
+        expect(Object.keys(initialState.treeIds)).not.toContain(String(goal.id));
+        
         const state = treeDataSlice.reducer(initialState, addGoalToTree(goal));
-
-        expect(state.treeIds).toContain(goal.id);
+        expect(Object.keys(state.treeIds)).toContain(String(goal.id));
     });
-    it('should remove a goal and goal id from the tree', () => {
+    it('should remove a goal\'s reference from the tree', () => {
         const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        expect(initialState.goals).not.toContain(goal.id);
+        expect(Object.keys(initialState.treeIds)).not.toContain(String(goal.id));
+
         const state1 = treeDataSlice.reducer(initialState, addGoalToTree(goal));
 
-        expect(state1.treeIds).toContain(goal.id);
+        const instanceId = state1.treeIds[goal.id][0];
+    
+        expect(Object.keys(state1.treeIds)).toContain(String(goal.id));
+        expect(Object.values(state1.treeIds)).not.toContain(instanceId);
 
-        const state2 = treeDataSlice.reducer(initialState, deleteGoal(goal));
-        expect(state2.treeIds).not.toContain(goal.id);
+        const state2 = treeDataSlice.reducer(
+            state1,
+            deleteGoalReferenceFromHierarchy({
+                ...goal,
+                instanceId, // overwrite
+            })
+        );
+        // only remove the reference
+        expect(Object.keys(state1.treeIds)).toContain(String(goal.id));
+        expect(Object.values(state2.treeIds)).not.toContain(instanceId);
     });
+
     it('should have tree as type TreeNode[]', () => {
         const {tree} = initialState;
         const testTree: TreeNode[] = tree;
 
         expect(testTree).toBeTruthy();
     });
-});
-
-describe('removeItemIdFromTree', () => {
-    beforeAll(() => {
-        enableMapSet();
-    });
-    it('should handle an empty tree', () => {
-        const tree = [] as TreeNode[];
-        const newTree = removeItemIdFromTree(tree, 99);
-        expect(tree.length).toEqual(newTree.length);
-    });
     it('should remove a node from the top level', () => {
         const goalId = 1;
-        const tree = [newTreeNode({goalId})] as TreeNode[];
-        const newTree = removeItemIdFromTree(tree, goalId);
+        const node = newTreeNode(initialState.treeIds, { goalId });
+        const instanceId = node.instanceId;
 
-        expect(newTree.length).toEqual(0);
+        const tree: TreeNode[] = [node];
+        expect(tree).toHaveLength(1);
+
+        const newTree = removeItemIdFromTree(tree, goalId, instanceId);
+
+        expect(newTree).toHaveLength(0);
     });
     it('should remove a node from the second level', () => {
         const goalId = 1;
-        const tree = [newTreeNode({goalId: 0, children: [newTreeNode({goalId})]})] as TreeNode[];
+        const childrenNode = newTreeNode(initialState.treeIds, { goalId });
+        const childrenInstanceId = childrenNode.instanceId
+        const initialNode = newTreeNode(initialState.treeIds, { goalId:0,children: [childrenNode]});
+        const tree: TreeNode[] = [initialNode];
+
         expect(tree.length).toEqual(1);
         expect(tree[0].children?.length).toEqual(1);
-        const newTree = removeItemIdFromTree(tree, goalId);
+
+        const newTree = removeItemIdFromTree(tree, goalId,childrenInstanceId);
 
         expect(newTree.length).toEqual(1);
         expect(tree[0].children?.length).toEqual(0);
     });
 });
+
 
 describe('createTreeFromTreeData', () => {
     beforeAll(() => {

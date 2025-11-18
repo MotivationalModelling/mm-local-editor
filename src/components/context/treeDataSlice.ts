@@ -1,4 +1,4 @@
-import {createSlice, current, PayloadAction} from "@reduxjs/toolkit";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {
     createTabDataFromTabs,
     createTreeDataFromTreeNode,
@@ -204,12 +204,10 @@ export const treeDataSlice = createSlice({
             delete state.treeIds[action.payload.id];
         },
         // delete it will not affect the orginal and other reference
-        deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<{
-            item: TreeItem
-        }>) => {
+        deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<TreeItem>) => {
             // only itself
-            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.item.id, action.payload.item.instanceId)
-            state.treeIds[action.payload.item.id] = state.treeIds[action.payload.item.id].filter(node => node !== action.payload.item.instanceId);
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, action.payload.instanceId)
+            state.treeIds[action.payload.id] = state.treeIds[action.payload.id].filter(node => node !== action.payload.instanceId);
         },
 
         updateTextForGoalId: (state, action: PayloadAction<{
