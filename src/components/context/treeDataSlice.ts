@@ -154,7 +154,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
     };
 };
 
-const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: string): TreeNode | undefined => {
+export const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: string): TreeNode | undefined => {
     let result: TreeNode | undefined;
 
     nodes.forEach((node) => {
@@ -262,7 +262,7 @@ export const treeDataSlice = createSlice({
             const {instanceId, color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             const node = findTreeNodeByInstanceId(state.tree, instanceId);
-            if (node && node.goalId === goalId) {
+            if (node?.goalId === goalId) {
                 node.color = color;
             }
         },

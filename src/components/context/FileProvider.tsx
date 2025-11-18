@@ -27,7 +27,7 @@ export interface TreeNode {
 
 // require id and type fields, others optional.
 // create a empty treeItem
-export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
+export function newTreeItem(initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem {
     const id = initFields.id ?? Date.now();
     const instanceId = initFields.instanceId ?? `${id}-${0}`;
     return {

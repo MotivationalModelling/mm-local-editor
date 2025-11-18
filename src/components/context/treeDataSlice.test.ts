@@ -10,7 +10,7 @@ import {
     createInitialState, createTreeFromTreeData,
     deleteGoal, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
     treeDataSlice,
-    updateTextForGoalId
+    updateTextForGoalId, findTreeNodeByInstanceId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
@@ -175,5 +175,35 @@ describe('createTreeFromTreeData', () => {
         const treeData = [] as TreeItem[];
         const tree = createTreeFromTreeData(treeData);
         expect(tree.length).toEqual(treeData.length);
+    });
+});
+
+describe('findTreeNodeByInstanceId', () => {
+    beforeAll(() => {
+        enableMapSet();
+    });
+    const treeIds: Record<number, string[]> = {};
+    const testTree = [
+        newTreeNode(treeIds, {
+            goalId: 1,
+            children: [
+                newTreeNode(treeIds, {goalId: 2}),
+                newTreeNode(treeIds, {goalId: 3})
+            ],
+        }),
+        newTreeNode(treeIds, {goalId: 4})
+    ]
+    it('should return the tree node with correct Id', () => {
+        const targetInstanceId = "1-1";
+        const targetGoalId = 1;
+        expect(findTreeNodeByInstanceId(testTree, targetInstanceId)?.goalId).toBe(targetGoalId);
+    });
+    it('should return the correct tree node in children level', () => {
+        const targetInstanceId = "3-1";
+        const targetGoalId = 3;
+        expect(findTreeNodeByInstanceId(testTree, targetInstanceId)?.goalId).toBe(targetGoalId);
+    });
+    it('should return undefined if node not found', () => {
+        expect(findTreeNodeByInstanceId(testTree, "not-exist")).toBeUndefined;
     });
 });
