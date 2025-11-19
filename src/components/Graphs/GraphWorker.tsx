@@ -648,7 +648,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 extraContent={
                     <Form.Check
                         type="checkbox"
-                        label="Delete associate goal(s)"
+                        label="Delete associated goal(s)"
                         checked={removeChildren}
                         onChange={(e) => setRemoveChildren(e.target.checked)}
                     />
