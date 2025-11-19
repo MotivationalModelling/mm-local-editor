@@ -7,7 +7,8 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
 import Table from "react-bootstrap/Table";
-import {TreeItem, useFileContext, newTreeItem, Label} from "./context/FileProvider";
+import {useFileContext} from "./context/FileProvider";
+import { Label,newTreeItem,TreeItem } from "../data/dataModels.ts";
 
 import styles from "./TabButtons.module.css";
 import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
@@ -178,7 +179,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			}
 		};
 		const handleDeleteRow = (row: TreeItem) => {
-			dispatch(deleteGoalFromGoalList({item:row}));
+			dispatch(deleteGoalFromGoalList(row));
 			const filteredGroupSelected = groupSelected.filter(
 				(item) => item.id !== row.id
 			);
@@ -260,7 +261,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			//
 			// 	setTabData(newTabData);
 
-				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoalFromGoalList({item:item})));
+				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoalFromGoalList(item)));
 				setGroupSelected([]); 
 			}
 		};

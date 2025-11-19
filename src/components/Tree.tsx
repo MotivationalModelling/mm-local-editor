@@ -6,9 +6,9 @@ import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeItem} from "./context/FileProvider";
+import {TreeItem, Label} from "../data/dataModels.ts";
 import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
-import {Label, isNonFunctionalGoal} from "./context/FileProvider";
+import {isNonFunctionalGoal} from "./context/FileProvider";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
@@ -101,7 +101,7 @@ const Tree: React.FC<TreeProps> = ({
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoalReferenceFromHierarchy({item: deletingItemRef.current}));
+      dispatch(deleteGoalReferenceFromHierarchy(deletingItemRef.current));
     }
     setShowDeleteWarning(false);
   };
