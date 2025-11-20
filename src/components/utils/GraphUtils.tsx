@@ -24,7 +24,7 @@ export function getCellNumericIds(cell: Cell): string[] {
         if (match) {
             return match[2]
                 .split(",")
-                .map(s => s.replace(/[\[\]\s]/g, ""))
+                .map(s => s.replace(/[[\]\s]/g, ""))
                 .filter(s => s.length > 0);
         } else {
             throw new Error(`badly formatted cellId "${cellId}"`);
