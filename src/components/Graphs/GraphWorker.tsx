@@ -179,15 +179,14 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // Track if we have already centered on first entry
     const hasCenteredOnEntryRef = useRef(false);
     const prevShowGraphSectionRef = useRef(false);
+    const prevClusterGoalsCountRef = useRef(cluster.ClusterGoals.length);
 
-
-
-    const recentreView = () => {
+    const recentreView = useCallback(() => {
         if (graph) {
             graph.fit();
             graph.center();
         }
-    };
+    }, [graph]);
 
     const initRecentreView = useCallback(() => {
         if (graph) {
@@ -599,15 +598,32 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         }
     }, [cluster, graph, renderGraph]);
 
+    // Auto-center when goals in the canvas change (e.g. new goal added)
+    useEffect(() => {
+        const currentCount = cluster.ClusterGoals.length;
+        const prevCount = prevClusterGoalsCountRef.current;
+
+        if (showGraphSection && currentCount > prevCount && graph) {
+            requestAnimationFrame(() => {
+                recentreView();
+            });
+        }
+
+        prevClusterGoalsCountRef.current = currentCount;
+    }, [cluster.ClusterGoals.length, showGraphSection, graph, recentreView]);
+
     // Trigger centering when entering render section
     useEffect(() => {
-
         // Only center when showGraphSection changes from false to true
         if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-            // Use setTimeout to ensure centering happens after layout is complete
-            setTimeout(() => {
-                initRecentreView();
-            }, 200);
+            // MaxGraph finishes its geometry/layout a frame after renderGraph returns.
+            // Double requestAnimationFrame waits until that layout work is flushed
+            // before calling fit/center, preventing the "first render" offset.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initRecentreView();
+                });
+            });
             hasCenteredOnEntryRef.current = true;
         }
 
