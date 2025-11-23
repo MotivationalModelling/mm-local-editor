@@ -20,7 +20,7 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
-import {useFileContext} from "../context/FileProvider.tsx";
+import {TreeNode, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
@@ -336,7 +336,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     title: "Input Error",
                                     message: "Goal name cannot be empty.",
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
-                                })
+                                });
                                 return;
                             }
 
@@ -344,7 +344,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             const newGoalValues = change.value.split(",");
 
                             // Check if the number of items matches
-                            const nUpdated = numericCellIds.length
+                            const nUpdated = numericCellIds.length;
                             if (nUpdated !== newGoalValues.length) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
@@ -358,11 +358,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
                             }
-
-
                         }
                     }
-
                 } finally {
                     graph.getDataModel().endUpdate();
                     graph.refresh();
@@ -390,8 +387,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 if (!selectedCells || selectedCells.length === 0) return;
 
                 deletingItemRef.current = selectedCells;
-
-
 
                 const outgoingEdges = graph.getOutgoingEdges(selectedCells[0], null);
                 const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
