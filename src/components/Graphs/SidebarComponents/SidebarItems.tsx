@@ -152,6 +152,8 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
 
     // Add all symbol nodes to the sidebar
     Object.values(SYMBOL_CONFIGS).forEach(config => {
+      if (config.type === "Crowd") return; // skip the crowd symbol since it stands for group of stakeholder
+
       addSidebarItem(
         graph,
         sidebar,
