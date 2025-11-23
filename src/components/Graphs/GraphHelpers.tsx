@@ -400,7 +400,7 @@ export const renderNonFunction = (
         width *= config.scale.width;
         height *= config.scale.height;
 
-        // Set the position and delimiter based on symbol type
+        // Set the position based on symbol type
         switch (symbolKey) {
             case "EMOTIONAL": // Top Right
                 x = geo.x + width + OFFSET_X;
@@ -440,7 +440,12 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
-    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+    const delimiter = symbolKey === "STAKEHOLDER" ? ",\n" : ", ";
+    const squareLabel = makeSquareLable(
+        descriptions.map(d => d.content),
+        delimiter
+    );
+
 
     console.log("Nonfunctional-goal-dependencies:",descriptions)
     // Insert the vertex
