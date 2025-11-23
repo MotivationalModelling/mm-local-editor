@@ -431,6 +431,15 @@ export const renderNonFunction = (
     style.labelPosition = "center";
     style.spacingTop = 0;
 
+    // Clone edge style
+    const dotted: any = { ...graph.getStylesheet().getDefaultEdgeStyle() };
+    dotted["dashed"] = 1;
+    dotted["dashPattern"] = "1 3";
+    dotted["rounded"] = 1;
+
+    // Put the dotted style in the stylesheet
+    graph.getStylesheet().putCellStyle("dottedEdge", dotted);
+
     // Text goes at bottom for stakeholder
     if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
         style.verticalAlign = "top";
@@ -455,8 +464,8 @@ export const renderNonFunction = (
     );
     console.log("Nonfunctional-goal-node:",node);
     // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node);
-    edge.visible = false; // Make the edge invisible - used in auto layout
+    const edge = graph.insertEdge(null, null, "", source, node, dotted);
+    // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
