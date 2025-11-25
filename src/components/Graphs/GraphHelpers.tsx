@@ -432,10 +432,12 @@ export const renderNonFunction = (
     style.spacingTop = 0;
 
     // Clone edge style
-    const dotted: any = { ...graph.getStylesheet().getDefaultEdgeStyle() };
-    dotted["dashed"] = 1;
-    dotted["dashPattern"] = "1 3";
-    dotted["rounded"] = 1;
+    const dotted: any = {
+        ...graph.getStylesheet().getDefaultEdgeStyle(),
+        dashed: 1,
+        dashPattern: "1 3",
+        rounded: 1
+    };
 
     // Put the dotted style in the stylesheet
     graph.getStylesheet().putCellStyle("dottedEdge", dotted);
