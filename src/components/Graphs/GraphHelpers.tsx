@@ -36,8 +36,8 @@ const VERTICAL_SPACING = 80;
 const HORIZONTAL_SPACING = 100;
 
 // Offset from functional goal with associated non-functional goal
-const OFFSET_X = 20;
-const OFFSET_Y = 20;
+const OFFSET_X = 0;
+const OFFSET_Y = 5;
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
