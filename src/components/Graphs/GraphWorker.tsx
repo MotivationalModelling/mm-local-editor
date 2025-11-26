@@ -76,7 +76,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const [removeChildren, setRemoveChildren] = useState(false);
     const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
 
-
     const childrenOfSelectedCell = (graph: Graph, selectedCell: Cell): Cell[] => {
             const outgoingEdges = graph.getOutgoingEdges(selectedCell,null);
             return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
@@ -396,7 +395,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
                 setDeletingCells(selectedCells);
 
-                const outgoingEdges = childrenOfSelectedCell(graph,selectedCells[0]);
+                const outgoingEdges = childrenOfSelectedCell(graph, selectedCells[0]);
                 const nAssociatedGoal = outgoingEdges.length;
                 // setRemoveChildren(hasChildren);
                 if (nAssociatedGoal > 0) {
