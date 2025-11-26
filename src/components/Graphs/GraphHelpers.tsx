@@ -440,10 +440,9 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
-    const delimiter = symbolKey === "STAKEHOLDER" ? ",\n" : ", ";
-    const squareLabel = makeSquareLable(
+    const squareLabel = makeLabelForGoalType(
         descriptions.map(d => d.content),
-        delimiter
+        symbolKey
     );
 
 
@@ -635,7 +634,20 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeSquareLable(
+export function makeLabelForGoalType (items: Array<string>, type: string|undefined): string {
+    let sep = ", ";
+    switch (type) {
+        case "STAKEHOLDER":
+            sep = ",\n";
+            break;
+        default:
+            break;
+    }
+    return makeSquareLabel(items, sep);
+}
+
+
+export function makeSquareLabel(
     items: Array<string>,
     sep = ", "
 ): string {
@@ -656,6 +668,7 @@ export function makeSquareLable(
 
     return lines.join(", \n");
 }
+
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";
