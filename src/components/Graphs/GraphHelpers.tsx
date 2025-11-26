@@ -435,7 +435,7 @@ export const renderNonFunction = (
     const dotted: any = {
         ...graph.getStylesheet().getDefaultEdgeStyle(),
         dashed: 1,
-        dashPattern: "1 3",
+        dashPattern: "3 3",
         rounded: 1
     };
 
