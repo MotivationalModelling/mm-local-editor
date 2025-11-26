@@ -1,6 +1,7 @@
 import {ClusterGoal} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
-import {Graph, InternalEvent, Cell} from '@maxgraph/core';
+import {Graph, Cell} from '@maxgraph/core';
+import {TreeNode} from "../context/FileProvider.tsx";
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -14,17 +15,20 @@ export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined 
 
 /**
  * Extracts ID strings from a cell:
- * - Supports multiple comma-separated IDs like: "Functional-123-1,123-2,123-3"
- * - Returns an array of strings, e.g. ["123-1", "123-2", "123-3"]
+ * - Supports multiple comma-separated IDs like: "Nonfunctional-[5-1,1762312908316-1]"
+ * - Returns an array of strings, e.g. ["5-1", "1762312908316-1"]
  */
 export function getCellNumericIds(cell: Cell): string[] {
     const cellId = cell.getId();
     if (cellId) {
         const match = cellId.match(/^(Functional|Nonfunctional)-(.+)$/);
         if (match) {
-        return match[2]
-            .split(",")
-            .map(s => s.trim())
+            return match[2]
+                .split(",")
+                .map(s => s.replace(/[[\]\s]/g, ""))
+                .filter(s => s.length > 0);
+        } else {
+            throw new Error(`badly formatted cellId "${cellId}"`);
         }
     }
     return [];
@@ -137,11 +141,11 @@ export function parseFuncGoalRefId(idStr: string) {
       return {goalId, instanceId};
     });
   }
-}
+};
 
 
 // Treeid stored in the state '8-1'
-export function getRefIdFromInstanceId(instanceId: string) {
+export function getRefIdFromInstanceId(instanceId: TreeNode["instanceId"]) {
     const parts = instanceId.split("-");
     const suffixStr = parts.pop();
     return Number(suffixStr);
@@ -153,11 +157,11 @@ export function getRefIdFromInstanceId(instanceId: string) {
  * - "Nonfunctional" expects an array of numbers, e.g., "Nonfunctional-1,2,3"
  */
 type IdsForType = {
-    Functional: string;
-    Nonfunctional: string[];
-};
+    Functional: string
+    Nonfunctional: string[]
+}
 
-export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForType[T]): string {
+export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForType[T]): string {
     switch (type) {
     case "Functional":
         return `${type}-${ids}`;
@@ -168,12 +172,11 @@ export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForTy
     }
 }
 
-export const parseInstanceId = (instanceId: string) => {
+export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
     const bits = instanceId.split("-").map(s => s.trim());
-    // TODO：After finalize id generate logic, add formate check like below
-    // if (bits.length !== 2) {
-    //     throw new Error(`badly formatted instanceId "${instanceId}"`);
-    // }
+    if (bits.length !== 2) {
+        throw new Error(`badly formatted instanceId "${instanceId}"`);
+    }
     
     const [goalId, refId] = bits.map(Number);
 

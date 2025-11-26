@@ -43,12 +43,14 @@ export type JSONData = {
     treeData: TreeItem[];
 };
 
+type InstanceId = `${number}-${number}`
+
 // Type of the tree item content
 export type TreeItem = {
     id: number;
     content: string;
     type: Label;
-    instanceId: string;
+    instanceId: InstanceId;
     children?: TreeItem[];
 };
 
@@ -81,6 +83,15 @@ export type TabContent = {
 // }));
 
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
+
+export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
+
+export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
+
+export const isNonFunctionalGoal = (
+  label: Label | undefined
+): label is NonFunctionalGoalType =>
+  NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
@@ -261,16 +272,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("Computed treeData:", computedTreeData);
         console.log("Computed tabData:", computedTabData);
     }, [computedTreeData, computedTabData]);
-
-    // const resetData = () => {
-    //   setJsonFileHandle(null);
-    //   del(DataType.JSON);
-    //   setTreeData([]);
-    //   setTabData(initialTabs);
-    //   localStorage.removeItem(LocalStorageType.TREE);
-    //   localStorage.removeItem(LocalStorageType.TAB);
-    // };
-
 
     return (
         <FileContext.Provider value={{
