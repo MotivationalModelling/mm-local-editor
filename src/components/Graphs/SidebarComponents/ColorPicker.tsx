@@ -10,7 +10,7 @@ type ColorPickerProps = {
 
 const ColorPicker = ({selectedColor, onColorChange, className}: ColorPickerProps) => {
     const [showPicker, setShowPicker] = useState(false);
-    const handleButtonClick = () => {
+    const toggleShowColourPicker = () => {
         setShowPicker(!showPicker);
     };
 
@@ -23,10 +23,10 @@ const ColorPicker = ({selectedColor, onColorChange, className}: ColorPickerProps
                 </div>
             )}
             <Button className="w-100"
-                    onClick={handleButtonClick}
+                    onClick={toggleShowColourPicker}
                     size="sm"
                     variant="secondary">
-                Select colour
+                {(showPicker) ? "Hide colour" : "Select colour"}
             </Button>
         </div>
     );

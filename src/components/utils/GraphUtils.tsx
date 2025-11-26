@@ -1,6 +1,7 @@
 import {ClusterGoal, GoalBase} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
-import {Graph, InternalEvent, Cell} from '@maxgraph/core';
+import {Graph, Cell} from '@maxgraph/core';
+import {TreeNode} from "../context/FileProvider.tsx";
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -24,7 +25,7 @@ export function getCellNumericIds(cell: Cell): string[] {
         if (match) {
             return match[2]
                 .split(",")
-                .map(s => s.replace(/[\[\]\s]/g, ""))
+                .map(s => s.replace(/[[\]\s]/g, ""))
                 .filter(s => s.length > 0);
         } else {
             throw new Error(`badly formatted cellId "${cellId}"`);
@@ -140,11 +141,11 @@ export function parseFuncGoalRefId(idStr: string) {
       return {goalId, instanceId};
     });
   }
-}
+};
 
 
 // Treeid stored in the state '8-1'
-export function getRefIdFromInstanceId(instanceId: string) {
+export function getRefIdFromInstanceId(instanceId: TreeNode["instanceId"]) {
     const parts = instanceId.split("-");
     const suffixStr = parts.pop();
     return Number(suffixStr);
@@ -156,11 +157,11 @@ export function getRefIdFromInstanceId(instanceId: string) {
  * - "Nonfunctional" expects an array of numbers, e.g., "Nonfunctional-1,2,3"
  */
 type IdsForType = {
-    Functional: string;
-    Nonfunctional: string[];
-};
+    Functional: string
+    Nonfunctional: string[]
+}
 
-export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForType[T]): string {
+export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForType[T]): string {
     switch (type) {
     case "Functional":
         return `${type}-${ids}`;
@@ -171,7 +172,7 @@ export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForTy
     }
 }
 
-export const parseInstanceId = (instanceId: string) => {
+export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
     const bits = instanceId.split("-").map(s => s.trim());
     if (bits.length !== 2) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);

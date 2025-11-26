@@ -1,10 +1,11 @@
 import {z} from "zod";
+import {TreeNode} from "./context/FileProvider.tsx";
 
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
 
 export interface GoalBase {
     GoalID: number
-    instanceId: string
+    instanceId: TreeNode["instanceId"]
     GoalType: GoalType
     GoalContent: string
     GoalNote: string
@@ -16,13 +17,13 @@ export interface Goal extends GoalBase {
 }
 
 export interface GlobObject {
-    [key: string]: Array<{ instanceId: string; content: string }>;
+    [key: string]: Array<{instanceId: TreeNode["instanceId"]; content: string}>;
 }
 
 // Common base for all goal reference info
 export interface GoalRefId {
   goalId: number;
-  instanceId: string;
+  instanceId: TreeNode["instanceId"];
 }
 
 // Parsed structure for functional goals like "Functional-8-1"
@@ -70,9 +71,13 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
+const instanceId = z.custom<TreeNode["instanceId"]>((val) => {
+  return typeof val === "string" && /^\d+-\d+$/.test(val);
+});
+
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
-    instanceId: z.string(),
+    instanceId: instanceId,
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string(),
