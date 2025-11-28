@@ -20,7 +20,7 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
-import {useFileContext} from "../context/FileProvider.tsx";
+import {TreeNode, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
@@ -74,11 +74,16 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [removeChildren, setRemoveChildren] = useState(false);
-    const deletingItemRef = useRef<Cell[] | null>(null);
+    const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
+
+    const childrenOfSelectedCell = (graph: Graph, selectedCell: Cell): Cell[] => {
+            const outgoingEdges = graph.getOutgoingEdges(selectedCell,null);
+            return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
+    };
 
 
     const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean) => {
-        const cells = deletingItemRef.current;
+        const cells = deletingCells;
         if (!cells || !graph) return;
 
         // 1) Collect all cells that would be removed (including children)
@@ -157,7 +162,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 removeChildren: removeChildrenFlag,
             }));
         });
-
         setShowDeleteWarning(false);
     };
 
@@ -335,7 +339,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     title: "Input Error",
                                     message: "Goal name cannot be empty.",
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
-                                })
+                                });
                                 return;
                             }
 
@@ -343,7 +347,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             const newGoalValues = change.value.split(",");
 
                             // Check if the number of items matches
-                            const nUpdated = numericCellIds.length
+                            const nUpdated = numericCellIds.length;
                             if (nUpdated !== newGoalValues.length) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
@@ -357,11 +361,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
                             }
-
-
                         }
                     }
-
                 } finally {
                     graph.getDataModel().endUpdate();
                     graph.refresh();
@@ -388,15 +389,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 const selectedCells = graph.getSelectionCells();
                 if (!selectedCells || selectedCells.length === 0) return;
 
-                deletingItemRef.current = selectedCells;
+                setDeletingCells(selectedCells);
 
-
-
-                const outgoingEdges = graph.getOutgoingEdges(selectedCells[0], null);
-                const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
-
+                const outgoingEdges = childrenOfSelectedCell(graph, selectedCells[0]);
+                const nAssociatedGoal = outgoingEdges.length;
                 // setRemoveChildren(hasChildren);
-                if (hasChildren) {
+                if (nAssociatedGoal > 0) {
                     setShowDeleteWarning(true);
                 } else {
                     deleteItemFromGraph(graph, false);
@@ -632,6 +630,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
+    const nAssociatedGoal =
+    deletingCells && graph
+        ? childrenOfSelectedCell(graph, deletingCells[0]).length
+        : 0;
 
     return (
         <div style={{position: "relative", width: "100%", height: "100%"}}>
@@ -639,7 +641,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             <ConfirmModal
                 show={showDeleteWarning}
                 title="Delete goal with children"
-                message="The selected goal has children. Confirm you want to delete this goal"
+                message={
+                    <>
+                        The selected goal has {nAssociatedGoal} associated {(nAssociatedGoal === 1) ? 'goal' : 'goals'}
+                        <br/>
+                        Choose below if you also want to delete them.
+                    </>
+                }
                 onHide={() => setShowDeleteWarning(false)}
                 onConfirm={() => {
                     if (graph) {
@@ -652,7 +660,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 extraContent={
                     <Form.Check
                         type="checkbox"
-                        label="Delete all children goals"
+                        label="Delete associated goal(s)"
                         checked={removeChildren}
                         onChange={(e) => setRemoveChildren(e.target.checked)}
                     />

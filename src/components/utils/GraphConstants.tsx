@@ -80,7 +80,7 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
         label: "Who",
     },
     CROWD: {
-        type: "Stakeholder",
+        type: "Crowd",
         shape: "crowdShape",
         imagePath: "img/Stakeholder.png",
         scale: {width: 1, height: 1.2},
