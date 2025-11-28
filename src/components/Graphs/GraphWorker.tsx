@@ -45,6 +45,14 @@ const DELETE_KEYBINDING2 = 46;
 
 // ---------------------------------------------------------------------------
 
+// Extracted outside component - no useCallback needed, better for testing
+const recentreView = (graphInstance: Graph) => {
+    graphInstance.fit();
+    graphInstance.center();
+};
+
+// ---------------------------------------------------------------------------
+
 interface CellHistory {
     [cellID: string]: [width: number | undefined, height: number | undefined];
 }
@@ -187,20 +195,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // changes (comparing previous vs current count) and does not affect UI rendering.
     // Updating a ref doesn't trigger re-renders, which is more efficient for this use case.
     const prevClusterGoalsCountRef = useRef(cluster.ClusterGoals.length);
-
-    const recentreView = useCallback(() => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    }, [graph]);
-
-    const initRecentreView = useCallback(() => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    }, [graph]);
 
     const adjustFontSize = (
         theOldStyle: CellStyle,
@@ -606,12 +600,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
         if (showGraphSection && currentCount > prevCount && graph) {
             requestAnimationFrame(() => {
-                recentreView();
+                recentreView(graph);
             });
         }
 
         prevClusterGoalsCountRef.current = currentCount;
-    }, [cluster.ClusterGoals.length, showGraphSection, graph, recentreView]);
+    }, [cluster.ClusterGoals.length, showGraphSection, graph]);
 
     // Trigger centering when entering render section
     useEffect(() => {
@@ -622,7 +616,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             // before calling fit/center, preventing the "first render" offset.
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    initRecentreView();
+                    recentreView(graph);
                 });
             });
             hasCenteredOnEntryRef.current = true;
@@ -630,7 +624,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
         // Update previous value
         prevShowGraphSectionRef.current = showGraphSection;
-    }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
+    }, [showGraphSection, graph, cluster.ClusterGoals.length]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
@@ -675,7 +669,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                         <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
                     <Col md={2}>
-                        <GraphSidebar graph={graph} recentreView={recentreView} />
+                        <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
