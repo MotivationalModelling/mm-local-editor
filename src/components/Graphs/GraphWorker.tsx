@@ -183,6 +183,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // Track if we have already centered on first entry
     const hasCenteredOnEntryRef = useRef(false);
     const prevShowGraphSectionRef = useRef(false);
+    // Using useRef instead of useState because this value is only used to detect
+    // changes (comparing previous vs current count) and does not affect UI rendering.
+    // Updating a ref doesn't trigger re-renders, which is more efficient for this use case.
     const prevClusterGoalsCountRef = useRef(cluster.ClusterGoals.length);
 
     const recentreView = useCallback(() => {
