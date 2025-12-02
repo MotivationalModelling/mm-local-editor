@@ -14,9 +14,9 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {CrowdShape} from "./GraphShapes.tsx"
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, makeLabelForGoalType} from "../utils/GraphUtils";
+
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -634,40 +634,6 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeLabelForGoalType (items: Array<string>, type: string|undefined): string {
-    let sep = ", ";
-    switch (type) {
-        case "STAKEHOLDER":
-            sep = ",\n";
-            break;
-        default:
-            break;
-    }
-    return makeSquareLabel(items, sep);
-}
-
-
-export function makeSquareLabel(
-    items: Array<string>,
-    sep = ", "
-): string {
-    const n = items.length;
-
-    if (n === 0) {
-        return "";
-    }
-
-    const cols = Math.ceil(Math.sqrt(n));
-    const rows = Math.ceil(n / cols);
-    const lines: string[] = [];
-
-    for (let r = 0; r < rows; r++) {
-        const slice = items.slice(r * cols, (r + 1) * cols);
-        lines.push(slice.join(sep));
-    }
-
-    return lines.join(", \n");
-}
 
 
 export function isGoalNameEmpty(value: string): boolean {

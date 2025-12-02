@@ -181,3 +181,38 @@ export const parseInstanceId = (instanceId: string) => {
 
     return {goalId, refId};
 };
+
+export function makeLabelForGoalType (items: Array<string>, type: string|undefined): string {
+    let sep = ", ";
+    switch (type) {
+        case "STAKEHOLDER":
+            sep = ",\n";
+            break;
+        default:
+            break;
+    }
+    return makeSquareLabel(items, sep);
+}
+
+
+function makeSquareLabel(
+    items: Array<string>,
+    sep = ", "
+): string {
+    const n = items.length;
+
+    if (n === 0) {
+        return "";
+    }
+
+    const cols = Math.ceil(Math.sqrt(n));
+    const rows = Math.ceil(n / cols);
+    const lines: string[] = [];
+
+    for (let r = 0; r < rows; r++) {
+        const slice = items.slice(r * cols, (r + 1) * cols);
+        lines.push(slice.join(sep));
+    }
+
+    return lines.join(",\n");
+}
