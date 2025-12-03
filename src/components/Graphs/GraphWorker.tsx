@@ -188,8 +188,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     //   }
     // };
 
-    // Track if we have already centered on first entry
-    const hasCenteredOnEntryRef = useRef(false);
     const prevShowGraphSectionRef = useRef(false);
     // Using useRef instead of useState because this value is only used to detect
     // changes (comparing previous vs current count) and does not affect UI rendering.
@@ -607,24 +605,21 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         prevClusterGoalsCountRef.current = currentCount;
     }, [cluster.ClusterGoals.length, showGraphSection, graph]);
 
-    // Trigger centering when entering render section
+    // Trigger centering when entering render section (every time, not just first entry)
     useEffect(() => {
-        // Only center when showGraphSection changes from false to true
-        if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-            // MaxGraph finishes its geometry/layout a frame after renderGraph returns.
-            // Double requestAnimationFrame waits until that layout work is flushed
-            // before calling fit/center, preventing the "first render" offset.
+        const justBecameVisible = showGraphSection && !prevShowGraphSectionRef.current;
+
+        if (justBecameVisible && graph && cluster.ClusterGoals.length > 0) {
+            // Double requestAnimationFrame waits for MaxGraph layout to finish
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     recentreView(graph);
                 });
             });
-            hasCenteredOnEntryRef.current = true;
         }
 
-        // Update previous value
         prevShowGraphSectionRef.current = showGraphSection;
-    }, [showGraphSection, graph, cluster.ClusterGoals.length]);
+    }, [showGraphSection, graph]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
