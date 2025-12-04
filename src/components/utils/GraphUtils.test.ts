@@ -4,42 +4,42 @@ import {parseFuncGoalRefId, parseGoalRefId, parseNonFuncGoalRefId} from "./Graph
 describe('parseGoalRefId', () => {
     it('should raise an exception for an empty refId', () => {
         const refId = '';
-        expect(() => parseGoalRefId(refId)).toThrow('Cell id is missing');
+        expect(() => parseGoalRefId(refId)).toThrow('cell id is missing');
     });
     it('should raise an exception for invalid type', () => {
         const refId = 'operational-1-2';
-        expect(() => parseGoalRefId(refId)).toThrow('Unrecognised goal type "operational"');
+        expect(() => parseGoalRefId(refId)).toThrow('unrecognised goal type "operational"');
     });
     it('should raise an exception for invalid format', () => {
         const refId = 'operational;1;2';
-        expect(() => parseGoalRefId(refId)).toThrow('Unrecognised goal type "operational;1;2"');
+        expect(() => parseGoalRefId(refId)).toThrow('malformed cell id "operational;1;2"');
     });
     it('should parse a valid functional id', () => {
         const refId = 'Functional-2-1';
-        expect(() => parseGoalRefId(refId)).toThrow('Unrecognised goal type "operational;1;2"');
+        expect(parseGoalRefId(refId)).toEqual([{goalId: 2, instanceId: "2-1"}]);
     });
     it('should parse a valid non-functional id', () => {
         const refId = 'Nonfunctional-[2-1,1762225479581-1]';
-        expect(() => parseGoalRefId(refId)).toThrow('Unrecognised goal type "operational;1;2"');
+        expect(parseGoalRefId(refId)).toEqual([{goalId: 2, instanceId: "2-1"}, {goalId: 1762225479581, instanceId: "1762225479581-1"}]);
     });
 });
 
 describe('parseFuncGoalRefId', () => {
     it('should raise an exception for an empty id', () => {
         const id = '';
-        expect(() => parseFuncGoalRefId(id)).toThrow('Invalid id: got ""');
+        expect(() => parseFuncGoalRefId(id)).toThrow('invalid id: got ""');
     });
     it('should raise an exception for an empty id', () => {
         const refId = '';
-        expect(() => parseFuncGoalRefId(refId)).toThrow('Invalid id: got ""');
+        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid id: got ""');
     });
     it('should raise an exception for a bad id', () => {
         const refId = '-';
-        expect(() => parseFuncGoalRefId(refId)).toThrow('Invalid id: got "-"');
+        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid id: got "-"');
     });
     it('should raise an exception for a malformed id', () => {
         const refId = '-2';
-        expect(() => parseFuncGoalRefId(refId)).toThrow('Invalid id: got "-2"');
+        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid id: got "-2"');
     });
     it('should parse a well-formed id', () => {
         const refId = '1-2';
@@ -50,15 +50,15 @@ describe('parseFuncGoalRefId', () => {
 describe('parseNonFuncGoalRefId', () => {
     it('should raise an exception for an empty id', () => {
         const refId = '';
-        expect(() => parseNonFuncGoalRefId(refId)).toThrow('Invalid Nonfunctional id: got "".');
+        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid Nonfunctional id: got "".');
     });
     it('should raise an exception for a bad id', () => {
         const refId = '-';
-        expect(() => parseNonFuncGoalRefId(refId)).toThrow('Invalid Nonfunctional id: got "-".');
+        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid Nonfunctional id: got "-".');
     });
     it('should raise an exception for a malformed id', () => {
         const refId = '-2';
-        expect(() => parseNonFuncGoalRefId(refId)).toThrow('Invalid Nonfunctional id: got "-2".');
+        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid Nonfunctional id: got "-2".');
     });
     it('should handle a single pair', () => {
         const refId = '[1-2]';
