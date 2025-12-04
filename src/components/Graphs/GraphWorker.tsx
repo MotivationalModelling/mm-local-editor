@@ -45,6 +45,14 @@ const DELETE_KEYBINDING2 = 46;
 
 // ---------------------------------------------------------------------------
 
+// Extracted outside component - no useCallback needed, better for testing
+const recentreView = (graphInstance: Graph) => {
+    graphInstance.fit();
+    graphInstance.center();
+};
+
+// ---------------------------------------------------------------------------
+
 interface CellHistory {
     [cellID: string]: [width: number | undefined, height: number | undefined];
 }
@@ -180,25 +188,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     //   }
     // };
 
-    // Track if we have already centered on first entry
-    const hasCenteredOnEntryRef = useRef(false);
     const prevShowGraphSectionRef = useRef(false);
-
-
-
-    const recentreView = () => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    };
-
-    const initRecentreView = useCallback(() => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    }, [graph]);
+    // Using useRef instead of useState because this value is only used to detect
+    // changes (comparing previous vs current count) and does not affect UI rendering.
+    // Updating a ref doesn't trigger re-renders, which is more efficient for this use case.
+    const prevClusterGoalsCountRef = useRef(cluster.ClusterGoals.length);
 
     const adjustFontSize = (
         theOldStyle: CellStyle,
@@ -597,21 +591,35 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         }
     }, [cluster, graph, renderGraph]);
 
-    // Trigger centering when entering render section
+    // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {
+        const currentCount = cluster.ClusterGoals.length;
+        const prevCount = prevClusterGoalsCountRef.current;
 
-        // Only center when showGraphSection changes from false to true
-        if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-            // Use setTimeout to ensure centering happens after layout is complete
-            setTimeout(() => {
-                initRecentreView();
-            }, 200);
-            hasCenteredOnEntryRef.current = true;
+        if (showGraphSection && currentCount > prevCount && graph) {
+            requestAnimationFrame(() => {
+                recentreView(graph);
+            });
         }
 
-        // Update previous value
+        prevClusterGoalsCountRef.current = currentCount;
+    }, [cluster.ClusterGoals.length, showGraphSection, graph]);
+
+    // Trigger centering when entering render section (every time, not just first entry)
+    useEffect(() => {
+        const justBecameVisible = showGraphSection && !prevShowGraphSectionRef.current;
+
+        if (justBecameVisible && graph && cluster.ClusterGoals.length > 0) {
+            // Double requestAnimationFrame waits for MaxGraph layout to finish
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    recentreView(graph);
+                });
+            });
+        }
+
         prevShowGraphSectionRef.current = showGraphSection;
-    }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
+    }, [showGraphSection, graph]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
@@ -656,7 +664,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                         <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
                     <Col md={2}>
-                        <GraphSidebar graph={graph} recentreView={recentreView} />
+                        <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
