@@ -92,55 +92,55 @@ export function formatFunGoalRefId(goal: ClusterGoal): string {
     return `${goal.GoalType}-${goal.instanceId}`;
 }
 
-// Convert the cell id in MaxGraph 'Functional-8-1'
-export function parseFuncGoalRefId(idStr: string) {
-
-  if (!idStr) throw new Error("Cell ID is missing.");
-
-  const [typePart] = idStr.split("-", 1);
-  const type = typePart.trim();
-
-  if (type === "Functional") {
-    // Example: Functional-2-1
-    // goalId = 2, instanceId = "2-1"
-    const parts = idStr.split("-");
-    if (parts.length < 3) {
-      throw new Error(
-        `Invalid Functional ID: expected "Functional-GoalId-InstanceId", got "${idStr}".`
-      );
+export const parseFuncGoalRefId = (id: string) => {
+    // Example: Functional-2-1 -> id = "2-1"
+    const parts = id.split("-");
+    if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
+        throw new Error(`Invalid id: got "${id}"`);
     }
 
-    const goalId = Number(parts[1].trim());
+    const goalId = Number(parts[0].trim());
     if (isNaN(goalId)) {
-      throw new Error(`Goal ID must be a number, got "${parts[1]}".`);
+        throw new Error(`Goal id must be a number, got "${parts[0]}"`);
     }
 
     // instanceId should include both goal and instance part
-    const instanceId = `${parts[1].trim()}-${parts[2].trim()}`;
-    return [{goalId, instanceId}];
+    const instanceId = `${parts[0].trim()}-${parts[1].trim()}`;
+    return {goalId, instanceId};
+};
 
-  } else if (type === "Nonfunctional") {
-    // Nonfunctional-[2-1,1762225479581-1]
-    const match = idStr.match(/^Nonfunctional-\[(.+)\]$/);
+export const parseNonFuncGoalRefId = (id: string) => {
+    // Eg, Nonfunctional-[2-1,1762225479581-1] -> [2-1,1762225479581-1]
+    const match = id.match(/^\[(.+)]$/);
     if (!match) {
-      throw new Error(
-        `Invalid Nonfunctional ID: expected "Nonfunctional-[goalId-instanceId,...]", got "${idStr}".`
-      );
+        throw new Error(`Invalid Nonfunctional id: got "${id}"`);
     }
 
     const inner = match[1];
-    const pairs = inner.split(",").map(s => s.trim());
+    const pairs = inner.split(",")
+                               .map((s) => s.trim())
+                               .map((pair) => parseFuncGoalRefId(pair));
 
-    return pairs.map(pair => {
-      const [goalStr, instStr] = pair.split("-");
-      const goalId = Number(goalStr);
-      if (isNaN(goalId)) {
-        throw new Error(`Goal ID must be a number, got "${goalStr}"`);
-      }
-      const instanceId = `${goalStr}-${instStr}`;
-      return {goalId, instanceId};
-    });
-  }
+    return pairs;
+};
+
+// Convert the cell id in MaxGraph 'Functional-8-1'
+export const parseGoalRefId = (refId: string) => {
+    if (!refId) {
+        throw new Error("Cell id is missing");
+    }
+
+    const [typePart, idPart] = refId.split("-", 1);
+    const type = typePart.trim();
+
+    switch (type) {
+    case "Functional":
+        return [parseFuncGoalRefId(idPart)];    // always return as a list
+    case "Nonfunctional":
+        return parseNonFuncGoalRefId(idPart);
+    default:
+        throw new Error(`Unrecognised goal type "${type}"`);
+    }
 };
 
 
