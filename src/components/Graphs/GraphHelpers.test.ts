@@ -25,4 +25,14 @@ describe("makeLabelForGoalType", () => {
 
         expect(result).toBe("A, B");
     });
+
+    it.each(["FUNCTIONAL", "STAKEHOLDER", "EMOTION", "NEGATIVE", "QUALITY"])(
+        "should handle empty array for %s type", 
+        (type) => {
+            const items: string[] = [];
+            const result = makeLabelForGoalType(items, type as SymbolKey);
+
+            expect(result).toBe("");
+        }
+    );
 });
