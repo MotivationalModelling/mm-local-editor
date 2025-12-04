@@ -139,7 +139,7 @@ export const parseGoalRefId = (refId: string) => {
     const type = typePart.trim();
 
     switch (type) {
-        case "Functional":
+    case "Functional":
         try {
             return [parseFuncGoalRefId(idPart)];    // always return as a list
         } catch (error) {
