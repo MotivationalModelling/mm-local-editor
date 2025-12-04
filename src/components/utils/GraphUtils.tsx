@@ -182,18 +182,10 @@ export const parseInstanceId = (instanceId: string) => {
     return {goalId, refId};
 };
 
-export function makeLabelForGoalType (items: Array<string>, type: string|undefined): string {
-    let sep = ", ";
-    switch (type) {
-        case "STAKEHOLDER":
-            sep = ",\n";
-            break;
-        default:
-            break;
-    }
+export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
+    const sep = (type === 'STAKEHOLDER') ? ",\n" : ", ";
     return makeSquareLabel(items, sep);
 }
-
 
 function makeSquareLabel(
     items: Array<string>,

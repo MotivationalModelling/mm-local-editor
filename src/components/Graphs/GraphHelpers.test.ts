@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { makeLabelForGoalType } from "../utils/GraphUtils";
+import {SymbolKey} from "../utils/GraphConstants.tsx";
 
 describe("makeLabelForGoalType", () => {
     it("uses ',\\n' separator when type is STAKEHOLDER", () => {
@@ -9,12 +10,14 @@ describe("makeLabelForGoalType", () => {
         expect(result).toBe("A,\nB,\nC");
     });
 
-    it("uses ', ' separator for other types", () => {
-        const items = ["A", "B", "C"];
-        const result = makeLabelForGoalType(items, "EMOTION");
-
-        expect(result).toBe("A, B,\nC");
-    });
+    it.each(["FUNCTIONAL", "EMOTION", "NEGATIVE", "QUALITY"])(
+        "uses default ', ' separator for %s type, and breaks lines according to square layout",
+        (type) => {
+            const items = ["A", "B", "C"];
+            const result = makeLabelForGoalType(items, type as SymbolKey);
+            expect(result).toBe("A, B,\nC");
+        }
+    );
 
     it("uses default ', ' separator when type is undefined", () => {
         const items = ["A", "B"];
