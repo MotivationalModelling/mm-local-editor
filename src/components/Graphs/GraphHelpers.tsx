@@ -13,8 +13,7 @@ import {
     SYMBOL_CONFIGS,
     SymbolKey
 } from "../utils/GraphConstants.tsx";
-
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, makeLabelForGoalType} from "../utils/GraphUtils";
 import {TreeNode} from "../context/FileProvider.tsx";
 
 // ---------------------------------------------------------------------------
@@ -399,7 +398,7 @@ export const renderNonFunction = (
         width *= config.scale.width;
         height *= config.scale.height;
 
-        // Set the position and delimiter based on symbol type
+        // Set the position based on symbol type
         switch (symbolKey) {
             case "EMOTIONAL": // Top Right
                 x = geo.x + width + OFFSET_X;
@@ -439,7 +438,11 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
-    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+    const squareLabel = makeLabelForGoalType(
+        descriptions.map(d => d.content),
+        symbolKey
+    );
+
 
     console.log("Nonfunctional-goal-dependencies:",descriptions);
     // Insert the vertex
@@ -629,27 +632,7 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeSquareLable(
-    items: Array<string>,
-    sep = ", "
-): string {
-    const n = items.length;
 
-    if (n === 0) {
-        return "";
-    }
-
-    const cols = Math.ceil(Math.sqrt(n));
-    const rows = Math.ceil(n / cols);
-    const lines: string[] = [];
-
-    for (let r = 0; r < rows; r++) {
-        const slice = items.slice(r * cols, (r + 1) * cols);
-        lines.push(slice.join(sep));
-    }
-
-    return lines.join(", \n");
-}
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";

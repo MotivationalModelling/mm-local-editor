@@ -182,3 +182,30 @@ export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
 
     return {goalId, refId};
 };
+
+export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
+    const sep = (type === 'STAKEHOLDER') ? ",\n" : ", ";
+    return makeSquareLabel(items, sep);
+}
+
+function makeSquareLabel(
+    items: Array<string>,
+    sep = ", "
+): string {
+    const n = items.length;
+
+    if (n === 0) {
+        return "";
+    }
+
+    const cols = Math.ceil(Math.sqrt(n));
+    const rows = Math.ceil(n / cols);
+    const lines: string[] = [];
+
+    for (let r = 0; r < rows; r++) {
+        const slice = items.slice(r * cols, (r + 1) * cols);
+        lines.push(slice.join(sep));
+    }
+
+    return lines.join(",\n");
+}
