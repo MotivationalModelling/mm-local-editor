@@ -1,6 +1,7 @@
 import {ClusterGoal} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
-import {Graph, InternalEvent, Cell} from '@maxgraph/core';
+import {Graph, Cell} from '@maxgraph/core';
+import {TreeNode} from "../context/FileProvider.tsx";
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -24,7 +25,7 @@ export function getCellNumericIds(cell: Cell): string[] {
         if (match) {
             return match[2]
                 .split(",")
-                .map(s => s.replace(/[\[\]\s]/g, ""))
+                .map(s => s.replace(/[[\]\s]/g, ""))
                 .filter(s => s.length > 0);
         } else {
             throw new Error(`badly formatted cellId "${cellId}"`);
@@ -91,60 +92,72 @@ export function formatFunGoalRefId(goal: ClusterGoal): string {
     return `${goal.GoalType}-${goal.instanceId}`;
 }
 
-// Convert the cell id in MaxGraph 'Functional-8-1'
-export function parseFuncGoalRefId(idStr: string) {
-
-  if (!idStr) throw new Error("Cell ID is missing.");
-
-  const [typePart] = idStr.split("-", 1);
-  const type = typePart.trim();
-
-  if (type === "Functional") {
-    // Example: Functional-2-1
-    // goalId = 2, instanceId = "2-1"
-    const parts = idStr.split("-");
-    if (parts.length < 3) {
-      throw new Error(
-        `Invalid Functional ID: expected "Functional-GoalId-InstanceId", got "${idStr}".`
-      );
+export const parseFuncGoalRefId = (id: string) => {
+    // Example: Functional-2-1 -> id = "2-1"
+    const parts = id.split("-");
+    if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
+        throw new Error(`invalid id: got "${id}"`);
     }
 
-    const goalId = Number(parts[1].trim());
+    const goalId = Number(parts[0].trim());
     if (isNaN(goalId)) {
-      throw new Error(`Goal ID must be a number, got "${parts[1]}".`);
+        throw new Error(`goal id must be a number, got "${parts[0]}"`);
     }
 
     // instanceId should include both goal and instance part
-    const instanceId = `${parts[1].trim()}-${parts[2].trim()}`;
-    return [{goalId, instanceId}];
+    const instanceId = `${parts[0].trim()}-${parts[1].trim()}`;
+    return {goalId, instanceId};
+};
 
-  } else if (type === "Nonfunctional") {
-    // Nonfunctional-[2-1,1762225479581-1]
-    const match = idStr.match(/^Nonfunctional-\[(.+)\]$/);
+export const parseNonFuncGoalRefId = (id: string) => {
+    // Eg, Nonfunctional-[2-1,1762225479581-1] -> [2-1,1762225479581-1]
+    const match = id.match(/^\[(.+)]$/);
     if (!match) {
-      throw new Error(
-        `Invalid Nonfunctional ID: expected "Nonfunctional-[goalId-instanceId,...]", got "${idStr}".`
-      );
+        throw new Error(`invalid nonfunctional id: got "${id}"`);
     }
 
     const inner = match[1];
-    const pairs = inner.split(",").map(s => s.trim());
+    const pairs = inner.split(",")
+                               .map((s) => s.trim())
+                               .map((pair) => parseFuncGoalRefId(pair));
 
-    return pairs.map(pair => {
-      const [goalStr, instStr] = pair.split("-");
-      const goalId = Number(goalStr);
-      if (isNaN(goalId)) {
-        throw new Error(`Goal ID must be a number, got "${goalStr}"`);
-      }
-      const instanceId = `${goalStr}-${instStr}`;
-      return {goalId, instanceId};
-    });
-  }
-}
+    return pairs;
+};
+
+// Convert the cell id in MaxGraph 'Functional-8-1'
+export const parseGoalRefId = (refId: string) => {
+    if (!refId) {
+        throw new Error("cell id is missing");
+    }
+
+    const n = refId.indexOf('-');
+    if (n === -1) {
+        throw new Error(`malformed cell id "${refId}"`);
+    }
+    const [typePart, idPart] = [refId.slice(0, n), refId.slice(n + 1)];
+    const type = typePart.trim();
+
+    switch (type) {
+    case "Functional":
+        try {
+            return [parseFuncGoalRefId(idPart)];    // always return as a list
+        } catch (error) {
+            throw Error(`invalid functional goal: "${refId}"`);
+        }
+    case "Nonfunctional":
+        try {
+            return parseNonFuncGoalRefId(idPart);
+        } catch (error) {
+            throw Error(`invalid non-functional goal: "${refId}"`);
+        }
+    default:
+        throw new Error(`unrecognised goal type "${type}"`);
+    }
+};
 
 
 // Treeid stored in the state '8-1'
-export function getRefIdFromInstanceId(instanceId: string) {
+export function getRefIdFromInstanceId(instanceId: TreeNode["instanceId"]) {
     const parts = instanceId.split("-");
     const suffixStr = parts.pop();
     return Number(suffixStr);
@@ -156,11 +169,11 @@ export function getRefIdFromInstanceId(instanceId: string) {
  * - "Nonfunctional" expects an array of numbers, e.g., "Nonfunctional-1,2,3"
  */
 type IdsForType = {
-    Functional: string;
-    Nonfunctional: string[];
-};
+    Functional: string
+    Nonfunctional: string[]
+}
 
-export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForType[T]): string {
+export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForType[T]): string {
     switch (type) {
     case "Functional":
         return `${type}-${ids}`;
@@ -171,7 +184,7 @@ export function generateCellId<T extends keyof IdsForType>(type: T,ids: IdsForTy
     }
 }
 
-export const parseInstanceId = (instanceId: string) => {
+export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
     const bits = instanceId.split("-").map(s => s.trim());
     if (bits.length !== 2) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
@@ -181,3 +194,30 @@ export const parseInstanceId = (instanceId: string) => {
 
     return {goalId, refId};
 };
+
+export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
+    const sep = (type === 'STAKEHOLDER') ? ",\n" : ", ";
+    return makeSquareLabel(items, sep);
+}
+
+function makeSquareLabel(
+    items: Array<string>,
+    sep = ", "
+): string {
+    const n = items.length;
+
+    if (n === 0) {
+        return "";
+    }
+
+    const cols = Math.ceil(Math.sqrt(n));
+    const rows = Math.ceil(n / cols);
+    const lines: string[] = [];
+
+    for (let r = 0; r < rows; r++) {
+        const slice = items.slice(r * cols, (r + 1) * cols);
+        lines.push(slice.join(sep));
+    }
+
+    return lines.join(",\n");
+}

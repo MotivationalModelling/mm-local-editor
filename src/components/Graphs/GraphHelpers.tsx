@@ -13,10 +13,8 @@ import {
     SYMBOL_CONFIGS,
     SymbolKey
 } from "../utils/GraphConstants.tsx";
-
-import {CrowdShape} from "./GraphShapes.tsx"
-
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, makeLabelForGoalType} from "../utils/GraphUtils";
+import {TreeNode} from "../context/FileProvider.tsx";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -121,7 +119,7 @@ export const renderGoals = (
     if (!source && rootGoalWrapper.value) {
         key = rootGoalWrapper.value.id?.toString() || ROOT_KEY;
     }
-    console.log("Key2: ", key)
+    console.log("Key2: ", key);
 
     // Store non-functional goals using the determined key
     if (emotions.length) {
@@ -364,12 +362,12 @@ const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{insta
         return config;
     }
     return null;
-}
+};
 
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{ instanceId: string; content: string; }>,
+    descriptions: Array<{instanceId: TreeNode["instanceId"]; content: string;}>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None"
@@ -393,14 +391,14 @@ export const renderNonFunction = (
     // Get symbol key and config
     const symbolKey = getSymbolKeyByType(type);
 
-    const config = getConfigByTypeAndDescriptions(type, descriptions)
+    const config = getConfigByTypeAndDescriptions(type, descriptions);
 
     if (config) {
         shape = config.shape;
         width *= config.scale.width;
         height *= config.scale.height;
 
-        // Set the position and delimiter based on symbol type
+        // Set the position based on symbol type
         switch (symbolKey) {
             case "EMOTIONAL": // Top Right
                 x = geo.x + width + OFFSET_X;
@@ -440,9 +438,13 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
-    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+    const squareLabel = makeLabelForGoalType(
+        descriptions.map(d => d.content),
+        symbolKey
+    );
 
-    console.log("Nonfunctional-goal-dependencies:",descriptions)
+
+    console.log("Nonfunctional-goal-dependencies:",descriptions);
     // Insert the vertex
     const node = graph.insertVertex(
         null,
@@ -454,7 +456,7 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("Nonfunctional-goal-node:",node)
+    console.log("Nonfunctional-goal-node:",node);
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node);
     edge.visible = false; // Make the edge invisible - used in auto layout
@@ -578,11 +580,11 @@ export const associateNonFunctions = (
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
 ) => {
-    console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob)
+    console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob);
     // fetch all the functional goals
     const goals = graph.getChildVertices();
 
-    console.log("Glob;child ", goals)
+    console.log("Glob;child ", goals);
 
     goals.forEach((goal, i) => {
         const value = goal.id?.toString();
@@ -630,27 +632,7 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeSquareLable(
-    items: Array<string>,
-    sep = ", "
-): string {
-    const n = items.length;
 
-    if (n === 0) {
-        return "";
-    }
-
-    const cols = Math.ceil(Math.sqrt(n));
-    const rows = Math.ceil(n / cols);
-    const lines: string[] = [];
-
-    for (let r = 0; r < rows; r++) {
-        const slice = items.slice(r * cols, (r + 1) * cols);
-        lines.push(slice.join(sep));
-    }
-
-    return lines.join(", \n");
-}
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";

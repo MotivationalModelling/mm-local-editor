@@ -20,6 +20,29 @@ import { Label,newTreeItem,TreeItem,TreeNode,TabContent } from "../../data/dataM
 // in-line and it was very hard to maintain and harder to test.
 
 
+// Type of the json data
+export type JSONData = {
+    tabData: TabContent[];
+    treeData: TreeItem[];
+};
+
+type InstanceId = `${number}-${number}`
+
+// Type of the tree item content
+export type TreeItem = {
+    id: number;
+    content: string;
+    type: Label;
+    instanceId: InstanceId;
+    children?: TreeItem[];
+};
+
+// Define the structure for the content of each tab
+export type TabContent = {
+    label: Label
+    icon: string
+    goalIds: TreeItem["id"][]
+}
 
 // // Define the initial tabs with labels and corresponding icons
 // export const tabs: TabContent[] = [
@@ -231,16 +254,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("Computed treeData:", computedTreeData);
         console.log("Computed tabData:", computedTabData);
     }, [computedTreeData, computedTabData]);
-
-    // const resetData = () => {
-    //   setJsonFileHandle(null);
-    //   del(DataType.JSON);
-    //   setTreeData([]);
-    //   setTabData(initialTabs);
-    //   localStorage.removeItem(LocalStorageType.TREE);
-    //   localStorage.removeItem(LocalStorageType.TAB);
-    // };
-
 
     return (
         <FileContext.Provider value={{

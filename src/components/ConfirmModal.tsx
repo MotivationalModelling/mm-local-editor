@@ -4,7 +4,7 @@ import { Modal, Button } from "react-bootstrap";
 export type ConfirmModalProps = {
 	show: boolean;
 	title: string;
-	message: string;
+	message: React.ReactNode;
 	onHide?: () => void;
 	onConfirm: () => void;
 	extraContent?: React.ReactNode

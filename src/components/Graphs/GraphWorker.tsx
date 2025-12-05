@@ -20,7 +20,7 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
-import {useFileContext} from "../context/FileProvider.tsx";
+import {TreeNode, useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
@@ -30,7 +30,7 @@ import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
-import {parseFuncGoalRefId} from "../utils/GraphUtils";
+import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
 // ---------------------------------------------------------------------------
@@ -42,6 +42,14 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
+
+// ---------------------------------------------------------------------------
+
+// Extracted outside component - no useCallback needed, better for testing
+const recentreView = (graphInstance: Graph) => {
+    graphInstance.fit();
+    graphInstance.center();
+};
 
 // ---------------------------------------------------------------------------
 
@@ -74,11 +82,16 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [removeChildren, setRemoveChildren] = useState(false);
-    const deletingItemRef = useRef<Cell[] | null>(null);
+    const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
+
+    const childrenOfSelectedCell = (graph: Graph, selectedCell: Cell): Cell[] => {
+            const outgoingEdges = graph.getOutgoingEdges(selectedCell,null);
+            return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
+    };
 
 
     const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean) => {
-        const cells = deletingItemRef.current;
+        const cells = deletingCells;
         if (!cells || !graph) return;
 
         // 1) Collect all cells that would be removed (including children)
@@ -102,7 +115,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         toRemove.forEach(cell => {
             const id = cell.getId();
             try {
-                const pairs = parseFuncGoalRefId(id!); 
+                const pairs = parseGoalRefId(id!);
                 pairs!.forEach(({ goalId, instanceId }) => {
                 parsedById.set(id!, { goalId, instanceId });
                 });
@@ -157,7 +170,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 removeChildren: removeChildrenFlag,
             }));
         });
-
         setShowDeleteWarning(false);
     };
 
@@ -176,25 +188,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     //   }
     // };
 
-    // Track if we have already centered on first entry
-    const hasCenteredOnEntryRef = useRef(false);
     const prevShowGraphSectionRef = useRef(false);
-
-
-
-    const recentreView = () => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    };
-
-    const initRecentreView = useCallback(() => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    }, [graph]);
+    // Using useRef instead of useState because this value is only used to detect
+    // changes (comparing previous vs current count) and does not affect UI rendering.
+    // Updating a ref doesn't trigger re-renders, which is more efficient for this use case.
+    const prevClusterGoalsCountRef = useRef(cluster.ClusterGoals.length);
 
     const adjustFontSize = (
         theOldStyle: CellStyle,
@@ -336,7 +334,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     title: "Input Error",
                                     message: "Goal name cannot be empty.",
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
-                                })
+                                });
                                 return;
                             }
 
@@ -344,7 +342,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             const newGoalValues = change.value.split(",");
 
                             // Check if the number of items matches
-                            const nUpdated = numericCellIds.length
+                            const nUpdated = numericCellIds.length;
                             if (nUpdated !== newGoalValues.length) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
@@ -358,11 +356,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
                             }
-
-
                         }
                     }
-
                 } finally {
                     graph.getDataModel().endUpdate();
                     graph.refresh();
@@ -389,15 +384,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 const selectedCells = graph.getSelectionCells();
                 if (!selectedCells || selectedCells.length === 0) return;
 
-                deletingItemRef.current = selectedCells;
+                setDeletingCells(selectedCells);
 
-
-
-                const outgoingEdges = graph.getOutgoingEdges(selectedCells[0], null);
-                const hasChildren = outgoingEdges.some(edge => edge.target && edge.target !== selectedCells[0]);
-
+                const outgoingEdges = childrenOfSelectedCell(graph, selectedCells[0]);
+                const nAssociatedGoal = outgoingEdges.length;
                 // setRemoveChildren(hasChildren);
-                if (hasChildren) {
+                if (nAssociatedGoal > 0) {
                     setShowDeleteWarning(true);
                 } else {
                     deleteItemFromGraph(graph, false);
@@ -599,23 +591,41 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         }
     }, [cluster, graph, renderGraph]);
 
-    // Trigger centering when entering render section
+    // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {
+        const currentCount = cluster.ClusterGoals.length;
+        const prevCount = prevClusterGoalsCountRef.current;
 
-        // Only center when showGraphSection changes from false to true
-        if (showGraphSection && !prevShowGraphSectionRef.current && graph && cluster.ClusterGoals.length > 0 && !hasCenteredOnEntryRef.current) {
-            // Use setTimeout to ensure centering happens after layout is complete
-            setTimeout(() => {
-                initRecentreView();
-            }, 200);
-            hasCenteredOnEntryRef.current = true;
+        if (showGraphSection && currentCount > prevCount && graph) {
+            requestAnimationFrame(() => {
+                recentreView(graph);
+            });
         }
 
-        // Update previous value
+        prevClusterGoalsCountRef.current = currentCount;
+    }, [cluster.ClusterGoals.length, showGraphSection, graph]);
+
+    // Trigger centering when entering render section (every time, not just first entry)
+    useEffect(() => {
+        const justBecameVisible = showGraphSection && !prevShowGraphSectionRef.current;
+
+        if (justBecameVisible && graph && cluster.ClusterGoals.length > 0) {
+            // Double requestAnimationFrame waits for MaxGraph layout to finish
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    recentreView(graph);
+                });
+            });
+        }
+
         prevShowGraphSectionRef.current = showGraphSection;
-    }, [showGraphSection, graph, cluster.ClusterGoals.length, initRecentreView]);
+    }, [showGraphSection, graph]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
+    const nAssociatedGoal =
+    deletingCells && graph
+        ? childrenOfSelectedCell(graph, deletingCells[0]).length
+        : 0;
 
     return (
         <div style={{position: "relative", width: "100%", height: "100%"}}>
@@ -623,7 +633,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             <ConfirmModal
                 show={showDeleteWarning}
                 title="Delete goal with children"
-                message="The selected goal has children. Confirm you want to delete this goal"
+                message={
+                    <>
+                        The selected goal has {nAssociatedGoal} associated {(nAssociatedGoal === 1) ? 'goal' : 'goals'}
+                        <br/>
+                        Choose below if you also want to delete them.
+                    </>
+                }
                 onHide={() => setShowDeleteWarning(false)}
                 onConfirm={() => {
                     if (graph) {
@@ -636,7 +652,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 extraContent={
                     <Form.Check
                         type="checkbox"
-                        label="Delete all children goals"
+                        label="Delete associated goal(s)"
                         checked={removeChildren}
                         onChange={(e) => setRemoveChildren(e.target.checked)}
                     />
@@ -648,7 +664,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                         <div id={GRAPH_DIV_ID} ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
                     <Col md={2}>
-                        <GraphSidebar graph={graph} recentreView={recentreView} />
+                        <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
