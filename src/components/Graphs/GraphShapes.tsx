@@ -225,7 +225,7 @@ class PersonShape extends ActorShape {
     w: number,
     h: number
   ): void {
-    c.translate(x + w / 3, y);
+    c.translate(x + w / 5, y);
     c.begin();
     this.redrawPath(c, x, y, w, h);
     c.fillAndStroke();
@@ -238,7 +238,7 @@ class PersonShape extends ActorShape {
     w: number,
     h: number
   ): void {
-    w = w / 3.5;
+    w = w / 1.6;
     c.moveTo(0.02 * w, 0.55 * h);
     c.lineTo(0.02 * w, 0.25 * h);
 
@@ -321,16 +321,17 @@ export class CrowdShape extends ActorShape {
     // Draw the main (normal size) person
     c.save();
     const mainPerson = new PersonShape(this.bounds, this.fill, this.stroke, this.strokeWidth);
-    mainPerson.paintVertexShape(c, 0, 0, w, h);
+    const mainPersonWidth = w / 1.2;
+    mainPerson.paintVertexShape(c, 0, 0, mainPersonWidth, h);
     c.restore();
 
     // Draw the smaller person next to it
     c.save();
     const smallPerson = new PersonShape(this.bounds, this.fill, this.stroke, this.strokeWidth);
-    const smallScale = 0.8; // smaller size
+    const smallScale = 0.8; // smaller height
     const offsetX = w * 0.3; // horizontal offset from main person
     const offsetY = h * 0.2; // slightly lower so they are aligned nicely
-    smallPerson.paintVertexShape(c, offsetX, offsetY, w * smallScale, h * smallScale);
+    smallPerson.paintVertexShape(c, offsetX, offsetY, mainPersonWidth * smallScale, h * smallScale);
     c.restore();
   }
 }
