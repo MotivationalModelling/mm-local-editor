@@ -3,6 +3,7 @@ import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
+import { Label,newTreeItem,TreeItem,TreeNode,TabContent } from "../../data/dataModels.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -18,24 +19,6 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 // Previously the code to manage and update these data structures was all done
 // in-line and it was very hard to maintain and harder to test.
 
-export interface TreeNode {
-    goalId: TreeItem["id"]
-    instanceId: TreeItem["instanceId"]
-    children?: TreeNode[]
-}
-
-// require id and type fields, others optional.
-// create a empty treeItem
-export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
-    const id = initFields.id ?? Date.now();
-    const instanceId = initFields.instanceId ?? `${id}-${0}`;
-    return {
-        id: id,
-        content: "",
-        instanceId,
-        ...initFields
-    }
-};
 
 // Type of the json data
 export type JSONData = {
@@ -81,7 +64,6 @@ export type TabContent = {
 //         },
 //     ]
 // }));
-
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
