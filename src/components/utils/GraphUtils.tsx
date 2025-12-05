@@ -130,7 +130,6 @@ export const parseGoalRefId = (refId: string) => {
         throw new Error("cell id is missing");
     }
 
-    // const [typePart, idPart] = refId.split("-", 1);
     const n = refId.indexOf('-');
     if (n === -1) {
         throw new Error(`malformed cell id "${refId}"`);
