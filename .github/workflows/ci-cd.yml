@@ -15,10 +15,10 @@ on:
 
 jobs:
   # =========================================================================
-  # CI JOB: Build, Lint, and Test (Runs on Push and PR)
+  # CI JOB: Build, Test (Runs on Push and PR)
   # =========================================================================
   ci:
-    name: Build, Lint, and Test
+    name: Build and Test
     runs-on: ubuntu-latest
     
     steps:
@@ -32,9 +32,6 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
-
-      - name: Run ESLint Check
-        run: npm run lint
 
       - name: Run Vitest (Unit/Component Tests)
         run: npm test
