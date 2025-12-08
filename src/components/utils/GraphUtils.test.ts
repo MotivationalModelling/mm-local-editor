@@ -50,15 +50,15 @@ describe('parseFuncGoalRefId', () => {
 describe('parseNonFuncGoalRefId', () => {
     it('should raise an exception for an empty id', () => {
         const refId = '';
-        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid Nonfunctional id: got "".');
+        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid nonfunctional id: got ""');
     });
     it('should raise an exception for a bad id', () => {
         const refId = '-';
-        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid Nonfunctional id: got "-".');
+        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid nonfunctional id: got "-"');
     });
     it('should raise an exception for a malformed id', () => {
         const refId = '-2';
-        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid Nonfunctional id: got "-2".');
+        expect(() => parseNonFuncGoalRefId(refId)).toThrow('invalid nonfunctional id: got "-2"');
     });
     it('should handle a single pair', () => {
         const refId = '[1-2]';
