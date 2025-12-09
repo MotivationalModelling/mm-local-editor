@@ -15,7 +15,7 @@ import {
 } from "../utils/GraphConstants.tsx";
 
 import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType} from "../utils/GraphUtils";
-import {TreeNode} from "../context/FileProvider.tsx";
+import {TreeNode} from "../../data/dataModels.ts";
 
 // ---------------------------------------------------------------------------
 // some image path

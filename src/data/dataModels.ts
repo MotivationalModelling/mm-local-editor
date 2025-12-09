@@ -7,12 +7,14 @@ export interface TreeItem {
   type: Label;
   instanceId: string;
   children?: TreeItem[];
+  color?: string;
 }
 
 export interface TreeNode {
   goalId: TreeItem["id"];
   instanceId: TreeItem["instanceId"];
   children?: TreeNode[];
+  color?: TreeItem["color"];
 }
 
 export interface TabContent {
