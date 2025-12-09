@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils } from "@maxgraph/core";
 
 import {getSymbolConfigByShape} from "../../utils/GraphUtils";
-import {Label, newTreeItem, useFileContext} from "../../context/FileProvider.tsx";
+import {useFileContext} from "../../context/FileProvider.tsx";
+import { Label,newTreeItem} from "../../../data/dataModels.ts";
 import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
 
 import {

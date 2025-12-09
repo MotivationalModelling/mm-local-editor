@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType} from "../utils/GraphUtils";
 import {TreeNode} from "../context/FileProvider.tsx";
 
 // ---------------------------------------------------------------------------
@@ -22,8 +22,10 @@ import {TreeNode} from "../context/FileProvider.tsx";
 // const PATH_EDGE_HANDLER_ICON = "img/link.png";
 
 // default x,y coordinates of the root goal in the graph - (functional graph)
-const SYMBOL_X_COORD = 0;
-const SYMBOL_Y_COORD = 0;
+const DEFAULT_ROOT_GOAL_COORD = {
+    x: 0,
+    y: 0
+}
 
 // scale factor for sizing child goals in the functional hierarchy; functional
 //   goals at each layer should be slightly smaller than their parents
@@ -32,12 +34,16 @@ const CHILD_SIZE_SCALE = 0.9;
 // preferred vertical and horizontal spacing between functional goals; note
 //   the autolayout won't always accomodate these - it will depend on the
 //   topology of the model you are trying to render
-const VERTICAL_SPACING = 80;
-const HORIZONTAL_SPACING = 100;
+const FUNCTIONAL_GOALS_SPACING = {
+    vertical: 80,
+    horizonal: 100
+};
 
 // Offset from functional goal with associated non-functional goal
-const OFFSET_X = 20;
-const OFFSET_Y = 20;
+const FUNCTIONAL_NONFUNCTIONAL_OFFSET = {
+    x: 0,
+    y: 5
+};
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -213,8 +219,8 @@ export const renderFunction = (
         null,
         generateCellId("Functional", goal.instanceId),
         arr.join("\n"),
-        SYMBOL_X_COORD,
-        SYMBOL_Y_COORD,
+        DEFAULT_ROOT_GOAL_COORD.x,
+        DEFAULT_ROOT_GOAL_COORD.y,
         width,
         height,
         style
@@ -403,24 +409,24 @@ export const renderNonFunction = (
         width *= config.scale.width;
         height *= config.scale.height;
 
-        // Set the position and delimiter based on symbol type
+        // Set the position based on symbol type
         switch (symbolKey) {
             case "EMOTIONAL": // Top Right
-                x = geo.x + width + OFFSET_X;
-                y = geo.y - height - OFFSET_Y;
+                x = geo.x + width + FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y - height - FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
             case "NEGATIVE": // Bottom Right
-                x = geo.x + width + OFFSET_X;
-                y = geo.y + OFFSET_Y;
+                x = geo.x + width + FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y + FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
             case "QUALITY": // Top Left
-                x = geo.x - width - OFFSET_X;
-                y = geo.y - height - OFFSET_Y;
+                x = geo.x - width - FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y - height - FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
             case "STAKEHOLDER": // Bottom Left
             case "CROWD":
-                x = geo.x - width - OFFSET_X;
-                y = geo.y + OFFSET_Y;
+                x = geo.x - width - FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y + FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
         }
     } else {
@@ -435,6 +441,17 @@ export const renderNonFunction = (
     style.labelPosition = "center";
     style.spacingTop = 0;
 
+    // Clone edge style
+    const dotted: any = {
+        ...graph.getStylesheet().getDefaultEdgeStyle(),
+        dashed: 1,
+        dashPattern: "3 3",
+        rounded: 1
+    };
+
+    // Put the dotted style in the stylesheet
+    graph.getStylesheet().putCellStyle("dottedEdge", dotted);
+
     // Text goes at bottom for stakeholder
     if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
         style.verticalAlign = "top";
@@ -448,7 +465,10 @@ export const renderNonFunction = (
         style.fillColor = color;
     }
 
-    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+    const squareLabel = makeLabelForGoalType(
+        descriptions.map(d => d.content),
+        symbolKey
+    );
 
     console.log("Nonfunctional-goal-dependencies:",descriptions);
     // Insert the vertex
@@ -464,8 +484,8 @@ export const renderNonFunction = (
     );
     console.log("Nonfunctional-goal-node:",node);
     // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node);
-    edge.visible = false; // Make the edge invisible - used in auto layout
+    const edge = graph.insertEdge(null, null, "", source, node, dotted);
+    // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
@@ -568,8 +588,8 @@ export const renderLegend = (graph: Graph): Cell => {
 export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
     const layout = new GoalModelLayout(
         graph,
-        VERTICAL_SPACING,
-        HORIZONTAL_SPACING
+        FUNCTIONAL_GOALS_SPACING.vertical,
+        FUNCTIONAL_GOALS_SPACING.horizonal
     );
     layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
 };
@@ -647,27 +667,7 @@ export const associateNonFunctions = (
     });
 };
 
-export function makeSquareLable(
-    items: Array<string>,
-    sep = ", "
-): string {
-    const n = items.length;
 
-    if (n === 0) {
-        return "";
-    }
-
-    const cols = Math.ceil(Math.sqrt(n));
-    const rows = Math.ceil(n / cols);
-    const lines: string[] = [];
-
-    for (let r = 0; r < rows; r++) {
-        const slice = items.slice(r * cols, (r + 1) * cols);
-        lines.push(slice.join(sep));
-    }
-
-    return lines.join(", \n");
-}
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";
