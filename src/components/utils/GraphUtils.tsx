@@ -1,7 +1,7 @@
-import {ClusterGoal} from '../types';
+import {ClusterGoal, GoalBase} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
-import {TreeNode} from "../context/FileProvider.tsx";
+import {TreeNode} from "../../data/dataModels";
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -194,6 +194,23 @@ export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
 
     return {goalId, refId};
 };
+
+// Check and retrieve if the non-functional goal has pre-defined color by instanceId
+export const getNonFunctionalGoalColor = (
+    clusterGoals: ClusterGoal[],
+    nonFunctionGoals: Array<{instanceId: string; content: string;}>,
+): string | undefined => {
+    const instanceId = nonFunctionGoals[0].instanceId;
+    const goal = findGoalbyInstanceId(clusterGoals, instanceId);
+    if (goal){
+        return goal.GoalColor;
+    }
+    return undefined;
+}
+
+const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: string): GoalBase | undefined => {
+    return clusterGoals.find((goal) => goal.instanceId === instanceId);
+}
 
 export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
     const sep = (type === 'STAKEHOLDER') ? ",\n" : ", ";

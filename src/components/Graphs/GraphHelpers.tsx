@@ -13,8 +13,9 @@ import {
     SYMBOL_CONFIGS,
     SymbolKey
 } from "../utils/GraphConstants.tsx";
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, makeLabelForGoalType} from "../utils/GraphUtils";
-import {TreeNode} from "../context/FileProvider.tsx";
+
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType} from "../utils/GraphUtils";
+import {TreeNode} from "../../data/dataModels.ts";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -101,7 +102,8 @@ export const renderGoals = (
                 emotionsGlob,
                 negativesGlob,
                 qualitiesGlob,
-                stakeholdersGlob
+                stakeholdersGlob,
+                goal.GoalColor
             );
 
             // accumulate non-functional descriptions into buckets
@@ -179,7 +181,8 @@ export const renderFunction = (
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
+    stakeholdersGlob: GlobObject,
+    goalColor: string | undefined
 ) => {
     const config = SYMBOL_CONFIGS.FUNCTIONAL;
 
@@ -201,6 +204,7 @@ export const renderFunction = (
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
     const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    style.fillColor = goalColor;
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -376,7 +380,8 @@ export const renderNonFunction = (
     descriptions: Array<{instanceId: TreeNode["instanceId"]; content: string;}>,
     graph: Graph,
     source: Cell | null = null,
-    type: string = "None"
+    type: string = "None",
+    color: string | undefined
 ) => {
 
     console.log("Rendering non-functional goal: ", descriptions);
@@ -455,11 +460,15 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
+    // Set the pre-defined color instead of default
+    if (color) {
+        style.fillColor = color;
+    }
+
     const squareLabel = makeLabelForGoalType(
         descriptions.map(d => d.content),
         symbolKey
     );
-
 
     console.log("Nonfunctional-goal-dependencies:",descriptions);
     // Insert the vertex
@@ -590,6 +599,7 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
  * functional goals.
  */
 export const associateNonFunctions = (
+    clusterGoals: ClusterGoal[],
     graph: Graph,
     rootGoal: Cell | null,
     emotionsGlob: GlobObject,
@@ -610,40 +620,48 @@ export const associateNonFunctions = (
 
         // render all concerns
         if (negativesGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, negativesGlob[value]);
             renderNonFunction(
                 negativesGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.NEGATIVE.type
+                SYMBOL_CONFIGS.NEGATIVE.type,
+                color
             );
         }
         // render all stakeholders
         if (stakeholdersGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, stakeholdersGlob[value]);
             renderNonFunction(
                 stakeholdersGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.STAKEHOLDER.type
+                SYMBOL_CONFIGS.STAKEHOLDER.type,
+                color
             );
         }
 
         // render all emotions
         if (emotionsGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, emotionsGlob[value]);
             renderNonFunction(
                 emotionsGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.EMOTIONAL.type
+                SYMBOL_CONFIGS.EMOTIONAL.type,
+                color
             );
         }
 
         // render all qualities
         if (qualitiesGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, qualitiesGlob[value]);
             renderNonFunction(
                 qualitiesGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.QUALITY.type
+                SYMBOL_CONFIGS.QUALITY.type,
+                color
             );
         }
     });

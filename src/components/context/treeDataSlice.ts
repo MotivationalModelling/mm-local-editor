@@ -15,28 +15,28 @@ import {parseInstanceId} from "../utils/GraphUtils.tsx";
 
 export const newTreeNode = (
     treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>,
-  {
-    goalId,
-    instanceId = generateInstanceId(treeIds, goalId),
-    children = [],
-  }: {
-    goalId: TreeItem["id"];
-    instanceId?: TreeItem["instanceId"];
-    children?: TreeNode[];
-  },
+    {
+        goalId,
+        instanceId = generateInstanceId(treeIds, goalId),
+        children = [],
+    }: {
+        goalId: TreeItem["id"];
+        instanceId?: TreeItem["instanceId"];
+        children?: TreeNode[];
+    },
 ) => {
-  // Update treeIds mapping
-  if (treeIds[goalId]) {
-    treeIds[goalId].push(instanceId);
-  } else {
-    treeIds[goalId] = [instanceId];
-  }
+    // Update treeIds mapping
+    if (treeIds[goalId]) {
+        treeIds[goalId].push(instanceId);
+    } else {
+        treeIds[goalId] = [instanceId];
+    }
 
-  return {
-    goalId,
-    instanceId,
-    children,
-  };
+    return {
+        goalId,
+        instanceId,
+        children,
+    };
 };
 
 
@@ -47,7 +47,8 @@ export const createTreeFromTreeData = (
         goalId: ti.id,
         // if ti.instanceId exists, use it, else compute one
         instanceId: ti.instanceId,
-        children: createTreeFromTreeData(ti.children ?? [])
+        children: createTreeFromTreeData(ti.children ?? []),
+        color: ti.color
     }));
 };
 
@@ -153,6 +154,19 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
     };
 };
 
+export const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: TreeNode["instanceId"]): TreeNode | undefined => {
+    for (const node of nodes) {
+        if (node.instanceId === instanceId) {
+            return node;
+        }
+        const matchingNode = findTreeNodeByInstanceId(node.children ?? [], instanceId);
+        if (matchingNode) {
+            return matchingNode;
+        }
+    }
+    return undefined;
+};
+
 export const treeDataSlice = createSlice({
     name: "treeData",
     initialState: {
@@ -230,6 +244,17 @@ export const treeDataSlice = createSlice({
                 content: text
             };
         },
+        updateColorForInstanceId: (state, action: PayloadAction<{
+            instanceId: string,
+            color: string
+        }>) => {
+            const {instanceId, color} = action.payload;
+            const goalId = parseInstanceId(instanceId).goalId;
+            const node = findTreeNodeByInstanceId(state.tree, instanceId);
+            if (node?.goalId === goalId) {
+                node.color = color;
+            }
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeItem[]
@@ -253,6 +278,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

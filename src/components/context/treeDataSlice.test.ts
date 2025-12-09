@@ -3,14 +3,14 @@
 */
 // Leave this (^) or you will see "ReferenceError: document is not defined" from renderHook
 
-import {describe, it, expect, beforeEach, beforeAll} from "vitest";
+import {beforeAll, beforeEach, describe, expect, it} from "vitest";
 import {
     addGoal,
     addGoalToTab, addGoalToTree,
     createInitialState, createTreeFromTreeData,
     deleteGoalFromGoalList, deleteGoalReferenceFromHierarchy, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
     treeDataSlice,
-    updateTextForGoalId
+    updateTextForGoalId, findTreeNodeByInstanceId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
@@ -191,5 +191,38 @@ describe('createTreeFromTreeData', () => {
         const treeData = [] as TreeItem[];
         const tree = createTreeFromTreeData(treeData);
         expect(tree.length).toEqual(treeData.length);
+    });
+});
+
+describe('findTreeNodeByInstanceId', () => {
+    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = {};
+    const testTree = [
+        newTreeNode(treeIds, {
+            goalId: 1,
+            children: [
+                newTreeNode(treeIds, {goalId: 2}),
+                newTreeNode(treeIds, {goalId: 3})
+            ],
+        }),
+        newTreeNode(treeIds, {goalId: 4})
+    ];
+    it('should handle an empty tree', () => {
+        const treeData = [] as TreeItem[];
+        const tree = createTreeFromTreeData(treeData);
+        const instanceId = "2-3";
+        expect(findTreeNodeByInstanceId(tree, instanceId)).toBeUndefined();
+    });
+    it('should return the tree node with correct Id', () => {
+        const targetInstanceId = "1-1";
+        const targetGoalId = 1;
+        expect(findTreeNodeByInstanceId(testTree, targetInstanceId)?.goalId).toBe(targetGoalId);
+    });
+    it('should return the correct tree node in children level', () => {
+        const targetInstanceId = "3-1";
+        const targetGoalId = 3;
+        expect(findTreeNodeByInstanceId(testTree, targetInstanceId)?.goalId).toBe(targetGoalId);
+    });
+    it('should return undefined if node not found', () => {
+        expect(findTreeNodeByInstanceId(testTree, "not-exist")).toBeUndefined;
     });
 });
