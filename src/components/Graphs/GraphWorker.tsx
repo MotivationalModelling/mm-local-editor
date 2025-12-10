@@ -20,7 +20,7 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
 import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
-import {TreeNode, useFileContext} from "../context/FileProvider.tsx";
+import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
@@ -81,6 +81,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+    
     const [removeChildren, setRemoveChildren] = useState(false);
     const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
 
@@ -90,8 +91,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     };
 
 
-    const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean) => {
-        const cells = deletingCells;
+    const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean, cells:Cell[]) => {
+    
         if (!cells || !graph) return;
 
         // 1) Collect all cells that would be removed (including children)
@@ -384,15 +385,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 const selectedCells = graph.getSelectionCells();
                 if (!selectedCells || selectedCells.length === 0) return;
 
-                setDeletingCells(selectedCells);
-
                 const outgoingEdges = childrenOfSelectedCell(graph, selectedCells[0]);
                 const nAssociatedGoal = outgoingEdges.length;
                 // setRemoveChildren(hasChildren);
                 if (nAssociatedGoal > 0) {
-                    setShowDeleteWarning(true);
+                    setDeletingCells(selectedCells)
                 } else {
-                    deleteItemFromGraph(graph, false);
+                    deleteItemFromGraph(graph, false, selectedCells);
                 }
 
                 // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
@@ -643,8 +642,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 }
                 onHide={() => setShowDeleteWarning(false)}
                 onConfirm={() => {
-                    if (graph) {
-                        deleteItemFromGraph(graph, removeChildren);
+                    if (graph&&deletingCells) {
+                        deleteItemFromGraph(graph, removeChildren, deletingCells);
                     } else {
                         console.warn("Graph not initialized yet");
                     }
