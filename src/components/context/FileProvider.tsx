@@ -1,9 +1,8 @@
 import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster, ClusterGoal, GoalType} from "../types.ts";
+import {Cluster, ClusterGoal, GoalType, Label, newTreeItem, TabContent, TreeItem, TreeNode} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
-import { Label,newTreeItem,TreeItem,TreeNode,TabContent } from "../../data/dataModels.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -26,56 +25,6 @@ export type JSONData = {
     treeData: TreeItem[];
 };
 
-type InstanceId = `${number}-${number}`
-
-// Type of the tree item content
-export type TreeItem = {
-    id: number;
-    content: string;
-    type: Label;
-    instanceId: InstanceId;
-    children?: TreeItem[];
-    color?: string;
-};
-
-// Define the structure for the content of each tab
-export type TabContent = {
-    label: Label
-    icon: string
-    goalIds: TreeItem["id"][]
-}
-
-// // Define the initial tabs with labels and corresponding icons
-// export const tabs: TabContent[] = [
-//     {label: "Do", icon: DoIcon, rows: []},
-//     {label: "Be", icon: BeIcon, rows: []},
-//     {label: "Feel", icon: FeelIcon, rows: []},
-//     {label: "Concern", icon: ConcernIcon, rows: []},
-//     {label: "Who", icon: WhoIcon, rows: []},
-// ];
-//
-// export const initialTabs = tabs.map((tab, index) => ({
-//     ...tab,
-//     rows: [
-//         ...tab.rows,
-//         {
-//             id: Date.now() + index,
-//             type: tab.label,
-//             content: "",
-//         },
-//     ]
-// }));
-export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
-
-export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
-
-export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
-
-export const isNonFunctionalGoal = (
-  label: Label | undefined
-): label is NonFunctionalGoalType =>
-  NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
-
 export const DataType = {JSON: "AMMBER_JSON"};
 
 export const LocalStorageType = {
@@ -92,7 +41,7 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem
             if (!treeIds[node.id]) {
                 treeIds[node.id] = [];
             }
-            treeIds[node.id].push(node.instanceId)
+            treeIds[node.id].push(node.instanceId);
             if (node.children && node.children.length > 0) {
                 accumulate(node.children);
             }
@@ -101,9 +50,6 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem
     accumulate(treeData);
     return treeIds
 };
-
-
-
 
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
@@ -190,7 +136,6 @@ const typeMapping: Record<Label, GoalType> = {
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
 export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
-
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
         return {
@@ -270,12 +215,9 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             tabData: computedTabData,
             cluster: convertTreeDataToClusters(state.goals, state.tree),
             xmlData,
-            // setTabData,
-            // setTreeData,
             setXmlData,
             jsonFileHandle,
             setJsonFileHandle,
-            // resetData,
         }}>
             {children}
         </FileContext.Provider>

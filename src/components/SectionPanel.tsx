@@ -4,11 +4,12 @@ import React, { useEffect, useRef, useState } from "react";
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { TreeItem, useFileContext } from "./context/FileProvider";
+import {useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import { addGoalToTree, updateTextForGoalId } from "./context/treeDataSlice.ts";
-import { isEmptyGoal } from "./utils/GoalHint.tsx";
+import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {isEmptyGoal} from "./utils/GoalHint.tsx";
+import {TreeItem} from "./types.ts";
 
 const defaultStyle = {
   display: "flex",

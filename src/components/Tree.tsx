@@ -6,9 +6,8 @@ import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeItem, Label} from "../data/dataModels.ts";
+import {TreeItem, Label, isNonFunctionalGoal} from "../components/types.ts";
 import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
-import {isNonFunctionalGoal} from "./context/FileProvider";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
@@ -17,7 +16,7 @@ import {
   handleContentSave,
   handleGoalKeyPress,
   handleGoalBlur
-} from "../components/utils/GoalHint.tsx"
+} from "./utils/GoalHint.tsx"
 
 import "./Tree.css";
 import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
@@ -113,9 +112,9 @@ const Tree: React.FC<TreeProps> = ({
     deletingItemRef.current = item;
     // const deletingIds = getAllIds(item);
 
-    const deletinginstanceId = getAllGoalInstances(item)
+    const deletingInstanceId = getAllGoalInstances(item);
     if (item.children && item.children.length > 0) {
-      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletinginstanceId])
+      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletingInstanceId])
       // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {

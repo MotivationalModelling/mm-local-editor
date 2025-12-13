@@ -8,7 +8,7 @@ import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
 import Table from "react-bootstrap/Table";
 import {useFileContext} from "./context/FileProvider";
-import { Label,newTreeItem,TreeItem } from "../data/dataModels.ts";
+import {Label, newTreeItem, TreeItem} from "../components/types.ts";
 
 import styles from "./TabButtons.module.css";
 import {BsFillTrash3Fill, BsPlus} from "react-icons/bs";
@@ -74,23 +74,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		// Function to add a new row to the active tab
 		const handleAddRow = (type: Label) => {
 			dispatch(addGoalToTab(newTreeItem({type})));
-			// const newTabData = tabData.map((tab) => {
-			// 	if (tab.label === label) {
-			// 		return {
-			// 			...tab,
-			// 			rows: [
-			// 				...tab.rows,
-			// 				{
-			// 					id: Date.now(),
-			// 					type: tab.label,
-			// 					content: "",
-			// 				},
-			// 			],
-			// 		};
-			// 	}
-			// 	return tab;
-			// });
-			// setTabData(newTabData);
 
 			// Defer code execution until after the browser has finished rendering updates to the DOM.
 			requestAnimationFrame(() => {
@@ -99,22 +82,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				}
 			});
 		};
-
-		// Function to handle changes to input fields (rows) within a tab
-		// const handleRowChange = (label: string, index: number, value: string) => {
-		// 	const newTabData = tabData.map((tab) => {
-		// 		if (tab.label === label) {
-		// 			const newRows = [...tab.rows];
-		// 			newRows[index].content = value;
-		// 			console.log(
-		// 				"id" + newRows[index].id + "content" + newRows[index].content
-		// 			); // Debug log
-		// 			return { ...tab, rows: newRows };
-		// 		}
-		// 		return tab;
-		// 	});
-		// 	setTabData(newTabData);
-		// };
 
 		// Function to update tree data while user finish input changes
 		const handleSave = (treeItem: TreeItem, text: string) => {
@@ -125,7 +92,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 		const handleTableKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, row: TreeItem, label: Label) => {
 			
 			// If we're editing this specific goal
-			if (editingGoalId === row.id && newRowAllowed === false) {
+			if (editingGoalId === row.id && !newRowAllowed) {
 				handleGoalKeyPress(
 					e,
 					row.content, // original content
@@ -147,7 +114,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				);
 			} 
 			// enter to create new row
-			else if (newRowAllowed === true && e.key === "Enter") {
+			else if (newRowAllowed && e.key === "Enter") {
 				// Second Enter after completing edit - only create new row if current row is not empty
 				handleKeyPress(e, label);
 				setNewRowAllowed(false);
@@ -248,19 +215,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 			const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
 
 			if (confirmed) {
-			// 	const newTabData = tabData.map((tab) => {
-			// 		if (tab.label === activeKey) {
-			// 			// Get selected goals
-			// 			const newRows = tab.rows.filter(
-			// 				(row) => !groupSelected.some((selected) => selected.id === row.id)
-			// 			);
-			// 			return { ...tab, rows: newRows };
-			// 		}
-			// 		return tab;
-			// 	});
-			//
-			// 	setTabData(newTabData);
-
 				groupSelected.forEach((item: TreeItem) => dispatch(deleteGoalFromGoalList(item)));
 				setGroupSelected([]); 
 			}
@@ -289,7 +243,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(
 				</div>
 			);
 		};
-		//------------------------------------------------------------------
 
 		return (
 			<div className={styles.tabContainer} ref={ref}>

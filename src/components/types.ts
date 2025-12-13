@@ -1,5 +1,4 @@
 import {z} from "zod";
-import {TreeNode} from "./context/FileProvider.tsx";
 
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
 
@@ -117,3 +116,46 @@ export const GoalModelProjectSchema = z.object({
     Notes: z.string(),
     Note: z.string(),
 });
+
+// // Define the initial tabs with labels and corresponding icons
+export type InstanceId = `${number}-${number}`
+
+// Type of the tree item content
+export type TreeItem = {
+    id: number;
+    content: string;
+    type: Label;
+    instanceId: InstanceId;
+    children?: TreeItem[];
+    color?: string;
+};
+
+export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
+    const id = initFields.id ?? Date.now();
+    const instanceId = initFields.instanceId ?? `${id}-0`;
+
+    return {id, content: "", instanceId, ...initFields};
+};
+
+// Define the structure for the content of each tab
+export type TabContent = {
+    label: Label
+    icon: string
+    goalIds: TreeItem["id"][]
+}
+
+export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
+
+export interface TreeNode {
+    goalId: TreeItem["id"];
+    instanceId: TreeItem["instanceId"];
+    children?: TreeNode[];
+    color?: TreeItem["color"];
+}
+
+export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
+export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
+export const isNonFunctionalGoal = (
+    label: Label | undefined
+): label is NonFunctionalGoalType =>
+    NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);

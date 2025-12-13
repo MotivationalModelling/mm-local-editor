@@ -22,7 +22,7 @@ import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster, GlobObject} from "../types.ts";
+import {Cluster, GlobObject, InstanceId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
@@ -33,8 +33,6 @@ import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
-// ---------------------------------------------------------------------------
-
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
 
@@ -43,21 +41,15 @@ const GRAPH_DIV_ID = "graphContainer";
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
 
-// ---------------------------------------------------------------------------
-
 // Extracted outside component - no useCallback needed, better for testing
 const recentreView = (graphInstance: Graph) => {
     graphInstance.fit();
     graphInstance.center();
 };
 
-// ---------------------------------------------------------------------------
-
 interface CellHistory {
     [cellID: string]: [width: number | undefined, height: number | undefined];
 }
-
-// ---------------------------------------------------------------------------
 
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
@@ -111,14 +103,14 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         // 2) Validate all IDs up-front
         type InvalidInfo = { id: string | null, reason: string };
         const invalids: InvalidInfo[] = [];
-        const parsedById = new Map<string, { goalId: number; instanceId: string }>();
+        const parsedById = new Map<string, {goalId: number; instanceId: InstanceId}>();
 
         toRemove.forEach(cell => {
             const id = cell.getId();
             try {
                 const pairs = parseGoalRefId(id!);
-                pairs!.forEach(({ goalId, instanceId }) => {
-                parsedById.set(id!, { goalId, instanceId });
+                pairs!.forEach(({goalId, instanceId}) => {
+                    parsedById.set(id!, {goalId, instanceId});
                 });
 
             } catch (err) {

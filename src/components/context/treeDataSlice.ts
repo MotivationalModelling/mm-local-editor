@@ -4,13 +4,9 @@ import {
     createTreeDataFromTreeNode,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {Label,
-    TabContent,
-    TreeItem,
-    TreeNode} from "../../data/dataModels.ts"
+import {Label, TabContent, TreeItem, TreeNode} from "../types.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 import {parseInstanceId} from "../utils/GraphUtils.tsx";
-
 
 
 export const newTreeNode = (
@@ -126,7 +122,7 @@ const removeAllReferenceFromHierarchy = (
 };
 
 const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
-    const ids = treeIds[goalId]?.filter((id): id is string => id != null);  // filter out undefined & null
+    const ids = treeIds[goalId]?.filter((id) => id !== null);  // filter out undefined & null
     if (!ids || ids.length === 0) return 0;
     return Math.max(
         ...ids.map((id) => parseInstanceId(id).refId)

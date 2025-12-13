@@ -1,17 +1,15 @@
 /**
 * @jest-environment jsdom
 */
-import {renderHook, act} from '@testing-library/react';
-import {describe, it, expect, beforeAll} from "vitest";
-import FileProvider, {
-    useFileContext,
-    createTreeIdsFromTreeData
-} from "./FileProvider";
-import {newTreeItem, TreeNode} from "../../data/dataModels.ts";
+import {act, renderHook} from '@testing-library/react';
+import {beforeAll, describe, expect, it} from "vitest";
+import FileProvider, {createTreeIdsFromTreeData, useFileContext} from "./FileProvider";
+import {newTreeItem, TreeNode} from "../types.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,
-    addGoalToTab, addGoalToTree,
+    addGoalToTab,
+    addGoalToTree,
     deleteGoalFromGoalList,
     reset,
     updateTextForGoalId,

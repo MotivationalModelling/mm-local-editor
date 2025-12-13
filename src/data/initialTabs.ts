@@ -1,4 +1,4 @@
-import { Label,newTreeItem,TreeItem } from "./dataModels.ts";
+import {Label, newTreeItem, TreeItem} from "../components/types.ts";
 
 import BeIcon from "/img/Cloud.png";
 import DoIcon from "/img/Function.png";
