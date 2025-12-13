@@ -3,7 +3,7 @@ import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils 
 
 import {getSymbolConfigByShape} from "../../utils/GraphUtils";
 import {useFileContext} from "../../context/FileProvider.tsx";
-import { Label,newTreeItem} from "../../../data/dataModels.ts";
+import {Label, newTreeItem} from "../../types.ts";
 import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
 
 import {

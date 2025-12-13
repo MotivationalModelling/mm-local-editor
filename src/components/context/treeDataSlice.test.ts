@@ -6,15 +6,23 @@
 import {beforeAll, beforeEach, describe, expect, it} from "vitest";
 import {
     addGoal,
-    addGoalToTab, addGoalToTree,
-    createInitialState, createTreeFromTreeData,
-    deleteGoalFromGoalList, deleteGoalReferenceFromHierarchy, newTreeNode, removeItemIdFromTree, reset, selectGoalsForLabel,
+    addGoalToTab,
+    addGoalToTree,
+    createInitialState,
+    createTreeFromTreeData,
+    deleteGoalFromGoalList,
+    deleteGoalReferenceFromHierarchy,
+    findTreeNodeByInstanceId,
+    newTreeNode,
+    removeItemIdFromTree,
+    reset,
+    selectGoalsForLabel,
     treeDataSlice,
-    updateTextForGoalId, findTreeNodeByInstanceId
+    updateTextForGoalId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeItem, TreeItem, TreeNode} from "../../data/dataModels.ts";
+import {newTreeItem, TreeItem, TreeNode} from "../types.ts";
 
 describe('treeDataSlice', () => {
     // turns on Map/Set support

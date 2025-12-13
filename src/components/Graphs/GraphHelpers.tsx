@@ -3,7 +3,7 @@ import {
     Rectangle,
     Cell,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject} from "../types.ts";
+import {ClusterGoal, GlobObject, TreeNode} from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
@@ -15,7 +15,6 @@ import {
 } from "../utils/GraphConstants.tsx";
 
 import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType} from "../utils/GraphUtils";
-import {TreeNode} from "../../data/dataModels.ts";
 
 // ---------------------------------------------------------------------------
 // some image path

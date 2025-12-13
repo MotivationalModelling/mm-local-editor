@@ -6,7 +6,7 @@ import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeItem, Label} from "../data/dataModels.ts";
+import {TreeItem, Label} from "../components/types.ts";
 import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
 import {isNonFunctionalGoal} from "./context/FileProvider";
 import {useFileContext} from "./context/FileProvider";
@@ -17,7 +17,7 @@ import {
   handleContentSave,
   handleGoalKeyPress,
   handleGoalBlur
-} from "../components/utils/GoalHint.tsx"
+} from "./utils/GoalHint.tsx"
 
 import "./Tree.css";
 import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";

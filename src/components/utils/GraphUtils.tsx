@@ -1,7 +1,6 @@
-import {ClusterGoal, GoalBase} from '../types';
+import {ClusterGoal, GoalBase, TreeNode} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
-import {TreeNode} from "../../data/dataModels";
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
