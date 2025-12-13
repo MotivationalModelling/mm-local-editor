@@ -65,11 +65,13 @@ jobs:
           
       - name: Install Dependencies and gh-pages
         # Need to install to access `gh-pages` script
-        run: npm install
+        run: npm ci
 
-      - name: Run Predeploy Build
-        # Runs 'npm run build'
-        run: npm run predeploy
+
+      - name: Configure Git Credentials for Custom Deployment 
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy to GitHub Pages
         # The deployment command
