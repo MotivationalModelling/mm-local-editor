@@ -25,15 +25,6 @@ export type JSONData = {
     treeData: TreeItem[];
 };
 
-export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
-
-export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
-
-export const isNonFunctionalGoal = (
-  label: Label | undefined
-): label is NonFunctionalGoalType =>
-  NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
-
 export const DataType = {JSON: "AMMBER_JSON"};
 
 export const LocalStorageType = {
@@ -50,7 +41,7 @@ export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem
             if (!treeIds[node.id]) {
                 treeIds[node.id] = [];
             }
-            treeIds[node.id].push(node.instanceId)
+            treeIds[node.id].push(node.instanceId);
             if (node.children && node.children.length > 0) {
                 accumulate(node.children);
             }
@@ -145,7 +136,6 @@ const typeMapping: Record<Label, GoalType> = {
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
 export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
-
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
         return {
@@ -225,12 +215,9 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             tabData: computedTabData,
             cluster: convertTreeDataToClusters(state.goals, state.tree),
             xmlData,
-            // setTabData,
-            // setTreeData,
             setXmlData,
             jsonFileHandle,
             setJsonFileHandle,
-            // resetData,
         }}>
             {children}
         </FileContext.Provider>
