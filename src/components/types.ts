@@ -152,3 +152,10 @@ export interface TreeNode {
     children?: TreeNode[];
     color?: TreeItem["color"];
 }
+
+export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
+export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
+export const isNonFunctionalGoal = (
+    label: Label | undefined
+): label is NonFunctionalGoalType =>
+    NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);
