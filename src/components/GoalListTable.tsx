@@ -7,12 +7,11 @@ import InputGroup from "react-bootstrap/InputGroup";
 import {Label, newTreeItem, TreeItem} from "./types.ts";
 import {handleGoalBlur, handleGoalKeyPress, isEmptyGoal, isGoalDraggable, isTextEmpty} from "./utils/GoalHint.tsx";
 import {
-	addGoalToTab,
-	deleteGoalFromGoalList,
-	selectGoalsForLabel,
-	updateTextForGoalId
+    addGoalToTab,
+    deleteGoalFromGoalList,
+    selectGoalsForLabel,
+    updateTextForGoalId
 } from "./context/treeDataSlice.ts";
-import styles from "./TabButtons.module.css";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {BsFillTrash3Fill} from "react-icons/bs";
 
@@ -238,8 +237,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
                             />
 
 							{selectGoalsForLabel({treeData}, label).length > 1 && (
-								<Button className={styles.deleteButton}
-										onClick={() => handleDeleteRow(row)}>
+								<Button onClick={() => handleDeleteRow(row)}>
 									<BsFillTrash3Fill/>
 								</Button>
 							)}
