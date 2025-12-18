@@ -9,7 +9,7 @@ import {useFileContext} from "./context/FileProvider";
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
-import {TreeItem} from "./types.ts";
+import {TreeGoal, InstanceId} from "./types.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -56,14 +56,14 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
-  const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
+  const [draggedItem, setDraggedItem] = useState<TreeGoal | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
     const {dispatch, tree} = useFileContext();
 
-  const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
+  const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
-    const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"]}[]>([])
+    const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeGoal["id"]; instanceId: InstanceId}[]>([])
   const [existingError, setExistingError] = useState<boolean>(false);
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
@@ -190,7 +190,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   };
 
   // Handle synchronize data in table data and tree data
-  const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
+  const handleSynTableTree = (treeItem: TreeGoal, editedText: string) => {
     dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
   };
 
@@ -263,7 +263,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeItem, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
+          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>

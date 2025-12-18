@@ -4,7 +4,7 @@ import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 import {useFileContext} from "./context/FileProvider";
-import {Label, newTreeItem, TreeItem} from "./types.ts";
+import {Label, newTreeGoal, TreeGoal} from "./types.ts";
 
 import styles from "./TabButtons.module.css";
 import {BsPlus} from "react-icons/bs";
@@ -13,10 +13,10 @@ import GoalListTable from "./GoalListTable.tsx";
 
 
 type GoalListProps = {
-    setDraggedItem: (item: TreeItem | null) => void;
-    groupSelected: TreeItem[];
-    setGroupSelected: (groupSelected: TreeItem[]) => void;
-    handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
+    setDraggedItem: (item: TreeGoal | null) => void;
+    groupSelected: TreeGoal[];
+    setGroupSelected: (groupSelected: TreeGoal[]) => void;
+    handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
     handleDropGroupSelected: () => void;
 };
 
@@ -38,7 +38,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
 
         // Function to add a new row to the active tab
         const handleAddRow = (type: Label) => {
-            dispatch(addGoalToTab(newTreeItem({type})));
+            dispatch(addGoalToTab(newTreeGoal({type})));
 
             // Defer code execution until after the browser has finished rendering updates to the DOM.
             requestAnimationFrame(() => {
@@ -52,7 +52,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
             const confirmed = window.confirm("Are you sure you want to delete all selected goals?");
 
             if (confirmed) {
-                groupSelected.forEach((item: TreeItem) => dispatch(deleteGoalFromGoalList(item)));
+                groupSelected.forEach((item: TreeGoal) => dispatch(deleteGoalFromGoalList(item)));
                 setGroupSelected([]);
             }
         };
