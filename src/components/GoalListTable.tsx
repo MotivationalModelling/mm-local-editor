@@ -163,7 +163,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 	};
 
     const isGoalInHierarchy = (goal: TreeItem): boolean => {
-        return treeIds[goal.id].length > 0;
+        return treeIds[goal.id]?.length > 0;
     };
 
 	// Select all items in the goals tab
