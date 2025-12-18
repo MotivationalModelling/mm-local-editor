@@ -200,7 +200,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 			<tbody>
 			{goals.map((row, index) => (
 				<tr key={`${label}-${index}`}>
-					<td>
+					<td className="align-middle">
 						<Form.Check type="checkbox"
 									onChange={() => handleCheckboxToggle(row)}
 									checked={isChecked(row)}
