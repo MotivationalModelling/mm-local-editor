@@ -17,7 +17,8 @@ import {
     reset,
     selectGoalsForLabel,
     treeDataSlice,
-    updateTextForGoalId
+    updateTextForGoalId,
+    updateTextForInstanceId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
@@ -91,6 +92,28 @@ describe('treeDataSlice', () => {
         const state2 = treeDataSlice.reducer(initialState, updateTextForGoalId({id: goal.id, text}));
 
         expect(state2.goals[goal.id].content).toEqual(text);
+    });
+    it('should update text of goal in tree by instanceId (canvas double-click edit)', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
+        const newText = "Updated via canvas";
+
+        // Add goal to tabs and tree
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+
+        // Get the instanceId from tree
+        const instanceId = state.treeIds[goal.id][0];
+        expect(instanceId).toBeDefined();
+
+        // Update text via instanceId (simulates canvas double-click edit)
+        state = treeDataSlice.reducer(state, updateTextForInstanceId({instanceId, text: newText}));
+
+        // Verify goals record is updated
+        expect(state.goals[goal.id].content).toEqual(newText);
+
+        // Verify tree node is also updated
+        const treeNode = findTreeGoalByInstanceId(state.tree, instanceId);
+        expect(treeNode?.content).toEqual(newText);
     });
     it('should add a goal to correct tab', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});

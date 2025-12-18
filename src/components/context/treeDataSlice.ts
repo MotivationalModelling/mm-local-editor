@@ -235,10 +235,16 @@ export const treeDataSlice = createSlice({
         }>) => {
             const {instanceId, text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
+            // Update goals record
             state.goals[goalId] = {
                 ...state.goals[goalId],
                 content: text
             };
+            // Also update tree since it now stores full TreeGoal data
+            const node = findTreeGoalByInstanceId(state.tree, instanceId as InstanceId);
+            if (node) {
+                node.content = text;
+            }
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
             instanceId: string,  // Accept string for compatibility
