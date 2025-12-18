@@ -44,13 +44,6 @@ export const createTreeGoalNode = (
     };
 };
 
-/** @deprecated Use createTreeGoalNode instead */
-export const newTreeNode = createTreeGoalNode;
-
-
-/** @deprecated No longer needed - tree now stores TreeGoal directly */
-export const createTreeFromTreeData = (treeData: TreeGoal[]): TreeGoal[] => treeData;
-
 export const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
     label,
     icon,
@@ -165,9 +158,6 @@ export const findTreeGoalByInstanceId = (nodes: TreeGoal[], instanceId: Instance
     }
     return undefined;
 };
-
-/** @deprecated Use findTreeGoalByInstanceId instead */
-export const findTreeNodeByInstanceId = findTreeGoalByInstanceId;
 
 export const treeDataSlice = createSlice({
     name: "treeData",

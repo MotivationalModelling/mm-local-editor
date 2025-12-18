@@ -148,15 +148,6 @@ export type TabContent = {
     goalIds: TreeGoal["id"][]
 }
 
-// ============================================
-// DEPRECATED: TreeNode is now an alias for TreeGoal
-// Will be removed in future refactoring steps
-// ============================================
-/** @deprecated Use TreeGoal instead */
-export type TreeNode = TreeGoal;
-/** @deprecated Use newTreeGoal instead */
-export const newTreeItem = newTreeGoal;
-
 export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
 export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
 export const isNonFunctionalGoal = (

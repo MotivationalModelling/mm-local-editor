@@ -51,9 +51,6 @@ export const createTreeIdsFromTreeData = (treeData: TreeGoal[]): Record<TreeGoal
     return treeIds
 };
 
-/** @deprecated No longer needed - state.tree is now TreeGoal[] directly */
-export const createTreeDataFromTreeNode = (goals: Record<TreeGoal["id"], TreeGoal>, tree: TreeGoal[]): TreeGoal[] => tree;
-
 export const createTabDataFromTabs = (goals: Record<TreeGoal["id"], TreeGoal>, tabs: Map<Label, TabContent>): TabContent[] => {
     // Convert Map<Label, TabContent> to TabContent[]
     // This ensures the tabData is properly derived from the Redux state
