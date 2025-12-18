@@ -25,19 +25,6 @@
   border: none;
 }
 
-/* Style for the button to delete rows */
-.deleteButton {
-  width: 1cm;
-  height: 1cm;
-  border: none; 
-  padding: 0;
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  margin-right: 1.5rem; 
-  margin-left: -1rem;
-}
-
 /* Style for the container of the nav elements */
 .navContainer {
   display: flex;
