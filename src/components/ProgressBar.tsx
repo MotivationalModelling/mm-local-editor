@@ -1,7 +1,7 @@
 import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
 import { Popover, OverlayTrigger } from "react-bootstrap";
-import {BsInfoCircleFill} from "react-icons/bs";
+import {BsFillTrash3Fill, BsInfoCircleFill, BsPlus} from "react-icons/bs";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
 
 enum TabOptions {
@@ -37,21 +37,28 @@ const ProgressBar = ({
   const clusterInfoPopover = (
     <Popover style={{ maxWidth: "max-content" }}>
       <Popover.Body>
-        • Click the goal and use{" "}
-        <strong>
-          <code>[delete]</code>
-        </strong>{" "}
-        to delete a goal <br />• Click the last goal on the goal list and use{" "}
-        <strong>
-          <code>[return]</code>
-        </strong>{" "}
-        to generate a new goal <br />
-        • Drag the goal from the goal list on the left section and drop it into
-        the cluster on the right section
+        <strong>Goal List:</strong>
         <br />
-        • Drag the goal in the cluster to the right or left sides to achieve the
-        hierarchical structure <br />
+        • Click <strong><BsFillTrash3Fill /></strong> or{" "}
+        <strong><code>[Delete Selected]</code></strong> to delete a goal
+        <br />
+        • Click <strong><BsPlus /></strong> or click the last goal entry in the goal list and press{" "}
+        <strong><code>[Enter]</code></strong> to create a new goal
+        <br />
+        • To add goals to the hierarchy view, drag a goal from the goal list 
+        <br />
+        and drop it into the cluster on the right, or select goals and click the{" "}
+        <strong><code>[Add Group]</code></strong> button
+        <br />
+        <br />
+        <strong>Hierarchy View:</strong>
+        <br />
+        • Drag a goal within the cluster to the left or right to create a hierarchical structure
+        <br />
+        • Hide or expand sub-goals by clicking the – / + icon
+        <br />
       </Popover.Body>
+
     </Popover>
   );
 
