@@ -1,4 +1,4 @@
-import {ClusterGoal, GoalBase, TreeItem, TreeNode} from '../types';
+import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
 
@@ -90,10 +90,10 @@ export function fixEditorPosition(graph: Graph) {
 
 // Functional-8-1
 export function formatFunGoalRefId(goal: ClusterGoal) {
-    return `${goal.GoalType}-${goal.instanceId}` as TreeItem["instanceId"];
+    return `${goal.GoalType}-${goal.instanceId}` as InstanceId;
 }
 
-export const parseFuncGoalRefId = (id: string): {goalId: TreeItem["id"], instanceId: TreeItem["instanceId"]} => {
+export const parseFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId} => {
     // Example: Functional-2-1 -> id = "2-1"
     const parts = id.split("-");
     if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
@@ -106,11 +106,11 @@ export const parseFuncGoalRefId = (id: string): {goalId: TreeItem["id"], instanc
     }
 
     // instanceId should include both goal and instance part
-    const instanceId = `${parts[0].trim()}-${parts[1].trim()}` as TreeItem["instanceId"];
+    const instanceId = `${parts[0].trim()}-${parts[1].trim()}` as InstanceId;
     return {goalId, instanceId};
 };
 
-export const parseNonFuncGoalRefId = (id: string): {goalId: TreeItem["id"], instanceId: TreeItem["instanceId"]}[] => {
+export const parseNonFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId}[] => {
     // Eg, Nonfunctional-[2-1,1762225479581-1] -> [2-1,1762225479581-1]
     const match = id.match(/^\[(.+)]$/);
     if (!match) {
@@ -126,7 +126,7 @@ export const parseNonFuncGoalRefId = (id: string): {goalId: TreeItem["id"], inst
 };
 
 // Convert the cell id in MaxGraph 'Functional-8-1'
-export const parseGoalRefId = (refId: string): {goalId: TreeItem["id"], instanceId: TreeItem["instanceId"]}[] => {
+export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instanceId: InstanceId}[] => {
     if (!refId) {
         throw new Error("cell id is missing");
     }
@@ -158,7 +158,7 @@ export const parseGoalRefId = (refId: string): {goalId: TreeItem["id"], instance
 
 
 // Treeid stored in the state '8-1'
-export function getRefIdFromInstanceId(instanceId: TreeNode["instanceId"]) {
+export function getRefIdFromInstanceId(instanceId: InstanceId) {
     const parts = instanceId.split("-");
     const suffixStr = parts.pop();
     return Number(suffixStr);
@@ -185,7 +185,7 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
-export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
+export const parseInstanceId = (instanceId: InstanceId) => {
     const bits = instanceId.split("-").map(s => s.trim());
     if (bits.length !== 2) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
@@ -199,7 +199,7 @@ export const parseInstanceId = (instanceId: TreeNode["instanceId"]) => {
 // Check and retrieve if the non-functional goal has pre-defined color by instanceId
 export const getNonFunctionalGoalColor = (
     clusterGoals: ClusterGoal[],
-    nonFunctionGoals: {instanceId: TreeItem["instanceId"]; content: string;}[],
+    nonFunctionGoals: {instanceId: InstanceId; content: string;}[],
 ): string | undefined => {
     const instanceId = nonFunctionGoals[0].instanceId;
     const goal = findGoalbyInstanceId(clusterGoals, instanceId);
@@ -207,7 +207,7 @@ export const getNonFunctionalGoalColor = (
     return goal?.GoalColor;
 };
 
-const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: TreeItem["instanceId"]): GoalBase | undefined => {
+const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: InstanceId): GoalBase | undefined => {
     return clusterGoals.find((goal) => goal.instanceId === instanceId);
 };
 

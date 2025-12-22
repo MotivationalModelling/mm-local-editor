@@ -4,7 +4,7 @@
 import {act, renderHook} from '@testing-library/react';
 import {beforeAll, describe, expect, it} from "vitest";
 import FileProvider, {createTreeIdsFromTreeData, useFileContext} from "./FileProvider";
-import {newTreeItem, TreeNode} from "../types.ts";
+import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,
@@ -21,7 +21,7 @@ const wrapper = ({ children}:React.PropsWithChildren) => (
 );
 const { result } = renderHook(() => useFileContext(), { wrapper });
 const {dispatch} = result.current;
-const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
 
 // FileProvider provides real data
 // Inner useFileContext will found nearest provider
@@ -118,25 +118,25 @@ describe('FileProvider', () => {
 
     it('should add a goal to the tree', () => {
         let treeData = result.current.tree;
-        expect(treeData).not.toContainEqual(expect.objectContaining({ goalId: goal.id }));
+        expect(treeData).not.toContainEqual(expect.objectContaining({ id: goal.id }));
 
         act(() => dispatch(addGoalToTree(goal)));
         treeData = result.current.tree;
-        expect(treeData).toContainEqual(expect.objectContaining({ goalId: goal.id }));
+        expect(treeData).toContainEqual(expect.objectContaining({ id: goal.id }));
     });
 
     it('should remove a goal and goal id from the tree', () => {
         let treeData = result.current.tree;
-        expect(treeData).toContainEqual(expect.objectContaining({ goalId: goal.id }));
+        expect(treeData).toContainEqual(expect.objectContaining({ id: goal.id }));
 
         act(() => dispatch(deleteGoalFromGoalList(goal)));
         treeData = result.current.tree;
         expect(result.current.treeIds).not.toContain(goal.id);
     });
-    it('should have tree as type TreeNode[]', () => {
+    it('should have tree as type TreeGoal[]', () => {
 
         const {tree} = result.current;
-        const testTree: TreeNode[] = tree;
+        const testTree: TreeGoal[] = tree;
 
         expect(testTree).toBeTruthy();
     });
@@ -144,7 +144,7 @@ describe('FileProvider', () => {
 
 describe('#createTreeIdsFromTreeData', () => {
     it('should handle a single node', () => {
-        const treeData = [newTreeItem({type: "Do", id: 1})];
+        const treeData = [newTreeGoal({type: "Do", id: 1})];
         const treeIds = createTreeIdsFromTreeData(treeData);
 
         expect(Object.keys(treeIds)).toEqual(["1"]);
@@ -152,8 +152,8 @@ describe('#createTreeIdsFromTreeData', () => {
 
     it('should handle a pair of nodes', () => {
         const treeData = [
-            newTreeItem({type: "Do", id: 1}),
-            newTreeItem({type: "Do", id: 2})
+            newTreeGoal({type: "Do", id: 1}),
+            newTreeGoal({type: "Do", id: 2})
         ];
         const treeIds = createTreeIdsFromTreeData(treeData);
 
@@ -161,8 +161,8 @@ describe('#createTreeIdsFromTreeData', () => {
     });
     it('should handle nested nodes', () => {
         const treeData = [
-                newTreeItem({type: "Do", id: 1, children: [
-                    newTreeItem({type: "Do", id: 2})
+                newTreeGoal({type: "Do", id: 1, children: [
+                    newTreeGoal({type: "Do", id: 2})
             ]})
         ];
         const treeIds = createTreeIdsFromTreeData(treeData);

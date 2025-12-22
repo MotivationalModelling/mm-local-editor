@@ -6,7 +6,7 @@ import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeItem, Label, isNonFunctionalGoal} from "../components/types.ts";
+import {TreeGoal, Label, isNonFunctionalGoal, InstanceId} from "../components/types.ts";
 import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
@@ -61,10 +61,10 @@ const iconFromType = (type: Label) => {
 
 type TreeProps = {
   // existingItemIds: number[];
-  handleSynTableTree: (treeItem: TreeItem, editedText: string) => void;
+  handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
   // setExistingItemIds: (existingItemIds: number[]) => void;
-  existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[];
-  setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[]) => void
+  existingGoalReferenceInstanceId: { goalId: TreeGoal["id"]; instanceId: InstanceId }[];
+  setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: { goalId: TreeGoal["id"]; instanceId: InstanceId }[]) => void
 };
 
 // Goal icon in the tree
@@ -92,7 +92,7 @@ const Tree: React.FC<TreeProps> = ({
   const [editedText, setEditedText] = useState<string>("");
   const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
-  const deletingItemRef = useRef<TreeItem | null>(null);
+  const deletingItemRef = useRef<TreeGoal | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const {treeData, dispatch} = useFileContext();
@@ -108,7 +108,7 @@ const Tree: React.FC<TreeProps> = ({
 
 
   // Handle delete button clicked
-  const handleDeleteItem = (item: TreeItem) => {
+  const handleDeleteItem = (item: TreeGoal) => {
     deletingItemRef.current = item;
     // const deletingIds = getAllIds(item);
 
@@ -130,7 +130,7 @@ const Tree: React.FC<TreeProps> = ({
   };
 
   // // Get ids from the tree item
-  // const getAllIds = (item: TreeItem) => {
+  // const getAllIds = (item: TreeGoal) => {
   //   const ids: number[] = [item.id];
 
   //   // If the item has children, recursively collect their ids
@@ -143,7 +143,7 @@ const Tree: React.FC<TreeProps> = ({
   //   return ids;
   // };
 
-  const getAllGoalInstances = (item: TreeItem): { goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"] }[] => {
+  const getAllGoalInstances = (item: TreeGoal): { goalId: TreeGoal["id"]; instanceId: InstanceId }[] => {
     const result = [{goalId: item.id, instanceId: item.instanceId}];
 
     if (item.children) {
@@ -157,7 +157,7 @@ const Tree: React.FC<TreeProps> = ({
 
   // Function for rendering every item
   const renderItem: NestableProps["renderItem"] = ({item, collapseIcon}) => {
-    const treeItem = item as TreeItem;
+    const treeItem = item as TreeGoal;
     const isEditing = editingItemId === treeItem.id;
 
     // Handle when edit button clicked
@@ -356,7 +356,7 @@ const Tree: React.FC<TreeProps> = ({
         onConfirm={deleteItem}
       />
       <Nestable
-        onChange={({items}) => dispatch(setTreeData(items as TreeItem[]))}
+        onChange={({items}) => dispatch(setTreeData(items as TreeGoal[]))}
         confirmChange={({destinationParent}) => !isNonFunctionalGoal(destinationParent?.type)}
         items={treeData}
         renderItem={renderItem}
