@@ -54,8 +54,9 @@ const ProgressBar = ({
         <br />
         <strong>Hierarchy View:</strong>
         <br />
-        • Drag a goal in the left section to adjust the hierarchy. 
-        Drag a goal within the cluster to the left or right to create a hierarchical structure
+        • Drag a goal in the left section to adjust the hierarchy
+        <br />
+        • Drag a goal within the cluster to the left or right to create a hierarchical structure
         <br />
         • Hide or expand sub-goals by clicking the – / + icon
         <br />
