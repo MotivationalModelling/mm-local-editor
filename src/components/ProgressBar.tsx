@@ -2,6 +2,7 @@ import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
 import { Popover, OverlayTrigger } from "react-bootstrap";
 import {BsFillTrash3Fill, BsInfoCircleFill, BsPlus} from "react-icons/bs";
+import {MdDelete, MdEdit} from "react-icons/md";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
 
 enum TabOptions {
@@ -39,10 +40,10 @@ const ProgressBar = ({
       <Popover.Body>
         <strong>Goal List:</strong>
         <br />
-        • Click <strong><BsFillTrash3Fill /></strong> or{" "}
+        • Click <BsFillTrash3Fill /> or{" "}
         <strong><code>[Delete Selected]</code></strong> to delete a goal
         <br />
-        • Click <strong><BsPlus /></strong> or click the last goal entry in the goal list and press{" "}
+        • Click <BsPlus /> or click the last goal entry in the goal list and press{" "}
         <strong><code>[Enter]</code></strong> to create a new goal
         <br />
         • To add goals to the hierarchy view, drag a goal from the goal list 
@@ -53,9 +54,14 @@ const ProgressBar = ({
         <br />
         <strong>Hierarchy View:</strong>
         <br />
-        • Drag a goal within the cluster to the left or right to create a hierarchical structure
+        • Drag a goal in the left section to adjust the hierarchy. 
+        Drag a goal within the cluster to the left or right to create a hierarchical structure
         <br />
         • Hide or expand sub-goals by clicking the – / + icon
+        <br />
+        • Hover over a goal and click <MdEdit /> to edit its name
+        <br />
+        • Hover over a goal and click <MdDelete /> to delete the goal
         <br />
       </Popover.Body>
 
@@ -65,21 +71,22 @@ const ProgressBar = ({
   const graphInfoPopover = (
     <Popover style={{ maxWidth: "max-content" }}>
       <Popover.Body>
-        • Click{" "}
-        <strong>
-          <code>Edit All</code>
-        </strong>{" "}
-        on the left section to edit the names of goals <br />• Click{" "}
-        <strong>
-          <code>Drag All</code>
-        </strong>{" "}
-        on the left section to drag the cluster into the graph on the right
-        section
-        <br />• Click{" "}
-        <strong>
-          <code>Render</code>
-        </strong>{" "}
-        on the left section to generate the goal modal
+        <strong>Hierarchy View:</strong>
+        <br />
+        • Drag a goal in the left section to adjust the hierarchy
+        <br />
+        • Hover over a goal and click <MdEdit /> to edit its name
+        <br />
+        • Hover over a goal and click <MdDelete /> to delete the goal
+        <br />
+        <br />
+        <strong>Model View:</strong>
+        <br />
+        • Select and drag a goal to adjust its position on the graph
+        <br />
+        • Drag elements from the right toolbar onto the graph to add a goal
+        <br />
+        • Double-click the text under a goal in the graph to edit the goal name
         <br />
       </Popover.Body>
     </Popover>
