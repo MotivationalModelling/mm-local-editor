@@ -1,8 +1,9 @@
 import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
-import { Popover, OverlayTrigger } from "react-bootstrap";
-import {BsFillTrash3Fill, BsInfoCircleFill, BsPlus} from "react-icons/bs";
-import {MdDelete, MdEdit} from "react-icons/md";
+import {OverlayTrigger} from "react-bootstrap";
+import {BsInfoCircleFill} from "react-icons/bs";
+import {GraphInfoPopover} from "./InfoPopover/GraphInfoPopover.tsx";
+import {ClusterInfoPopover} from "./InfoPopover/ClusterInfoPopover.tsx";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
 
 enum TabOptions {
@@ -35,64 +36,6 @@ const ProgressBar = ({
     setShowGraphSection(true);
   };
 
-  const clusterInfoPopover = (
-    <Popover style={{ maxWidth: "max-content" }}>
-      <Popover.Body>
-        <strong>Goal List:</strong>
-        <br />
-        • Click <BsFillTrash3Fill /> or{" "}
-        <strong><code>[Delete Selected]</code></strong> to delete a goal
-        <br />
-        • Click <BsPlus /> or click the last goal entry in the goal list and press{" "}
-        <strong><code>[Enter]</code></strong> to create a new goal
-        <br />
-        • To add goals to the hierarchy view, drag a goal from the goal list 
-        <br />
-        and drop it into the cluster on the right, or select goals and click the{" "}
-        <strong><code>[Add Group]</code></strong> button
-        <br />
-        <br />
-        <strong>Hierarchy View:</strong>
-        <br />
-        • Drag a goal in the left section to adjust the hierarchy
-        <br />
-        • Drag a goal within the cluster to the left or right to create a hierarchical structure
-        <br />
-        • Hide or expand sub-goals by clicking the – / + icon
-        <br />
-        • Hover over a goal and click <MdEdit /> to edit its name
-        <br />
-        • Hover over a goal and click <MdDelete /> to delete the goal
-        <br />
-      </Popover.Body>
-
-    </Popover>
-  );
-
-  const graphInfoPopover = (
-    <Popover style={{ maxWidth: "max-content" }}>
-      <Popover.Body>
-        <strong>Hierarchy View:</strong>
-        <br />
-        • Drag a goal in the left section to adjust the hierarchy
-        <br />
-        • Hover over a goal and click <MdEdit /> to edit its name
-        <br />
-        • Hover over a goal and click <MdDelete /> to delete the goal
-        <br />
-        <br />
-        <strong>Model View:</strong>
-        <br />
-        • Select and drag a goal to adjust its position on the graph
-        <br />
-        • Drag elements from the right toolbar onto the graph to add a goal
-        <br />
-        • Double-click the text under a goal in the graph to edit the goal name
-        <br />
-      </Popover.Body>
-    </Popover>
-  );
-
   return (
       <div style={{
           width: "auto",
@@ -108,8 +51,10 @@ const ProgressBar = ({
                 Enter Goals / Arrange Hierarchy
                 <OverlayTrigger trigger="click"
                                 placement="right"
-                                overlay={clusterInfoPopover}>
-                    <span>
+                                overlay={<ClusterInfoPopover />}>
+                    <span
+                      style={{ cursor: "pointer" }}
+                    >
                         <BsInfoCircleFill className="ms-1"/>
                     </span>
                 </OverlayTrigger>
@@ -122,8 +67,10 @@ const ProgressBar = ({
               Arrange Hierarchy / Render Model
               <OverlayTrigger trigger="click"
                               placement="left"
-                              overlay={graphInfoPopover}>
-                  <span>
+                              overlay={<GraphInfoPopover />}>
+                  <span
+                    style={{ cursor: "pointer" }}
+                  >
                       <BsInfoCircleFill className="ms-1"/>
                   </span>
               </OverlayTrigger>

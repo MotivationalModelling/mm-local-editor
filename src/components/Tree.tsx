@@ -7,7 +7,7 @@ import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
 import {TreeItem, Label, isNonFunctionalGoal} from "../components/types.ts";
-import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
+import {BsFillTrash3Fill, BsCheckCircle, BsXCircle, BsPencilSquare } from "react-icons/bs";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
@@ -310,9 +310,9 @@ const Tree: React.FC<TreeProps> = ({
           }}
         >
           {isEditing ? (
-            <MdCheckCircle size={ICON_SIZE} />
+            <BsCheckCircle size={ICON_SIZE} />
           ) : (
-            <MdEdit size={ICON_SIZE} />
+            <BsPencilSquare size={ICON_SIZE} />
           )}
         </div>
         <div
@@ -321,9 +321,9 @@ const Tree: React.FC<TreeProps> = ({
           onMouseEnter={() => setDisableOnBlur(true)}
         >
           {isEditing ? (
-            <MdCancel size={ICON_SIZE} />
+            <BsXCircle size={ICON_SIZE} />
           ) : (
-            <MdDelete size={ICON_SIZE} />
+            <BsFillTrash3Fill size={ICON_SIZE} />
           )}
         </div>
       </div>
