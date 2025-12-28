@@ -35,7 +35,7 @@ const CHILD_SIZE_SCALE = 0.9;
 //   topology of the model you are trying to render
 const FUNCTIONAL_GOALS_SPACING = {
     vertical: 80,
-    horizonal: 100
+    horizonal: 170
 };
 
 // Offset from functional goal with associated non-functional goal
