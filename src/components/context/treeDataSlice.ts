@@ -4,7 +4,7 @@ import {
     createTreeDataFromTreeNode,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {Label, TabContent, TreeItem, TreeNode} from "../types.ts"
+import {InstanceId, Label, TabContent, TreeItem, TreeNode} from "../types.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 import {parseInstanceId} from "../utils/GraphUtils.tsx";
 
@@ -138,7 +138,6 @@ const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId
 
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
-
     const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
@@ -146,7 +145,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         tabs,
         goals,
         tree: createTreeFromTreeData(treeData),
-        treeIds: createTreeIdsFromTreeData(treeData),
+        treeIds: createTreeIdsFromTreeData(goals, treeData),
     };
 };
 
@@ -190,8 +189,9 @@ export const treeDataSlice = createSlice({
             state.tree = createTreeFromTreeData(action.payload);
         },
         addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
-            const node = newTreeNode(state.treeIds,{goalId: action.payload.id});
+            const node = newTreeNode(state.treeIds, {goalId: action.payload.id});
             state.tree.push(node);
+            state.treeIds[action.payload.id] = [];
         },
         // remove goal(s) and its children from canvas
         removeGoalIdFromTree: (state, action: PayloadAction<{
@@ -210,13 +210,13 @@ export const treeDataSlice = createSlice({
             }
             delete state.goals[action.payload.id];
             // remove it and its reference
-            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, undefined)
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, undefined);
             delete state.treeIds[action.payload.id];
         },
         // delete it will not affect the orginal and other reference
         deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<TreeItem>) => {
             // only itself
-            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, action.payload.instanceId)
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, action.payload.instanceId);
             state.treeIds[action.payload.id] = state.treeIds[action.payload.id].filter(node => node !== action.payload.instanceId);
         },
 
@@ -230,7 +230,7 @@ export const treeDataSlice = createSlice({
             };
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
-            instanceId: string,
+            instanceId: InstanceId,
             text: string
         }>) => {
             const {instanceId, text} = action.payload;
@@ -241,7 +241,7 @@ export const treeDataSlice = createSlice({
             };
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
-            instanceId: string,
+            instanceId: InstanceId,
             color: string
         }>) => {
             const {instanceId, color} = action.payload;
