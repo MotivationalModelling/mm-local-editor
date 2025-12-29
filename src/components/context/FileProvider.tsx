@@ -33,21 +33,23 @@ export const LocalStorageType = {
 };
 
 // XXX this should be a Set
-export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem["id"], TreeItem["instanceId"][]> => {
-    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = {}
-    // inner function
-    const accumulate = (nodes: TreeItem[]) => {
+export const createTreeIdsFromTreeData = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeItem[]): Record<TreeItem["id"], TreeItem["instanceId"][]> => {
+    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = Object.fromEntries(Object.keys(goals).map((goalId) => (
+        [Number(goalId), []]
+    )));
+    const addInstanceIdsToTreeIds = (nodes: TreeItem[]) => {
         nodes.forEach((node) => {
-            if (!treeIds[node.id]) {
-                treeIds[node.id] = [];
+            if (treeIds[node.id]) {
+                treeIds[node.id].push(node.instanceId);
+            } else {
+                throw new Error(`goal ${node.id} in tree but not in goal list`);
             }
-            treeIds[node.id].push(node.instanceId);
             if (node.children && node.children.length > 0) {
-                accumulate(node.children);
+                addInstanceIdsToTreeIds(node.children);
             }
         })
     };
-    accumulate(treeData);
+    addInstanceIdsToTreeIds(treeData);
     return treeIds
 };
 
@@ -168,7 +170,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     );
 
     const initialState = createInitialState(tabData, treeData);
-    console.log("transformation from localstorage to data: ", treeData)
+    console.log("transformation from localstorage to data: ", treeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
@@ -176,11 +178,11 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("FileProvider state updated:", state);
     }, [state]);
 
-    // // Listen to changes in redux state and write back to localStorage
+    // Listen to changes in redux state and write back to localStorage
     useEffect(() => {
         // Convert TreeNode[] to TreeItem[] for storage
         // Here we map TreeNode.goalId to TreeItem from state.goals
-        const treeItems = createTreeDataFromTreeNode(state.goals, state.tree)
+        const treeItems = createTreeDataFromTreeNode(state.goals, state.tree);
 
         setTreeData(treeItems);
 
@@ -193,8 +195,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
         setTabData(tabsArray);
     }, [state.tree, state.tabs, state.goals, setTreeData, setTabData]);
-
-
 
     const [xmlData, setXmlData] = useState("");
 
