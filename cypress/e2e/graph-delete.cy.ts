@@ -18,7 +18,7 @@ describe('Graph Deletion UI Tests', () => {
     cy.get('#graphContainer').contains('Concern').should('not.exist');
   });
 
-  it('should show a dialog when delete cells with children)', () => {
+  it('should show a dialog when delete cells with children', () => {
 
     cy.get('#graphContainer').contains('Do').click({ force: true });
 
