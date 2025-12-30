@@ -31,7 +31,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 				<Button variant="secondary" onClick={onHide}>
 					Cancel
 				</Button>
-				<Button variant="warning" onClick={onConfirm} style={{ backgroundColor:"red" }}>
+				<Button variant="warning" data-cy="confirm-delete" onClick={onConfirm} style={{ backgroundColor:"red" }}>
 					Confirm
 				</Button>
 			</Modal.Footer>
