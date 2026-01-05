@@ -61,6 +61,8 @@ const ProgressBar = ({
                     </Popover>
                   }
                 >
+                  {/* Wrap with <span> because OverlayTrigger needs to attach a ref to its child to make it visible;
+                    react-icons components do not forward refs. */}
                   <span>
                     <BsInfoCircleFill className="ms-1"/>
                   </span>
@@ -84,6 +86,8 @@ const ProgressBar = ({
                   </Popover>
                 }
               >
+                {/* Wrap with <span> because OverlayTrigger needs to attach a ref to its child to make it visible;
+                  react-icons components do not forward refs. */}
                 <span>
                   <BsInfoCircleFill className="ms-1"/>
                 </span>
