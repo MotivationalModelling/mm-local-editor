@@ -34,5 +34,3 @@ export const GraphUsageInfo = React.forwardRef<
     </Popover>
   );
 });
-
-GraphUsageInfo.displayName = "GraphUsageInfo";

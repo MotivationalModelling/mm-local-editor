@@ -45,4 +45,3 @@ export const ClusterUsageInfo = React.forwardRef<
   );
 });
 
-ClusterUsageInfo.displayName = "ClusterUsageInfo";
