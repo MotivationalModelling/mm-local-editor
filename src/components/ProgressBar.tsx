@@ -1,10 +1,10 @@
 import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
 import {OverlayTrigger, Popover} from "react-bootstrap";
-import {BsInfoCircleFill} from "react-icons/bs";
 import {GraphUsageInfo} from "./UsageInfo/GraphUsageInfo";
 import {ClusterUsageInfo} from "./UsageInfo/ClusterUsageInfo";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton";
+import {OverlayInfoIcon} from "./UsageInfo/OverlayInfoIcon";
 
 enum TabOptions {
   Cluster,
@@ -61,11 +61,7 @@ const ProgressBar = ({
                     </Popover>
                   }
                 >
-                  {/* Wrap with <span> because OverlayTrigger needs to attach a ref to its child to make it visible;
-                    react-icons components do not forward refs. */}
-                  <span>
-                    <BsInfoCircleFill className="ms-1"/>
-                  </span>
+                  <OverlayInfoIcon />
                 </OverlayTrigger>
               </span>
           </div>
@@ -86,11 +82,7 @@ const ProgressBar = ({
                   </Popover>
                 }
               >
-                {/* Wrap with <span> because OverlayTrigger needs to attach a ref to its child to make it visible;
-                  react-icons components do not forward refs. */}
-                <span>
-                  <BsInfoCircleFill className="ms-1"/>
-                </span>
+                <OverlayInfoIcon />
               </OverlayTrigger>
               <ShowGoalSectionButton showGoalSection={showGoalSection}
                                      onClick={(ev) => {
