@@ -2,9 +2,9 @@ import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
 import {OverlayTrigger, Popover} from "react-bootstrap";
 import {BsInfoCircleFill} from "react-icons/bs";
-import {GraphUsageInfo} from "./UsageInfo/GraphUsageInfo.tsx";
-import {ClusterUsageInfo} from "./UsageInfo/ClusterUsageInfo.tsx";
-import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
+import {GraphUsageInfo} from "./UsageInfo/GraphUsageInfo";
+import {ClusterUsageInfo} from "./UsageInfo/ClusterUsageInfo";
+import ShowGoalSectionButton from "./header/ShowGoalSectionButton";
 
 enum TabOptions {
   Cluster,
@@ -52,6 +52,7 @@ const ProgressBar = ({
                 <OverlayTrigger
                   trigger="click"
                   placement="left"
+                  rootClose
                   overlay={
                     <Popover>
                       <Popover.Body>
@@ -60,7 +61,9 @@ const ProgressBar = ({
                     </Popover>
                   }
                 >
-                  <BsInfoCircleFill className="ms-1"/>
+                  <span>
+                    <BsInfoCircleFill className="ms-1"/>
+                  </span>
                 </OverlayTrigger>
               </span>
           </div>
@@ -72,6 +75,7 @@ const ProgressBar = ({
               <OverlayTrigger
                 trigger="click"
                 placement="left"
+                rootClose
                 overlay={
                   <Popover>
                     <Popover.Body>
@@ -80,7 +84,9 @@ const ProgressBar = ({
                   </Popover>
                 }
               >
-                <BsInfoCircleFill className="ms-1"/>
+                <span>
+                  <BsInfoCircleFill className="ms-1"/>
+                </span>
               </OverlayTrigger>
               <ShowGoalSectionButton showGoalSection={showGoalSection}
                                      onClick={(ev) => {

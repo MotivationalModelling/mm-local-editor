@@ -1,20 +1,9 @@
-import React from "react";
-import {Popover} from "react-bootstrap";
 import {BsFillTrash3Fill, BsPlus, BsPencilSquare} from "react-icons/bs";
 
 
-export const ClusterUsageInfo = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof Popover>
->((props, ref) => {
-  const { children, ...popoverProps } = props;
-
+export const ClusterUsageInfo = () => {
   return (
-    <Popover
-      ref={ref}
-      {...popoverProps}
-    >
-    <Popover.Body>
+    <>
       <strong>Goal List:</strong>
       <br />
       • Click <BsFillTrash3Fill /> or{" "}
@@ -40,8 +29,7 @@ export const ClusterUsageInfo = React.forwardRef<
       • Hover over a goal and click <BsPencilSquare /> to edit its name
       <br />
       • Hover over a goal and click <BsFillTrash3Fill /> to delete the goal
-    </Popover.Body>
-  </Popover>
+    </>
   );
-});
+};
 
