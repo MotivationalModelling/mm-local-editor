@@ -1,9 +1,9 @@
 import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
-import {OverlayTrigger} from "react-bootstrap";
+import {OverlayTrigger, Popover} from "react-bootstrap";
 import {BsInfoCircleFill} from "react-icons/bs";
-import {GraphInfoPopover} from "./InfoPopover/GraphInfoPopover.tsx";
-import {ClusterInfoPopover} from "./InfoPopover/ClusterInfoPopover.tsx";
+import {GraphUsageInfo} from "./UsageInfo/GraphUsageInfo.tsx";
+import {ClusterUsageInfo} from "./UsageInfo/ClusterUsageInfo.tsx";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton.tsx";
 
 enum TabOptions {
@@ -49,14 +49,18 @@ const ProgressBar = ({
                onClick={handleClusterBarClick}>
               <span>
                 Enter Goals / Arrange Hierarchy
-                <OverlayTrigger trigger="click"
-                                placement="right"
-                                overlay={<ClusterInfoPopover />}>
-                    <span
-                      style={{ cursor: "pointer" }}
-                    >
-                        <BsInfoCircleFill className="ms-1"/>
-                    </span>
+                <OverlayTrigger
+                  trigger="click"
+                  placement="left"
+                  overlay={
+                    <Popover>
+                      <Popover.Body>
+                        <ClusterUsageInfo />
+                      </Popover.Body>
+                    </Popover>
+                  }
+                >
+                  <BsInfoCircleFill className="ms-1"/>
                 </OverlayTrigger>
               </span>
           </div>
@@ -65,14 +69,18 @@ const ProgressBar = ({
                onClick={handleGraphBarClick}>
           <span>
               Arrange Hierarchy / Render Model
-              <OverlayTrigger trigger="click"
-                              placement="left"
-                              overlay={<GraphInfoPopover />}>
-                  <span
-                    style={{ cursor: "pointer" }}
-                  >
-                      <BsInfoCircleFill className="ms-1"/>
-                  </span>
+              <OverlayTrigger
+                trigger="click"
+                placement="left"
+                overlay={
+                  <Popover>
+                    <Popover.Body>
+                      <GraphUsageInfo />
+                    </Popover.Body>
+                  </Popover>
+                }
+              >
+                <BsInfoCircleFill className="ms-1"/>
               </OverlayTrigger>
               <ShowGoalSectionButton showGoalSection={showGoalSection}
                                      onClick={(ev) => {

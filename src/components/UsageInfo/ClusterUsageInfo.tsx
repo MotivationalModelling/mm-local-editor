@@ -3,7 +3,7 @@ import {Popover} from "react-bootstrap";
 import {BsFillTrash3Fill, BsPlus, BsPencilSquare} from "react-icons/bs";
 
 
-export const ClusterInfoPopover = React.forwardRef<
+export const ClusterUsageInfo = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof Popover>
 >((props, ref) => {
@@ -45,4 +45,4 @@ export const ClusterInfoPopover = React.forwardRef<
   );
 });
 
-ClusterInfoPopover.displayName = "ClusterInfoPopover";
+ClusterUsageInfo.displayName = "ClusterUsageInfo";

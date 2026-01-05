@@ -2,7 +2,7 @@ import React from "react";
 import { Popover } from "react-bootstrap";
 import { MdDelete, MdEdit } from "react-icons/md";
 
-export const GraphInfoPopover = React.forwardRef<
+export const GraphUsageInfo = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof Popover>
 >((props, ref) => {
@@ -35,4 +35,4 @@ export const GraphInfoPopover = React.forwardRef<
   );
 });
 
-GraphInfoPopover.displayName = "GraphInfoPopover";
+GraphUsageInfo.displayName = "GraphUsageInfo";
