@@ -585,9 +585,22 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             }
         }
     }, [cluster, graph, renderGraph]);
+    
+    // Auto-center when goals in the canvas change (e.g. new goal added)
+    useEffect(() => {
+        const currentCount = cluster.ClusterGoals.length;
+        const prevCount = prevClusterGoalsCountRef.current;
 
-    // Auto-center when goals in the canvas change (e.g. new goal added) or 
-    // when entering render section (every time, not just first entry)
+        if (showGraphSection && currentCount > prevCount && graph) {
+            requestAnimationFrame(() => {
+                recentreView(graph);
+            });
+        }
+
+        prevClusterGoalsCountRef.current = currentCount;
+    }, [cluster.ClusterGoals.length, showGraphSection, graph]);
+
+    // Auto-center when entering render section (every time, not just first entry)
     useEffect(() => {
         if (!showGraphSection || !graph || !divGraph.current) return;
 
