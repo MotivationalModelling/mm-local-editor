@@ -584,35 +584,27 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         }
     }, [cluster, graph, renderGraph]);
 
-    // Auto-center when goals in the canvas change (e.g. new goal added)
+    // Auto-center when goals in the canvas change (e.g. new goal added) or 
+    // when entering render section (every time, not just first entry)
     useEffect(() => {
-        const currentCount = cluster.ClusterGoals.length;
-        const prevCount = prevClusterGoalsCountRef.current;
+        if (!showGraphSection || !graph || cluster.ClusterGoals.length === 0) return;
 
-        if (showGraphSection && currentCount > prevCount && graph) {
-            requestAnimationFrame(() => {
+        let attempts = 0;
+        const maxAttempts = 20;
+
+        const tryCenter = () => {
+            const bounds = graph.getGraphBounds();
+
+            if (bounds && bounds.width > 0 && bounds.height > 0) {
                 recentreView(graph);
-            });
-        }
+            } else if (attempts < maxAttempts) {
+                attempts++;
+                requestAnimationFrame(tryCenter);
+            }
+        };
 
-        prevClusterGoalsCountRef.current = currentCount;
-    }, [cluster.ClusterGoals.length, showGraphSection, graph]);
-
-    // Trigger centering when entering render section (every time, not just first entry)
-    useEffect(() => {
-        const justBecameVisible = showGraphSection && !prevShowGraphSectionRef.current;
-
-        if (justBecameVisible && graph && cluster.ClusterGoals.length > 0) {
-            // Double requestAnimationFrame waits for MaxGraph layout to finish
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    recentreView(graph);
-                });
-            });
-        }
-
-        prevShowGraphSectionRef.current = showGraphSection;
-    }, [showGraphSection, graph]);
+        requestAnimationFrame(tryCenter);
+        }, [showGraphSection, graph, cluster.ClusterGoals.length]);
 
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
