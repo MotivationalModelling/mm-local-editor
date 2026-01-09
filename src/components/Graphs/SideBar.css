@@ -1,0 +1,9 @@
+.responsive-sidebar {
+  width: fit-content;
+}
+
+@media (min-width: 992px) {
+  .responsive-sidebar {
+    max-width: 124px;
+  }
+}

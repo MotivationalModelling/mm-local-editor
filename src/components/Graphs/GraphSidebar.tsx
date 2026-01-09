@@ -1,6 +1,7 @@
 import {Graph} from "@maxgraph/core";
 import SidebarBody from "./SidebarComponents/SidebarBody";
 import SidebarItems from "./SidebarComponents/SidebarItems.tsx";
+import "./SideBar.css";
 
 type recentreViewFunction = () => void;
 
@@ -11,7 +12,8 @@ type GraphSidebarProps = {
 
 const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {
     return (
-        <div>
+        <div className="responsive-sidebar" style={{ width: 'fit-content'}}>
+
             <SidebarBody graph={graph}
                          recentreView={recentreView}
                          className="mt-1"/>

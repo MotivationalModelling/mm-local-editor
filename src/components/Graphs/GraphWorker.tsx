@@ -644,11 +644,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                 }
             />
             <Container>
-                <Row className="row">
-                    <Col md={10}>
+                <Row className="flex-lg-nowrap">
+                    <Col>
                         <div id={GRAPH_DIV_ID} data-cy="graph-canvas" ref={divGraph} tabIndex={0} style={{ outline: 'none' }} />
                     </Col>
-                    <Col md={2}>
+                    <Col  md="auto">
                         <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} />
                     </Col>
                 </Row>

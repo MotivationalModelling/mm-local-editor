@@ -14,7 +14,8 @@ const SidebarBody = ({graph, recentreView, className}: SidebarProps) => {
     if (!graph) return null;
 
     return (
-        <div className={`border border-black p-1 rounded ${className}`}>
+        <div className={`border border-black p-1 rounded ${className}`}
+        style={{width: 'fit-content'}}>
             <CollapsibleSidebarCard isOpen title="Zoom">
                 <ZoomButtons recentreView={recentreView}/>
             </CollapsibleSidebarCard>
