@@ -490,7 +490,7 @@ export const renderNonFunction = (
     const nodeGeo = node.getGeometry();
     const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
 
-    if (nodeGeo && preferred) {
+    if (nodeGeo && preferred && (symbolKey !== "STAKEHOLDER" && symbolKey !== "CROWD")) {
         // Adjust height based on the number of lines and font size
         const lines: string[] = squareLabel.split(/\n/);
         nodeGeo.height = lines.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;
