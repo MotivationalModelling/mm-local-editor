@@ -605,13 +605,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         if (!showGraphSection || !graph || !divGraph.current) return;
 
         const container = divGraph.current;
-        let lastBounds: { width: number; height: number } | null = null;
+        let lastBounds: {width: number; height: number} | null = null;
 
         const observer = new ResizeObserver(() => {
             const bounds = graph.getGraphBounds();
             if (!bounds) return;
 
-            const { width, height } = bounds;
+            const {width, height} = bounds;
 
             // Wait until graph has valid size
             if (width > 0 && height > 0) {
@@ -623,7 +623,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                     observer.disconnect();
                 } else {
                     // Store bounds for next frame
-                    lastBounds = { width, height };
+                    lastBounds = {width, height};
                 }
             }
         });
