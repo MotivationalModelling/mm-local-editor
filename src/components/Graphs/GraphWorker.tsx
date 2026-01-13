@@ -536,8 +536,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             stakeholdersGlob
         );
         graph.getDataModel().endUpdate();
-
-
     }, [graph, cluster]);
 
     // First useEffect to set up graph. Only run on mount.
