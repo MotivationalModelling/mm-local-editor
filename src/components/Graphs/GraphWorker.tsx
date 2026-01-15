@@ -583,29 +583,55 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             }
         }
     }, [cluster, graph, renderGraph]);
-
-    // Auto-center when goals in the canvas change (e.g. new goal added) or 
-    // when entering render section (every time, not just first entry)
+    
+    // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {
-        if (!showGraphSection || !graph || cluster.ClusterGoals.length === 0) return;
+        const currentCount = cluster.ClusterGoals.length;
+        const prevCount = prevClusterGoalsCountRef.current;
 
-        let attempts = 0;
-        const maxAttempts = 20;
-
-        const tryCenter = () => {
-            const bounds = graph.getGraphBounds();
-
-            if (bounds && bounds.width > 0 && bounds.height > 0) {
+        if (showGraphSection && currentCount > prevCount && graph) {
+            requestAnimationFrame(() => {
                 recentreView(graph);
-            } else if (attempts < maxAttempts) {
-                attempts++;
-                requestAnimationFrame(tryCenter);
+            });
+        }
+
+        prevClusterGoalsCountRef.current = currentCount;
+    }, [cluster.ClusterGoals.length, showGraphSection, graph]);
+
+    // Auto-center when entering render section (every time, not just first entry)
+    useEffect(() => {
+        if (!showGraphSection || !graph || !divGraph.current) return;
+
+        const container = divGraph.current;
+        let lastBounds: {width: number; height: number} | null = null;
+
+        const observer = new ResizeObserver(() => {
+            const bounds = graph.getGraphBounds();
+            if (!bounds) return;
+
+            const {width, height} = bounds;
+
+            // Wait until graph has valid size
+            if (width > 0 && height > 0) {
+
+                // Check if bounds are stable (same as last frame)
+                if (lastBounds && lastBounds.width === width && lastBounds.height === height) {
+                    // Graph is finalized -> center and stop observing
+                    recentreView(graph);
+                    observer.disconnect();
+                } else {
+                    // Store bounds for next frame
+                    lastBounds = {width, height};
+                }
             }
-        };
+        });
 
-        requestAnimationFrame(tryCenter);
-        }, [showGraphSection, graph, cluster.ClusterGoals.length]);
+        observer.observe(container);
 
+        return () => observer.disconnect();
+    }, [showGraphSection, graph]);
+
+        
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
         deletingCells && graph
