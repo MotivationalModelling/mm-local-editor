@@ -235,3 +235,5 @@ function makeSquareLabel(items: string[], sep = ", "): string {
 
     return lines.join(",\n");
 }
+
+    export const isTypeAdjustableByText = (symbolKey: SymbolKey | undefined) => (symbolKey !== "STAKEHOLDER" && symbolKey !== "CROWD");
