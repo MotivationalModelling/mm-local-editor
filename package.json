@@ -1,7 +1,7 @@
 {
   "name": "mm-local-editor",
   "private": true,
-  "version": "2025.1",
+  "version": "2025.2",
   "type": "module",
   "homepage": "https://motivationalmodelling.github.io/mm-local-editor",
   "scripts": {
