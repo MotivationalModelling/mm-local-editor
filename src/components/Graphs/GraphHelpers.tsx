@@ -3,7 +3,7 @@ import {
     Rectangle,
     Cell,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject} from "../types.ts";
+import {ClusterGoal, GlobObject, TreeNode} from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
@@ -14,15 +14,17 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
 // const PATH_EDGE_HANDLER_ICON = "img/link.png";
 
 // default x,y coordinates of the root goal in the graph - (functional graph)
-const SYMBOL_X_COORD = 0;
-const SYMBOL_Y_COORD = 0;
+const DEFAULT_ROOT_GOAL_COORD = {
+    x: 0,
+    y: 0
+}
 
 // scale factor for sizing child goals in the functional hierarchy; functional
 //   goals at each layer should be slightly smaller than their parents
@@ -31,12 +33,16 @@ const CHILD_SIZE_SCALE = 0.9;
 // preferred vertical and horizontal spacing between functional goals; note
 //   the autolayout won't always accomodate these - it will depend on the
 //   topology of the model you are trying to render
-const VERTICAL_SPACING = 80;
-const HORIZONTAL_SPACING = 100;
+const FUNCTIONAL_GOALS_SPACING = {
+    vertical: 80,
+    horizonal: 170
+};
 
 // Offset from functional goal with associated non-functional goal
-const OFFSET_X = 20;
-const OFFSET_Y = 20;
+const FUNCTIONAL_NONFUNCTIONAL_OFFSET = {
+    x: 0,
+    y: 5
+};
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
@@ -95,7 +101,8 @@ export const renderGoals = (
                 emotionsGlob,
                 negativesGlob,
                 qualitiesGlob,
-                stakeholdersGlob
+                stakeholdersGlob,
+                goal.GoalColor
             );
 
             // accumulate non-functional descriptions into buckets
@@ -119,7 +126,7 @@ export const renderGoals = (
     if (!source && rootGoalWrapper.value) {
         key = rootGoalWrapper.value.id?.toString() || ROOT_KEY;
     }
-    console.log("Key2: ", key)
+    console.log("Key2: ", key);
 
     // Store non-functional goals using the determined key
     if (emotions.length) {
@@ -173,7 +180,8 @@ export const renderFunction = (
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
+    stakeholdersGlob: GlobObject,
+    goalColor: string | undefined
 ) => {
     const config = SYMBOL_CONFIGS.FUNCTIONAL;
 
@@ -195,6 +203,7 @@ export const renderFunction = (
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
     const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    style.fillColor = goalColor;
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -209,8 +218,8 @@ export const renderFunction = (
         null,
         generateCellId("Functional", goal.instanceId),
         arr.join("\n"),
-        SYMBOL_X_COORD,
-        SYMBOL_Y_COORD,
+        DEFAULT_ROOT_GOAL_COORD.x,
+        DEFAULT_ROOT_GOAL_COORD.y,
         width,
         height,
         style
@@ -347,13 +356,31 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
     graph.getDataModel().setGeometry(node, nodeGeo);
 };
 
+// Get the config type based on the type and the descriptions
+const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{instanceId: string; content: string;}>) => {
+    const symbolKey = getSymbolKeyByType(type);
+    if (symbolKey) {
+        const config = SYMBOL_CONFIGS[symbolKey];
+
+        if (config === SYMBOL_CONFIGS.STAKEHOLDER) {
+            // If there is more than one stakeholder, then change the shape to crowd shape
+            const isMultipleStakeholders = descriptions.length > 1;
+
+            return (isMultipleStakeholders) ? SYMBOL_CONFIGS.CROWD : config;
+        }
+        return config;
+    }
+    return null;
+};
+
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{ instanceId: string; content: string; }>,
+    descriptions: Array<{instanceId: TreeNode["instanceId"]; content: string;}>,
     graph: Graph,
     source: Cell | null = null,
-    type: string = "None"
+    type: string = "None",
+    color: string | undefined
 ) => {
 
     console.log("Rendering non-functional goal: ", descriptions);
@@ -368,40 +395,37 @@ export const renderNonFunction = (
     let y = 0;
     let width = geo.width;
     let height = geo.height;
-    let delimiter = "";
     let shape = "";
 
     // Set the position and size based on the type of non-functional goal
     // Get symbol key and config
     const symbolKey = getSymbolKeyByType(type);
 
-    if (symbolKey) {
-        const config = SYMBOL_CONFIGS[symbolKey];
+    const config = getConfigByTypeAndDescriptions(type, descriptions);
+
+    if (config) {
         shape = config.shape;
         width *= config.scale.width;
         height *= config.scale.height;
 
-        // Set the position and delimiter based on symbol type
+        // Set the position based on symbol type
         switch (symbolKey) {
             case "EMOTIONAL": // Top Right
-                x = geo.x + width + OFFSET_X;
-                y = geo.y - height - OFFSET_Y;
-                delimiter = ", ";
+                x = geo.x + width + FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y - height - FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
             case "NEGATIVE": // Bottom Right
-                x = geo.x + width + OFFSET_X;
-                y = geo.y + OFFSET_Y;
-                delimiter = ", ";
+                x = geo.x + width + FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y + FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
             case "QUALITY": // Top Left
-                x = geo.x - width - OFFSET_X;
-                y = geo.y - height - OFFSET_Y;
-                delimiter = ", ";
+                x = geo.x - width - FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y - height - FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
             case "STAKEHOLDER": // Bottom Left
-                x = geo.x - width - OFFSET_X;
-                y = geo.y + OFFSET_Y;
-                delimiter = "\n";
+            case "CROWD":
+                x = geo.x - width - FUNCTIONAL_NONFUNCTIONAL_OFFSET.x;
+                y = geo.y + FUNCTIONAL_NONFUNCTIONAL_OFFSET.y;
                 break;
         }
     } else {
@@ -416,6 +440,17 @@ export const renderNonFunction = (
     style.labelPosition = "center";
     style.spacingTop = 0;
 
+    // Clone edge style
+    const dotted: any = {
+        ...graph.getStylesheet().getDefaultEdgeStyle(),
+        dashed: 1,
+        dashPattern: "3 3",
+        rounded: 1
+    };
+
+    // Put the dotted style in the stylesheet
+    graph.getStylesheet().putCellStyle("dottedEdge", dotted);
+
     // Text goes at bottom for stakeholder
     if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
         style.verticalAlign = "top";
@@ -424,9 +459,17 @@ export const renderNonFunction = (
         style.fillColor = "grey";
     }
 
-    const squareLabel = makeSquareLable(descriptions.map(d => d.content), ", ");
+    // Set the pre-defined color instead of default
+    if (color) {
+        style.fillColor = color;
+    }
 
-    console.log("Nonfunctional-goal-dependencies:",descriptions)
+    const squareLabel = makeLabelForGoalType(
+        descriptions.map(d => d.content),
+        symbolKey
+    );
+
+    console.log("Nonfunctional-goal-dependencies:",descriptions);
     // Insert the vertex
     const node = graph.insertVertex(
         null,
@@ -438,16 +481,16 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("Nonfunctional-goal-node:",node)
+    console.log("Nonfunctional-goal-node:",node);
     // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node);
-    edge.visible = false; // Make the edge invisible - used in auto layout
+    const edge = graph.insertEdge(null, null, "", source, node, dotted);
+    // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
     const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
-
-    if (nodeGeo && preferred) {
+    
+    if (nodeGeo && preferred && isTypeAdjustableByText(symbolKey)) {
         // Adjust height based on the number of lines and font size
         const lines: string[] = squareLabel.split(/\n/);
         nodeGeo.height = lines.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;
@@ -544,8 +587,8 @@ export const renderLegend = (graph: Graph): Cell => {
 export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
     const layout = new GoalModelLayout(
         graph,
-        VERTICAL_SPACING,
-        HORIZONTAL_SPACING
+        FUNCTIONAL_GOALS_SPACING.vertical,
+        FUNCTIONAL_GOALS_SPACING.horizonal
     );
     layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
 };
@@ -555,6 +598,7 @@ export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
  * functional goals.
  */
 export const associateNonFunctions = (
+    clusterGoals: ClusterGoal[],
     graph: Graph,
     rootGoal: Cell | null,
     emotionsGlob: GlobObject,
@@ -562,11 +606,11 @@ export const associateNonFunctions = (
     qualitiesGlob: GlobObject,
     stakeholdersGlob: GlobObject
 ) => {
-    console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob)
+    console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob);
     // fetch all the functional goals
     const goals = graph.getChildVertices();
 
-    console.log("Glob;child ", goals)
+    console.log("Glob;child ", goals);
 
     goals.forEach((goal, i) => {
         const value = goal.id?.toString();
@@ -575,66 +619,54 @@ export const associateNonFunctions = (
 
         // render all concerns
         if (negativesGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, negativesGlob[value]);
             renderNonFunction(
                 negativesGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.NEGATIVE.type
+                SYMBOL_CONFIGS.NEGATIVE.type,
+                color
             );
         }
         // render all stakeholders
         if (stakeholdersGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, stakeholdersGlob[value]);
             renderNonFunction(
                 stakeholdersGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.STAKEHOLDER.type
+                SYMBOL_CONFIGS.STAKEHOLDER.type,
+                color
             );
         }
 
         // render all emotions
         if (emotionsGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, emotionsGlob[value]);
             renderNonFunction(
                 emotionsGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.EMOTIONAL.type
+                SYMBOL_CONFIGS.EMOTIONAL.type,
+                color
             );
         }
 
         // render all qualities
         if (qualitiesGlob[value]) {
+            const color = getNonFunctionalGoalColor(clusterGoals, qualitiesGlob[value]);
             renderNonFunction(
                 qualitiesGlob[value],
                 graph,
                 goal,
-                SYMBOL_CONFIGS.QUALITY.type
+                SYMBOL_CONFIGS.QUALITY.type,
+                color
             );
         }
     });
 };
 
-export function makeSquareLable(
-    items: Array<string>,
-    sep = ", "
-): string {
-    const n = items.length;
 
-    if (n === 0) {
-        return "";
-    }
-
-    const cols = Math.ceil(Math.sqrt(n));
-    const rows = Math.ceil(n / cols);
-    const lines: string[] = [];
-
-    for (let r = 0; r < rows; r++) {
-        const slice = items.slice(r * cols, (r + 1) * cols);
-        lines.push(slice.join(sep));
-    }
-
-    return lines.join(", \n");
-}
 
 export function isGoalNameEmpty(value: string): boolean {
     return !value || value.trim() === "";

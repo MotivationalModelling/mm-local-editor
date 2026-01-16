@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils } from "@maxgraph/core";
 
 import {getSymbolConfigByShape} from "../../utils/GraphUtils";
-import {Label, newTreeItem, useFileContext} from "../../context/FileProvider.tsx";
+import {useFileContext} from "../../context/FileProvider.tsx";
+import {Label, newTreeItem} from "../../types.ts";
 import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
 
 import {
@@ -151,7 +152,9 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
     sidebar.enabled = false;
 
     // Add all symbol nodes to the sidebar
-    Object.values(SYMBOL_CONFIGS).forEach(config => {
+    Object.values(SYMBOL_CONFIGS)
+    .filter((config) => config.type !== "Crowd")   // skip the crowd symbol since it stands for a group of stakeholders
+    .forEach((config) => {
       addSidebarItem(
         graph,
         sidebar,

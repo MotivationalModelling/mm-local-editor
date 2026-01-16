@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+
+# -------------------------------------------------------------------------
+# 1. Triggers
+# The workflow runs on push to any branch and on pull requests targeting 'develop'.
+# -------------------------------------------------------------------------
+on:
+  push:
+    # Run on every push to ALL branches (by omitting 'branches' key)
+    # This covers your requirement: "any branch push will run ci"
+  pull_request:
+    # Run when a PR is opened, updated, or synchronized, targeting the 'develop' branch
+    branches:
+      - develop
+
+jobs:
+  # =========================================================================
+  # CI JOB: Build, Test (Runs on Push and PR)
+  # =========================================================================
+  ci:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Vitest (Unit/Component Tests)
+        run: npm test
+
+      - name: Run Vite Build Check
+        run: npm run build
+
+      - name: Run Cypress E2E Tests
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run dev
+          wait-on: 'http://localhost:5173/mm-local-editor/'
+  # =========================================================================
+  # CD JOB: Deploy to GitHub Pages
+  # Runs ONLY on PUSH to the 'develop' branch (which happens after a successful merge)
+  # -------------------------------------------------------------------------
+  deploy:
+    name: Deploy to GitHub Pages
+    # Requires the CI job to pass first
+    needs: ci
+    
+    # This condition ensures deployment runs ONLY when a push occurs 
+    # directly to the 'develop' branch (which covers merges).
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+          
+      - name: Install Dependencies and gh-pages
+        # Need to install to access `gh-pages` script
+        run: npm ci
+
+
+      - name: Configure Git Credentials for Custom Deployment 
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set up push credentials 
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+      - name: Deploy to GitHub Pages
+        run: npm run deploy

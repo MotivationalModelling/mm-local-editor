@@ -5,6 +5,9 @@ import {ColorResult} from "react-color";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Button from "react-bootstrap/Button";
 import ColorPicker from "./ColorPicker.tsx";
+import {useFileContext} from "../../context/FileProvider.tsx";
+import {parseFuncGoalRefId, parseGoalRefId} from "../../utils/GraphUtils.tsx";
+import {updateColorForInstanceId} from "../../context/treeDataSlice.ts";
 
 type ColorButtonsProps = {
     graph: Graph;
@@ -12,13 +15,16 @@ type ColorButtonsProps = {
 
 const ColorButtons = ({graph}: ColorButtonsProps) => {
     const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
+    const { dispatch } = useFileContext();
     const setColor = (color: string) => {
         graph.getDataModel().beginUpdate();
         try {
-            graph.getSelectionCells().forEach((cell) => {
-                const style = graph.getCellStyle(cell);
-                style.fillColor = color;
-                graph.getDataModel().setStyle(cell, style);
+            graph.getSelectionCells().forEach((cell) => {           
+                const id = cell.getId();
+                const instanceId = parseGoalRefId(id!)?.[0].instanceId;
+                if (instanceId) {
+                    dispatch(updateColorForInstanceId({instanceId, color}));
+                }
             });
         } finally {
             graph.getDataModel().endUpdate();

@@ -24,6 +24,7 @@ export const registerCustomShapes = (): void => {
   CellRenderer.registerShape(SYMBOL_CONFIGS.EMOTIONAL.shape, HeartShape);
   CellRenderer.registerShape(SYMBOL_CONFIGS.NEGATIVE.shape, NegativeShape);
   CellRenderer.registerShape(SYMBOL_CONFIGS.STAKEHOLDER.shape, PersonShape);
+  CellRenderer.registerShape(SYMBOL_CONFIGS.CROWD.shape, CrowdShape);
   CellRenderer.registerShape(SYMBOL_CONFIGS.QUALITY.shape, MMCloudShape);
   console.log("Custom shapes registered");
 };
@@ -224,7 +225,7 @@ class PersonShape extends ActorShape {
     w: number,
     h: number
   ): void {
-    c.translate(x + w / 3, y);
+    c.translate(x + w / 5, y);
     c.begin();
     this.redrawPath(c, x, y, w, h);
     c.fillAndStroke();
@@ -237,7 +238,7 @@ class PersonShape extends ActorShape {
     w: number,
     h: number
   ): void {
-    w = w / 3.5;
+    w = w / 1.6;
     c.moveTo(0.02 * w, 0.55 * h);
     c.lineTo(0.02 * w, 0.25 * h);
 
@@ -292,6 +293,46 @@ class PersonShape extends ActorShape {
     );
     c.curveTo(w / 2 + 0.1 * h, 0.02 * h, w / 2 + 0.1 * h, h / 6, w / 2, h / 6);
     c.close();
+  }
+}
+
+// CrowdShape
+export class CrowdShape extends ActorShape {
+  bounds: Rectangle;
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+
+  constructor(bounds: Rectangle, fill: string, stroke: string, strokeWidth = 1) {
+    super();
+    this.bounds = bounds;
+    this.fill = fill;
+    this.stroke = stroke;
+    this.strokeWidth = strokeWidth;
+  }
+
+  isRoundable(): boolean {
+    return true;
+  }
+
+  paintVertexShape(c: AbstractCanvas2D, x: number, y: number, w: number, h: number): void {
+    c.translate(x, y);
+
+    // Draw the main (normal size) person
+    c.save();
+    const mainPerson = new PersonShape(this.bounds, this.fill, this.stroke, this.strokeWidth);
+    const mainPersonWidth = w / 1.2;
+    mainPerson.paintVertexShape(c, 0, 0, mainPersonWidth, h);
+    c.restore();
+
+    // Draw the smaller person next to it
+    c.save();
+    const smallPerson = new PersonShape(this.bounds, this.fill, this.stroke, this.strokeWidth);
+    const smallScale = 0.8; // smaller height
+    const offsetX = w * 0.3; // horizontal offset from main person
+    const offsetY = h * 0.2; // slightly lower so they are aligned nicely
+    smallPerson.paintVertexShape(c, offsetX, offsetY, mainPersonWidth * smallScale, h * smallScale);
+    c.restore();
   }
 }
 

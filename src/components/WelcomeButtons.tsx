@@ -1,12 +1,13 @@
 import React, { ChangeEvent, useRef, useState } from "react";
 import Button from "react-bootstrap/Button";
-import { useNavigate } from "react-router-dom";
-import { InitialTab, createDefaultTabData, defaultTreeData } from "../data/initialTabs";
-import ErrorModal, { ErrorModalProps } from "./ErrorModal";
+import {useNavigate} from "react-router-dom";
+import {InitialTab, createDefaultTabData, defaultTreeData} from "../data/initialTabs";
+import ErrorModal, {ErrorModalProps} from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
-import { JSONData, TabContent, TreeItem, useFileContext } from "./context/FileProvider";
-import { reset } from "./context/treeDataSlice.ts";
+import { JSONData, useFileContext } from "./context/FileProvider";
+import {reset} from "./context/treeDataSlice.ts";
+import {TabContent, TreeItem} from "./types.ts";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -168,14 +169,10 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 		}
 	};
 
-	/* --------------------------------------------------------------------------------------------------------*/
-
 	const handleJSONFileRemove = () => {
 		setJsonFile(null);
 		setIsJsonDragOver(false);
 	};
-
-	/* --------------------------------------------------------------------------------------------------------*/
 
 	return (
 		<div className="d-flex justify-content-center mt-3">
@@ -192,7 +189,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				ref={jsonFileRef}
 			/>
 			{/* Conditionally render create/open buttons or files section */}
-			{isDragging ? (
+			{(isDragging) ? (
 				<>
 					{!jsonFile ? (
 						<FileDrop

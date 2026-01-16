@@ -6,9 +6,8 @@ import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeItem} from "./context/FileProvider";
-import {MdDelete, MdEdit, MdCheckCircle, MdCancel} from "react-icons/md";
-import {Label} from "./context/FileProvider";
+import {TreeItem, Label, isNonFunctionalGoal} from "../components/types.ts";
+import {BsFillTrash3Fill, BsCheckCircle, BsXCircle, BsPencilSquare } from "react-icons/bs";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
@@ -17,7 +16,7 @@ import {
   handleContentSave,
   handleGoalKeyPress,
   handleGoalBlur
-} from "../components/utils/GoalHint.tsx"
+} from "./utils/GoalHint.tsx"
 
 import "./Tree.css";
 import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
@@ -101,7 +100,7 @@ const Tree: React.FC<TreeProps> = ({
   // Delete item by its id
   const deleteItem = () => {
     if (deletingItemRef?.current) {
-      dispatch(deleteGoalReferenceFromHierarchy({item: deletingItemRef.current}));
+      dispatch(deleteGoalReferenceFromHierarchy(deletingItemRef.current));
     }
     setShowDeleteWarning(false);
   };
@@ -113,9 +112,9 @@ const Tree: React.FC<TreeProps> = ({
     deletingItemRef.current = item;
     // const deletingIds = getAllIds(item);
 
-    const deletinginstanceId = getAllGoalInstances(item)
+    const deletingInstanceId = getAllGoalInstances(item);
     if (item.children && item.children.length > 0) {
-      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletinginstanceId])
+      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletingInstanceId])
       // setExistingItemIds([...existingItemIds, ...deletingIds]);
       setShowDeleteWarning(true);
     } else {
@@ -311,9 +310,9 @@ const Tree: React.FC<TreeProps> = ({
           }}
         >
           {isEditing ? (
-            <MdCheckCircle size={ICON_SIZE} />
+            <BsCheckCircle size={ICON_SIZE} />
           ) : (
-            <MdEdit size={ICON_SIZE} />
+            <BsPencilSquare size={ICON_SIZE} />
           )}
         </div>
         <div
@@ -322,9 +321,9 @@ const Tree: React.FC<TreeProps> = ({
           onMouseEnter={() => setDisableOnBlur(true)}
         >
           {isEditing ? (
-            <MdCancel size={ICON_SIZE} />
+            <BsXCircle size={ICON_SIZE} />
           ) : (
-            <MdDelete size={ICON_SIZE} />
+            <BsFillTrash3Fill size={ICON_SIZE} />
           )}
         </div>
       </div>
@@ -358,6 +357,7 @@ const Tree: React.FC<TreeProps> = ({
       />
       <Nestable
         onChange={({items}) => dispatch(setTreeData(items as TreeItem[]))}
+        confirmChange={({destinationParent}) => !isNonFunctionalGoal(destinationParent?.type)}
         items={treeData}
         renderItem={renderItem}
         idProp="instanceId"

@@ -4,10 +4,11 @@ export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "
 
 export interface GoalBase {
     GoalID: number
-    instanceId: string
+    instanceId: TreeNode["instanceId"]
     GoalType: GoalType
     GoalContent: string
     GoalNote: string
+    GoalColor?: string
 }
 
 export interface Goal extends GoalBase {
@@ -15,13 +16,13 @@ export interface Goal extends GoalBase {
 }
 
 export interface GlobObject {
-    [key: string]: Array<{ instanceId: string; content: string }>;
+    [key: string]: Array<{instanceId: TreeNode["instanceId"]; content: string}>;
 }
 
 // Common base for all goal reference info
 export interface GoalRefId {
   goalId: number;
-  instanceId: string;
+  instanceId: TreeNode["instanceId"];
 }
 
 // Parsed structure for functional goals like "Functional-8-1"
@@ -69,12 +70,17 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
+const instanceId = z.custom<TreeNode["instanceId"]>((val) => {
+  return typeof val === "string" && /^\d+-\d+$/.test(val);
+});
+
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
-    instanceId: z.string(),
+    instanceId: instanceId,
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
-    GoalNote: z.string()
+    GoalNote: z.string(),
+    GoalColor: z.string()
 });
 
 export const GoalSchema = GoalBaseSchema.extend({
@@ -110,3 +116,46 @@ export const GoalModelProjectSchema = z.object({
     Notes: z.string(),
     Note: z.string(),
 });
+
+// // Define the initial tabs with labels and corresponding icons
+export type InstanceId = `${number}-${number}`
+
+// Type of the tree item content
+export type TreeItem = {
+    id: number;
+    content: string;
+    type: Label;
+    instanceId: InstanceId;
+    children?: TreeItem[];
+    color?: string;
+};
+
+export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
+    const id = initFields.id ?? Date.now();
+    const instanceId = initFields.instanceId ?? `${id}-0`;
+
+    return {id, content: "", instanceId, ...initFields};
+};
+
+// Define the structure for the content of each tab
+export type TabContent = {
+    label: Label
+    icon: string
+    goalIds: TreeItem["id"][]
+}
+
+export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
+
+export interface TreeNode {
+    goalId: TreeItem["id"];
+    instanceId: TreeItem["instanceId"];
+    children?: TreeNode[];
+    color?: TreeItem["color"];
+}
+
+export const NON_FUNCTIONAL_GOAL_TYPES = ["Be", "Feel", "Concern", "Who"] as const;
+export type NonFunctionalGoalType = (typeof NON_FUNCTIONAL_GOAL_TYPES)[number];
+export const isNonFunctionalGoal = (
+    label: Label | undefined
+): label is NonFunctionalGoalType =>
+    NON_FUNCTIONAL_GOAL_TYPES.includes(label as NonFunctionalGoalType);

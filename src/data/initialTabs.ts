@@ -1,4 +1,4 @@
-import {Label, TreeItem, newTreeItem} from "../components/context/FileProvider.tsx";
+import {Label, newTreeItem, TreeItem} from "../components/types.ts";
 
 import BeIcon from "/img/Cloud.png";
 import DoIcon from "/img/Function.png";

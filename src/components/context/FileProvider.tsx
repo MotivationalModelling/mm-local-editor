@@ -1,7 +1,7 @@
 import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster, ClusterGoal, GoalType} from "../types.ts";
+import {Cluster, ClusterGoal, GoalType, Label, newTreeItem, TabContent, TreeItem, TreeNode} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
 
 // This hook manages the goals that are in use in the motivational model.
@@ -18,69 +18,12 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 // Previously the code to manage and update these data structures was all done
 // in-line and it was very hard to maintain and harder to test.
 
-export interface TreeNode {
-    goalId: TreeItem["id"]
-    instanceId: TreeItem["instanceId"]
-    children?: TreeNode[]
-}
-
-// require id and type fields, others optional.
-// create a empty treeItem
-export const newTreeItem = (initFields: Pick<TreeItem, "type"> & Partial<TreeItem>): TreeItem => {
-    const id = initFields.id ?? Date.now();
-    const instanceId = initFields.instanceId ?? `${id}-${0}`;
-    return {
-        id: id,
-        content: "",
-        instanceId,
-        ...initFields
-    }
-};
 
 // Type of the json data
 export type JSONData = {
     tabData: TabContent[];
     treeData: TreeItem[];
 };
-
-// Type of the tree item content
-export type TreeItem = {
-    id: number;
-    content: string;
-    type: Label;
-    instanceId: string;
-    children?: TreeItem[];
-};
-
-// Define the structure for the content of each tab
-export type TabContent = {
-    label: Label
-    icon: string
-    goalIds: TreeItem["id"][]
-}
-
-// // Define the initial tabs with labels and corresponding icons
-// export const tabs: TabContent[] = [
-//     {label: "Do", icon: DoIcon, rows: []},
-//     {label: "Be", icon: BeIcon, rows: []},
-//     {label: "Feel", icon: FeelIcon, rows: []},
-//     {label: "Concern", icon: ConcernIcon, rows: []},
-//     {label: "Who", icon: WhoIcon, rows: []},
-// ];
-//
-// export const initialTabs = tabs.map((tab, index) => ({
-//     ...tab,
-//     rows: [
-//         ...tab.rows,
-//         {
-//             id: Date.now() + index,
-//             type: tab.label,
-//             content: "",
-//         },
-//     ]
-// }));
-
-export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
@@ -90,31 +33,35 @@ export const LocalStorageType = {
 };
 
 // XXX this should be a Set
-export const createTreeIdsFromTreeData = (treeData: TreeItem[]): Record<TreeItem["id"], TreeItem["instanceId"][]> => {
-    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = {}
-    // inner function
-    const accumulate = (nodes: TreeItem[]) => {
+export const createTreeIdsFromTreeData = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeItem[]): Record<TreeItem["id"], TreeItem["instanceId"][]> => {
+    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = Object.fromEntries(Object.keys(goals).map((goalId) => (
+        [Number(goalId), []]
+    )));
+    const addInstanceIdsToTreeIds = (nodes: TreeItem[]) => {
         nodes.forEach((node) => {
-            if (!treeIds[node.id]) {
-                treeIds[node.id] = [];
+            if (treeIds[node.id]) {
+                treeIds[node.id].push(node.instanceId);
+            } else {
+                throw new Error(`goal ${node.id} in tree but not in goal list`);
             }
-            treeIds[node.id].push(node.instanceId)
             if (node.children && node.children.length > 0) {
-                accumulate(node.children);
+                addInstanceIdsToTreeIds(node.children);
             }
         })
     };
-    accumulate(treeData);
+    addInstanceIdsToTreeIds(treeData);
     return treeIds
 };
-
-
-
 
 export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
     return treeNode.map((tn) => {
         const goal = goals[tn.goalId];
-        return newTreeItem({...goal, instanceId: tn.instanceId, ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {}});
+        return newTreeItem({
+            ...goal,
+            instanceId: tn.instanceId,
+            ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {},
+            color: tn.color
+        });
     });
 };
 
@@ -191,7 +138,6 @@ const typeMapping: Record<Label, GoalType> = {
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
 export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
-
     const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
         const goal = goals[item.goalId];
         return {
@@ -201,6 +147,7 @@ export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem
             GoalContent: goal.content,
             GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
             SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
+            GoalColor: item.color,
         };
     };
 
@@ -223,7 +170,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     );
 
     const initialState = createInitialState(tabData, treeData);
-    console.log("transformation from localstorage to data: ", treeData)
+    console.log("transformation from localstorage to data: ", treeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
@@ -231,11 +178,11 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("FileProvider state updated:", state);
     }, [state]);
 
-    // // Listen to changes in redux state and write back to localStorage
+    // Listen to changes in redux state and write back to localStorage
     useEffect(() => {
         // Convert TreeNode[] to TreeItem[] for storage
         // Here we map TreeNode.goalId to TreeItem from state.goals
-        const treeItems = createTreeDataFromTreeNode(state.goals, state.tree)
+        const treeItems = createTreeDataFromTreeNode(state.goals, state.tree);
 
         setTreeData(treeItems);
 
@@ -249,8 +196,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         setTabData(tabsArray);
     }, [state.tree, state.tabs, state.goals, setTreeData, setTabData]);
 
-
-
     const [xmlData, setXmlData] = useState("");
 
     // Debug: Log computed values
@@ -262,16 +207,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("Computed tabData:", computedTabData);
     }, [computedTreeData, computedTabData]);
 
-    // const resetData = () => {
-    //   setJsonFileHandle(null);
-    //   del(DataType.JSON);
-    //   setTreeData([]);
-    //   setTabData(initialTabs);
-    //   localStorage.removeItem(LocalStorageType.TREE);
-    //   localStorage.removeItem(LocalStorageType.TAB);
-    // };
-
-
     return (
         <FileContext.Provider value={{
             ...state,
@@ -280,12 +215,9 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             tabData: computedTabData,
             cluster: convertTreeDataToClusters(state.goals, state.tree),
             xmlData,
-            // setTabData,
-            // setTreeData,
             setXmlData,
             jsonFileHandle,
             setJsonFileHandle,
-            // resetData,
         }}>
             {children}
         </FileContext.Provider>

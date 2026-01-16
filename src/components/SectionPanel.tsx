@@ -4,11 +4,12 @@ import React, { useEffect, useRef, useState } from "react";
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
-import { TreeItem, useFileContext } from "./context/FileProvider";
+import {useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import { addGoalToTree, updateTextForGoalId } from "./context/treeDataSlice.ts";
-import { isEmptyGoal } from "./utils/GoalHint.tsx";
+import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {isEmptyGoal} from "./utils/GoalHint.tsx";
+import {TreeItem} from "./types.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -57,7 +58,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-    const {dispatch, treeIds, tree} = useFileContext();
+    const {dispatch, tree} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
 
@@ -71,18 +72,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // // define a handler for deleting a cell and it children from the Graph Render Section
-  // const handleDeleteCellsFromGraph = (treeItems:TreeItem[]) => {
-  // // remove goal from treeData / cluster hierarchy
-  //   dispatch(removeItemIdFromTree);
-  // };
-
-
-
-
-
-
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {

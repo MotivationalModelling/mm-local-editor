@@ -1,110 +1,97 @@
 /**
 * @jest-environment jsdom
 */
-import {renderHook, act, render} from '@testing-library/react';
-import {describe, it, expect, beforeAll} from "vitest";
-import FileProvider, {
-    useFileContext,
-    createTreeIdsFromTreeData
-} from "./FileProvider";
-import {newTreeItem, TreeItem} from "./FileProvider";
+import {act, renderHook} from '@testing-library/react';
+import {beforeAll, describe, expect, it} from "vitest";
+import FileProvider, {createTreeIdsFromTreeData, useFileContext} from "./FileProvider";
+import {newTreeItem, TreeItem, TreeNode} from "../types.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,
-    addGoalToTab, addGoalToTree,
-    deleteGoal,
+    addGoalToTab,
+    addGoalToTree,
+    deleteGoalFromGoalList,
     reset,
-    updateTextForGoalId
+    updateTextForGoalId,
 } from "./treeDataSlice.ts";
 
-const TestFileProviderContext = () => {
-    const context = useFileContext();
+// FileProvider provides data than UI
+const wrapper = ({children}: React.PropsWithChildren) => (
+    <FileProvider>{children}</FileProvider>
+);
+const {result} = renderHook(() => useFileContext(), {wrapper});
+const {dispatch} = result.current;
+const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-    describe("test default tab length", () => {
-        expect(context.tabData).toHaveLength(5);
-    });
-    return (
-        <div>
-            tabs {context.tabData.length}
-        </div>
-    )
-};
+// FileProvider provides real data
+// Inner useFileContext will found nearest provider
 
 describe('FileProvider', () => {
-    beforeAll(() => enableMapSet());
-    it("should render with default tabs", () => {
-        const {container, getByText} = render(
-            <FileProvider>
-                <TestFileProviderContext/>
-            </FileProvider>
-        );
+    beforeAll(() => {
+        enableMapSet();
     });
-    it('should start with five tabs', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {tabs} = result.current;
 
-        expect(tabs.size).toEqual(5);
-    });
-    it('should start with tabs having arrays of goals', () => {
-        const {result} = renderHook(() => useFileContext());
+    it('should start with 5 tabs, each has a arrays of goals', () => {
         const {tabData} = result.current;
 
-        tabData.forEach((tab) => {
-            expect(tab).toHaveProperty('rows');
+        expect(tabData.length).toBe(5);
+
+        tabData.forEach(tab => {
+            expect(tab).toHaveProperty("goalIds");
+            expect(Array.isArray(tab.goalIds)).toBe(true);
         });
     });
-    it('should add a goal', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+    it('should add a new goal to the "Do" tab', () => {
+        let doTab = result.current.tabs.get(goal.type);
 
-        expect(result.current.tabs.size).toEqual(5);
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
+        expect(doTab).toBeTruthy();
+        expect(doTab!.goalIds).not.toContain(goal.id);
 
         act(() => dispatch(addGoal(goal)));
-        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
+
+        doTab = result.current.tabs.get(goal.type);
+        expect(doTab?.goalIds).toContain(goal.id);
     });
-    it('removes a goal', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+    it('removes a goal from the "Do" tab', () => {
+        let doTab = result.current.tabs.get(goal.type);
 
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
+        // already had
+        expect(doTab).toBeTruthy();
+        expect(doTab!.goalIds).toContain(goal.id);
 
-        act(() => dispatch(addGoal(goal)));
-        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
-
-        act(() => dispatch(deleteGoal(goal)));
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
+        act(() => dispatch(deleteGoalFromGoalList(goal)));
+        doTab = result.current.tabs.get(goal.type);
+        expect(doTab?.goalIds).not.toContain(goal.id);
     });
-    it('ignores removing an nx goal', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+    it('should ignore removing an non-exist goal', () => {
+        let doTab = result.current.tabs.get(goal.type);
 
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
-        act(() => dispatch(deleteGoal(goal)));
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
+        // remove/not exist
+        expect(doTab).toBeTruthy();
+        expect(doTab!.goalIds).not.toContain(goal.id);
+
+        act(() => dispatch(deleteGoalFromGoalList(goal)));
+        doTab = result.current.tabs.get(goal.type);
+        expect(doTab!.goalIds).not.toContain(goal.id);
     });
+
     it('should revert on reset', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+        let doTab = result.current.tabs.get(goal.type);
 
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
+        expect(doTab).toBeTruthy();
+        expect(doTab!.goalIds).not.toContain(goal.id);
 
         act(() => dispatch(addGoal(goal)));
-        expect(result.current.tabs.get(goal.type)?.goalIds).toContain(goal.id);
+        doTab = result.current.tabs.get(goal.type);
+        expect(doTab!.goalIds).toContain(goal.id);
 
         act(() => dispatch(reset()));
-
-        expect(result.current.tabs.get(goal.type)?.goalIds).not.toContain(goal.id);
-        expect(result.current.tabs.size).toEqual(5);
+        doTab = result.current.tabs.get(goal.type);
+        expect(doTab!.goalIds).not.toContain(goal.id);
+        // orignal
+        expect(Object.keys(result.current.goals).length).toEqual(5);
     });
     it('should update text of the goal', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
         const text = "Hello, world!";
 
         expect(goal.content).not.toEqual(text);
@@ -114,9 +101,6 @@ describe('FileProvider', () => {
         expect(result.current.goals[goal.id].content).toEqual(text);
     });
     it('should add a goal to correct tab', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
         expect(result.current.tabs.get(goal.type)?.goalIds).toHaveLength(1);
 
@@ -129,74 +113,78 @@ describe('FileProvider', () => {
         // check added to goals
         expect(result.current.goals).toHaveProperty(String(goal.id));
     });
-    it('should list the goals for a label', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
 
-        act(() => dispatch(addGoalToTab(goal)));
-
-        expect(result.current.goalsForLabel(goal.type)?.some((g) => g.id === goal.id)).toBeTruthy();
-    });
-    it('should allow the goals to be reset', () => {
-
-    });
     it('should add a goal to the tree', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+        let treeData = result.current.tree;
+        expect(treeData).not.toContainEqual(expect.objectContaining({goalId: goal.id}));
 
-        expect(result.current.goals).not.toContain(goal.id);
         act(() => dispatch(addGoalToTree(goal)));
-
-        expect(result.current.treeIds).toContain(goal.id);
+        treeData = result.current.tree;
+        expect(treeData).toContainEqual(expect.objectContaining({goalId: goal.id}));
+        expect(result.current.treeIds).toHaveProperty(String(goal.id));
     });
+
     it('should remove a goal and goal id from the tree', () => {
-        const {result} = renderHook(() => useFileContext());
-        const {dispatch} = result.current;
-        const goal = newTreeItem({id: 7, type: "Do", content: "example"});
+        let treeData = result.current.tree;
+        expect(treeData).toContainEqual(expect.objectContaining({goalId: goal.id}));
 
-        expect(result.current.goals).not.toContain(goal.id);
-        act(() => dispatch(addGoalToTree(goal)));
-
-        expect(result.current.treeIds).toContain(goal.id);
-
-        act(() => dispatch(deleteGoal(goal)));
+        act(() => dispatch(deleteGoalFromGoalList(goal)));
+        treeData = result.current.tree;
         expect(result.current.treeIds).not.toContain(goal.id);
     });
-    it('should have tree as type TreeItem[]', () => {
-        const {result} = renderHook(() => useFileContext());
+    it('should have tree as type TreeNode[]', () => {
         const {tree} = result.current;
-        const testTree: TreeItem[] = tree;
+        const testTree: TreeNode[] = tree;
 
         expect(testTree).toBeTruthy();
     });
 });
 
 describe('#createTreeIdsFromTreeData', () => {
-    it('should handle a single node', () => {
-        const treeData = [newTreeItem({type: "Do", id: 1})];
-        const treeIds = createTreeIdsFromTreeData(treeData);
+    it("should handle a node which isn't in the tree", () => {
+        const g1 = newTreeItem({type: "Do", id: 1});
+        const goals= {[g1.id]: g1};
+        const treeData = [] as TreeItem[];
+        const treeIds = createTreeIdsFromTreeData(goals, treeData);
 
-        expect(treeIds).toEqual([1]);
+        expect(Object.keys(treeIds)).toEqual([`${g1.id}`]);
+        expect(treeIds[g1.id]).toEqual([]);
+    });
+    it('should handle a single node', () => {
+        const g1 = newTreeItem({type: "Do", id: 1});
+        const goals = {[g1.id]: g1};
+        const treeData = [g1];
+        const treeIds = createTreeIdsFromTreeData(goals, treeData);
+
+        expect(Object.keys(treeIds)).toEqual([`${g1.id}`]);
+        expect(treeIds[g1.id]).toEqual(["1-0"]);
+    });
+    it('should raise an exception when a node is in the tree but not in goals', () => {
+        const g1 = newTreeItem({type: "Do", id: 1});
+        const goals = {};
+        const treeData = [g1];
+        expect(() => createTreeIdsFromTreeData(goals, treeData)).toThrowError(`goal ${g1.id} in tree but not in goal list`);
     });
     it('should handle a pair of nodes', () => {
-        const treeData = [
-            newTreeItem({type: "Do", id: 1}),
-            newTreeItem({type: "Do", id: 2})
-        ];
-        const treeIds = createTreeIdsFromTreeData(treeData);
+        const g1 = newTreeItem({type: "Do", id: 1});
+        const g2 = newTreeItem({type: "Do", id: 2});
+        const goals = {[g1.id]: g1, [g2.id]: g2};
+        const treeData = [g1, g2];
+        const treeIds = createTreeIdsFromTreeData(goals, treeData);
 
-        expect(treeIds).toEqual([1, 2]);
+        expect(Object.keys(treeIds)).toEqual(["1", "2"]);
+        expect(treeIds[g1.id]).toEqual(["1-0"]);
+        expect(treeIds[g2.id]).toEqual(["2-0"]);
     });
     it('should handle nested nodes', () => {
-        const treeData = [
-            newTreeItem({type: "Do", id: 1, children: [
-                newTreeItem({type: "Do", id: 2})
-            ]})
-        ];
-        const treeIds = createTreeIdsFromTreeData(treeData);
+        const g2 = newTreeItem({type: "Do", id: 2});
+        const g1 = newTreeItem({type: "Do", id: 1, children: [g2]});
+        const goals = {[g1.id]: g1, [g2.id]: g2};
+        const treeData = [g1];
+        const treeIds = createTreeIdsFromTreeData(goals, treeData);
 
-        expect(treeIds).toEqual([1, 2]);
+        expect(Object.keys(treeIds)).toEqual(["1", "2"]);
+        expect(treeIds[g1.id]).toEqual(["1-0"]);
+        expect(treeIds[g2.id]).toEqual(["2-0"]);
     });
 });
