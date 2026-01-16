@@ -14,7 +14,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -489,8 +489,8 @@ export const renderNonFunction = (
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
     const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
-
-    if (nodeGeo && preferred) {
+    
+    if (nodeGeo && preferred && isTypeAdjustableByText(symbolKey)) {
         // Adjust height based on the number of lines and font size
         const lines: string[] = squareLabel.split(/\n/);
         nodeGeo.height = lines.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight;
