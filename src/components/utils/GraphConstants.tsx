@@ -71,7 +71,7 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
         type: "Stakeholder",
         shape: "personShape",
         imagePath: "img/Stakeholder.png",
-        scale: {width: 0.5, height: 1.2},
+        scale: {width: 0.6, height: 1.0},
         shapeStyle: {
             verticalAlign: 'top',
             verticalLabelPosition: 'bottom',
@@ -83,7 +83,7 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
         type: "Crowd",
         shape: "crowdShape",
         imagePath: "img/Stakeholder.png",
-        scale: {width: 0.6, height: 1.2},
+        scale: {width: 0.7, height: 1.0},
         shapeStyle: {
             verticalAlign: 'top',
             verticalLabelPosition: 'bottom',

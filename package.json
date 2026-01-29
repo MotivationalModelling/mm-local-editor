@@ -1,7 +1,7 @@
 {
   "name": "mm-local-editor",
   "private": true,
-  "version": "2025.1",
+  "version": "2025.2",
   "type": "module",
   "homepage": "https://motivationalmodelling.github.io/mm-local-editor",
   "scripts": {
@@ -46,7 +46,7 @@
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "cypress": "^14.5.2",
+    "cypress": "14.5.4",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",

@@ -33,21 +33,23 @@ export const LocalStorageType = {
 };
 
 // XXX this should be a Set
-export const createTreeIdsFromTreeData = (treeData: TreeGoal[]): Record<TreeGoal["id"], InstanceId[]> => {
-    const treeIds: Record<TreeGoal["id"], InstanceId[]> = {}
-    // inner function
-    const accumulate = (nodes: TreeGoal[]) => {
+export const createTreeIdsFromTreeData = (goals: Record<TreeGoal["id"], TreeGoal>, treeData: TreeGoal[]): Record<TreeGoal["id"], InstanceId[]> => {
+    const treeIds: Record<TreeGoal["id"], InstanceId[]> = Object.fromEntries(Object.keys(goals).map((goalId) => (
+        [Number(goalId), []]
+    )));
+    const addInstanceIdsToTreeIds = (nodes: TreeGoal[]) => {
         nodes.forEach((node) => {
-            if (!treeIds[node.id]) {
-                treeIds[node.id] = [];
+            if (treeIds[node.id]) {
+                treeIds[node.id].push(node.instanceId);
+            } else {
+                throw new Error(`goal ${node.id} in tree but not in goal list`);
             }
-            treeIds[node.id].push(node.instanceId);
             if (node.children && node.children.length > 0) {
-                accumulate(node.children);
+                addInstanceIdsToTreeIds(node.children);
             }
         })
     };
-    accumulate(treeData);
+    addInstanceIdsToTreeIds(treeData);
     return treeIds
 };
 

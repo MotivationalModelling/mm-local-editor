@@ -134,7 +134,6 @@ const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalI
 
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeGoal[] = []) => {
-
     const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
@@ -142,7 +141,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         tabs,
         goals,
         tree: treeData,  // No conversion needed - tree now stores TreeGoal directly
-        treeIds: createTreeIdsFromTreeData(treeData),
+        treeIds: createTreeIdsFromTreeData(goals, treeData),
     };
 };
 
@@ -210,13 +209,13 @@ export const treeDataSlice = createSlice({
             }
             delete state.goals[action.payload.id];
             // remove it and its reference
-            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, undefined)
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, undefined);
             delete state.treeIds[action.payload.id];
         },
         // delete it will not affect the orginal and other reference
         deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<TreeGoal>) => {
             // only itself
-            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, action.payload.instanceId)
+            state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, action.payload.instanceId);
             state.treeIds[action.payload.id] = state.treeIds[action.payload.id].filter(node => node !== action.payload.instanceId);
         },
 

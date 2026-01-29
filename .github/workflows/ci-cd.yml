@@ -39,6 +39,11 @@ jobs:
       - name: Run Vite Build Check
         run: npm run build
 
+      - name: Run Cypress E2E Tests
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run dev
+          wait-on: 'http://localhost:5173/mm-local-editor/'
   # =========================================================================
   # CD JOB: Deploy to GitHub Pages
   # Runs ONLY on PUSH to the 'develop' branch (which happens after a successful merge)
