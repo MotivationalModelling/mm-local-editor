@@ -123,9 +123,6 @@ export const GoalModelProjectSchema = z.object({
     Note: z.string(),
 });
 
-// ============================================
-// TreeGoal - the unified tree structure type
-// ============================================
 export type TreeGoal = {
     id: number;
     content: string;

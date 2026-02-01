@@ -161,7 +161,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
     // Listen to changes in state and write back to localStorage
     useEffect(() => {
-        // No conversion needed - state.tree is already TreeGoal[]
         setStoredTreeData(state.tree);
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
@@ -176,7 +175,6 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
     const [xmlData, setXmlData] = useState("");
 
-    // Computed values - no conversion needed
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
 
     useEffect(() => {
@@ -188,9 +186,9 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         <FileContext.Provider value={{
             ...state,
             dispatch,
-            treeData: state.tree,  // No conversion needed
+            treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),  // Simplified - no goals param needed
+            cluster: convertTreeDataToClusters(state.tree),
             xmlData,
             setXmlData,
             jsonFileHandle,

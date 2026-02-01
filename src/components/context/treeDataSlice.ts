@@ -140,7 +140,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
     return {
         tabs,
         goals,
-        tree: treeData,  // No conversion needed - tree now stores TreeGoal directly
+        tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
     };
 };
@@ -176,7 +176,7 @@ export const treeDataSlice = createSlice({
             state.goals[action.payload.id] = action.payload;
         },
         setTreeData: (state, action: PayloadAction<TreeGoal[]>) => {
-            state.tree = action.payload;  // No conversion needed
+            state.tree = action.payload;
         },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
             // Create a TreeGoal node with generated instanceId
@@ -229,7 +229,7 @@ export const treeDataSlice = createSlice({
             };
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
-            instanceId: string,  // Accept string for compatibility with getCellNumericIds
+            instanceId: string,
             text: string
         }>) => {
             const {instanceId, text} = action.payload;
@@ -239,14 +239,13 @@ export const treeDataSlice = createSlice({
                 ...state.goals[goalId],
                 content: text
             };
-            // Also update tree since it now stores full TreeGoal data
             const node = findTreeGoalByInstanceId(state.tree, instanceId as InstanceId);
             if (node) {
                 node.content = text;
             }
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
-            instanceId: string,  // Accept string for compatibility
+            instanceId: string,
             color: string
         }>) => {
             const {instanceId, color} = action.payload;
@@ -274,7 +273,7 @@ export const treeDataSlice = createSlice({
     },
     selectors: {
         selectTabData: (state) => createTabDataFromTabs(state.goals, state.tabs),
-        selectTreeData: (state) => state.tree,  // No conversion needed - tree is already TreeGoal[]
+        selectTreeData: (state) => state.tree,
         selectGoalsForLabel: (state, label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
     }
 });
