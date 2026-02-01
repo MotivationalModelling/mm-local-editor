@@ -10,7 +10,7 @@ export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "
 
 export interface GoalBase {
     GoalID: number
-    instanceId: InstanceId
+    instanceId: TreeGoal["instanceId"]
     GoalType: GoalType
     GoalContent: string
     GoalNote: string

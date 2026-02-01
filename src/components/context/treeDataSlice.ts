@@ -20,7 +20,7 @@ export const createTreeGoalNode = (
         color,
     }: {
         id: TreeGoal["id"];
-        instanceId?: InstanceId;
+        instanceId?: TreeGoal["instanceId"];
         children?: TreeGoal[];
         content?: string;
         type: TreeGoal["type"];
