@@ -5,7 +5,7 @@ import {
 } from "./FileProvider.tsx";
 import {InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {parseInstanceId} from "../utils/GraphUtils.tsx";
+import {parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)
@@ -232,14 +232,14 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             text: string
         }>) => {
-            const {instanceId, text} = action.payload;
+            const instanceId = validateInstanceId(action.payload.instanceId);
+            const {text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
-            // Update goals record
             state.goals[goalId] = {
                 ...state.goals[goalId],
                 content: text
             };
-            const node = findTreeGoalByInstanceId(state.tree, instanceId as InstanceId);
+            const node = findTreeGoalByInstanceId(state.tree, instanceId);
             if (node) {
                 node.content = text;
             }
@@ -248,9 +248,10 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             color: string
         }>) => {
-            const {instanceId, color} = action.payload;
+            const instanceId = validateInstanceId(action.payload.instanceId);
+            const {color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
-            const node = findTreeGoalByInstanceId(state.tree, instanceId as InstanceId);
+            const node = findTreeGoalByInstanceId(state.tree, instanceId);
             if (node?.id === goalId) {
                 node.color = color;
             }

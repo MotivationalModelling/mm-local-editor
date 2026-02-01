@@ -185,12 +185,24 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
+export const validateInstanceId = (id: string): InstanceId => {
+    const bits = id.split("-").map(s => s.trim());
+    if (bits.length !== 2) {
+        throw new Error(`badly formatted instanceId "${id}"`);
+    }
+    const [goalId, refId] = bits.map(Number);
+    if (isNaN(goalId) || isNaN(refId)) {
+        throw new Error(`instanceId must contain two numbers, got "${id}"`);
+    }
+    return id as InstanceId;
+};
+
 export const parseInstanceId = (instanceId: InstanceId) => {
     const bits = instanceId.split("-").map(s => s.trim());
     if (bits.length !== 2) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
-    
+
     const [goalId, refId] = bits.map(Number);
 
     return {goalId, refId};
