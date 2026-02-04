@@ -3,7 +3,7 @@ import {
     Rectangle,
     Cell,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject, TreeNode} from "../types.ts";
+import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
@@ -376,7 +376,7 @@ const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{insta
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{instanceId: TreeNode["instanceId"]; content: string;}>,
+    descriptions: Array<{instanceId: InstanceId; content: string;}>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None",

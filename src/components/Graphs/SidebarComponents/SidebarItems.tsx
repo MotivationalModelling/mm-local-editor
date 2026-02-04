@@ -3,7 +3,7 @@ import { Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils 
 
 import {getSymbolConfigByShape} from "../../utils/GraphUtils";
 import {useFileContext} from "../../context/FileProvider.tsx";
-import {Label, newTreeItem} from "../../types.ts";
+import {Label, newTreeGoal} from "../../types.ts";
 import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
 
 import {
@@ -96,7 +96,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         const goal = graph.cloneCell(prototype);
         
         if (goal) {
-          const treeItem = newTreeItem({
+          const treeItem = newTreeGoal({
             type: getSymbolConfigByShape(String(goal.style.shape))?.label as Label
           });
           dispatch(addGoal(treeItem));

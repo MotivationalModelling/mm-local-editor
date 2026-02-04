@@ -7,7 +7,7 @@ import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import { JSONData, useFileContext } from "./context/FileProvider";
 import {reset} from "./context/treeDataSlice.ts";
-import {TabContent, TreeItem} from "./types.ts";
+import {TabContent, TreeGoal} from "./types.ts";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";
@@ -28,13 +28,13 @@ const defaultModalState: ErrorModalProps = {
 // https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
 
 // Helper to convert TabContent[] to InitialTab[] using all goals from treeData
-function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeItem[]): InitialTab[] {
+function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeGoal[]): InitialTab[] {
 	// Build a map of all goals by id
-	const allGoals: Record<number, TreeItem> = {};
-	(treeData || []).forEach((goal: TreeItem) => {
+	const allGoals: Record<number, TreeGoal> = {};
+	(treeData || []).forEach((goal: TreeGoal) => {
 		allGoals[goal.id] = goal;
-		const addChildren = (children: TreeItem[]) => {
-			(children || []).forEach((child: TreeItem) => {
+		const addChildren = (children: TreeGoal[]) => {
+			(children || []).forEach((child: TreeGoal) => {
 				allGoals[child.id] = child;
 				addChildren(child.children || []);
 			});
