@@ -1,5 +1,7 @@
 import React from "react";
-import { ButtonGroup, Dropdown, DropdownButton } from "react-bootstrap";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Dropdown from "react-bootstrap/Dropdown";
+import DropdownButton from "react-bootstrap/DropdownButton";
 import { createDefaultTabData, defaultTreeData } from "../../data/initialTabs";
 import { useFileContext } from "../context/FileProvider";
 import { reset } from "../context/treeDataSlice";
