@@ -37,12 +37,12 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
                         <ResetGraphButton variant="outline-primary" className="ms-3"/>
                     </Col>
                     <Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center">
-                        <ButtonGroup className="ms-3">
+                        <ButtonGroup>
                             {/* Pass showGraphSection to ExportFileButton to control enablement */}
                             <ExportFileButton showGraphSection={showGraphSection}/>
                             {isBrowserSupported && <SaveFileButton/>}
                         </ButtonGroup>
-                        <HomeButton className="ms-3"/>
+                        <HomeButton/>
                     </Col>
                 </Row>
             </Container>
