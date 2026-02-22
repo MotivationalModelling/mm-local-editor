@@ -13,14 +13,17 @@ const ZoomButtons = ({recentreView}: ZoomButtonsProps) => {
     return (
         <ButtonGroup className="w-100" size="sm">
             <Button variant="light"
+                    size="sm"
                     onClick={() => graph?.zoomIn()}>
                 <BsZoomIn/>
             </Button>
             <Button variant="light"
+                    size="sm"
                     onClick={() => recentreView()}>
                 <BsStopCircle/>
             </Button>
             <Button variant="light"
+                    size="sm"
                     onClick={() => graph?.zoomOut()}>
                 <BsZoomOut/>
             </Button>
