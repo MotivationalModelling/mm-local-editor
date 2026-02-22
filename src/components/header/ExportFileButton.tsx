@@ -1,7 +1,9 @@
 import { Canvg } from 'canvg';
 import * as d3 from 'd3';
 import { useState } from "react";
-import { Dropdown, OverlayTrigger, Tooltip } from "react-bootstrap";
+import Dropdown from "react-bootstrap/Dropdown";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Tooltip from "react-bootstrap/Tooltip";
 import ErrorModal, { ErrorModalProps } from "../ErrorModal";
 import { useFileContext } from "../context/FileProvider";
 import { useGraph } from "../context/GraphContext";

@@ -61,14 +61,13 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
             return (
                 <div className="d-flex justify-content-end my-2">
                     <Button variant="primary"
-                            className="me-2"
+                            className="me-1"
                             disabled={groupSelected.length <= 0}
                             onClick={handleDropGroupSelected}>
                         {/* Click to Drop To Right Panel */}
                         Add Group
                     </Button>
                     <Button variant="danger"
-                            className="me-2"
                             disabled={groupSelected.length <= 0}
                             onClick={handleDeleteSelected}>
                         Delete Selected

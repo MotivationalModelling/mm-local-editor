@@ -1,6 +1,7 @@
 import React, {Dispatch, useState} from "react";
 import "./ProgressBar.css";
-import {OverlayTrigger, Popover} from "react-bootstrap";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Popover from "react-bootstrap/Popover";
 import {GraphUsageInfo} from "./UsageInfo/GraphUsageInfo";
 import {ClusterUsageInfo} from "./UsageInfo/ClusterUsageInfo";
 import ShowGoalSectionButton from "./header/ShowGoalSectionButton";
