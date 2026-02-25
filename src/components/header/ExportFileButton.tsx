@@ -9,6 +9,8 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {useFileContext} from "../context/FileProvider";
 import {useGraph} from "../context/GraphContext";
 import {returnFocusToGraph} from "../utils/GraphUtils";
+import DropdownButton from "react-bootstrap/DropdownButton";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
@@ -82,7 +84,7 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
     };
 
     // Function to export graph as an image
-    const exportGraphAsSVG = async () => {
+    const exportGraphAsSVG = async (graph: Graph) => {
         const svgElement = (graph) && findSVGElementInGraph(graph);
         if (!svgElement) {
             return;
@@ -132,7 +134,7 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
     };
 
     // Function to export graph as PNG
-    const exportGraphAsPNG = async () => {
+    const exportGraphAsPNG = async (graph: Graph) => {
         const svgElement = (graph) && findSVGElementInGraph(graph);
         if (!svgElement) {
             return;
@@ -221,23 +223,19 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
             <OverlayTrigger placement="bottom"
                             overlay={tooltip}
                             trigger={(!isReady) ? ['hover', 'focus'] : []}>
-                <Dropdown>
-                    <Dropdown.Toggle variant="outline-primary"
-                                     id="export-dropdown"
-                                     disabled={!isReady}>
-                        Export
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                        <Dropdown.Item onClick={exportGraphAsPNG}
-                                       disabled={!isReady}>
-                            Export as PNG
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={exportGraphAsSVG}
-                                       disabled={!isReady}>
-                            Export as SVG
-                        </Dropdown.Item>
-                    </Dropdown.Menu>
-                </Dropdown>
+                <DropdownButton as={ButtonGroup}
+                                title="Export"
+                                variant="outline-primary"
+                                disabled={!isReady}>
+                    <Dropdown.Item onClick={() => exportGraphAsPNG(graph!)}
+                                   disabled={!graph}>
+                        Export as PNG
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={() => exportGraphAsSVG(graph!)}
+                                   disabled={!graph}>
+                        Export as SVG
+                    </Dropdown.Item>
+                </DropdownButton>
             </OverlayTrigger>
             <ErrorModal {...errorModal} />
         </>
