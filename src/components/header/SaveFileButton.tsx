@@ -5,7 +5,7 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 
 const SaveFileButton = () => {
-	const { setJsonFileHandle, treeData, tabData, goals } = useFileContext();
+	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();
 
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
