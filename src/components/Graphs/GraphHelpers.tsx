@@ -208,6 +208,8 @@ export const renderFunction = (
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
 
+    style.perimeter = "none"; // Disables the perimeter check so the line reaches the center
+
     const goalName = formatFunGoalRefId(goal)
     // insert new vertex and edge into graph
     // between functional goal, should connect with edge, rather than cell hierachy
@@ -226,7 +228,17 @@ export const renderFunction = (
     );
     // console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
-        graph.insertEdge(null, null, "", source, node);
+        // Insert the edge with specific constraints
+        const edge = graph.insertEdge(null, null, "", source, node);
+        
+        // Force the connection to the center of the target (the parallelogram)
+        // entryX/Y = 0.5 means 50% of the width/height (the center)
+        graph.setCellStyles("entryX", "0.5", [edge]);
+        graph.setCellStyles("entryY", "0.5", [edge]);
+        
+        // Ensure the line is behind the shape (Z-Index / Order)
+        // This moves the edge to the back of the graph display list
+        graph.orderCells(true, [edge]); 
     }
     // if no root goal is registered, then store this as root
     if (rootGoalWrapper.value === null) {
@@ -435,6 +447,7 @@ export const renderNonFunction = (
     // Clone style to avoid modifying the default
     const style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.shape = shape;
+    style.perimeter = "none"
     style.align = "center";
     style.verticalAlign = "middle";
     style.labelPosition = "center";
@@ -484,6 +497,9 @@ export const renderNonFunction = (
     console.log("Nonfunctional-goal-node:",node);
     // Insert an invisible edge
     const edge = graph.insertEdge(null, null, "", source, node, dotted);
+    // Ensure the line is behind the shape (Z-Index / Order)
+    // This moves the edge to the back of the graph display list
+    graph.orderCells(true, [edge]); 
     // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
