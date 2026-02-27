@@ -6,7 +6,7 @@ import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
 import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeGoal, Label, isNonFunctionalGoal, InstanceId} from "../components/types.ts";
+import {TreeGoal, Label, isNonFunctionalGoal, InstanceId} from "./types.ts";
 import {BsFillTrash3Fill, BsCheckCircle, BsXCircle, BsPencilSquare } from "react-icons/bs";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
