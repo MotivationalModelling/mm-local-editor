@@ -3,7 +3,6 @@ import {
     CellStyle,
     Client,
     DragSource,
-    error,
     EventObject,
     getDefaultPlugins,
     Graph,
@@ -504,12 +503,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             qualitiesGlob,
             stakeholdersGlob
         );
-
-        // Check if the browser is supported
-        if (!Client.isBrowserSupported()) {
-            error("Browser not supported!", 200, false);
-            return;
-        }
 
         // Start the transaction to render the graph
         graph.getDataModel().beginUpdate();

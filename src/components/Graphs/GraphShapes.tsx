@@ -10,9 +10,7 @@ import {
   AbstractCanvas2D,
   constants,
   Point,
-  utils,
-  CellRenderer,
-  Shape,
+  ShapeRegistry
 } from "@maxgraph/core";
 
 import {
@@ -20,12 +18,12 @@ import {
 } from "../utils/GraphConstants";
 
 export const registerCustomShapes = (): void => {
-  CellRenderer.registerShape(SYMBOL_CONFIGS.FUNCTIONAL.shape, ParallelogramShape);
-  CellRenderer.registerShape(SYMBOL_CONFIGS.EMOTIONAL.shape, HeartShape);
-  CellRenderer.registerShape(SYMBOL_CONFIGS.NEGATIVE.shape, NegativeShape);
-  CellRenderer.registerShape(SYMBOL_CONFIGS.STAKEHOLDER.shape, PersonShape);
-  CellRenderer.registerShape(SYMBOL_CONFIGS.CROWD.shape, CrowdShape);
-  CellRenderer.registerShape(SYMBOL_CONFIGS.QUALITY.shape, MMCloudShape);
+  ShapeRegistry.add(SYMBOL_CONFIGS.FUNCTIONAL.shape, ParallelogramShape);
+  ShapeRegistry.add(SYMBOL_CONFIGS.EMOTIONAL.shape, HeartShape);
+  ShapeRegistry.add(SYMBOL_CONFIGS.NEGATIVE.shape, NegativeShape);
+  ShapeRegistry.add(SYMBOL_CONFIGS.STAKEHOLDER.shape, PersonShape);
+  ShapeRegistry.add(SYMBOL_CONFIGS.CROWD.shape, CrowdShape);
+  ShapeRegistry.add(SYMBOL_CONFIGS.QUALITY.shape, MMCloudShape);
   console.log("Custom shapes registered");
 };
 
@@ -64,13 +62,9 @@ class ParallelogramShape extends ActorShape {
       w *
       Math.max(
         0,
-        Math.min(
-          1,
-          parseFloat(utils.getValue(this.style, "startSize", this.startSize))
-        )
+        Math.min(1, this.style?.startSize ?? this.startSize)
       );
-    const arcSize =
-      utils.getValue(this.style, "arcSize", constants.LINE_ARCSIZE) / 2;
+    const arcSize = (this.style?.arcSize ?? constants.LINE_ARCSIZE) / 2;
     const points: Point[] = [
       new Point(0, h),
       new Point(dx, 0),
