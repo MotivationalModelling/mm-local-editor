@@ -135,7 +135,7 @@ export type TreeGoal = {
 export const newTreeGoal = (initFields: Pick<TreeGoal, "type"> & Partial<TreeGoal>): TreeGoal => {
     const id = initFields.id ?? Date.now();
     const instanceId = initFields.instanceId ?? `${id}-0`;
-    return {id, content: "", instanceId, ...initFields};
+    return { id, content: "New Goal", instanceId, ...initFields };
 };
 
 // Define the structure for the content of each tab
