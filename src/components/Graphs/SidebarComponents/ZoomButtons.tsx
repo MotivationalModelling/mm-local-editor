@@ -11,18 +11,21 @@ const ZoomButtons = ({recentreView}: ZoomButtonsProps) => {
     const {graph} = useGraph();
 
     return (
-        <ButtonGroup className="w-100" size="sm">
-            <Button variant="light"
+        <ButtonGroup className="w-100 d-flex flex-wrap" size="sm">
+            <Button className="flex-fill"
+                    variant="light"
                     size="sm"
                     onClick={() => graph?.zoomIn()}>
                 <BsZoomIn/>
             </Button>
-            <Button variant="light"
+            <Button className="flex-fill"
+                    variant="light"
                     size="sm"
                     onClick={() => recentreView()}>
                 <BsStopCircle/>
             </Button>
-            <Button variant="light"
+            <Button className="flex-fill"
+                    variant="light"
                     size="sm"
                     onClick={() => graph?.zoomOut()}>
                 <BsZoomOut/>
