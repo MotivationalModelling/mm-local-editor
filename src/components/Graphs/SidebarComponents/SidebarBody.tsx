@@ -1,5 +1,6 @@
 import {Graph} from "@maxgraph/core";
 import ColorButtons from "./ColorButtons";
+import LineButtons from "./LineButtons";
 import ZoomButtons from "./ZoomButtons";
 import ScaleTextButton from "../ScaleTextButton";
 import {CollapsibleSidebarCard} from "./CollapsibleSidebarCard";
@@ -23,6 +24,9 @@ const SidebarBody = ({graph, recentreView, className}: SidebarProps) => {
             </CollapsibleSidebarCard>
             <CollapsibleSidebarCard title="Font size">
                 <ScaleTextButton/>
+            </CollapsibleSidebarCard>
+            <CollapsibleSidebarCard title="Line Visibility">
+                <LineButtons/>
             </CollapsibleSidebarCard>
         </div>
     );

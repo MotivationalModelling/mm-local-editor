@@ -142,6 +142,8 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         goals,
         tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
+        showNonFunctionalLines: true, 
+        showFunctionalLines: true,
     };
 };
 
@@ -164,7 +166,10 @@ export const treeDataSlice = createSlice({
         tree: [] as TreeGoal[],
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
-        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>
+        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
+        showNonFunctionalLines : true,
+        showFunctionalLines:true,
+
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
@@ -256,6 +261,16 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
+        updateVisibilityForEdge: (state, action: PayloadAction<{
+            isNonFunctionalEdge: boolean,
+            isVisibile:boolean
+        }>) => {
+            if (action.payload.isNonFunctionalEdge) {
+                state.showNonFunctionalLines = action.payload.isVisibile;
+            } else {
+                state.showFunctionalLines = action.payload.isVisibile;
+            }
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeGoal[]
@@ -279,6 +294,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, updateVisibilityForEdge} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
