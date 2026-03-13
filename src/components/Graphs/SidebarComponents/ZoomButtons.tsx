@@ -25,7 +25,7 @@ const ZoomButtons = ({recentreView}: ZoomButtonsProps) => {
                 resizeObserver.disconnect();
             };
         }
-    }, [containerRef.current?.offsetWidth]);
+    }, []);
 
     return (
         <ButtonGroup ref={containerRef} 
