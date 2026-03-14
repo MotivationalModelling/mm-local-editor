@@ -15,7 +15,7 @@ const LineButtons = () => {
 
     return (
         <div className="w-100 px-1">
-            <div className="d-flex flex-column mb-3">
+            <div>
                 <span className="fw-bold mb-1" style={{ fontSize: '0.7rem'}}>
                     Between Non-Functioanl Goal
                 </span>
