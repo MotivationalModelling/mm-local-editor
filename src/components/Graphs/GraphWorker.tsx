@@ -56,7 +56,7 @@ interface CellHistory {
 
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSection = false }) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const { cluster, dispatch, treeIds , showFunctionalLines,showNonFunctionalLines } = useFileContext();
+    const { cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoal } = useFileContext();
     const { graph, setGraph } = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
@@ -541,13 +541,16 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
 
         const allEdges = graph.getChildEdges(graph.getDefaultParent());
         allEdges.forEach((edge) => {
-            const style = graph.getCellStyle(edge);
-            const isNF = !!style?.dashed; 
-            edge.visible = isNF ? showNonFunctionalLines : showFunctionalLines;
-        });
+            const targetId = edge.target?.getId() || "";
+            const isConnectedToNFGoal = targetId.startsWith("Nonfunctional");
 
+            if (isConnectedToNFGoal) {
+                edge.setVisible(showLineBetweenNonFunctionalGoal);
+            }
+        });
+        
         graph.getDataModel().endUpdate();
-    }, [graph, cluster,showNonFunctionalLines,showFunctionalLines]);
+    }, [graph, cluster, showLineBetweenNonFunctionalGoal]);
 
     // First useEffect to set up graph. Only run on mount.
     useEffect(() => {

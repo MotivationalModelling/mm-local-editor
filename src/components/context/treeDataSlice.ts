@@ -142,8 +142,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         goals,
         tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
-        showNonFunctionalLines: true, 
-        showFunctionalLines: true,
+        showLineBetweenNonFunctionalGoal: true, 
     };
 };
 
@@ -167,8 +166,7 @@ export const treeDataSlice = createSlice({
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
-        showNonFunctionalLines : true,
-        showFunctionalLines:true,
+        showLineBetweenNonFunctionalGoal : true,
 
     },
     reducers: {
@@ -261,15 +259,10 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
-        updateVisibilityForEdge: (state, action: PayloadAction<{
-            isNonFunctionalEdge: boolean,
+        updateVisibilityForLineBetweenNonFunctionalGoal: (state, action: PayloadAction<{
             isVisibile:boolean
         }>) => {
-            if (action.payload.isNonFunctionalEdge) {
-                state.showNonFunctionalLines = action.payload.isVisibile;
-            } else {
-                state.showFunctionalLines = action.payload.isVisibile;
-            }
+            state.showLineBetweenNonFunctionalGoal = action.payload.isVisibile;
         },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
@@ -294,6 +287,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, updateVisibilityForEdge} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, updateVisibilityForLineBetweenNonFunctionalGoal} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
