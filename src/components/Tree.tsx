@@ -1,4 +1,5 @@
-import React, {useRef, useState} from "react";
+// FIX #254: added useEffect to the import for auto-edit mode on new drag-and-drop goals
+import React, {useEffect, useRef, useState} from "react";
 import WhoIcon from "/img/Stakeholder.png";
 import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
@@ -19,7 +20,9 @@ import {
 } from "./utils/GoalHint.tsx"
 
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
+// FIX #254: added deleteGoalFromGoalList so we can clean up orphan goals
+// that were drag-and-dropped but abandoned without a name
+import {deleteGoalFromGoalList, deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
 // Inline style for element in Nestable, css style import not working
 const treeListStyle: React.CSSProperties = {
@@ -94,8 +97,51 @@ const Tree: React.FC<TreeProps> = ({
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
   const deletingItemRef = useRef<TreeGoal | null>(null);
 
+  // FIX #254: tracks whether the goal currently being edited was empty when editing started
+  // (i.e. it was just created via drag-and-drop and has never been named).
+  // Used in handleCancel to decide whether to delete the node if no name was entered.
+  const editingWasNewEmptyGoal = useRef<boolean>(false);
+
+  // FIX #254: tracks all instanceIds already present in the tree so we can detect
+  // newly added nodes (i.e. ones dropped from the palette since the component mounted).
+  const knownInstanceIds = useRef<Set<InstanceId>>(new Set());
+
   const inputRef = useRef<HTMLInputElement>(null);
   const {treeData, dispatch} = useFileContext();
+
+  // FIX #254: auto-enter edit mode when a new empty goal is dropped from the palette.
+  // Every time treeData changes we scan for nodes whose instanceId we haven't seen before
+  // and whose content is still empty — those are freshly dropped symbols that need naming.
+  // This mirrors the UX of standard tree editors (VS Code file tree, Figma layers, Notion).
+  useEffect(() => {
+    const findNewEmptyGoals = (nodes: TreeGoal[]): TreeGoal | null => {
+      for (const node of nodes) {
+        if (!knownInstanceIds.current.has(node.instanceId)) {
+          // Mark every node we encounter as known going forward.
+          knownInstanceIds.current.add(node.instanceId);
+          if (isEmptyGoal(node)) {
+            return node; // first new empty goal wins
+          }
+        }
+        if (node.children) {
+          const found = findNewEmptyGoals(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const newEmptyGoal = findNewEmptyGoals(treeData);
+    if (newEmptyGoal) {
+      editingWasNewEmptyGoal.current = true;
+      setEditingItemId(newEmptyGoal.id);
+      setEditedText("");
+      // Defer code execution until after the browser has finished rendering updates to the DOM.
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [treeData]);
 
   // Delete item by its id
   const deleteItem = () => {
@@ -104,8 +150,6 @@ const Tree: React.FC<TreeProps> = ({
     }
     setShowDeleteWarning(false);
   };
-
-
 
   // Handle delete button clicked
   const handleDeleteItem = (item: TreeGoal) => {
@@ -160,13 +204,22 @@ const Tree: React.FC<TreeProps> = ({
     const treeItem = item as TreeGoal;
     const isEditing = editingItemId === treeItem.id;
 
+    // FIX #254: helper to fully remove a goal that was drag-and-dropped but never named.
+    // Removes both the tree reference and the goal-list entry so no orphan node is left behind.
+    const deleteNewEmptyGoal = (goal: TreeGoal) => {
+      dispatch(deleteGoalReferenceFromHierarchy(goal));
+      dispatch(deleteGoalFromGoalList(goal));
+    };
+
     // Handle when edit button clicked
+    // FIX #254: removed the isEmptyGoal(treeItem) early-return guard.
+    // That guard was intended for phantom/deleted nodes but also blocked brand-new goals
+    // created via drag-and-drop, which legitimately start with content: "".
+    // Saving an empty string is still blocked downstream by canSaveContentEdit — no regression.
     const handleEdit = () => {
       // Allow editing for any goal with content (same as original logic)
-      if (isEmptyGoal(treeItem)) {
-        return;
-      }
-
+      // FIX #254: also allow editing for empty goals (newly dropped from palette)
+      editingWasNewEmptyGoal.current = isEmptyGoal(treeItem);
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -178,8 +231,9 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     // Handle double click to start editing
+    // FIX #254: removed !isEmptyGoal(treeItem) guard for the same reason as handleEdit above
     const handleDoubleClick = () => {
-      if (!isEditing && !isEmptyGoal(treeItem)) {
+      if (!isEditing) {
         handleEdit();
       }
     };
@@ -193,6 +247,8 @@ const Tree: React.FC<TreeProps> = ({
           // On save callback
           handleSynTableTree(treeItem, content);
           setEditingItemId(null);
+          // FIX #254: reset new-goal flag once successfully saved
+          editingWasNewEmptyGoal.current = false;
         },
         () => {
           // On cancel callback
@@ -202,9 +258,16 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     // Handle cancel edited text
+    // FIX #254: if the goal was brand-new (dropped from palette) and the user cancelled
+    // without entering a name, delete it entirely so no permanently unnamed node is left
+    // in the tree or the goal list.
     const handleCancel = () => {
+      if (editingWasNewEmptyGoal.current && isEmptyGoal(treeItem)) {
+        deleteNewEmptyGoal(treeItem);
+      }
       setEditingItemId(null);
       setEditedText(treeItem.content);
+      editingWasNewEmptyGoal.current = false;
       // Defer code execution until after the browser has finished rendering updates to the DOM.
       requestAnimationFrame(() => {
         setDisableOnBlur(false);
@@ -220,6 +283,8 @@ const Tree: React.FC<TreeProps> = ({
           // On save callback
           handleSynTableTree(treeItem, content);
           setEditingItemId(null);
+          // FIX #254: reset new-goal flag once successfully saved
+          editingWasNewEmptyGoal.current = false;
         },
         () => {
           // On cancel callback
@@ -240,6 +305,8 @@ const Tree: React.FC<TreeProps> = ({
           // On save callback
           handleSynTableTree(treeItem, content);
           setEditingItemId(null);
+          // FIX #254: reset new-goal flag once successfully saved
+          editingWasNewEmptyGoal.current = false;
         },
         () => {
           // On cancel callback
@@ -286,9 +353,13 @@ const Tree: React.FC<TreeProps> = ({
               onKeyDown={handleEditKeyDown}
               className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
               style={treeInputStyle}
+              // FIX #254: placeholder so the user knows to type a name for a newly dropped goal
+              placeholder="Enter goal name…"
             />
           ) : (
-            treeItem.content
+            // FIX #254: show a grey fallback if content is empty so the node is still
+            // visually distinct and the user knows it needs a name
+            treeItem.content || <em style={{color: "#999"}}>unnamed goal</em>
           )}
         </div>
 
@@ -304,10 +375,8 @@ const Tree: React.FC<TreeProps> = ({
         <div
           className="edit-icon"
           onClick={isEditing ? handleSave : handleEdit}
-          style={{
-            opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
-            cursor: !isEditing && isEmptyGoal(treeItem) ? 'not-allowed' : 'pointer'
-          }}
+          // FIX #254: removed opacity/cursor style that made the icon look disabled for empty goals.
+          // Empty goals created via drag-and-drop must be editable so the greyed-out style is wrong.
         >
           {isEditing ? (
             <BsCheckCircle size={ICON_SIZE} />
