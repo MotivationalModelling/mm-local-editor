@@ -1,11 +1,11 @@
-import React, { ChangeEvent, useRef, useState } from "react";
+import React, {ChangeEvent, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import {useNavigate} from "react-router-dom";
 import {InitialTab, createDefaultTabData, defaultTreeData} from "../data/initialTabs";
 import ErrorModal, {ErrorModalProps} from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
-import { JSONData, useFileContext } from "./context/FileProvider";
+import {JSONData, useFileContext} from "./context/FileProvider";
 import {reset} from "./context/treeDataSlice.ts";
 import {TabContent, TreeGoal} from "./types.ts";
 
@@ -48,7 +48,7 @@ function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeGoal
 	}));
 }
 
-const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
+const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
 	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>(defaultModalState);
@@ -185,7 +185,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 				accept=".json"
 				multiple
 				onChange={handleFileChange}
-				style={{ display: "none" }}
+				style={{display: "none"}}
 				ref={jsonFileRef}
 			/>
 			{/* Conditionally render create/open buttons or files section */}
@@ -209,7 +209,7 @@ const WelcomeButtons = ({ isDragging, setIsDragging }: WelcomeButtonsProps) => {
 					)}
 					<div
 						className="position-absolute d-flex flex-row gap-5"
-						style={{ bottom: "80px" }}
+						style={{bottom: "80px"}}
 					>
 						<Button
 							variant="primary"

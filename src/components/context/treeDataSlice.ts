@@ -142,7 +142,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         goals,
         tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
-        showLineBetweenNonFunctionalGoal: true, 
+        showLineBetweenNonFunctionalGoal: true,
     };
 };
 
@@ -166,7 +166,7 @@ export const treeDataSlice = createSlice({
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
-        showLineBetweenNonFunctionalGoal : true,
+        showLineBetweenNonFunctionalGoal: true,
 
     },
     reducers: {
@@ -259,10 +259,10 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
-        updateVisibilityForLineBetweenNonFunctionalGoal: (state, action: PayloadAction<{
-            isVisibile:boolean
+        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<{
+            showLines: boolean
         }>) => {
-            state.showLineBetweenNonFunctionalGoal = action.payload.isVisibile;
+            state.showLineBetweenNonFunctionalGoal = action.payload.showLines;
         },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
@@ -287,6 +287,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, updateVisibilityForLineBetweenNonFunctionalGoal} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

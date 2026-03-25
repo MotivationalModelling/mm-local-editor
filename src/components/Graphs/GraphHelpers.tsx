@@ -392,7 +392,8 @@ export const renderNonFunction = (
     graph: Graph,
     source: Cell | null = null,
     type: string = "None",
-    color: string | undefined
+    color: string | undefined,
+    showLineBetweenNonFunctionalGoal: boolean
 ) => {
 
     console.log("Rendering non-functional goal: ", descriptions);
@@ -496,10 +497,12 @@ export const renderNonFunction = (
     );
     console.log("Nonfunctional-goal-node:",node);
     // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node, dotted);
-    // Ensure the line is behind the shape (Z-Index / Order)
-    // This moves the edge to the back of the graph display list
-    graph.orderCells(true, [edge]); 
+    if(showLineBetweenNonFunctionalGoal){
+        const edge = graph.insertEdge(null, null, "", source, node, dotted);
+        // Ensure the line is behind the shape (Z-Index / Order)
+        // This moves the edge to the back of the graph display list
+        graph.orderCells(true, [edge]); 
+    }
     // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
@@ -620,7 +623,8 @@ export const associateNonFunctions = (
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
+    stakeholdersGlob: GlobObject,
+    showLineBetweenNonFunctionalGoal: boolean
 ) => {
     console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob);
     // fetch all the functional goals
@@ -641,7 +645,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.NEGATIVE.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoal
             );
         }
         // render all stakeholders
@@ -652,7 +657,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.STAKEHOLDER.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoal
             );
         }
 
@@ -664,7 +670,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.EMOTIONAL.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoal
             );
         }
 
@@ -676,7 +683,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.QUALITY.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoal
             );
         }
     });

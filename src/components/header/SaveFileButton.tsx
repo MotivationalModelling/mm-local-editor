@@ -11,7 +11,7 @@ const SaveFileButton = () => {
 		show: false,
 		title: "",
 		message: "",
-		onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+		onHide: () => setErrorModal(prev => ({...prev, show: false}))
 	});
 
 	// Function to check if there are any goals with content
@@ -26,7 +26,7 @@ const SaveFileButton = () => {
 			show: true,
 			title: "Cannot Save Model",
 			message: "No goals have been added. Please add at least one goal before saving.",
-			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+			onHide: () => setErrorModal(prev => ({...prev, show: false}))
 		});
 	};
 
@@ -36,7 +36,7 @@ const SaveFileButton = () => {
 			show: true,
 			title: "Invalid File Name",
 			message: "Please enter the file name",
-			onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+			onHide: () => setErrorModal(prev => ({...prev, show: false}))
 		});
 	};
 

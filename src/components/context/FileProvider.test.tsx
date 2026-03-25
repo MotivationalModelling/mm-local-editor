@@ -116,17 +116,17 @@ describe('FileProvider', () => {
 
     it('should add a goal to the tree', () => {
         let treeData = result.current.tree;
-        expect(treeData).not.toContainEqual(expect.objectContaining({ id: goal.id }));
+        expect(treeData).not.toContainEqual(expect.objectContaining({id: goal.id}));
 
         act(() => dispatch(addGoalToTree(goal)));
         treeData = result.current.tree;
-        expect(treeData).toContainEqual(expect.objectContaining({ id: goal.id }));
+        expect(treeData).toContainEqual(expect.objectContaining({id: goal.id}));
         expect(result.current.treeIds).toHaveProperty(String(goal.id));
     });
 
     it('should remove a goal and goal id from the tree', () => {
         let treeData = result.current.tree;
-        expect(treeData).toContainEqual(expect.objectContaining({ id: goal.id }));
+        expect(treeData).toContainEqual(expect.objectContaining({id: goal.id}));
 
         act(() => dispatch(deleteGoalFromGoalList(goal)));
         treeData = result.current.tree;

@@ -25,7 +25,7 @@ const SidebarBody = ({graph, recentreView, className}: SidebarProps) => {
             <CollapsibleSidebarCard title="Font size">
                 <ScaleTextButton/>
             </CollapsibleSidebarCard>
-            <CollapsibleSidebarCard isOpen title="Line visibility">
+            <CollapsibleSidebarCard title="Line visibility">
                 <LineButtons/>
             </CollapsibleSidebarCard>
         </div>
