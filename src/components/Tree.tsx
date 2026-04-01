@@ -11,7 +11,7 @@ import {BsFillTrash3Fill, BsCheckCircle, BsXCircle, BsPencilSquare } from "react
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
-  isEmptyGoal,
+ 
   isTextEmpty,
   handleContentSave,
   handleGoalKeyPress,
@@ -162,11 +162,6 @@ const Tree: React.FC<TreeProps> = ({
 
     // Handle when edit button clicked
     const handleEdit = () => {
-      // Allow editing for any goal with content (same as original logic)
-      if (isEmptyGoal(treeItem)) {
-        return;
-      }
-
       setEditingItemId(treeItem.id);
       setEditedText(treeItem.content);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
@@ -179,7 +174,7 @@ const Tree: React.FC<TreeProps> = ({
 
     // Handle double click to start editing
     const handleDoubleClick = () => {
-      if (!isEditing && !isEmptyGoal(treeItem)) {
+      if (!isEditing) {
         handleEdit();
       }
     };
@@ -288,7 +283,7 @@ const Tree: React.FC<TreeProps> = ({
               style={treeInputStyle}
             />
           ) : (
-            treeItem.content
+            treeItem.content || <em className="text-secondary">unnamed goal</em>
           )}
         </div>
 
@@ -304,10 +299,6 @@ const Tree: React.FC<TreeProps> = ({
         <div
           className="edit-icon"
           onClick={isEditing ? handleSave : handleEdit}
-          style={{
-            opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
-            cursor: !isEditing && isEmptyGoal(treeItem) ? 'not-allowed' : 'pointer'
-          }}
         >
           {isEditing ? (
             <BsCheckCircle size={ICON_SIZE} />
