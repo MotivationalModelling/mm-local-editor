@@ -7,16 +7,25 @@ export function isTextEmpty(input: string): boolean {
 }
 
 // Check if editing should be allowed (prevent editing empty goals)
+// FIX #254: this function is no longer called in Tree.tsx to gate handleEdit/handleDoubleClick —
+// empty goals created via drag-and-drop must be editable immediately.
+// It is kept here because it is still used elsewhere (e.g. isGoalDraggable, SectionPanel).
 export function canEditGoal(goal: { content: string }): boolean {
   return !isEmptyGoal(goal);
 }
 
 // Validate if save should be allowed (prevent saving empty content to existing goals)
+// FIX #254: the original second clause was dead code —
+//   (isTextEmpty(originalContent) && !isTextEmpty(newContent))
+// If !isTextEmpty(newContent) is true the first clause already returns true.
+// If !isTextEmpty(newContent) is false the second clause is also false.
+// Simplified to just !isTextEmpty(newContent), which is the correct intended behaviour.
 export function canSaveContentEdit(originalContent: string, newContent: string): boolean {
   // Allow save if:
   // 1. New content is not empty, OR
   // 2. Original content was empty (initial entry)
-  return !isTextEmpty(newContent) || (isTextEmpty(originalContent)&& !isTextEmpty(newContent));
+  void originalContent; // originalContent is intentionally unused — see comment above
+  return !isTextEmpty(newContent);
 }
 
 // Handle content edit save with validation
