@@ -14,27 +14,27 @@ import {
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
-import ErrorModal, { ErrorModalProps } from "../ErrorModal.tsx";
-import { associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals } from './GraphHelpers';
-import { registerCustomShapes } from "./GraphShapes";
+import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
+import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
-import { useFileContext } from "../context/FileProvider.tsx";
-import { useGraph } from "../context/GraphContext";
-import { Cluster, GlobObject, InstanceId } from "../types.ts";
+import {useFileContext} from "../context/FileProvider.tsx";
+import {useGraph} from "../context/GraphContext";
+import {Cluster, GlobObject, InstanceId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
-import { VERTEX_FONT } from "../utils/GraphConstants.tsx"
-import { getCellNumericIds } from "../utils/GraphUtils";
-import { removeGoalIdFromTree, updateTextForInstanceId } from "../context/treeDataSlice.ts";
+import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
-import { parseGoalRefId } from "../utils/GraphUtils";
-import { fixEditorPosition, returnFocusToGraph } from "../utils/GraphUtils.tsx";
+import {parseGoalRefId} from "../utils/GraphUtils";
+import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
@@ -60,6 +60,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
     const { graph, setGraph } = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
+    // Guards against dispatching stale positions while renderGraph is rebuilding cells.
+    const isRenderingRef = useRef(false);
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -316,6 +318,14 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                             }
                             if (cellID) {
                                 cellHistory[cellID] = [newWidth, newHeight];
+                            }
+
+                            if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
+                                const geo = cell.getGeometry();
+                                if (geo !== null) {
+                                    const instanceId = validateInstanceId(cellID.replace("Functional-", ""));
+                                    dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
+                                }
                             }
                         }
                         else if (change.constructor.name == "ValueChange") {
