@@ -20,7 +20,7 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
-import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
@@ -506,6 +506,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         const qualitiesGlob: GlobObject = {};
         const stakeholdersGlob: GlobObject = {};
 
+        isRenderingRef.current = true;
         resetGraph(
             graph,
             rootGoalWrapper,
@@ -518,6 +519,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         // Check if the browser is supported
         if (!Client.isBrowserSupported()) {
             error("Browser not supported!", 200, false);
+            isRenderingRef.current = false;
             return;
         }
 
@@ -537,6 +539,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         );
         rootGoal = rootGoalWrapper.value;
         layoutFunctions(graph, rootGoal);
+        restoreSavedPositions(graph, cluster.ClusterGoals);
 
         // render non-functional goals
         associateNonFunctions(
@@ -549,6 +552,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             stakeholdersGlob
         );
         graph.getDataModel().endUpdate();
+        isRenderingRef.current = false;
     }, [graph, cluster]);
 
     // First useEffect to set up graph. Only run on mount.

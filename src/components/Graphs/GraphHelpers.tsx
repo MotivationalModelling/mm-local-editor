@@ -2,6 +2,7 @@ import {
     Graph,
     Rectangle,
     Cell,
+    Geometry,
 } from "@maxgraph/core";
 import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
@@ -595,6 +596,36 @@ export const renderLegend = (graph: Graph): Cell => {
     });
 
     return legend;
+};
+
+/**
+ * Overrides layout-computed positions with any coordinates previously saved
+ * by the user. Must be called after layoutFunctions and before
+ * associateNonFunctions so that non-functional symbols are placed relative
+ * to the restored positions.
+ */
+export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
+    const positionMap = new Map<string, { x: number; y: number }>();
+    const collect = (goal: ClusterGoal) => {
+        if (goal.GoalType === "Functional" && goal.x !== undefined && goal.y !== undefined) {
+            positionMap.set(generateCellId("Functional", goal.instanceId), { x: goal.x, y: goal.y });
+        }
+        goal.SubGoals.forEach(collect);
+    };
+    goals.forEach(collect);
+
+    if (positionMap.size === 0) return;
+
+    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+        const id = cell.getId();
+        const pos = id ? positionMap.get(id) : undefined;
+        if (pos) {
+            const geo = cell.getGeometry();
+            if (geo) {
+                graph.getDataModel().setGeometry(cell, new Geometry(pos.x, pos.y, geo.width, geo.height));
+            }
+        }
+    });
 };
 
 /**
