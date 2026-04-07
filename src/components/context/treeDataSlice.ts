@@ -256,6 +256,17 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
+        updatePositionForInstanceId: (state, action: PayloadAction<{
+            instanceId: InstanceId,
+            x: number,
+            y: number
+        }>) => {
+            const node = findTreeGoalByInstanceId(state.tree, action.payload.instanceId);
+            if (node) {
+                node.x = action.payload.x;
+                node.y = action.payload.y;
+            }
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeGoal[]
@@ -279,6 +290,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, updatePositionForInstanceId} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
