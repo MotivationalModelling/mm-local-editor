@@ -158,17 +158,6 @@ export const findTreeGoalByInstanceId = (nodes: TreeGoal[], instanceId: Instance
     return undefined;
 };
 
-const updateTreeGoalContentById = (nodes: TreeGoal[], id: TreeGoal["id"], text: string): void => {
-    for (const node of nodes) {
-        if (node.id === id) {
-            node.content = text;
-        }
-        if (node.children && node.children.length > 0) {
-            updateTreeGoalContentById(node.children, id, text);
-        }
-    }
-};
-
 export const treeDataSlice = createSlice({
     name: "treeData",
     initialState: {
@@ -234,11 +223,11 @@ export const treeDataSlice = createSlice({
             id: TreeGoal["id"],
             text: string
         }>) => {
-            state.goals[action.payload.id] = {
-                ...state.goals[action.payload.id],
-                content: action.payload.text
+            const {id, text} = action.payload;
+            state.goals[id] = {
+                ...state.goals[id],
+                content: text
             };
-            updateTreeGoalContentById(state.tree, action.payload.id, action.payload.text);
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
@@ -251,10 +240,6 @@ export const treeDataSlice = createSlice({
                 ...state.goals[goalId],
                 content: text
             };
-            const node = findTreeGoalByInstanceId(state.tree, instanceId);
-            if (node) {
-                node.content = text;
-            }
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
@@ -291,5 +276,5 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, updateTextForInstanceId, reset, removeGoalIdFromTree, updateColorForInstanceId} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;

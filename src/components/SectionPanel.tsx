@@ -145,7 +145,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
       if (draggedItem && draggedItem.content) {
             // the first hierachy does not contain the dragged item
-            if (!tree.map((index) => index.id).includes(draggedItem.id)) {
+            if (!tree.some((goal) => goal.id === draggedItem.id)) {
               dispatch(addGoalToTree(draggedItem));
           } else {
               setExistingItemIds([...existingItemIds, draggedItem.id]);
@@ -162,7 +162,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     const newItemsToAdd = groupSelected.filter(
             // current hierachy
             (item) => !tree.some(
-                ref => ref.id === item.id
+                goal => goal.id === item.id
             )
     );
 

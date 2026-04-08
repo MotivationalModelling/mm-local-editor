@@ -95,7 +95,7 @@ const Tree: React.FC<TreeProps> = ({
   const deletingItemRef = useRef<TreeGoal | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const {treeData, dispatch} = useFileContext();
+  const {treeData, goals, dispatch} = useFileContext();
 
   // Delete item by its id
   const deleteItem = () => {
@@ -159,11 +159,12 @@ const Tree: React.FC<TreeProps> = ({
   const renderItem: NestableProps["renderItem"] = ({item, collapseIcon}) => {
     const treeItem = item as TreeGoal;
     const isEditing = editingItemId === treeItem.id;
+    const goalContent = goals[treeItem.id]?.content ?? "";
 
     // Handle when edit button clicked
     const handleEdit = () => {
       setEditingItemId(treeItem.id);
-      setEditedText(treeItem.content);
+      setEditedText(goalContent);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
       requestAnimationFrame(() => {
         if (inputRef.current) {
@@ -182,7 +183,7 @@ const Tree: React.FC<TreeProps> = ({
     // Handle saving edited text using GoalHint
     const handleSave = () => {
       handleContentSave(
-        treeItem.content, // original content
+        goalContent, // original content
         editedText, // new content
         (content) => {
           // On save callback
@@ -199,7 +200,7 @@ const Tree: React.FC<TreeProps> = ({
     // Handle cancel edited text
     const handleCancel = () => {
       setEditingItemId(null);
-      setEditedText(treeItem.content);
+      setEditedText(goalContent);
       // Defer code execution until after the browser has finished rendering updates to the DOM.
       requestAnimationFrame(() => {
         setDisableOnBlur(false);
@@ -209,7 +210,7 @@ const Tree: React.FC<TreeProps> = ({
     // Handle saving edited text when lost focus using GoalHint
     const handleBlur = () => {
       handleGoalBlur(
-        treeItem.content, // original content
+        goalContent, // original content
         editedText, // current content
         (content) => {
           // On save callback
@@ -229,7 +230,7 @@ const Tree: React.FC<TreeProps> = ({
     const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       handleGoalKeyPress(
         e,
-        treeItem.content, // original content
+        goalContent, // original content
         editedText, // current content
         (content) => {
           // On save callback
@@ -283,7 +284,7 @@ const Tree: React.FC<TreeProps> = ({
               style={treeInputStyle}
             />
           ) : (
-            treeItem.content || <em className="text-secondary">unnamed goal</em>
+            goalContent || <span className="text-secondary">Goal name</span>
           )}
         </div>
 
