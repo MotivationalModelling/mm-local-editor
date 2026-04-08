@@ -52,6 +52,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   setShowGoalSection,
   paddingX,
 }) => {
+  void setShowGoalSection;
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
@@ -144,7 +145,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
       if (draggedItem && draggedItem.content) {
             // the first hierachy does not contain the dragged item
-            if (!tree.map((index) => index.goalId).includes(draggedItem.id)) {
+            if (!tree.map((index) => index.id).includes(draggedItem.id)) {
               dispatch(addGoalToTree(draggedItem));
           } else {
               setExistingItemIds([...existingItemIds, draggedItem.id]);
@@ -161,7 +162,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     const newItemsToAdd = groupSelected.filter(
             // current hierachy
             (item) => !tree.some(
-                ref => ref.goalId === item.id
+                ref => ref.id === item.id
             )
     );
 
@@ -263,7 +264,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
+          handleSynTableTree={handleSynTableTree}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
