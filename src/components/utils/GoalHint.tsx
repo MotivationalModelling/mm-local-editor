@@ -25,11 +25,9 @@ export function handleContentSave(
   onSave: (content: string) => void,
   onCancel: () => void
 ): void {
+  void onCancel;
   if (canSaveContentEdit(originalContent, newContent)) {
     onSave(newContent);
-  } else {
-    // If trying to save empty content to existing goal, cancel
-    onCancel();
   }
 }
 
