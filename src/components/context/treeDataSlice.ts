@@ -262,7 +262,9 @@ export const treeDataSlice = createSlice({
             y: number
         }>) => {
             const node = findTreeGoalByInstanceId(state.tree, action.payload.instanceId);
-            if (node) {
+            // Equality guard: writing unchanged values would still dirty the Immer draft,
+            // producing a new state.tree ref and retriggering renderGraph indefinitely.
+            if (node && (node.x !== action.payload.x || node.y !== action.payload.y)) {
                 node.x = action.payload.x;
                 node.y = action.payload.y;
             }

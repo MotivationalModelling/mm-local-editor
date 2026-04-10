@@ -320,6 +320,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                                 cellHistory[cellID] = [newWidth, newHeight];
                             }
 
+                            // Only persist user-initiated drags; skip events fired during renderGraph.
                             if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
