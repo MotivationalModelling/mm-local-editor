@@ -268,11 +268,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
         });
     }
 
-    const graphListener = useCallback((graph: Graph) => {
+    const graphListener = useCallback((graph: Graph): (() => void) => {
         const cellHistory: CellHistory = {};
-        graph
-            .getDataModel()
-            .addListener(InternalEvent.CHANGE, (_sender: string, evt: EventObject) => {
+        const changeHandler = (_sender: string, evt: EventObject) => {
                 graph.getDataModel().beginUpdate();
                 evt.consume();
                 try {
@@ -357,7 +355,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
                     graph.getDataModel().endUpdate();
                     graph.refresh();
                 }
-            });
+            };
+        graph.getDataModel().addListener(InternalEvent.CHANGE, changeHandler);
+        return () => graph.getDataModel().removeListener(changeHandler);
     }, [dispatch]);
 
     /**
@@ -558,18 +558,16 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({ showGraphSectio
             const graphInstance = new Graph(graphContainer, undefined, plugins);
 
             setGraphStyle(graphInstance);
-            graphListener(graphInstance);
+            const removeChangeListener = graphListener(graphInstance);
             fixEditorPosition(graphInstance);
             supportFunctions(graphInstance);
             registerCustomShapes();
             setGraph(graphInstance);
 
-            // Cleanup function to destroy graph
             return () => {
-                if (graphInstance) {
-                    graphInstance.destroy();
-                }
-                setGraph(null); // Reset state
+                removeChangeListener();
+                graphInstance.destroy();
+                setGraph(null);
             };
         }
     }, [graphListener, setGraph]);
