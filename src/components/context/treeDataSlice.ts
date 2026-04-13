@@ -275,6 +275,5 @@ export const treeDataSlice = createSlice({
         selectGoalsForLabel: (state, label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
     }
 });
-
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, updateTextForInstanceId, reset, removeGoalIdFromTree, updateColorForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, addGoalToTree, deleteGoalFromGoalList, deleteGoalReferenceFromHierarchy, removeGoalIdFromTree, reset, setTreeData, updateColorForInstanceId, updateTextForGoalId, updateTextForInstanceId} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
