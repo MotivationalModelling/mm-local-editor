@@ -52,7 +52,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   setShowGoalSection,
   paddingX,
 }) => {
-  void setShowGoalSection;
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
@@ -264,7 +263,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={handleSynTableTree}
+          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>

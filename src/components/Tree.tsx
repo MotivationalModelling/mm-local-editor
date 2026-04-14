@@ -1,364 +1,511 @@
-import React, {useRef, useState} from "react";
+import React, {useMemo, useRef, useState} from "react";
 import WhoIcon from "/img/Stakeholder.png";
 import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
-import Nestable, {NestableProps} from "react-nestable";
-import {FaPlus, FaMinus} from "react-icons/fa";
-import {TreeGoal, Label, isNonFunctionalGoal, InstanceId} from "../components/types.ts";
-import {BsFillTrash3Fill, BsCheckCircle, BsXCircle, BsPencilSquare } from "react-icons/bs";
+import {
+    SimpleTreeItemWrapper,
+    SortableTree,
+    TreeItemComponentProps,
+    TreeItems,
+} from "dnd-kit-sortable-tree";
+import {FaMinus, FaPlus} from "react-icons/fa";
+import {BsCheckCircle, BsFillTrash3Fill, BsGripVertical, BsPencilSquare, BsXCircle} from "react-icons/bs";
+import {InstanceId, Label, TreeGoal, isNonFunctionalGoal} from "../components/types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import {
- 
-  isTextEmpty,
-  handleContentSave,
-  handleGoalKeyPress,
-  handleGoalBlur
-} from "./utils/GoalHint.tsx"
-
+    handleContentSave,
+    handleGoalBlur,
+    handleGoalKeyPress,
+    isEmptyGoal,
+    isTextEmpty,
+} from "./utils/GoalHint.tsx";
 import "./Tree.css";
 import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
-// Inline style for element in Nestable, css style import not working
+const INDENTATION_WIDTH = 24;
+
 const treeListStyle: React.CSSProperties = {
-  position: "relative",
-  background: "white",
-  display: "flex",
-  border: "1px solid gray",
-  borderRadius: "5px",
-  alignItems: "center",
-  padding: "0.1rem",
-  minWidth: "100px",
+    position: "relative",
+    background: "white",
+    display: "flex",
+    border: "1px solid gray",
+    borderRadius: "5px",
+    alignItems: "center",
+    padding: "0.1rem",
+    minWidth: "100px",
+    width: "100%",
 };
 
 const treeInputStyle: React.CSSProperties = {
-  backgroundColor: "#e0e0e0",
-  border: "none",
-  margin: 0,
-  padding: 0,
-  flex: 1,
-  outline: "none",
-  width: "100%",
-  height: "100%",
+    backgroundColor: "#e0e0e0",
+    border: "none",
+    margin: 0,
+    padding: 0,
+    flex: 1,
+    outline: "none",
+    width: "100%",
+    height: "100%",
 };
 
-const iconFromType = (type: Label) => {
-  const typeToIcon = {
-    Be: BeIcon,
-    Do: DoIcon,
-    Concern: ConcernIcon,
-    Feel: FeelIcon,
-    Who: WhoIcon,
-  };
+type SortableTreeGoal = TreeGoal & {
+    collapsed?: boolean;
+    canHaveChildren?: boolean;
+};
 
-  if (type in typeToIcon) {
-    return typeToIcon[type];
-  }
-  throw Error(`iconFromType: Unknown type "${type}"`);
+type GoalReference = {
+    goalId: TreeGoal["id"];
+    instanceId: InstanceId;
 };
 
 type TreeProps = {
-  // existingItemIds: number[];
-  handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
-  // setExistingItemIds: (existingItemIds: number[]) => void;
-  existingGoalReferenceInstanceId: { goalId: TreeGoal["id"]; instanceId: InstanceId }[];
-  setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: { goalId: TreeGoal["id"]; instanceId: InstanceId }[]) => void
+    handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
+    existingGoalReferenceInstanceId: GoalReference[];
+    setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: GoalReference[]) => void;
 };
 
-// Goal icon in the tree
-const IconComponent = ({type}: { type: Label }) => {
-  return (
+type TreeRowProps = TreeItemComponentProps<SortableTreeGoal> & {
+    editingItemId: InstanceId | null;
+    editedText: string;
+    inputRef: React.RefObject<HTMLInputElement>;
+    disableOnBlur: boolean;
+    setDisableOnBlur: React.Dispatch<React.SetStateAction<boolean>>;
+    setEditingItemId: React.Dispatch<React.SetStateAction<InstanceId | null>>;
+    setEditedText: React.Dispatch<React.SetStateAction<string>>;
+    handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
+    existingGoalReferenceInstanceId: GoalReference[];
+    onDeleteItem: (item: TreeGoal) => void;
+};
+
+const iconFromType = (type: Label) => {
+    const typeToIcon = {
+      Be: BeIcon,
+      Do: DoIcon,
+      Concern: ConcernIcon,
+      Feel: FeelIcon,
+      Who: WhoIcon,
+    };
+
+    if (type in typeToIcon) {
+      return typeToIcon[type];
+    }
+
+    throw Error(`iconFromType: Unknown type "${type}"`);
+};
+
+const IconComponent = ({type}: {type: Label}) => (
     <img
-      src={iconFromType(type)}
-      alt={`${type} icon`}
-      className="ms-2 me-1"
-      style={{
-        height: type === "Who" ? "30px" : "20px",
-      }}
+        src={iconFromType(type)}
+        alt={`${type} icon`}
+        className="ms-2 me-1"
+        style={{
+          height: type === "Who" ? "30px" : "20px",
+        }}
     />
-  );
+);
+
+const decorateTreeItems = (
+    items: TreeGoal[],
+    collapsedIds: Set<InstanceId>,
+): TreeItems<SortableTreeGoal> => {
+    return items.map((item) => ({
+        ...item,
+        collapsed: collapsedIds.has(item.instanceId),
+        canHaveChildren: !isNonFunctionalGoal(item.type),
+        children: decorateTreeItems(item.children ?? [], collapsedIds),
+    }));
 };
 
-const Tree: React.FC<TreeProps> = ({
-  // existingItemIds,
-  handleSynTableTree,
-  // setExistingItemIds,
-  existingGoalReferenceInstanceId,
-  setExistingGoalReferenceInstanceId,
-}) => {
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [editedText, setEditedText] = useState<string>("");
-  const [disableOnBlur, setDisableOnBlur] = useState<boolean>(false);
-  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
-  const deletingItemRef = useRef<TreeGoal | null>(null);
+const stripTreeUiState = (items: TreeItems<SortableTreeGoal>): TreeGoal[] => {
+    return items.map((treeItem) => {
+        const {children, collapsed, canHaveChildren, ...plainItem} = treeItem;
+        void collapsed;
+        void canHaveChildren;
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const {treeData, goals, dispatch} = useFileContext();
+      return {
+          ...plainItem,
+          children: stripTreeUiState(children ?? []),
+      };
+    });
+};
 
-  // Delete item by its id
-  const deleteItem = () => {
-    if (deletingItemRef?.current) {
-      dispatch(deleteGoalReferenceFromHierarchy(deletingItemRef.current));
-    }
-    setShowDeleteWarning(false);
-  };
+const collectCollapsedIds = (items: TreeItems<SortableTreeGoal>): Set<InstanceId> => {
+    const collapsedIds = new Set<InstanceId>();
 
+    const walk = (nodes: TreeItems<SortableTreeGoal>) => {
+        nodes.forEach((node) => {
+            if (node.collapsed) {
+              collapsedIds.add(node.instanceId);
+            }
 
+            if (node.children?.length) {
+              walk(node.children);
+            }
+        });
+    };
 
-  // Handle delete button clicked
-  const handleDeleteItem = (item: TreeGoal) => {
-    deletingItemRef.current = item;
-    // const deletingIds = getAllIds(item);
+    walk(items);
+    return collapsedIds;
+};
 
-    const deletingInstanceId = getAllGoalInstances(item);
-    if (item.children && item.children.length > 0) {
-      setExistingGoalReferenceInstanceId([...existingGoalReferenceInstanceId, ...deletingInstanceId])
-      // setExistingItemIds([...existingItemIds, ...deletingIds]);
-      setShowDeleteWarning(true);
-    } else {
-      deleteItem();
-    }
-  };
-
-  // Handle cancel deleting goal with children(s)
-  const handleDeleteCancel = () => {
-    setShowDeleteWarning(false);
-    // setExistingItemIds([]);
-    setExistingGoalReferenceInstanceId([])
-  };
-
-  // // Get ids from the tree item
-  // const getAllIds = (item: TreeGoal) => {
-  //   const ids: number[] = [item.id];
-
-  //   // If the item has children, recursively collect their ids
-  //   if (item.children) {
-  //     item.children.forEach((child) => {
-  //       ids.push(...getAllIds(child));
-  //     });
-  //   }
-
-  //   return ids;
-  // };
-
-  const getAllGoalInstances = (item: TreeGoal): { goalId: TreeGoal["id"]; instanceId: InstanceId }[] => {
+const getAllGoalInstances = (item: TreeGoal): GoalReference[] => {
     const result = [{goalId: item.id, instanceId: item.instanceId}];
 
     if (item.children) {
-      item.children.forEach((child) => {
-        result.push(...getAllGoalInstances(child)); // recurse into children
-      });
+        item.children.forEach((child) => {
+          result.push(...getAllGoalInstances(child));
+        });
     }
 
     return result;
-  };
+};
 
-  // Function for rendering every item
-  const renderItem: NestableProps["renderItem"] = ({item, collapseIcon}) => {
-    const treeItem = item as TreeGoal;
-    const isEditing = editingItemId === treeItem.id;
-    const goalContent = goals[treeItem.id]?.content ?? "";
-
-    // Handle when edit button clicked
-    const handleEdit = () => {
-      setEditingItemId(treeItem.id);
-      setEditedText(goalContent);
-      // Defer code execution until after the browser has finished rendering updates to the DOM.
-      requestAnimationFrame(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      });
-    };
-
-    // Handle double click to start editing
-    const handleDoubleClick = () => {
-      if (!isEditing) {
-        handleEdit();
-      }
-    };
-
-    // Handle saving edited text using GoalHint
-    const handleSave = () => {
-      handleContentSave(
-        goalContent, // original content
-        editedText, // new content
-        (content) => {
-          // On save callback
-          handleSynTableTree(treeItem, content);
-          setEditingItemId(null);
-        },
-        () => {
-          // On cancel callback
-          handleCancel();
-        }
-      );
-    };
-
-    // Handle cancel edited text
-    const handleCancel = () => {
-      setEditingItemId(null);
-      setEditedText(goalContent);
-      // Defer code execution until after the browser has finished rendering updates to the DOM.
-      requestAnimationFrame(() => {
-        setDisableOnBlur(false);
-      });
-    };
-
-    // Handle saving edited text when lost focus using GoalHint
-    const handleBlur = () => {
-      handleGoalBlur(
-        goalContent, // original content
-        editedText, // current content
-        (content) => {
-          // On save callback
-          handleSynTableTree(treeItem, content);
-          setEditingItemId(null);
-        },
-        () => {
-          // On cancel callback
-          handleCancel();
-        },
-        disableOnBlur // should prevent blur
-      );
-      setDisableOnBlur(false);
-    };
-
-    // Handle save and cancel edited text when key pressed using GoalHint
-    const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      handleGoalKeyPress(
-        e,
-        goalContent, // original content
-        editedText, // current content
-        (content) => {
-          // On save callback
-          handleSynTableTree(treeItem, content);
-          setEditingItemId(null);
-        },
-        () => {
-          // On cancel callback
-          handleCancel();
-        }
-      );
-    };
-
-    const ICON_SIZE = 25;
+const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
+    item,
+    childCount,
+    collapsed,
+    clone,
+    depth,
+    disableSorting,
+    handleProps,
+    onCollapse,
+    ghost,
+    editingItemId,
+    editedText,
+    inputRef,
+    disableOnBlur,
+    setDisableOnBlur,
+    setEditingItemId,
+    setEditedText,
+    handleSynTableTree,
+    existingGoalReferenceInstanceId,
+    onDeleteItem,
+    ...props
+}, ref) => {
+    const treeItem = item as SortableTreeGoal;
+    const isEditing = editingItemId === treeItem.instanceId;
+    const iconSize = 25;
     const isReference = existingGoalReferenceInstanceId.some(
-      ref => ref.goalId === treeItem.id && ref.instanceId === treeItem.instanceId
+      (itemRef) => itemRef.goalId === treeItem.id && itemRef.instanceId === treeItem.instanceId
     );
+
+    const handleEdit = () => {
+        if (isEmptyGoal(treeItem)) {
+          return;
+        }
+
+        setEditingItemId(treeItem.instanceId);
+        setEditedText(treeItem.content);
+
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+    };
+
+    const handleCancel = () => {
+        setEditingItemId(null);
+        setEditedText(treeItem.content);
+
+        requestAnimationFrame(() => {
+          setDisableOnBlur(false);
+        });
+    };
+
+    const handleSave = () => {
+        handleContentSave(
+            treeItem.content,
+            editedText,
+            (content) => {
+              handleSynTableTree(treeItem, content);
+              setEditingItemId(null);
+            },
+            handleCancel,
+        );
+    };
+
+    const handleBlur = () => {
+        handleGoalBlur(
+          treeItem.content,
+          editedText,
+          (content) => {
+            handleSynTableTree(treeItem, content);
+            setEditingItemId(null);
+          },
+          handleCancel,
+          disableOnBlur,
+        );
+        setDisableOnBlur(false);
+    };
+
+    const handleEditKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        handleGoalKeyPress(
+          event,
+          treeItem.content,
+          editedText,
+          (content) => {
+            handleSynTableTree(treeItem, content);
+            setEditingItemId(null);
+          },
+          handleCancel,
+        );
+    };
+
     return (
-      // While editing, set color to gray. If the drop item exist, set color to light red (#FF474C)
-      <div
-        style={{
-          ...treeListStyle,
-          backgroundColor: isEditing
-            ? "#e0e0e0"
-            : isReference
-              ? "#FF474C"
-              : "white",
-        }}
-        className="tree-list"
-        onDoubleClick={handleDoubleClick}
-      >
-        {collapseIcon}
-        <IconComponent type={treeItem.type} />
+        <SimpleTreeItemWrapper
+          {...props}
+          ref={ref}
+          item={treeItem}
+          depth={depth}
+          clone={clone}
+          handleProps={handleProps}
+          disableSorting={disableSorting}
+          indentationWidth={INDENTATION_WIDTH}
+          childCount={childCount}
+          collapsed={collapsed}
+          onCollapse={onCollapse}
+          manualDrag
+          showDragHandle={false}
+          hideCollapseButton
+        >
         <div
           style={{
-            padding: ".5rem",
-            flex: 1,
-            overflowWrap: "break-word",
-            wordBreak: "break-word",
+            ...treeListStyle,
+            backgroundColor: isEditing
+              ? "#e0e0e0"
+              : isReference
+                ? "#FF474C"
+                : "white",
+            boxShadow: clone ? "0 8px 24px rgba(0, 0, 0, 0.18)" : undefined,
+            opacity: ghost ? 0.55 : 1,
+          }}
+          className="tree-list"
+          onDoubleClick={() => {
+            if (!isEditing && !isEmptyGoal(treeItem)) {
+              handleEdit();
+            }
           }}
         >
-          {isEditing ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={editedText}
-              onChange={(event) => setEditedText(event.target.value)}
-              onBlur={handleBlur}
-              onKeyDown={handleEditKeyDown}
-              className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
-              style={treeInputStyle}
-            />
-          ) : (
-            goalContent || <span className="text-secondary">Goal name</span>
-          )}
-        </div>
-
-        {/* Visual feedback for empty content */}
-        {isEditing && isTextEmpty(editedText) && (
-          <div className="invalid-feedback d-block small">
-            Content cannot be empty
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              paddingLeft: "0.35rem",
+              gap: "0.2rem",
+              cursor: disableSorting ? "default" : "grab",
+            }}
+          >
+            <div
+              style={{
+                width: "16px",
+                display: "flex",
+                justifyContent: "center",
+                cursor: childCount ? "pointer" : "default",
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+                onCollapse?.();
+              }}
+            >
+              {childCount ? (
+                collapsed ? <FaPlus size={13} /> : <FaMinus size={13} />
+              ) : null}
+            </div>
+            <div
+              {...(!disableSorting ? handleProps : {})}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                color: "#666",
+                cursor: disableSorting ? "default" : "grab",
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <BsGripVertical size={16} />
+            </div>
           </div>
-        )}
 
-        {/* The hover effect can only created with pure css, onMouseEnter will 
-            replace the Nestable onMouseEnter code and break the dragging functionality */}
-        <div
-          className="edit-icon"
-          onClick={isEditing ? handleSave : handleEdit}
-        >
-          {isEditing ? (
-            <BsCheckCircle size={ICON_SIZE} />
-          ) : (
-            <BsPencilSquare size={ICON_SIZE} />
+          <IconComponent type={treeItem.type} />
+
+          <div
+            style={{
+              padding: ".5rem",
+              flex: 1,
+              overflowWrap: "break-word",
+              wordBreak: "break-word",
+            }}
+          >
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={editedText}
+                onChange={(event) => setEditedText(event.target.value)}
+                onBlur={handleBlur}
+                onKeyDown={handleEditKeyDown}
+                className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
+                style={treeInputStyle}
+              />
+            ) : (
+              treeItem.content
+            )}
+          </div>
+
+          {isEditing && isTextEmpty(editedText) && (
+            <div className="invalid-feedback d-block small">
+              Content cannot be empty
+            </div>
           )}
+
+          <div
+            className="edit-icon"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (isEditing) {
+                handleSave();
+              } else {
+                handleEdit();
+              }
+            }}
+            style={{
+              opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
+              cursor: !isEditing && isEmptyGoal(treeItem) ? "not-allowed" : "pointer",
+            }}
+          >
+            {isEditing ? (
+              <BsCheckCircle size={iconSize} />
+            ) : (
+              <BsPencilSquare size={iconSize} />
+            )}
+          </div>
+
+          <div
+            className="delete-icon"
+            onMouseDown={(event) => {
+              setDisableOnBlur(true);
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (isEditing) {
+                handleCancel();
+              } else {
+                onDeleteItem(treeItem);
+              }
+            }}
+          >
+            {isEditing ? (
+              <BsXCircle size={iconSize} />
+            ) : (
+              <BsFillTrash3Fill size={iconSize} />
+            )}
+          </div>
         </div>
-        <div
-          className="delete-icon"
-          onClick={isEditing ? handleCancel : () => handleDeleteItem(treeItem)}
-          onMouseEnter={() => setDisableOnBlur(true)}
-        >
-          {isEditing ? (
-            <BsXCircle size={ICON_SIZE} />
-          ) : (
-            <BsFillTrash3Fill size={ICON_SIZE} />
-          )}
-        </div>
-      </div>
+      </SimpleTreeItemWrapper>
     );
-  };
+});
 
-  // Button for collapse and expand
-  const Collapser = ({isCollapsed}: { isCollapsed: boolean }) => {
-    const iconSize = 13;
+TreeRow.displayName = "TreeRow";
+
+const Tree: React.FC<TreeProps> = ({
+    handleSynTableTree,
+    existingGoalReferenceInstanceId,
+    setExistingGoalReferenceInstanceId,
+}) => {
+    const [editingItemId, setEditingItemId] = useState<InstanceId | null>(null);
+    const [editedText, setEditedText] = useState("");
+    const [disableOnBlur, setDisableOnBlur] = useState(false);
+    const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+    const [collapsedIds, setCollapsedIds] = useState<Set<InstanceId>>(new Set());
+    const deletingItemRef = useRef<TreeGoal | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const {treeData, dispatch} = useFileContext();
+
+    const sortableItems = useMemo(
+      () => decorateTreeItems(treeData, collapsedIds),
+      [treeData, collapsedIds],
+    );
+
+    const deleteItem = () => {
+      if (deletingItemRef.current) {
+        dispatch(deleteGoalReferenceFromHierarchy(deletingItemRef.current));
+      }
+
+      setExistingGoalReferenceInstanceId([]);
+      setShowDeleteWarning(false);
+    };
+
+    const handleDeleteItem = (item: TreeGoal) => {
+      deletingItemRef.current = item;
+
+      const deletingGoalReferences = getAllGoalInstances(item);
+      if (item.children && item.children.length > 0) {
+        setExistingGoalReferenceInstanceId([
+          ...existingGoalReferenceInstanceId,
+          ...deletingGoalReferences,
+        ]);
+        setShowDeleteWarning(true);
+        return;
+      }
+
+      deleteItem();
+    };
+
+    const handleDeleteCancel = () => {
+      setShowDeleteWarning(false);
+      setExistingGoalReferenceInstanceId([]);
+    };
+
+    const handleItemsChanged = (items: TreeItems<SortableTreeGoal>) => {
+      setCollapsedIds(collectCollapsedIds(items));
+      dispatch(setTreeData(stripTreeUiState(items)));
+    };
+
+    const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
+        <TreeRow
+          {...props}
+          ref={ref}
+          editingItemId={editingItemId}
+          editedText={editedText}
+          inputRef={inputRef}
+          disableOnBlur={disableOnBlur}
+          setDisableOnBlur={setDisableOnBlur}
+          setEditingItemId={setEditingItemId}
+          setEditedText={setEditedText}
+          handleSynTableTree={handleSynTableTree}
+          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+          onDeleteItem={handleDeleteItem}
+        />
+    ));
+
+    DndTreeItem.displayName = "DndTreeItem";
+
     return (
-      <div
-        style={{
-          display: "flex",
-          paddingLeft: "0.5rem",
-          cursor: "pointer",
-        }}
-      >
-        {isCollapsed ? <FaPlus size={iconSize} /> : <FaMinus size={iconSize} />}
-      </div>
-    );
-  };
+        <div style={{width: "100%", height: "100%", alignSelf: "flex-start", position: "relative"}}>
+          <ConfirmModal
+            show={showDeleteWarning}
+            title="Delete Warning"
+            message="You are going to delete a goal with children goals, are you sure?"
+            onHide={handleDeleteCancel}
+            onConfirm={deleteItem}
+          />
 
-  return (
-    <div style={{width: "100%", height: "100%", alignSelf: "flex-start", position: "relative"}}>
-      <ConfirmModal
-        show={showDeleteWarning}
-        title="Delete Warning"
-        message="You are going to delete a goal with children goals, are you sure?"
-        onHide={handleDeleteCancel}
-        onConfirm={deleteItem}
-      />
-      <Nestable
-        onChange={({items}) => dispatch(setTreeData(items as TreeGoal[]))}
-        confirmChange={({destinationParent}) => !isNonFunctionalGoal(destinationParent?.type)}
-        items={treeData}
-        renderItem={renderItem}
-        idProp="instanceId"
-        renderCollapseIcon={({isCollapsed}) => (
-          <Collapser isCollapsed={isCollapsed} />
-        )}
-      />
-    </div>
-  );
+          <SortableTree
+            items={sortableItems}
+            onItemsChanged={handleItemsChanged}
+            TreeItemComponent={DndTreeItem}
+            indentationWidth={INDENTATION_WIDTH}
+            disableSorting={editingItemId !== null}
+            pointerSensorOptions={{
+              activationConstraint: {
+                distance: 5,
+              },
+            }}
+          />
+        </div>
+    );
 };
 
 export default Tree;
