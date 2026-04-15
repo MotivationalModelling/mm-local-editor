@@ -5,6 +5,7 @@ import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
 import PaperReferenceList from "./PaperReferenceList";
 import {papers} from "../data/papers.ts";
+import { Link } from "react-router-dom";
 
 const Papers = () => {
     return (
@@ -12,7 +13,10 @@ const Papers = () => {
             <WelcomeHeader/>
                 <Container style={{overflow: "auto", height: "90vh"}}>
                     <PaperReferenceList references={papers}/>
-                </Container>
+                    <Link to="https://www.leonsterling.com/about-research-report-series" target="_blank" className="text-decoration-none">
+                        <p className="text-center mt-3">Read more</p>
+                    </Link>
+                </Container>     
             <WelcomeFooter destination="" name="Home"/>
         </div>
     );
