@@ -91,7 +91,7 @@ interface FileContextProps {
     tabs: Map<Label, TabContent>
     goals: Record<TreeGoal["id"], TreeGoal>
     treeIds: Record<TreeGoal["id"], InstanceId[]>
-    showLineBetweenNonFunctionalGoal: boolean
+    showLineBetweenNonFunctionalGoals: boolean
 }
 
 // Create context for data tansfer and file handle
@@ -111,7 +111,7 @@ const FileContext = createContext<FileContextProps>({
     tabs: new Map(),
     goals: {},
     treeIds: {},
-    showLineBetweenNonFunctionalGoal:true,
+    showLineBetweenNonFunctionalGoals: true,
 });
 
 // Mapping of old types to new types

@@ -142,7 +142,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         goals,
         tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
-        showLineBetweenNonFunctionalGoal: true,
+        showLineBetweenNonFunctionalGoals: true,
     };
 };
 
@@ -166,7 +166,7 @@ export const treeDataSlice = createSlice({
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
-        showLineBetweenNonFunctionalGoal: true,
+        showLineBetweenNonFunctionalGoals: true,
 
     },
     reducers: {
@@ -259,10 +259,8 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
-        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<{
-            showLines: boolean
-        }>) => {
-            state.showLineBetweenNonFunctionalGoal = action.payload.showLines;
+        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<boolean>) => {
+            state.showLineBetweenNonFunctionalGoals = action.payload;
         },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],

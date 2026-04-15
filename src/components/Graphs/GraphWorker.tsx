@@ -56,7 +56,7 @@ interface CellHistory {
 
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoal} = useFileContext();
+    const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
     const {graph, setGraph} = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
@@ -85,7 +85,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         return outgoingEdges.filter((edge) => edge?.target !== selectedCell);
     };
 
-    const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean,cells:Cell[]) => {
+    const deleteItemFromGraph = (graph: Graph, removeChildrenFlag: boolean, cells: Cell[]) => {
 
         if (!cells || !graph) return;
 
@@ -375,10 +375,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         const keyHandler = new KeyHandler(graph);
         keyHandler.bindKey(DELETE_KEYBINDING, () => {
             if (graph.isEnabled()) {
-                
+
                 const selectedCells = graph.getSelectionCells();
                 if (!selectedCells || selectedCells.length === 0) return;
-                
+
                 setDeletingCells(selectedCells);
 
                 const outgoingEdges = childrenOfSelectedCell(graph, selectedCells[0]);
@@ -387,7 +387,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 if (nAssociatedGoal > 0) {
                     setShowDeleteWarning(true)
                 } else {
-                    deleteItemFromGraph(graph, false,selectedCells);
+                    deleteItemFromGraph(graph, false, selectedCells);
                 }
 
                 // const cells = graph.removeCells(); // no arguments, internally take all selected ones and delete, and return th deleted cells as an array
@@ -537,11 +537,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             negativesGlob,
             qualitiesGlob,
             stakeholdersGlob,
-            showLineBetweenNonFunctionalGoal
+            showLineBetweenNonFunctionalGoals
         );
-        
+
         graph.getDataModel().endUpdate();
-    }, [graph, cluster, showLineBetweenNonFunctionalGoal]);
+    }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
 
     // First useEffect to set up graph. Only run on mount.
     useEffect(() => {
@@ -588,7 +588,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             }
         }
     }, [cluster, graph, renderGraph]);
-    
+
     // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {
         const currentCount = cluster.ClusterGoals.length;
@@ -608,7 +608,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         if (!showGraphSection || !graph || !divGraph.current) return;
 
         const container = divGraph.current;
-        let lastBounds: {width: number; height: number} | null = null;
+        let lastBounds: { width: number; height: number } | null = null;
 
         const observer = new ResizeObserver(() => {
             const bounds = graph.getGraphBounds();
@@ -636,7 +636,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         return () => observer.disconnect();
     }, [showGraphSection, graph]);
 
-        
+
     // --------------------------------------------------------------------------------------------------------------------------------------------------
     const nAssociatedGoal =
         deletingCells && graph
@@ -659,7 +659,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 onHide={() => setShowDeleteWarning(false)}
                 onConfirm={() => {
                     if (graph && deletingCells) {
-                        deleteItemFromGraph(graph, removeChildren,deletingCells);
+                        deleteItemFromGraph(graph, removeChildren, deletingCells);
                     } else {
                         console.warn("Graph not initialized yet");
                     }
