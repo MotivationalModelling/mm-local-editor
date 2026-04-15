@@ -142,6 +142,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         goals,
         tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
+        showLineBetweenNonFunctionalGoals: true,
     };
 };
 
@@ -164,7 +165,9 @@ export const treeDataSlice = createSlice({
         tree: [] as TreeGoal[],
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
-        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>
+        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
+        showLineBetweenNonFunctionalGoals: true,
+
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
@@ -256,6 +259,9 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
+        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<boolean>) => {
+            state.showLineBetweenNonFunctionalGoals = action.payload;
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeGoal[]
@@ -279,6 +285,6 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
+export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

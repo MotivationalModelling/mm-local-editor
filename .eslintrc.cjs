@@ -10,6 +10,12 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh'],
   rules: {
+    'array-bracket-spacing': ['error', 'never'],
+
+    'object-curly-spacing': ['error', 'never'],
+    
+    'space-in-parens': ['error', 'never'],
+
     'react-refresh/only-export-components': [
       'warn',
       { allowConstantExport: true },

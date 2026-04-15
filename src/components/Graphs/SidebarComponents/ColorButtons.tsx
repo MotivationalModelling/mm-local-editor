@@ -15,7 +15,7 @@ type ColorButtonsProps = {
 
 const ColorButtons = ({graph}: ColorButtonsProps) => {
     const [selectedColor, setSelectedColor] = useState<string>("#ffffff");
-    const { dispatch } = useFileContext();
+    const {dispatch} = useFileContext();
     const setColor = (color: string) => {
         graph.getDataModel().beginUpdate();
         try {
