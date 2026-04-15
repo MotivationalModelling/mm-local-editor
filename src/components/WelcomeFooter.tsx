@@ -15,7 +15,7 @@ const WelcomeFooter = ({name, destination}: WelcomeFooterProps) => {
 				</Link>
 				&nbsp;|&nbsp;
 				<Link
-					to="/papers/usermanual.pdf"
+					to="/papers/AMMBER_User_Manual.pdf"
 					target="_blank"
 					className="text-decoration-none"
 				>
