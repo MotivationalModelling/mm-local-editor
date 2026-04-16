@@ -85,7 +85,7 @@ export function fixEditorPosition(graph: Graph) {
     };
 
     const observer = new MutationObserver(() => adjustOnce());
-    observer.observe(container, { childList: true, subtree: true });
+    observer.observe(container, {childList: true, subtree: true});
 }
 
 // Functional-8-1

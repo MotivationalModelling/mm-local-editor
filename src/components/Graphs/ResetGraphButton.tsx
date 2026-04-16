@@ -2,9 +2,9 @@ import React from "react";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
-import { createDefaultTabData, defaultTreeData } from "../../data/initialTabs";
-import { useFileContext } from "../context/FileProvider";
-import { reset } from "../context/treeDataSlice";
+import {createDefaultTabData, defaultTreeData} from "../../data/initialTabs";
+import {useFileContext} from "../context/FileProvider";
+import {reset} from "../context/treeDataSlice";
 
 type ButtonVariant = "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark" | "outline-primary" | "outline-secondary" | "outline-success" | "outline-danger" | "outline-warning" | "outline-info" | "outline-light" | "outline-dark" | "link";
 

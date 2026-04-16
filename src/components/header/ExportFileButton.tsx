@@ -14,14 +14,14 @@ import ButtonGroup from "react-bootstrap/ButtonGroup";
 
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
-const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) => {
+const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => {
     const {graph} = useGraph(); // Use the context to get the graph instance
-    const {cluster } = useFileContext(); // Get goals and cluster from file context
+    const {cluster} = useFileContext(); // Get goals and cluster from file context
     const [errorModal, setErrorModal] = useState<ErrorModalProps>({
         show: false,
         title: "",
         message: "",
-        onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+        onHide: () => setErrorModal(prev => ({...prev, show: false}))
     });
 
     // Simplified logic: Export is only available when showGraphSection is true
@@ -60,7 +60,7 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
                 show: true,
                 title: "Cannot Export Model",
                 message: getTooltipMessage(),
-                onHide: () => setErrorModal(prev => ({ ...prev, show: false }))
+                onHide: () => setErrorModal(prev => ({...prev, show: false}))
             });
             return null;
         }
@@ -107,7 +107,7 @@ const ExportFileButton = ({ showGraphSection }: { showGraphSection: boolean }) =
                 };
                 const handle = await self.showSaveFilePicker(options);
                 const writable = await handle.createWritable();
-                await writable.write(new Blob([svgString], {type: 'image/svg+xml;charset=utf-8' }));
+                await writable.write(new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'}));
                 await writable.close();
             }
             // Fallback for non chromium browsers

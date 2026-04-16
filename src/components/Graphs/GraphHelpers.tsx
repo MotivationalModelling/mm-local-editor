@@ -231,15 +231,15 @@ export const renderFunction = (
     if (source) {
         // Insert the edge with specific constraints
         const edge = graph.insertEdge(null, null, "", source, node);
-        
+
         // Force the connection to the center of the target (the parallelogram)
         // entryX/Y = 0.5 means 50% of the width/height (the center)
         graph.setCellStyles("entryX", "0.5", [edge]);
         graph.setCellStyles("entryY", "0.5", [edge]);
-        
+
         // Ensure the line is behind the shape (Z-Index / Order)
         // This moves the edge to the back of the graph display list
-        graph.orderCells(true, [edge]); 
+        graph.orderCells(true, [edge]);
     }
     // if no root goal is registered, then store this as root
     if (rootGoalWrapper.value === null) {
@@ -370,7 +370,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
 };
 
 // Get the config type based on the type and the descriptions
-const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{instanceId: string; content: string;}>) => {
+const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{ instanceId: string; content: string; }>) => {
     const symbolKey = getSymbolKeyByType(type);
     if (symbolKey) {
         const config = SYMBOL_CONFIGS[symbolKey];
@@ -389,11 +389,12 @@ const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{insta
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{instanceId: InstanceId; content: string;}>,
+    descriptions: Array<{ instanceId: InstanceId; content: string; }>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None",
-    color: string | undefined
+    color: string | undefined,
+    showLineBetweenNonFunctionalGoals: boolean
 ) => {
 
     console.log("Rendering non-functional goal: ", descriptions);
@@ -483,7 +484,7 @@ export const renderNonFunction = (
         symbolKey
     );
 
-    console.log("Nonfunctional-goal-dependencies:",descriptions);
+    console.log("Nonfunctional-goal-dependencies:", descriptions);
     // Insert the vertex
     const node = graph.insertVertex(
         null,
@@ -495,18 +496,20 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("Nonfunctional-goal-node:",node);
+    console.log("Nonfunctional-goal-node:", node);
     // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node, dotted);
-    // Ensure the line is behind the shape (Z-Index / Order)
-    // This moves the edge to the back of the graph display list
-    graph.orderCells(true, [edge]); 
+    if (showLineBetweenNonFunctionalGoals) {
+        const edge = graph.insertEdge(null, null, "", source, node, dotted);
+        // Ensure the line is behind the shape (Z-Index / Order)
+        // This moves the edge to the back of the graph display list
+        graph.orderCells(true, [edge]);
+    }
     // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
     const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
-    
+
     if (nodeGeo && preferred && isTypeAdjustableByText(symbolKey)) {
         // Adjust height based on the number of lines and font size
         const lines: string[] = squareLabel.split(/\n/);
@@ -651,7 +654,8 @@ export const associateNonFunctions = (
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
+    stakeholdersGlob: GlobObject,
+    showLineBetweenNonFunctionalGoals: boolean
 ) => {
     console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob);
     // fetch all the functional goals
@@ -672,7 +676,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.NEGATIVE.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
         // render all stakeholders
@@ -683,7 +688,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.STAKEHOLDER.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
 
@@ -695,7 +701,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.EMOTIONAL.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
 
@@ -707,7 +714,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.QUALITY.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
     });

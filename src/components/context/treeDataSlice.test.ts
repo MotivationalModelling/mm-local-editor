@@ -185,7 +185,7 @@ describe('treeDataSlice', () => {
     });
     it('should remove a node from the top level', () => {
         const id = 1;
-        const node = createTreeGoalNode(initialState.treeIds, { id, type: "Do" });
+        const node = createTreeGoalNode(initialState.treeIds, {id, type: "Do"});
         const instanceId = node.instanceId;
 
         const tree: TreeGoal[] = [node];
@@ -197,9 +197,9 @@ describe('treeDataSlice', () => {
     });
     it('should remove a node from the second level', () => {
         const id = 1;
-        const childrenNode = createTreeGoalNode(initialState.treeIds, { id, type: "Do" });
+        const childrenNode = createTreeGoalNode(initialState.treeIds, {id, type: "Do"});
         const childrenInstanceId = childrenNode.instanceId
-        const initialNode = createTreeGoalNode(initialState.treeIds, { id: 0, type: "Do", children: [childrenNode]});
+        const initialNode = createTreeGoalNode(initialState.treeIds, {id: 0, type: "Do", children: [childrenNode]});
         const tree: TreeGoal[] = [initialNode];
 
         expect(tree.length).toEqual(1);

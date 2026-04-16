@@ -4,13 +4,14 @@ import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
+import Nestable, {NestableProps} from "react-nestable";
+import {FaPlus, FaMinus} from "react-icons/fa";
 import {
     SimpleTreeItemWrapper,
     SortableTree,
     TreeItemComponentProps,
     TreeItems,
 } from "dnd-kit-sortable-tree";
-import {FaMinus, FaPlus} from "react-icons/fa";
 import {BsCheckCircle, BsFillTrash3Fill, BsGripVertical, BsPencilSquare, BsXCircle} from "react-icons/bs";
 import {InstanceId, Label, TreeGoal, isNonFunctionalGoal} from "../components/types.ts";
 import {useFileContext} from "./context/FileProvider";
