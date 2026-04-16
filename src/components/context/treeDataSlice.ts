@@ -259,6 +259,9 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
+        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<boolean>) => {
+            state.showLineBetweenNonFunctionalGoals = action.payload;
+        },
         updatePositionForInstanceId: (state, action: PayloadAction<{
             instanceId: InstanceId,
             x: number,
@@ -295,6 +298,10 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, updatePositionForInstanceId} = treeDataSlice.actions;
+export const {
+    addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList,
+    updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId,
+    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
