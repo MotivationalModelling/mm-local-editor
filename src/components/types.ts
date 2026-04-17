@@ -49,6 +49,8 @@ export type ParsedGoalId = ParsedFunctionalId | ParsedNonFunctionalId;
 
 export interface ClusterGoal extends GoalBase {
     SubGoals: ClusterGoal[]
+    x?: number;
+    y?: number;
 }
 
 export interface GoalList extends Record<GoalType, Goal[]> {
@@ -130,6 +132,8 @@ export type TreeGoal = {
     instanceId: InstanceId;
     children?: TreeGoal[];
     color?: string;
+    x?: number;
+    y?: number;
 };
 
 export const newTreeGoal = (initFields: Pick<TreeGoal, "type"> & Partial<TreeGoal>): TreeGoal => {

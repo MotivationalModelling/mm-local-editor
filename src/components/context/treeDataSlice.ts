@@ -262,6 +262,19 @@ export const treeDataSlice = createSlice({
         setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<boolean>) => {
             state.showLineBetweenNonFunctionalGoals = action.payload;
         },
+        updatePositionForInstanceId: (state, action: PayloadAction<{
+            instanceId: InstanceId,
+            x: number,
+            y: number
+        }>) => {
+            const node = findTreeGoalByInstanceId(state.tree, action.payload.instanceId);
+            // Equality guard: writing unchanged values would still dirty the Immer draft,
+            // producing a new state.tree ref and retriggering renderGraph indefinitely.
+            if (node && (node.x !== action.payload.x || node.y !== action.payload.y)) {
+                node.x = action.payload.x;
+                node.y = action.payload.y;
+            }
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeGoal[]
@@ -285,6 +298,10 @@ export const treeDataSlice = createSlice({
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals} = treeDataSlice.actions;
+export const {
+    addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList,
+    updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId,
+    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 

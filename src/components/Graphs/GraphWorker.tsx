@@ -20,7 +20,7 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
-import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals} from './GraphHelpers';
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
@@ -30,8 +30,8 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds} from "../utils/GraphUtils";
-import {removeGoalIdFromTree, updateTextForInstanceId} from "../context/treeDataSlice.ts";
+import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
@@ -60,6 +60,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const {graph, setGraph} = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
+    // Guards against dispatching stale positions while renderGraph is rebuilding cells.
+    const isRenderingRef = useRef(false);
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -315,6 +317,15 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             if (cellID) {
                                 cellHistory[cellID] = [newWidth, newHeight];
                             }
+
+                            // Only persist user-initiated drags; skip events fired during renderGraph.
+                            if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
+                                const geo = cell.getGeometry();
+                                if (geo !== null) {
+                                    const instanceId = validateInstanceId(cellID.replace("Functional-", ""));
+                                    dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
+                                }
+                            }
                         }
                         else if (change.constructor.name == "ValueChange") {
                             const cell: Cell = change.cell;
@@ -496,6 +507,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         const qualitiesGlob: GlobObject = {};
         const stakeholdersGlob: GlobObject = {};
 
+        isRenderingRef.current = true;
         resetGraph(
             graph,
             rootGoalWrapper,
@@ -508,6 +520,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         // Check if the browser is supported
         if (!Client.isBrowserSupported()) {
             error("Browser not supported!", 200, false);
+            isRenderingRef.current = false;
             return;
         }
 
@@ -527,6 +540,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         );
         rootGoal = rootGoalWrapper.value;
         layoutFunctions(graph, rootGoal);
+        restoreSavedPositions(graph, cluster.ClusterGoals);
 
         // render non-functional goals
         associateNonFunctions(
@@ -541,6 +555,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         );
 
         graph.getDataModel().endUpdate();
+        isRenderingRef.current = false;
     }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
 
     // First useEffect to set up graph. Only run on mount.
