@@ -142,6 +142,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         goals,
         tree: treeData,
         treeIds: createTreeIdsFromTreeData(goals, treeData),
+        showLineBetweenNonFunctionalGoals: true,
     };
 };
 
@@ -164,7 +165,9 @@ export const treeDataSlice = createSlice({
         tree: [] as TreeGoal[],
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
-        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>
+        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
+        showLineBetweenNonFunctionalGoals: true,
+
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
@@ -223,10 +226,9 @@ export const treeDataSlice = createSlice({
             id: TreeGoal["id"],
             text: string
         }>) => {
-            const {id, text} = action.payload;
-            state.goals[id] = {
-                ...state.goals[id],
-                content: text
+            state.goals[action.payload.id] = {
+                ...state.goals[action.payload.id],
+                content: action.payload.text
             };
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
@@ -253,6 +255,22 @@ export const treeDataSlice = createSlice({
                 node.color = color;
             }
         },
+        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<boolean>) => {
+            state.showLineBetweenNonFunctionalGoals = action.payload;
+        },
+        updatePositionForInstanceId: (state, action: PayloadAction<{
+            instanceId: InstanceId,
+            x: number,
+            y: number
+        }>) => {
+            const node = findTreeGoalByInstanceId(state.tree, action.payload.instanceId);
+            // Equality guard: writing unchanged values would still dirty the Immer draft,
+            // producing a new state.tree ref and retriggering renderGraph indefinitely.
+            if (node && (node.x !== action.payload.x || node.y !== action.payload.y)) {
+                node.x = action.payload.x;
+                node.y = action.payload.y;
+            }
+        },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeGoal[]
@@ -275,5 +293,11 @@ export const treeDataSlice = createSlice({
         selectGoalsForLabel: (state, label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
     }
 });
-export const {addGoal, addGoalToTab, addGoalToTree, deleteGoalFromGoalList, deleteGoalReferenceFromHierarchy, removeGoalIdFromTree, reset, setTreeData, updateColorForInstanceId, updateTextForGoalId, updateTextForInstanceId} = treeDataSlice.actions;
+
+export const {
+    addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList,
+    updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId,
+    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
+
