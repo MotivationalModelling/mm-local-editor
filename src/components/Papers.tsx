@@ -5,7 +5,7 @@ import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
 import PaperReferenceList from "./PaperReferenceList";
 import {papers} from "../data/papers.ts";
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
 
 const Papers = () => {
     return (
