@@ -24,7 +24,7 @@ const iconFromType = (type: Label) => {
     throw Error(`iconFromType: Unknown type "${type}"`);
 };
 
-const IconComponent: FC<{type: Label}> = ({type}) => (
+const IconForGoalType: FC<{type: Label}> = ({type}) => (
     <img src={iconFromType(type)}
          alt={`${type} icon`}
          className="ms-2 me-1"
@@ -33,4 +33,4 @@ const IconComponent: FC<{type: Label}> = ({type}) => (
          }}/>
 );
 
-export default IconComponent;
+export default IconForGoalType;
