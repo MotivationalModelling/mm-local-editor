@@ -42,14 +42,12 @@ const DEFAULT_HEIGHT = "800px";
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
-  setShowGoalSection: (showGoalSection: boolean) => void;
   paddingX: number;
 };
 
 const SectionPanel: React.FC<SectionPanelProps> = ({
   showGoalSection,
   showGraphSection,
-  setShowGoalSection,
   paddingX,
 }) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
@@ -189,11 +187,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     setGroupSelected([]);
   };
 
-  // Handle synchronize data in table data and tree data
-  const handleSynTableTree = (treeItem: TreeGoal, editedText: string) => {
-    dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
-  };
-
   // Get the parent div inner width and set starter width for section one and section three
   useEffect(() => {
     if (parentRef.current) {
@@ -284,15 +277,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         onDragOver={(event) => event.preventDefault()}
         ref={sectionTwoRef}
       >
-        <Tree
-
-          // existingItemIds={existingItemIds}
-          // setTreeIds={setTreeIds}
-          handleSynTableTree={handleSynTableTree}
-          // setExistingItemIds={setExistingItemIds}
-          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
-        />
+          <Tree existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+                setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}/>
       </div>
 
       {/* Graph Render Section */}
