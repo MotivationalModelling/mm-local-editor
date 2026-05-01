@@ -39,7 +39,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     const isEditing = (editingItemId === treeItem.instanceId);
     const iconSize = 16;
     const {dispatch, goals} = useFileContext();
-    const goal = goals[treeItem.id];
+    const goal = goals[treeItem.id];    // use the Goal from goals referenced by the tree node's id
     const [editedText, setEditedText] = useState(goal.content);
 
     const keyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
