@@ -1,39 +1,22 @@
 import React, {useMemo, useRef, useState} from "react";
-import InputGroup from "react-bootstrap/InputGroup";
-import Form from "react-bootstrap/esm/Form";
-import {FaMinus, FaPlus} from "react-icons/fa";
-import {BsFillTrash3Fill, BsGripVertical, BsXCircle} from "react-icons/bs";
-import {SimpleTreeItemWrapper, SortableTree, TreeItemComponentProps, TreeItems,} from "dnd-kit-sortable-tree";
+import {SortableTree, TreeItemComponentProps, TreeItems,} from "dnd-kit-sortable-tree";
 import {InstanceId, isNonFunctionalGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
-import {isTextEmpty} from "./utils/GoalHint.tsx";
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setTreeData, updateTextForGoalId} from "./context/treeDataSlice.ts";
-import IconForGoalType from "./IconForGoalType.tsx";
+import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
+import TreeRow from "./TreeRow.tsx";
 
-const INDENTATION_WIDTH = 24;
+export const INDENTATION_WIDTH = 24;
 
-type SortableTreeGoal = TreeGoal & {
+export type SortableTreeGoal = TreeGoal & {
     collapsed?: boolean;
     canHaveChildren?: boolean;
 };
 
-type GoalReference = {
+export type GoalReference = {
     goalId: TreeGoal["id"];
     instanceId: InstanceId;
-};
-
-type TreeProps = {
-    existingGoalReferenceInstanceId: GoalReference[];
-    setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: GoalReference[]) => void;
-};
-
-type TreeRowProps = TreeItemComponentProps<SortableTreeGoal> & {
-    editingItemId: InstanceId | null;
-    setEditingItemId: React.Dispatch<React.SetStateAction<InstanceId | null>>;
-    existingGoalReferenceInstanceId: GoalReference[];
-    onDeleteItem: (item: TreeGoal) => void;
 };
 
 const decorateTreeItems = (
@@ -92,92 +75,12 @@ const getAllGoalInstances = (item: TreeGoal): GoalReference[] => {
     return result;
 };
 
-const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
-    item,
-    childCount,
-    collapsed,
-    clone,
-    depth,
-    disableSorting,
-    handleProps,
-    onCollapse,
-    ghost,
-    editingItemId,
-    setEditingItemId,
-    onDeleteItem,
-    ...props
-}, ref) => {
-    const treeItem = item as SortableTreeGoal;
-    const isEditing = (editingItemId === treeItem.instanceId);
-    const iconSize = 16;
-    const [editedText, setEditedText] = useState(treeItem.content);
-    const {dispatch} = useFileContext();
-
-    const keyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        if (e.key === "Enter") {
-            dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
-            setEditingItemId(null);
-        } else if (e.key === "Escape") {
-            setEditingItemId(null);
-        }
-    };
-
-    return (
-        <SimpleTreeItemWrapper {...props}
-                               ref={ref}
-                               item={treeItem}
-                               depth={depth}
-                               clone={clone}
-                               handleProps={handleProps}
-                               disableSorting={disableSorting}
-                               indentationWidth={INDENTATION_WIDTH}
-                               childCount={childCount}
-                               collapsed={collapsed}
-                               onCollapse={onCollapse}
-                               manualDrag
-                               showDragHandle={false}
-                               hideCollapseButton>
-              <InputGroup>
-                  <InputGroup.Text>
-                      <BsGripVertical {...((!disableSorting) ? handleProps : {})}
-                                      style={{cursor: disableSorting ? "default" : "grab"}}
-                                      size={iconSize}/>
-                  </InputGroup.Text>
-                  {(childCount) ? (
-                      <InputGroup.Text>
-                          {(collapsed) ? <FaPlus size={iconSize}/> : <FaMinus size={iconSize}/>}
-                      </InputGroup.Text>
-                  ) : null}
-                  <InputGroup.Text>
-                      <IconForGoalType type={treeItem.type}/>
-                  </InputGroup.Text>
-                  {(isEditing) ? (
-                      <Form.Control placeholder="Goal name"
-                                    defaultValue={treeItem.content}
-                                    onKeyDown={keyDown}
-                                    onChange={(e) => setEditedText(e.target.value)}
-                                    isInvalid={isTextEmpty(editedText) /* || isGoalDuplicatedAtThisLevel(editedText) */}/>
-                  ) : (
-                      <Form.Control placeholder="Goal name"
-                                    value={treeItem.content}
-                                    onClick={() => setEditingItemId(treeItem.instanceId)}
-                                    readOnly/>
-                  )}
-                  <InputGroup.Text>
-                      {(isEditing) ? (
-                          <BsXCircle size={iconSize}
-                                     onClick={() => setEditingItemId(null)}/>
-                      ) : (
-                          <BsFillTrash3Fill size={iconSize}
-                                            onClick={() => onDeleteItem(treeItem)}/>
-                      )}
-                  </InputGroup.Text>
-              </InputGroup>
-      </SimpleTreeItemWrapper>
-    );
-});
-
 TreeRow.displayName = "TreeRow";
+
+interface TreeProps {
+    existingGoalReferenceInstanceId: GoalReference[]
+    setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: GoalReference[]) => void
+}
 
 const Tree: React.FC<TreeProps> = ({
     existingGoalReferenceInstanceId,
@@ -252,7 +155,7 @@ const Tree: React.FC<TreeProps> = ({
                           onItemsChanged={handleItemsChanged}
                           TreeItemComponent={DndTreeItem}
                           indentationWidth={INDENTATION_WIDTH}
-                          disableSorting={editingItemId !== null}
+                          disableSorting={editingItemId !== null}   // disallow dragging while editing
                           pointerSensorOptions={{
                               activationConstraint: {
                                   distance: 5
