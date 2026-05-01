@@ -166,8 +166,7 @@ export const treeDataSlice = createSlice({
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
-        showLineBetweenNonFunctionalGoals: true,
-
+        showLineBetweenNonFunctionalGoals: true
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
