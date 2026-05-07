@@ -1,10 +1,9 @@
-import React, {useMemo, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import WhoIcon from "/img/Stakeholder.png";
 import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
-import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
 import {
     SimpleTreeItemWrapper,
@@ -69,12 +68,10 @@ type TreeProps = {
 
 type TreeRowProps = TreeItemComponentProps<SortableTreeGoal> & {
     editingItemId: InstanceId | null;
-    editedText: string;
     inputRef: React.RefObject<HTMLInputElement>;
     disableOnBlur: boolean;
     setDisableOnBlur: React.Dispatch<React.SetStateAction<boolean>>;
     setEditingItemId: React.Dispatch<React.SetStateAction<InstanceId | null>>;
-    setEditedText: React.Dispatch<React.SetStateAction<string>>;
     handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
     existingGoalReferenceInstanceId: GoalReference[];
     onDeleteItem: (item: TreeGoal) => void;
@@ -174,12 +171,10 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     onCollapse,
     ghost,
     editingItemId,
-    editedText,
     inputRef,
     disableOnBlur,
     setDisableOnBlur,
     setEditingItemId,
-    setEditedText,
     handleSynTableTree,
     existingGoalReferenceInstanceId,
     onDeleteItem,
@@ -188,9 +183,16 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     const treeItem = item as SortableTreeGoal;
     const isEditing = editingItemId === treeItem.instanceId;
     const iconSize = 25;
+    const [draftText, setDraftText] = useState(treeItem.content);
     const isReference = existingGoalReferenceInstanceId.some(
       (itemRef) => itemRef.goalId === treeItem.id && itemRef.instanceId === treeItem.instanceId
     );
+
+    useEffect(() => {
+        if (!isEditing) {
+          setDraftText(treeItem.content);
+        }
+    }, [isEditing, treeItem.content]);
 
     const handleEdit = () => {
         if (isEmptyGoal(treeItem)) {
@@ -198,7 +200,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
         }
 
         setEditingItemId(treeItem.instanceId);
-        setEditedText(treeItem.content);
+        setDraftText(treeItem.content);
 
         requestAnimationFrame(() => {
           inputRef.current?.focus();
@@ -207,7 +209,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
 
     const handleCancel = () => {
         setEditingItemId(null);
-        setEditedText(treeItem.content);
+        setDraftText(treeItem.content);
 
         requestAnimationFrame(() => {
           setDisableOnBlur(false);
@@ -217,7 +219,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     const handleSave = () => {
         handleContentSave(
             treeItem.content,
-            editedText,
+            draftText,
             (content) => {
               handleSynTableTree(treeItem, content);
               setEditingItemId(null);
@@ -229,7 +231,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     const handleBlur = () => {
         handleGoalBlur(
           treeItem.content,
-          editedText,
+          draftText,
           (content) => {
             handleSynTableTree(treeItem, content);
             setEditingItemId(null);
@@ -244,7 +246,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
         handleGoalKeyPress(
           event,
           treeItem.content,
-          editedText,
+          draftText,
           (content) => {
             handleSynTableTree(treeItem, content);
             setEditingItemId(null);
@@ -341,11 +343,11 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
               <input
                 ref={inputRef}
                 type="text"
-                value={editedText}
-                onChange={(event) => setEditedText(event.target.value)}
+                value={draftText}
+                onChange={(event) => setDraftText(event.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleEditKeyDown}
-                className={`tree-input ${isTextEmpty(editedText) ? "is-invalid" : ""}`}
+                className={`tree-input ${isTextEmpty(draftText) ? "is-invalid" : ""}`}
                 style={treeInputStyle}
               />
             ) : (
@@ -353,7 +355,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
             )}
           </div>
 
-          {isEditing && isTextEmpty(editedText) && (
+          {isEditing && isTextEmpty(draftText) && (
             <div className="invalid-feedback d-block small">
               Content cannot be empty
             </div>
@@ -416,7 +418,6 @@ const Tree: React.FC<TreeProps> = ({
     setExistingGoalReferenceInstanceId,
 }) => {
     const [editingItemId, setEditingItemId] = useState<InstanceId | null>(null);
-    const [editedText, setEditedText] = useState("");
     const [disableOnBlur, setDisableOnBlur] = useState(false);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [collapsedIds, setCollapsedIds] = useState<Set<InstanceId>>(new Set());
@@ -469,12 +470,10 @@ const Tree: React.FC<TreeProps> = ({
           {...props}
           ref={ref}
           editingItemId={editingItemId}
-          editedText={editedText}
           inputRef={inputRef}
           disableOnBlur={disableOnBlur}
           setDisableOnBlur={setDisableOnBlur}
           setEditingItemId={setEditingItemId}
-          setEditedText={setEditedText}
           handleSynTableTree={handleSynTableTree}
           existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
           onDeleteItem={handleDeleteItem}

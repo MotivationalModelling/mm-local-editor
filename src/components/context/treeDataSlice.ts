@@ -159,6 +159,22 @@ export const findTreeGoalByInstanceId = (nodes: TreeGoal[], instanceId: Instance
     return undefined;
 };
 
+const updateTreeGoalTextById = (
+    nodes: TreeGoal[],
+    goalId: TreeGoal["id"],
+    text: string,
+) => {
+    nodes.forEach((node) => {
+        if (node.id === goalId) {
+            node.content = text;
+        }
+
+        if (node.children?.length) {
+            updateTreeGoalTextById(node.children, goalId, text);
+        }
+    });
+};
+
 export const treeDataSlice = createSlice({
     name: "treeData",
     initialState: {
@@ -230,6 +246,7 @@ export const treeDataSlice = createSlice({
                 ...state.goals[action.payload.id],
                 content: action.payload.text
             };
+            updateTreeGoalTextById(state.tree, action.payload.id, action.payload.text);
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
@@ -304,4 +321,3 @@ export const {
     setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
 } = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
-
