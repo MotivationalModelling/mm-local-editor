@@ -2,7 +2,7 @@ import React, {createContext, PropsWithChildren, useContext, useEffect, useReduc
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "../utils/useLocalStorage.tsx"
+import useLocalStorage from "use-local-storage";
 
 // This hook manages the goals that are in use in the motivational model.
 //
