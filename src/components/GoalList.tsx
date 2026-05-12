@@ -7,7 +7,7 @@ import {useFileContext} from "./context/FileProvider";
 import {Label, newTreeGoal, TreeGoal} from "./types.ts";
 
 import styles from "./TabButtons.module.css";
-import {BsPlus} from "react-icons/bs";
+import {BsPlusLg} from "react-icons/bs";
 import {addGoalToTab, deleteGoalFromGoalList, selectGoalsForLabel} from "./context/treeDataSlice.ts";
 import GoalListTable from "./GoalListTable.tsx";
 
@@ -109,7 +109,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
                                     <Button className="me-2"
                                             onClick={() => handleAddRow(activeKey)}
                                             variant="primary">
-                                        <BsPlus/>
+                                        <BsPlusLg/>
                                     </Button>
                                     <div className="text-muted">
                                         Drag goals to arrange hierarchy

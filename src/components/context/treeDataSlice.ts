@@ -175,6 +175,11 @@ const updateTreeGoalTextById = (
     });
 };
 
+// Note: in the state here, "tabs" and "tree" content contain goalId's which are used to index into
+// "goals" to get the Goal. This is a little confusing with "tree" especially because the tree structure
+// has a full copy of the Goal but in practice it is only used to hold the structure of the goalId's.
+// In short, don't edit the Goal's in the tree -- they're not used.
+
 export const treeDataSlice = createSlice({
     name: "treeData",
     initialState: {
@@ -182,8 +187,7 @@ export const treeDataSlice = createSlice({
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
-        showLineBetweenNonFunctionalGoals: true,
-
+        showLineBetweenNonFunctionalGoals: true
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
@@ -259,10 +263,6 @@ export const treeDataSlice = createSlice({
                 ...state.goals[goalId],
                 content: text
             };
-            const node = findTreeGoalByInstanceId(state.tree, instanceId);
-            if (node) {
-                node.content = text;
-            }
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
             instanceId: string,

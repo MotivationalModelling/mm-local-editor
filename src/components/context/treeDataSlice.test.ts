@@ -93,7 +93,7 @@ describe('treeDataSlice', () => {
 
         expect(state2.goals[goal.id].content).toEqual(text);
     });
-    it('should update text of goal in tree by instanceId (canvas double-click edit)', () => {
+    it('should update text of goal by instanceId (canvas double-click edit)', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
         const newText = "Updated via canvas";
 
@@ -110,10 +110,6 @@ describe('treeDataSlice', () => {
 
         // Verify goals record is updated
         expect(state.goals[goal.id].content).toEqual(newText);
-
-        // Verify tree node is also updated
-        const treeNode = findTreeGoalByInstanceId(state.tree, instanceId);
-        expect(treeNode?.content).toEqual(newText);
     });
     it('should add a goal to correct tab', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
