@@ -155,7 +155,17 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         initialTabs
     );
 
-    const initialState = createInitialState(tabData, storedTreeData);
+    // Recovering from corrupted localStorage can leave the tree pointing
+    // at goal ids that no longer exist in tabData (e.g. tabData was reset
+    // to defaults while treeData survived). Drop the tree in that case so
+    // createTreeIdsFromTreeData isn't fed inconsistent input.
+    const goalIdsInTabs = new Set(tabData.flatMap(tab => tab.rows.map(row => row.id)));
+    const treeRefsAreValid = (nodes: TreeGoal[]): boolean =>
+        nodes.every(node => goalIdsInTabs.has(node.id) && treeRefsAreValid(node.children ?? []));
+    const initialState = createInitialState(
+        tabData,
+        treeRefsAreValid(storedTreeData) ? storedTreeData : []
+    );
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
