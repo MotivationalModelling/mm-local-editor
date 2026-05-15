@@ -155,7 +155,6 @@ const Tree: React.FC<TreeProps> = ({
                           onItemsChanged={handleItemsChanged}
                           TreeItemComponent={DndTreeItem}
                           indentationWidth={INDENTATION_WIDTH}
-                          disableSorting={editingItemId !== null}   // disallow dragging while editing
                           pointerSensorOptions={{
                               activationConstraint: {
                                   distance: 5

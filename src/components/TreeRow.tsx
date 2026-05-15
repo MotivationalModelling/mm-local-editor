@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 
 import InputGroup from "react-bootstrap/InputGroup";
 import Form from "react-bootstrap/Form";
@@ -20,27 +20,38 @@ type TreeRowProps = TreeItemComponentProps<SortableTreeGoal> & {
     onDeleteItem: (item: TreeGoal) => void;
 };
 
-const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
-                                                                           item,
-                                                                           childCount,
-                                                                           collapsed,
-                                                                           clone,
-                                                                           depth,
-                                                                           disableSorting,
-                                                                           handleProps,
-                                                                           onCollapse,
-                                                                           ghost,
+const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({ 
+    item,
+    childCount,
+    collapsed,
+    clone,
+    depth,
+    disableSorting,
+    handleProps,
+    onCollapse,
                                                                            editingItemId,
                                                                            setEditingItemId,
                                                                            onDeleteItem,
                                                                            ...props
                                                                        }, ref) => {
     const treeItem = item as SortableTreeGoal;
-    const isEditing = (editingItemId === treeItem.instanceId);
+    const isEditing = editingItemId === treeItem.instanceId;
+    const dragDisabled = disableSorting || isEditing;
     const iconSize = 16;
     const {dispatch, goals} = useFileContext();
-    const goal = goals[treeItem.id];    // use the Goal from goals referenced by the tree node's id
-    const [editedText, setEditedText] = useState(goal.content);
+    const goal = goals[treeItem.id];
+    const [editedText, setEditedText] = useState(treeItem.content);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isEditing) {
+            setEditedText(treeItem.content);
+            requestAnimationFrame(() => {
+                inputRef.current?.focus();
+                inputRef.current?.select();
+            });
+        }
+    }, [isEditing, treeItem.content]);
 
     const keyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if (e.key === "Enter") {
@@ -58,23 +69,28 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
                                depth={depth}
                                clone={clone}
                                handleProps={handleProps}
-                               disableSorting={disableSorting}
+                               disableSorting={dragDisabled}
                                indentationWidth={INDENTATION_WIDTH}
                                childCount={childCount}
                                collapsed={collapsed}
                                onCollapse={onCollapse}
                                manualDrag
                                showDragHandle={false}
-                               hideCollapseButton>
+                               hideCollapseButton
+                               disableCollapseOnItemClick>
             <InputGroup>
                 <InputGroup.Text>
-                    <BsGripVertical {...((!disableSorting) ? handleProps : {})}
-                                    style={{cursor: (disableSorting) ? "default" : "grab"}}
+                    <BsGripVertical {...((!dragDisabled) ? handleProps : {})}
+                                    style={{cursor: (dragDisabled) ? "default" : "grab"}}
                                     size={iconSize}/>
                 </InputGroup.Text>
                 {(childCount) ? (
-                    <InputGroup.Text>
-                        {(collapsed) ? <FaPlus size={iconSize}/> : <FaMinus size={iconSize}/>}
+                    <InputGroup.Text onClick={(e) => {
+                        e.stopPropagation();
+                        onCollapse?.();
+                    }}
+                    style={{cursor: "pointer"}}>
+                        {(collapsed) ? <FaPlus size={iconSize}/> : <FaMinus size={iconSize}/>} 
                     </InputGroup.Text>
                 ) : null}
                 <InputGroup.Text>
@@ -82,7 +98,8 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
                 </InputGroup.Text>
                 {(isEditing) ? (
                     <Form.Control placeholder="Goal name"
-                                  defaultValue={goal.content}
+                                  ref={inputRef}
+                                  value={editedText}
                                   onKeyDown={keyDown}
                                   onChange={(e) => setEditedText(e.target.value)}
                                   isInvalid={isTextEmpty(editedText) /* || isGoalDuplicatedAtThisLevel(editedText) */}/>
@@ -90,7 +107,11 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
                     <Form.Control placeholder="Goal name"
                                   value={goal.content}
                                   onClick={(e) => {
-                                      setEditingItemId(goal.instanceId);
+                                      setEditingItemId(treeItem.instanceId);
+                                      e.stopPropagation();
+                                  }}
+                                  onDoubleClick={(e) => {
+                                      setEditingItemId(treeItem.instanceId);
                                       e.stopPropagation();
                                   }}
                                   readOnly/>
@@ -101,7 +122,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
                                    onClick={() => setEditingItemId(null)}/>
                     ) : (
                         <BsFillTrash3Fill size={iconSize}
-                                          onClick={() => onDeleteItem(goal)}/>
+                                          onClick={() => onDeleteItem(treeItem)}/>
                     )}
                 </InputGroup.Text>
             </InputGroup>
