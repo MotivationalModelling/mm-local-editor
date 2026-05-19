@@ -1,15 +1,23 @@
 import {Resizable, ResizeCallback} from "re-resizable";
 import React, {useEffect, useRef, useState} from "react";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import {useFileContext} from "./context/FileProvider";
+import UserStoriesPanel from "./UserStoriesPanel";
+import {parseStoriesFromText, useUserStories} from "./context/UserStoriesContext";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
 import {TreeGoal, InstanceId} from "./types.ts";
+import {extractModelForPrompt} from "./utils/modelExtractor";
+import {buildUserStoryPrompt} from "./utils/promptBuilder";
+import {generateUserStories} from "./utils/llmService";
 
 const defaultStyle = {
   display: "flex",
@@ -52,13 +60,15 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   setShowGoalSection,
   paddingX,
 }) => {
+  void setShowGoalSection;
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
   const [draggedItem, setDraggedItem] = useState<TreeGoal | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-    const {dispatch, tree} = useFileContext();
+    const {dispatch, tree, treeData} = useFileContext();
+    const {state: usState, dispatch: usDispatch} = useUserStories();
 
   const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
 
@@ -132,6 +142,19 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }, delayTime);
   };
 
+  const handleGenerate = async () => {
+    try {
+      const extracted = extractModelForPrompt(treeData);
+      const prompt = buildUserStoryPrompt(extracted);
+      usDispatch({type: "SET_LOADING"});
+      const raw = await generateUserStories(prompt);
+      const stories = parseStoriesFromText(raw);
+      usDispatch({type: "SET_SUCCESS", payload: {rawOutput: raw, stories}});
+    } catch (err) {
+      usDispatch({type: "SET_ERROR", payload: err instanceof Error ? err.message : "Unknown error"});
+    }
+  };
+
   // Handle for goals drop on the nestable section
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -144,7 +167,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
       if (draggedItem && draggedItem.content) {
             // the first hierachy does not contain the dragged item
-            if (!tree.map((item) => item.id).includes(draggedItem.id)) {
+            if (!tree.some((goal) => goal.id === draggedItem.id)) {
               dispatch(addGoalToTree(draggedItem));
           } else {
               setExistingItemIds([...existingItemIds, draggedItem.id]);
@@ -161,7 +184,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     const newItemsToAdd = groupSelected.filter(
             // current hierachy
             (item) => !tree.some(
-                ref => ref.id === item.id
+                goal => goal.id === item.id
             )
     );
 
@@ -220,6 +243,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
     }
   }, [paddingX, showGoalSection, showGraphSection]); 
+  const isGenerating = usState.status === "loading";
 
   return (
     <div
@@ -227,95 +251,122 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         width: "100%",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
         padding: paddingX,
       }}
       ref={parentRef}
-      // onClick={() => setIsHintVisible(false)}
     >
-      {/* Additional helper components */}
-      <ErrorModal
-        show={existingError}
-        title="Drop Failed"
-        message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
-        } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
-        onHide={handleGroupDropModal}
-      />
-      {/* <DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/> */}
-
-      {/* Goal List Section */}
-      <Resizable
-        handleClasses={{right: "right-handler"}}
-        enable={{right: true}}
-        style={{
-          ...defaultStyle,
-          backgroundColor: "rgb(236, 244, 244)",
-          display: showGoalSection ? "flex" : "none",
-        }}
-        size={{width: sectionOneWidth, height: "100%"}}
-        maxWidth={DEFINED_PROPORTIONS.maxWidth}
-        minWidth={DEFINED_PROPORTIONS.minWidth}
-        minHeight={DEFAULT_HEIGHT}
-        onResize={handleResizeSectionOne}
-      >
-        {/* First Panel Content */}
-        <GoalList
-          ref={goalListRef}
-          setDraggedItem={setDraggedItem}
-          groupSelected={groupSelected} 
-          setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
-          handleDropGroupSelected={handleDropGroupSelected}
-        />
-      </Resizable>
-
-      {/* Cluster Hierarchy Section */}
-      <div
-        style={{
-          ...defaultStyle,
-          width: "100%",
-          minWidth: DEFINED_PROPORTIONS.minWidth,
-          minHeight: DEFAULT_HEIGHT,
-          height: DEFAULT_HEIGHT,
-          padding: "10px",
-          backgroundColor: "rgba(35, 144, 231, 0.1)",
-          overflow: "auto",
-        }}
-        onDrop={handleDrop}
-        onDragOver={(event) => event.preventDefault()}
-        ref={sectionTwoRef}
-      >
-        <Tree
-
-          // existingItemIds={existingItemIds}
-          // setTreeIds={setTreeIds}
-          handleSynTableTree={handleSynTableTree}
-          // setExistingItemIds={setExistingItemIds}
-          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
-        />
+      <div className="d-flex align-items-center">
+        <Button
+          variant="outline-primary"
+          size="sm"
+          disabled={isGenerating}
+          onClick={handleGenerate}
+        >
+          {isGenerating ? (
+            <>
+              <Spinner animation="border" size="sm" className="me-1" />
+              Generating...
+            </>
+          ) : (
+            "✨ Generate User Stories"
+          )}
+        </Button>
       </div>
 
-      {/* Graph Render Section */}
-      <Resizable
-        handleClasses={{left: "left-handler"}}
-        enable={{left: true}}
-        style={{
-          ...defaultStyle,
-          backgroundColor: "rgb(236, 244, 244)",
-          display: showGraphSection ? "flex" : "none",
-        }}
-        size={{
-          width: sectionThreeWidth,
-          height: "100%",
-        }}
-        maxWidth={DEFINED_PROPORTIONS.maxWidth}
-        minWidth={DEFINED_PROPORTIONS.minWidth}
-        minHeight={DEFAULT_HEIGHT}
-        onResize={handleResizeSectionThree}
-      >
-        {/* Third Panel Content */}
-        <GraphWorker showGraphSection={showGraphSection}/>
-      </Resizable>
+      {usState.status === "error" && (
+        <Alert
+          variant="danger"
+          className="mt-2 mb-0 py-1 px-2"
+          style={{fontSize: "0.85rem"}}
+        >
+          {usState.error}
+        </Alert>
+      )}
+
+      <div style={{display: "flex", height: "100%", marginTop: "0.5rem"}}>
+        <ErrorModal
+          show={existingError}
+          title="Drop Failed"
+          message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
+          } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
+          onHide={handleGroupDropModal}
+        />
+
+        <Resizable
+          handleClasses={{right: "right-handler"}}
+          enable={{right: true}}
+          style={{
+            ...defaultStyle,
+            backgroundColor: "rgb(236, 244, 244)",
+            display: showGoalSection ? "flex" : "none",
+          }}
+          size={{width: sectionOneWidth, height: "100%"}}
+          maxWidth={DEFINED_PROPORTIONS.maxWidth}
+          minWidth={DEFINED_PROPORTIONS.minWidth}
+          minHeight={DEFAULT_HEIGHT}
+          onResize={handleResizeSectionOne}
+        >
+          <GoalList
+            ref={goalListRef}
+            setDraggedItem={setDraggedItem}
+            groupSelected={groupSelected}
+            setGroupSelected={setGroupSelected}
+            handleSynTableTree={handleSynTableTree}
+            handleDropGroupSelected={handleDropGroupSelected}
+          />
+        </Resizable>
+
+        <div style={{display: "flex", flexDirection: "column", width: "100%"}}>
+          <div
+            style={{
+              ...defaultStyle,
+              width: "100%",
+              minWidth: DEFINED_PROPORTIONS.minWidth,
+              minHeight: DEFAULT_HEIGHT,
+              height: DEFAULT_HEIGHT,
+              padding: "10px",
+              backgroundColor: "rgba(35, 144, 231, 0.1)",
+              overflow: "auto",
+            }}
+            onDrop={handleDrop}
+            onDragOver={(event) => event.preventDefault()}
+            ref={sectionTwoRef}
+          >
+            <Tree
+              handleSynTableTree={handleSynTableTree}
+              existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+              setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
+            />
+          </div>
+
+          {usState.status !== "idle" && (
+            <div style={{width: "100%", marginTop: "1rem", padding: "0 10px"}}>
+              <UserStoriesPanel />
+            </div>
+          )}
+        </div>
+
+        <Resizable
+          handleClasses={{left: "left-handler"}}
+          enable={{left: true}}
+          style={{
+            ...defaultStyle,
+            backgroundColor: "rgb(236, 244, 244)",
+            display: showGraphSection ? "flex" : "none",
+          }}
+          size={{
+            width: sectionThreeWidth,
+            height: "100%",
+          }}
+          maxWidth={DEFINED_PROPORTIONS.maxWidth}
+          minWidth={DEFINED_PROPORTIONS.minWidth}
+          minHeight={DEFAULT_HEIGHT}
+          onResize={handleResizeSectionThree}
+        >
+          <GraphWorker showGraphSection={showGraphSection}/>
+        </Resizable>
+      </div>
     </div>
   );
 };
