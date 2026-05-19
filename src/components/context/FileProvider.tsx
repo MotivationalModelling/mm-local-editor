@@ -155,7 +155,20 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         initialTabs
     );
 
-    const initialState = createInitialState(tabData, storedTreeData);
+    const normalizeIconPath = (icon: string): string => {
+        const filename = icon.split("/").filter(Boolean).pop();
+        if (!filename || !filename.toLowerCase().endsWith(".png")) return icon;
+        const baseUrl = import.meta.env.BASE_URL;
+        const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+        return `${normalizedBaseUrl}img/${filename}`;
+    };
+
+    const normalizedTabData: typeof initialTabs = tabData.map((tab) => ({
+        ...tab,
+        icon: normalizeIconPath(tab.icon),
+    }));
+
+    const initialState = createInitialState(normalizedTabData, storedTreeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
@@ -170,7 +183,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         // Convert Map<Label, TabContent> to InitialTab[] for storage
         const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
             label,
-            icon: tabContent.icon,
+            icon: normalizeIconPath(tabContent.icon),
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 
