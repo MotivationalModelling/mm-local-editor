@@ -118,35 +118,54 @@ const UserStoriesPanel = () => {
 
       <div className="row g-3">
         <div className="col-12 col-lg-4">
-          {usState.status === "success" && (
-            <>
-              <div className="mb-2">
-                <strong>{passedCount} / 9 consistency principles satisfied</strong>
-              </div>
-              <Table striped bordered size="sm" responsive>
-                <thead>
-                  <tr>
-                    <th>CP</th>
-                    <th>Description</th>
-                    <th>Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cpResults.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.id}</td>
-                      <td>{r.description}</td>
-                      <td className={r.passed ? "text-success" : "text-danger"}>
-                        {r.passed ? "✓" : "✗"}
-                      </td>
+          <Card className="h-100">
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <span>Consistency principles</span>
+              {usState.status === "success" && (
+                <Badge bg={passedCount === 9 ? "success" : "secondary"}>
+                  {passedCount}/9
+                </Badge>
+              )}
+            </Card.Header>
+            <Card.Body style={{maxHeight: "70vh", overflow: "auto"}}>
+              {usState.status === "success" ? (
+                <Table striped bordered size="sm" responsive className="mb-0">
+                  <thead>
+                    <tr>
+                      <th style={{width: "3rem"}}>CP</th>
+                      <th>Description</th>
+                      <th style={{width: "4rem"}}>Result</th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </>
-          )}
+                  </thead>
+                  <tbody>
+                    {cpResults.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.id}</td>
+                        <td>{r.description}</td>
+                        <td className={r.passed ? "text-success" : "text-danger"}>
+                          {r.passed ? "✓" : "✗"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                <span className="text-muted" style={{fontSize: "0.9rem"}}>
+                  Generate user stories to see the consistency check.
+                </span>
+              )}
+            </Card.Body>
+          </Card>
         </div>
         <div className="col-12 col-lg-8">
+          <div className="d-flex align-items-center justify-content-between mb-2">
+            <strong>User stories</strong>
+            {usState.status !== "idle" && (
+              <Badge bg="secondary">
+                Approved: {approvedCount} / {totalCount}
+              </Badge>
+            )}
+          </div>
           {usState.stories.map((s) => {
             const isRejected = s.status === "rejected";
             const isApproved = s.status === "approved";
