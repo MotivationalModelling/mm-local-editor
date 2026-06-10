@@ -35,6 +35,8 @@ const IconForGoalType: FC<IconForGoalTypeProps> = ({type, className="ms-2 me-1"}
          className={className}
          style={{
              height: type === "Who" ? "30px" : "20px",
+             width: "30px",
+             objectFit: "contain"
          }}/>
 );
 
