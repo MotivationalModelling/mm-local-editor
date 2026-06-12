@@ -1,6 +1,9 @@
 import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
-import {initialTabs} from "../../data/initialTabs.ts";
+import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
 import useLocalStorage from "use-local-storage";
 
@@ -144,6 +147,18 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
     };
 };
 
+// createInitialState throws when the stored data is inconsistent, e.g. the
+// tree referencing goals that are not in tabData, or a value that is not
+// the expected shape. Return null so the provider can ask the user how to
+// recover instead of crashing.
+const tryCreateInitialState = (tabData: InitialTab[], treeData: TreeGoal[]) => {
+    try {
+        return createInitialState(tabData, treeData);
+    } catch {
+        return null;
+    }
+};
+
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     // Load from localStorage
     const [storedTreeData, setStoredTreeData] = useLocalStorage<TreeGoal[]>(
@@ -155,26 +170,22 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         initialTabs
     );
 
-    // Recovering from corrupted localStorage can leave the tree pointing
-    // at goal ids that no longer exist in tabData (e.g. tabData was reset
-    // to defaults while treeData survived). Drop the tree in that case so
-    // createTreeIdsFromTreeData isn't fed inconsistent input.
-    const goalIdsInTabs = new Set(tabData.flatMap(tab => tab.rows.map(row => row.id)));
-    const treeRefsAreValid = (nodes: TreeGoal[]): boolean =>
-        nodes.every(node => goalIdsInTabs.has(node.id) && treeRefsAreValid(node.children ?? []));
-    const initialState = createInitialState(
-        tabData,
-        treeRefsAreValid(storedTreeData) ? storedTreeData : []
-    );
-    const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
+    const initialState = tryCreateInitialState(tabData, storedTreeData);
+    const corrupted = initialState === null;
+    const [abandoned, setAbandoned] = useState(false);
+    const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState ?? createInitialState());
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
     useEffect(() => {
         console.log("FileProvider state updated:", state);
     }, [state]);
 
-    // Listen to changes in state and write back to localStorage
+    // Listen to changes in state and write back to localStorage. While the
+    // corruption modal is up, the stored data must stay untouched so the
+    // user can still choose to inspect it.
     useEffect(() => {
+        if (corrupted) return;
+
         setStoredTreeData(state.tree);
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
@@ -185,7 +196,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         }));
 
         setTabData(tabsArray);
-    }, [state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
+    }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
 
@@ -195,6 +206,39 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("Tree data:", state.tree);
         console.log("Tab data:", computedTabData);
     }, [state.tree, computedTabData]);
+
+    const revertToDefault = () => {
+        setTabData(initialTabs);
+        setStoredTreeData([]);
+    };
+
+    if (corrupted) {
+        return (abandoned) ? (
+            <Alert variant="warning" className="m-5">
+                Editing is paused and your saved data has been left unchanged. You can
+                inspect or repair it in the browser developer tools, then reload the page.
+            </Alert>
+        ) : (
+            <Modal show centered backdrop="static" keyboard={false}>
+                <Modal.Header>
+                    <Modal.Title>Saved data is corrupted</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Your saved model could not be loaded. You can abandon editing and
+                    leave the saved data untouched for inspection, or revert to the
+                    default state, replacing the saved data.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setAbandoned(true)}>
+                        Abandon
+                    </Button>
+                    <Button variant="warning" onClick={revertToDefault} style={{backgroundColor: "red"}}>
+                        Revert to default
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        );
+    }
 
     return (
         <FileContext.Provider value={{
