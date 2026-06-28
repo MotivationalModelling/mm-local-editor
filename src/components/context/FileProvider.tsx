@@ -3,7 +3,7 @@ import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
-import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
+import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
 import useLocalStorage from "use-local-storage";
 
@@ -147,13 +147,21 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
     };
 };
 
-// createInitialState throws when the stored data is inconsistent, e.g. the
-// tree referencing goals that are not in tabData, or a value that is not
-// the expected shape. Return null so the provider can ask the user how to
-// recover instead of crashing.
-const tryCreateInitialState = (tabData: InitialTab[], treeData: TreeGoal[]) => {
+// The two persisted keys are kept as raw JSON strings (see rawStringStorage)
+// so an unparseable value is neither silently discarded nor overwritten on
+// load: the provider can surface it and leave it intact for inspection.
+const rawStringStorage = {
+    parser: (raw: string) => raw,
+    serializer: (value: string | undefined) => value ?? "",
+};
+
+// createInitialState throws when the stored JSON cannot be parsed or is
+// inconsistent, e.g. the tree referencing goals that are not in tabData, or a
+// value that is not the expected shape. Return null so the provider can ask the
+// user how to recover instead of crashing.
+const tryCreateInitialState = (tabData: string, treeData: string) => {
     try {
-        return createInitialState(tabData, treeData);
+        return createInitialState(JSON.parse(tabData), JSON.parse(treeData));
     } catch {
         return null;
     }
@@ -161,13 +169,15 @@ const tryCreateInitialState = (tabData: InitialTab[], treeData: TreeGoal[]) => {
 
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     // Load from localStorage
-    const [storedTreeData, setStoredTreeData] = useLocalStorage<TreeGoal[]>(
+    const [storedTreeData, setStoredTreeData] = useLocalStorage<string>(
         LocalStorageType.TREE,
-        []
+        "[]",
+        rawStringStorage
     );
-    const [tabData, setTabData] = useLocalStorage<typeof initialTabs>(
+    const [tabData, setTabData] = useLocalStorage<string>(
         LocalStorageType.TAB,
-        initialTabs
+        JSON.stringify(initialTabs),
+        rawStringStorage
     );
 
     const initialState = tryCreateInitialState(tabData, storedTreeData);
@@ -186,7 +196,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     useEffect(() => {
         if (corrupted) return;
 
-        setStoredTreeData(state.tree);
+        setStoredTreeData(JSON.stringify(state.tree));
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
         const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
@@ -195,7 +205,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 
-        setTabData(tabsArray);
+        setTabData(JSON.stringify(tabsArray));
     }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
@@ -208,8 +218,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     }, [state.tree, computedTabData]);
 
     const revertToDefault = () => {
-        setTabData(initialTabs);
-        setStoredTreeData([]);
+        setTabData(JSON.stringify(initialTabs));
+        setStoredTreeData("[]");
     };
 
     if (corrupted) {

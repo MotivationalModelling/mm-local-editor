@@ -231,9 +231,27 @@ describe('corrupted localStorage recovery', () => {
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
         expect(screen.queryByTestId("editor")).toBeNull();
-        // use-local-storage re-serializes parseable values on mount, so
-        // assert content rather than bytes
         expect(JSON.parse(localStorage.getItem(LocalStorageType.TAB)!)).toEqual({broken: 1});
+    });
+
+    it('shows the recovery modal when stored data is not parseable JSON', () => {
+        localStorage.clear();
+        localStorage.setItem(LocalStorageType.TREE, '{not valid json');
+        renderProvider();
+
+        expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
+        expect(screen.queryByTestId("editor")).toBeNull();
+    });
+
+    it('abandon leaves unparseable data byte-for-byte intact for inspection', () => {
+        const garbage = '{not valid json';
+        localStorage.clear();
+        localStorage.setItem(LocalStorageType.TREE, garbage);
+        renderProvider();
+
+        fireEvent.click(screen.getByText("Abandon"));
+
+        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(garbage);
     });
 
     it('abandon pauses the app and leaves storage untouched', () => {
