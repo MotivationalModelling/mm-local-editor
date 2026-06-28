@@ -162,7 +162,8 @@ const rawStringStorage = {
 const tryCreateInitialState = (tabData: string, treeData: string) => {
     try {
         return createInitialState(JSON.parse(tabData), JSON.parse(treeData));
-    } catch {
+    } catch (error) {
+        console.error("Saved data could not be loaded:", error);
         return null;
     }
 };
