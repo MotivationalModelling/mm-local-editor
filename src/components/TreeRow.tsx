@@ -5,38 +5,13 @@ import Form from "react-bootstrap/Form";
 import {BsFillTrash3Fill, BsGripVertical, BsXCircle} from "react-icons/bs";
 import {FaMinus, FaPlus} from "react-icons/fa";
 
-// import {SimpleTreeItemWrapper, TreeItemComponentProps} from "dnd-kit-sortable-tree";
-// import {SimpleTreeItemWrapper, TreeItemComponentProps} from "@dnd-kit/react";
 import {InstanceId, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {updateTextForGoalId} from "./context/treeDataSlice.ts";
 import IconForGoalType from "./IconForGoalType.tsx";
 import {isTextEmpty} from "./utils/GoalHint.tsx";
-import {GoalReference, INDENTATION_WIDTH, SortableTreeGoal} from "./Tree.tsx";
+import {GoalReference} from "./Tree.tsx";
 import {ItemInstance} from "@headless-tree/core";
-
-// type TreeRowProps = TreeItemComponentProps<SortableTreeGoal> & {
-//     editingItemId: InstanceId | null
-//     setEditingItemId: (itemId: InstanceId | null) => void
-//     existingGoalReferenceInstanceId: GoalReference[]
-//     onDeleteItem: (item: TreeGoal) => void;
-// };
-//
-// const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
-//                                                                            item,
-//                                                                            childCount,
-//                                                                            collapsed,
-//                                                                            clone,
-//                                                                            depth,
-//                                                                            disableSorting,
-//                                                                            handleProps,
-//                                                                            onCollapse,
-//                                                                            ghost,
-//                                                                            editingItemId,
-//                                                                            setEditingItemId,
-//                                                                            onDeleteItem,
-//                                                                            ...props
-//                                                                        }, ref) => {
 
 interface TreeRowProps {
     item: ItemInstance<TreeGoal>

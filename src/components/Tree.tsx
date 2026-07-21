@@ -1,6 +1,5 @@
 import React, {useMemo, useRef, useState} from "react";
-// import {SortableTree, TreeItemComponentProps, TreeItems,} from "dnd-kit-sortable-tree";
-import {InstanceId, isNonFunctionalGoal, newTreeGoal, TreeGoal} from "./types.ts";
+import {InstanceId, newTreeGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import "./Tree.css";
@@ -20,38 +19,6 @@ export type GoalReference = {
     goalId: TreeGoal["id"];
     instanceId: InstanceId;
 };
-
-// const stripTreeUiState = (items: TreeItems<SortableTreeGoal>): TreeGoal[] => {
-//     return items.map((treeItem) => {
-//         const {children, collapsed, canHaveChildren, ...plainItem} = treeItem;
-//         void collapsed;
-//         void canHaveChildren;
-//
-//         return {
-//             ...plainItem,
-//             children: stripTreeUiState(children ?? []),
-//         };
-//     });
-// };
-
-// const collectCollapsedIds = (items: TreeItems<SortableTreeGoal>): Set<InstanceId> => {
-//     const collapsedIds = new Set<InstanceId>();
-//
-//     const walk = (nodes: TreeItems<SortableTreeGoal>) => {
-//         nodes.forEach((node) => {
-//             if (node.collapsed) {
-//                 collapsedIds.add(node.instanceId);
-//             }
-//
-//             if (node.children?.length) {
-//                 walk(node.children);
-//             }
-//         });
-//     };
-//
-//     walk(items);
-//     return collapsedIds;
-// };
 
 const getAllGoalInstances = (item: TreeGoal): GoalReference[] => {
     const result = [{goalId: item.id, instanceId: item.instanceId}];
@@ -143,26 +110,6 @@ const Tree: React.FC<TreeProps> = ({
       setShowDeleteWarning(false);
       setExistingGoalReferenceInstanceId([]);
     };
-
-    // const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
-    //     <TreeRow {...props}
-    //              ref={ref}
-    //              editingItemId={editingItemId}
-    //              setEditingItemId={setEditingItemId}
-    //              existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-    //              onDeleteItem={handleDeleteItem}/>
-    // ));
-
-    // const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
-    //     <TreeRow {...props}
-    //              ref={ref}
-    //              editingItemId={editingItemId}
-    //              setEditingItemId={setEditingItemId}
-    //              existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-    //              onDeleteItem={handleDeleteItem}/>
-    // ));
-
-    // DndTreeItem.displayName = "DndTreeItem";
 
     return (
         <div {...tree.getContainerProps()}
