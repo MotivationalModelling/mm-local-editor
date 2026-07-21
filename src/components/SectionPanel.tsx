@@ -264,7 +264,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       {/* Cluster Hierarchy Section */}
       <div
         style={{
-          ...defaultStyle,
+          // ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPORTIONS.minWidth,
           minHeight: DEFAULT_HEIGHT,

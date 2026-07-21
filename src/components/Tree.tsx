@@ -1,11 +1,13 @@
 import React, {useMemo, useRef, useState} from "react";
-import {SortableTree, TreeItemComponentProps, TreeItems,} from "dnd-kit-sortable-tree";
-import {InstanceId, isNonFunctionalGoal, TreeGoal} from "./types.ts";
+// import {SortableTree, TreeItemComponentProps, TreeItems,} from "dnd-kit-sortable-tree";
+import {InstanceId, isNonFunctionalGoal, newTreeGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
+import {deleteGoalReferenceFromHierarchy, setChildrenOfNodeId, setTreeData} from "./context/treeDataSlice.ts";
 import TreeRow from "./TreeRow.tsx";
+import {useTree} from "@headless-tree/react";
+import {createOnDropHandler, dragAndDropFeature, ItemInstance, syncDataLoaderFeature} from "@headless-tree/core";
 
 export const INDENTATION_WIDTH = 24;
 
@@ -19,49 +21,37 @@ export type GoalReference = {
     instanceId: InstanceId;
 };
 
-const decorateTreeItems = (
-    items: TreeGoal[],
-    collapsedIds: Set<InstanceId>,
-): TreeItems<SortableTreeGoal> => {
-    return items.map((item) => ({
-        ...item,
-        collapsed: collapsedIds.has(item.instanceId),
-        canHaveChildren: !isNonFunctionalGoal(item.type),
-        children: decorateTreeItems(item.children ?? [], collapsedIds),
-    }));
-};
+// const stripTreeUiState = (items: TreeItems<SortableTreeGoal>): TreeGoal[] => {
+//     return items.map((treeItem) => {
+//         const {children, collapsed, canHaveChildren, ...plainItem} = treeItem;
+//         void collapsed;
+//         void canHaveChildren;
+//
+//         return {
+//             ...plainItem,
+//             children: stripTreeUiState(children ?? []),
+//         };
+//     });
+// };
 
-const stripTreeUiState = (items: TreeItems<SortableTreeGoal>): TreeGoal[] => {
-    return items.map((treeItem) => {
-        const {children, collapsed, canHaveChildren, ...plainItem} = treeItem;
-        void collapsed;
-        void canHaveChildren;
-
-      return {
-          ...plainItem,
-          children: stripTreeUiState(children ?? []),
-      };
-    });
-};
-
-const collectCollapsedIds = (items: TreeItems<SortableTreeGoal>): Set<InstanceId> => {
-    const collapsedIds = new Set<InstanceId>();
-
-    const walk = (nodes: TreeItems<SortableTreeGoal>) => {
-        nodes.forEach((node) => {
-            if (node.collapsed) {
-                collapsedIds.add(node.instanceId);
-            }
-
-            if (node.children?.length) {
-               walk(node.children);
-            }
-        });
-    };
-
-    walk(items);
-    return collapsedIds;
-};
+// const collectCollapsedIds = (items: TreeItems<SortableTreeGoal>): Set<InstanceId> => {
+//     const collapsedIds = new Set<InstanceId>();
+//
+//     const walk = (nodes: TreeItems<SortableTreeGoal>) => {
+//         nodes.forEach((node) => {
+//             if (node.collapsed) {
+//                 collapsedIds.add(node.instanceId);
+//             }
+//
+//             if (node.children?.length) {
+//                 walk(node.children);
+//             }
+//         });
+//     };
+//
+//     walk(items);
+//     return collapsedIds;
+// };
 
 const getAllGoalInstances = (item: TreeGoal): GoalReference[] => {
     const result = [{goalId: item.id, instanceId: item.instanceId}];
@@ -83,19 +73,46 @@ interface TreeProps {
 }
 
 const Tree: React.FC<TreeProps> = ({
-    existingGoalReferenceInstanceId,
-    setExistingGoalReferenceInstanceId,
-}) => {
+                                       existingGoalReferenceInstanceId,
+                                       setExistingGoalReferenceInstanceId,
+                                   }) => {
     const [editingItemId, setEditingItemId] = useState<InstanceId | null>(null);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
-    const [collapsedIds, setCollapsedIds] = useState<Set<InstanceId>>(new Set());
     const deletingItemRef = useRef<TreeGoal | null>(null);
-    const {treeData, dispatch} = useFileContext();
-
-    const sortableItems = useMemo(
-      () => decorateTreeItems(treeData, collapsedIds),
-      [treeData, collapsedIds],
-    );
+    const {treeData, goals, dispatch} = useFileContext();
+    const topTreeGoal = useMemo(() => newTreeGoal({
+        id: -999,
+        content: "(Top Level Goal)",
+        type: "Do",
+        children: treeData,
+    }), [treeData]);
+    const goalForId = (id: string): TreeGoal => {
+        return (id === String(topTreeGoal.id)) ? topTreeGoal : goals[Number(id)];
+    };
+    const tree = useTree<TreeGoal>({
+        rootItemId: String(topTreeGoal.id),
+        dataLoader: {
+            getItem: (id) => goalForId(id),
+            getChildren: (id) => {
+                console.log(`getChildren ${id}`);
+                return goalForId(id).children?.map((child) => String(child.id)) ?? [];
+            },
+        },
+        isItemFolder: (item: ItemInstance<TreeGoal>): boolean => (item.getItemData().children?.length ?? 0) > 0,
+        getItemName: (item: ItemInstance<TreeGoal>): string => item.getItemData().content,
+        features: [syncDataLoaderFeature, dragAndDropFeature],
+        indent: 20,
+        canReorder: true,
+        onDrop: createOnDropHandler((item, newChildren) => {
+            const children = newChildren.map(childId => goalForId(childId));
+            if (item.getId() === "-999") {
+                dispatch(setTreeData(children));
+            } else {
+                dispatch(setChildrenOfNodeId({id: item.getId(), children}))
+            }
+            console.log(`update item ${item.getId()} with children`, newChildren);
+        }),
+    });
 
     const deleteItem = () => {
       if (deletingItemRef.current) {
@@ -127,40 +144,44 @@ const Tree: React.FC<TreeProps> = ({
       setExistingGoalReferenceInstanceId([]);
     };
 
-    const handleItemsChanged = (items: TreeItems<SortableTreeGoal>) => {
-      setCollapsedIds(collectCollapsedIds(items));
-      dispatch(setTreeData(stripTreeUiState(items)));
-    };
+    // const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
+    //     <TreeRow {...props}
+    //              ref={ref}
+    //              editingItemId={editingItemId}
+    //              setEditingItemId={setEditingItemId}
+    //              existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+    //              onDeleteItem={handleDeleteItem}/>
+    // ));
 
-    const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
-        <TreeRow {...props}
-                 ref={ref}
-                 editingItemId={editingItemId}
-                 setEditingItemId={setEditingItemId}
-                 existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-                 onDeleteItem={handleDeleteItem}/>
-    ));
+    // const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
+    //     <TreeRow {...props}
+    //              ref={ref}
+    //              editingItemId={editingItemId}
+    //              setEditingItemId={setEditingItemId}
+    //              existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+    //              onDeleteItem={handleDeleteItem}/>
+    // ));
 
-    DndTreeItem.displayName = "DndTreeItem";
+    // DndTreeItem.displayName = "DndTreeItem";
 
     return (
-        <div style={{width: "100%", height: "100%", alignSelf: "flex-start", position: "relative"}}>
+        <div {...tree.getContainerProps()}
+             className="tree"
+             ref={tree.registerElement}>
             <ConfirmModal show={showDeleteWarning}
                           title="Delete Warning"
                           message="You are going to delete a goal with children goals, are you sure?"
                           onHide={handleDeleteCancel}
                           onConfirm={deleteItem}/>
-
-            <SortableTree items={sortableItems}
-                          onItemsChanged={handleItemsChanged}
-                          TreeItemComponent={DndTreeItem}
-                          indentationWidth={INDENTATION_WIDTH}
-                          disableSorting={editingItemId !== null}   // disallow dragging while editing
-                          pointerSensorOptions={{
-                              activationConstraint: {
-                                  distance: 5
-                              }
-                          }}/>
+            {tree.getItems().map((item) => (
+                <TreeRow item={item}
+                         editingItemId={editingItemId}
+                         setEditingItemId={setEditingItemId}
+                         existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+                         onDeleteItem={handleDeleteItem}
+                         className="py-1"/>
+            ))}
+            <div style={tree.getDragLineStyle()} className="dragline" />
         </div>
     );
 };

@@ -185,6 +185,11 @@ export const treeDataSlice = createSlice({
         setTreeData: (state, action: PayloadAction<TreeGoal[]>) => {
             state.tree = action.payload;
         },
+        setChildrenOfNodeId: (state, action: PayloadAction<{id: TreeGoal["id"], children: TreeGoal[]}>) => {
+            const goal = state.goals[action.payload.id];
+
+            goal.children = action.payload.children;
+        },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
             // Create a TreeGoal node with generated instanceId
             const instanceId = generateInstanceId(state.treeIds, action.payload.id);
@@ -299,9 +304,9 @@ export const treeDataSlice = createSlice({
 });
 
 export const {
-    addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList,
-    updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId,
-    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, addGoalToTree, deleteGoalReferenceFromHierarchy,
+    deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
+    updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
 } = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
 
