@@ -128,6 +128,7 @@ export const GoalModelProjectSchema = z.object({
 export type TreeGoal = {
     id: number;
     content: string;
+    url?: string;
     type: Label;
     instanceId: InstanceId;
     children?: TreeGoal[];

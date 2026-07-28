@@ -13,7 +13,7 @@ import {
     updateTextForGoalId
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
-import {BsFillTrash3Fill} from "react-icons/bs";
+import {BsFillTrash3Fill, BsLink45Deg} from "react-icons/bs";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -29,10 +29,11 @@ interface Props {
 	groupSelected: TreeGoal[]
 	setGroupSelected: (groupSelected: TreeGoal[]) => void
 	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
+	onLinkClick: (goal: TreeGoal) => void
     inputRef: RefObject<HTMLInputElement>
 }
 
-const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
+const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, onLinkClick, inputRef}) => {
 	const treeData = useFileContext();
 	const {dispatch, treeIds} = treeData;
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
@@ -236,8 +237,18 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
                                           ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
                             />
 
+							{/* Open the shared goal link modal for this row. */}
+							<Button
+								type="button"
+								title="Related link"
+								aria-label={`Related link for ${row.content || label}`}
+								onClick={() => onLinkClick(row)}
+							>
+								<BsLink45Deg/>
+							</Button>
+
 							{selectGoalsForLabel({treeData}, label).length > 1 && (
-								<Button onClick={() => handleDeleteRow(row)}>
+								<Button variant="danger" onClick={() => handleDeleteRow(row)}>
 									<BsFillTrash3Fill/>
 								</Button>
 							)}

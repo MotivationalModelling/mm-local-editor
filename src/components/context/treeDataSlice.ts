@@ -117,6 +117,23 @@ const removeAllReferenceFromHierarchy = (
         }));
 };
 
+const updateUrlForGoalReferences = (
+    nodes: TreeGoal[],
+    goalId: TreeGoal["id"],
+    url?: string,
+) => {
+    nodes.forEach((node) => {
+        if (node.id === goalId) {
+            if (url) {
+                node.url = url;
+            } else {
+                delete node.url;
+            }
+        }
+        updateUrlForGoalReferences(node.children ?? [], goalId, url);
+    });
+};
+
 const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): number => {
     const ids = treeIds[goalId]?.filter((id) => id !== null);  // filter out undefined & null
     if (!ids || ids.length === 0) return 0;
@@ -231,6 +248,22 @@ export const treeDataSlice = createSlice({
                 content: action.payload.text
             };
         },
+        updateUrlForGoalId: (state, action: PayloadAction<{
+            id: TreeGoal["id"],
+            url?: string
+        }>) => {
+            const goal = state.goals[action.payload.id];
+            if (!goal) return;
+
+            if (action.payload.url) {
+                goal.url = action.payload.url;
+            } else {
+                delete goal.url;
+            }
+
+            // Keep saved hierarchy references consistent with the goal list.
+            updateUrlForGoalReferences(state.tree, action.payload.id, action.payload.url);
+        },
         updateTextForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
             text: string
@@ -301,7 +334,6 @@ export const treeDataSlice = createSlice({
 export const {
     addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList,
     updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId,
-    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId, updateUrlForGoalId
 } = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
-

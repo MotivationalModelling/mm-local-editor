@@ -18,7 +18,8 @@ import {
     selectGoalsForLabel,
     treeDataSlice,
     updateTextForGoalId,
-    updateTextForInstanceId
+    updateTextForInstanceId,
+    updateUrlForGoalId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
@@ -92,6 +93,22 @@ describe('treeDataSlice', () => {
         const state2 = treeDataSlice.reducer(initialState, updateTextForGoalId({id: goal.id, text}));
 
         expect(state2.goals[goal.id].content).toEqual(text);
+    });
+    it('should update and remove the URL for a goal and its tree references', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
+        const url = "https://example.com";
+
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        state = treeDataSlice.reducer(state, updateUrlForGoalId({id: goal.id, url}));
+
+        expect(state.goals[goal.id].url).toEqual(url);
+        expect(state.tree[0].url).toEqual(url);
+
+        state = treeDataSlice.reducer(state, updateUrlForGoalId({id: goal.id}));
+
+        expect(state.goals[goal.id].url).toBeUndefined();
+        expect(state.tree[0].url).toBeUndefined();
     });
     it('should update text of goal in tree by instanceId (canvas double-click edit)', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
