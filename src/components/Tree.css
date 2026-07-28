@@ -1,14 +1,17 @@
+.link-icon,
 .delete-icon,
 .edit-icon {
 	visibility: hidden;
 	margin-right: 10px;
 }
 
+.link-icon:hover,
 .delete-icon:hover,
 .edit-icon:hover {
 	cursor: pointer;
 }
 
+.tree-list:hover .link-icon,
 .tree-list:hover .delete-icon,
 .tree-list:hover .edit-icon {
 	visibility: visible;
