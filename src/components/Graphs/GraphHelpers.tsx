@@ -2,7 +2,9 @@ import {
     Graph,
     Rectangle,
     Cell,
+    CellStyle,
     Geometry,
+    constants,
 } from "@maxgraph/core";
 import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
@@ -47,6 +49,26 @@ const FUNCTIONAL_NONFUNCTIONAL_OFFSET = {
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
+
+const GOAL_LINK_COLOR = "#0d6efd";
+const goalLinks = new WeakMap<Cell, string>();
+
+// Keep link metadata outside the cell value so existing plain-text editing
+// continues to work without HTML labels.
+export const getGoalLinkForCell = (cell: Cell): string | undefined => goalLinks.get(cell);
+
+const applyGoalLink = (style: CellStyle, url?: string) => {
+    if (!url) return;
+
+    style.fontColor = GOAL_LINK_COLOR;
+    style.fontStyle = (style.fontStyle ?? 0) | constants.FONT.UNDERLINE;
+};
+
+const registerGoalLink = (cell: Cell, url?: string) => {
+    if (url) {
+        goalLinks.set(cell, url);
+    }
+};
 
 /**
  * Recursively renders the goal hierarchy.
@@ -108,13 +130,13 @@ export const renderGoals = (
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
-            emotions.push({instanceId, content});
+            emotions.push({instanceId, content, url: goal.url});
         } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-            concerns.push({instanceId, content});
+            concerns.push({instanceId, content, url: goal.url});
         } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
-            qualities.push({instanceId, content});
+            qualities.push({instanceId, content, url: goal.url});
         } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
-            stakeholders.push({instanceId, content});
+            stakeholders.push({instanceId, content, url: goal.url});
         } else {
             console.log("Logging: goal of unknown type received: " + type);
         }
@@ -205,6 +227,7 @@ export const renderFunction = (
     // If not cloned, will affect all nodes instead.
     const style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.fillColor = goalColor;
+    applyGoalLink(style, goal.url);
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -227,6 +250,7 @@ export const renderFunction = (
         height,
         style
     );
+    registerGoalLink(node, goal.url);
     // console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
         // Insert the edge with specific constraints
@@ -389,7 +413,7 @@ const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{ inst
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{ instanceId: InstanceId; content: string; }>,
+    descriptions: Array<{ instanceId: InstanceId; content: string; url?: string; }>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None",
@@ -455,6 +479,11 @@ export const renderNonFunction = (
     style.labelPosition = "center";
     style.spacingTop = 0;
 
+    // Aggregated symbols can represent several goals, so only create a text
+    // link when the rendered label has one unambiguous URL target.
+    const goalUrl = descriptions.length === 1 ? descriptions[0].url : undefined;
+    applyGoalLink(style, goalUrl);
+
     // Clone edge style
     const dotted: any = {
         ...graph.getStylesheet().getDefaultEdgeStyle(),
@@ -496,6 +525,7 @@ export const renderNonFunction = (
         height,
         style
     );
+    registerGoalLink(node, goalUrl);
     console.log("Nonfunctional-goal-node:", node);
     // Insert an invisible edge
     if (showLineBetweenNonFunctionalGoals) {
