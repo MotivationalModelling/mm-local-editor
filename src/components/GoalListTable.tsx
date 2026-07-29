@@ -237,12 +237,14 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
                                           ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
                             />
 
-							{/* Keep the link action white with the same subtle border as the input. */}
+							{/* Match the link action background to the adjacent goal input. */}
 							<Button
 								type="button"
 								variant="light"
 								style={{
-									backgroundColor: "white",
+									backgroundColor: isGoalInHierarchy(row)
+										? "white"
+										: "var(--bs-secondary-bg-subtle)",
 									borderColor: "var(--bs-border-color)",
 									borderLeft: "none", // Remove the divider between the input and link action.
 									color: "var(--bs-primary)"
