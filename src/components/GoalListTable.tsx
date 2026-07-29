@@ -237,9 +237,16 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
                                           ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
                             />
 
-							{/* Open the shared goal link modal for this row. */}
+							{/* Keep the link action white with the same subtle border as the input. */}
 							<Button
 								type="button"
+								variant="light"
+								style={{
+									backgroundColor: "white",
+									borderColor: "var(--bs-border-color)",
+									borderLeft: "none", // Remove the divider between the input and link action.
+									color: "var(--bs-primary)"
+								}}
 								title="Related link"
 								aria-label={`Related link for ${row.content || label}`}
 								onClick={() => onLinkClick(row)}
@@ -247,8 +254,9 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 								<BsLink45Deg/>
 							</Button>
 
+							{/* Match the primary blue background used by the adjacent row action. */}
 							{selectGoalsForLabel({treeData}, label).length > 1 && (
-								<Button variant="danger" onClick={() => handleDeleteRow(row)}>
+								<Button onClick={() => handleDeleteRow(row)}>
 									<BsFillTrash3Fill/>
 								</Button>
 							)}
