@@ -54,7 +54,8 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 	return (
 		<Modal show={show} onHide={onHide} centered>
 			<Modal.Header closeButton>
-				<Modal.Title>Related link</Modal.Title>
+				{/* Identify the goal whose link is being edited in the dialog title. */}
+				<Modal.Title>Link for {goal?.content || "this goal"}</Modal.Title>
 			</Modal.Header>
 			<Form onSubmit={handleSubmit}>
 				<Modal.Body>
@@ -71,9 +72,6 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 						<Form.Control.Feedback type="invalid">
 							Enter a valid http:// or https:// URL.
 						</Form.Control.Feedback>
-						<Form.Text muted>
-							Link for {goal?.content || "this goal"}
-						</Form.Text>
 					</Form.Group>
 				</Modal.Body>
 				<Modal.Footer>
@@ -91,9 +89,6 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 							Remove
 						</Button>
 					)}
-					<Button type="button" variant="secondary" onClick={onHide}>
-						Cancel
-					</Button>
 					<Button type="submit" variant="primary" disabled={!isUrlValid}>
 						Save
 					</Button>
