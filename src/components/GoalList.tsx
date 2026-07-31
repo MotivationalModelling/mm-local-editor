@@ -25,7 +25,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
         const {dispatch, tabs} = treeData;
         const [activeKey, setActiveKey] = useState<Label>(tabs.keys().next().value ?? "Do");
 
-        const inputRef = useRef<HTMLInputElement>(null);
+        const inputRef = useRef<HTMLDivElement>(null);
 
         // Function to handle selecting a tab
         const handleSelect = (selectedKey: Label) => {

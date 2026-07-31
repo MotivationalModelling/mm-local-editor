@@ -36,12 +36,12 @@ export function handleContentSave(
 
 // Handle key press events for goal editing
 export function handleGoalKeyPress(
-  event: React.KeyboardEvent<HTMLInputElement>,
+  event: React.KeyboardEvent<HTMLElement>,
   originalContent: string,
   currentContent: string,
   onSave: (content: string) => void,
   onCancel: () => void,
-  onOtherKey?: (event: React.KeyboardEvent<HTMLInputElement>) => void
+  onOtherKey?: (event: React.KeyboardEvent<HTMLElement>) => void
 ): void {
   if (event.key === "Enter") {
     // call input Onsave Function

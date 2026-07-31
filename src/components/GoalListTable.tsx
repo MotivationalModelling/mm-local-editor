@@ -14,6 +14,7 @@ import {
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {BsFillTrash3Fill} from "react-icons/bs";
+import SpellcheckGoalInput from "./SpellcheckGoalInput.tsx";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -29,7 +30,7 @@ interface Props {
 	groupSelected: TreeGoal[]
 	setGroupSelected: (groupSelected: TreeGoal[]) => void
 	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
-    inputRef: RefObject<HTMLInputElement>
+    inputRef: RefObject<HTMLDivElement>
 }
 
 const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
@@ -41,7 +42,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 
 	// add new row
 	const handleKeyPress = (
-		e: React.KeyboardEvent<HTMLInputElement>,
+		e: React.KeyboardEvent<HTMLElement>,
 		label: Label
 	) => {
 		if (e.key === "Enter") {
@@ -56,7 +57,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 	};
 
 	// Handle key press with GoalHint functions
-	const handleTableKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, row: TreeGoal, label: Label) => {
+	const handleTableKeyPress = (e: React.KeyboardEvent<HTMLElement>, row: TreeGoal, label: Label) => {
 
 		// If we're editing this specific goal
 		if (editingGoalId === row.id && !newRowAllowed) {
@@ -199,7 +200,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 			</thead>
 			<tbody>
 			{goals.map((row, index) => (
-				<tr key={`${label}-${index}`}>
+				<tr key={row.id}>
 					<td className="align-middle">
 						<Form.Check type="checkbox"
 									onChange={() => handleCheckboxToggle(row)}
@@ -208,13 +209,15 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 					</td>
 					<td>
 						<InputGroup>
-                            <Form.Control onDragStart={() => handleDragStart(row)}
+                            <SpellcheckGoalInput
+                                          onDragStart={() => handleDragStart(row)}
                                           draggable={isGoalDraggable(row)} // Only draggable if not empty
-                                          type="text"
                                           value={editingGoalId === row.id ? editedText : row.content} // Show edited text when editing
-                                          onChange={(e) => {
+                                          aria-label={`${goalDescriptionForLabel(label)} ${index + 1}`}
+                                          aria-invalid={editingGoalId === row.id && isTextEmpty(editedText)}
+                                          onChange={(value) => {
                                               if (editingGoalId === row.id) {
-                                                  setEditedText(e.target.value); // Allow free typing
+                                                  setEditedText(value); // Allow free typing
                                               }
                                           }}
                                           onFocus={() => {
@@ -225,13 +228,12 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
                                               }
                                           }}
                                           placeholder={`Enter ${label}...`}
-                                          spellCheck
                                           className={`
 											  ${isEmptyGoal(row) ? "text-muted" : ""}
 											  ${editingGoalId === row.id && isTextEmpty(editedText) ? "is-invalid" : ""}
 											  ${isGoalInHierarchy(row) ? "" : "bg-secondary-subtle"}
 										  `}
-                                          onKeyDown={(e) => handleTableKeyPress(e as React.KeyboardEvent<HTMLInputElement>, row, label)}
+                                          onKeyDown={(e) => handleTableKeyPress(e, row, label)}
                                           onBlur={() => handleTableBlur(row)}
                                           ref={index === selectGoalsForLabel({treeData}, label).length - 1 ? inputRef : undefined}
                             />

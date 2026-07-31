@@ -1,0 +1,25 @@
+.spellcheck-goal-input {
+    min-width: 0;
+    min-height: calc(1.5em + 0.75rem + 2px);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.spellcheck-goal-input:empty::before {
+    color: var(--bs-secondary-color);
+    content: attr(data-placeholder);
+    pointer-events: none;
+}
+
+.spellcheck-goal-input::spelling-error {
+    text-decoration-color: #d93025;
+    text-decoration-line: underline;
+    text-decoration-skip-ink: none;
+    text-decoration-style: wavy;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.spellcheck-goal-input:focus {
+    cursor: text;
+}
