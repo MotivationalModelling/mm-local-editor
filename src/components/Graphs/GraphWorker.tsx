@@ -9,6 +9,7 @@ import {
     Graph,
     InternalEvent,
     KeyHandler,
+    PanningHandler,
     RubberBandHandler,
     UndoManager,
 } from "@maxgraph/core";
@@ -225,6 +226,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         //graph.setConnectable(true);
         graph.setCellsEditable(true);
         graph.setPanning(true);
+        const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
+        if (panningHandler) {
+            // Pan with the primary mouse button only when the pointer is over
+            // empty canvas space, leaving goal dragging and resizing unchanged.
+            panningHandler.useLeftButtonForPanning = true;
+        }
         graph.setCellsResizable(true);
         graph.setCellsMovable(true); // Allow cells to be moved
         graph.setCellsSelectable(true); // Allow cells to be selected
