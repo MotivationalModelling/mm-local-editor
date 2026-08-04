@@ -17,10 +17,14 @@ const buildStorySentence = (s: UserStory): string => {
   return `As a ${s.role}, I want to ${s.action} so that ${s.qualityGoal}. I want to feel ${s.emotionalGoal}.`;
 };
 
+export const getStoryText = (story: UserStory): string => {
+  return story.editedText.trim().length > 0 ? story.editedText : buildStorySentence(story);
+};
+
 const exportStoriesAsTxt = (stories: UserStory[]): void => {
   const text = stories
     .map((s) => {
-      const header = s.editedText.trim().length > 0 ? s.editedText.trim() : buildStorySentence(s);
+      const header = getStoryText(s).trim();
       const tasks = s.subTasks.map((t) => `  - ${t}`).join("\n");
       return tasks.length > 0 ? `${header}\n${tasks}` : header;
     })
@@ -40,7 +44,7 @@ const exportStoriesAsTxt = (stories: UserStory[]): void => {
 const copyStoriesToClipboard = async (stories: UserStory[]): Promise<void> => {
   const text = stories
     .map((s) => {
-      const header = s.editedText.trim().length > 0 ? s.editedText.trim() : buildStorySentence(s);
+      const header = getStoryText(s).trim();
       const tasks = s.subTasks.map((t) => `  - ${t}`).join("\n");
       return tasks.length > 0 ? `${header}\n${tasks}` : header;
     })
@@ -70,7 +74,7 @@ const UserStoriesPanel = () => {
 
   const handleStartEdit = (s: UserStory) => {
     setEditingId(s.id);
-    setDraftText(s.editedText.trim().length > 0 ? s.editedText : buildStorySentence(s));
+    setDraftText(getStoryText(s));
   };
 
   const handleSaveEdit = (id: string) => {
@@ -169,10 +173,9 @@ const UserStoriesPanel = () => {
           {usState.stories.map((s) => {
             const isRejected = s.status === "rejected";
             const isApproved = s.status === "approved";
-            const isEdited = s.status === "edited";
             const showEdit = editingId === s.id;
 
-            const textToShow = showEdit ? draftText : isEdited && s.editedText.trim().length > 0 ? s.editedText : buildStorySentence(s);
+            const textToShow = showEdit ? draftText : getStoryText(s);
 
             return (
               <Card
