@@ -1,23 +1,18 @@
 import {Resizable, ResizeCallback} from "re-resizable";
 import React, {useEffect, useRef, useState} from "react";
 import Alert from "react-bootstrap/Alert";
-import Button from "react-bootstrap/Button";
-import Spinner from "react-bootstrap/Spinner";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import {useFileContext} from "./context/FileProvider";
 import UserStoriesPanel from "./UserStoriesPanel";
-import {parseStoriesFromText, useUserStories} from "./context/UserStoriesContext";
+import {useUserStories} from "./context/UserStoriesContext";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
 import {TreeGoal, InstanceId} from "./types.ts";
-import {extractModelForPrompt} from "./utils/modelExtractor";
-import {buildUserStoryPrompt} from "./utils/promptBuilder";
-import {generateUserStories} from "./utils/llmService";
 
 const defaultStyle = {
   display: "flex",
@@ -67,8 +62,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   const [draggedItem, setDraggedItem] = useState<TreeGoal | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
-    const {dispatch, tree, treeData} = useFileContext();
-    const {state: usState, dispatch: usDispatch} = useUserStories();
+    const {dispatch, tree} = useFileContext();
+    const {state: usState} = useUserStories();
 
   const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
 
@@ -140,19 +135,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       setGroupSelected([]);
       setExistingError(false);
     }, delayTime);
-  };
-
-  const handleGenerate = async () => {
-    try {
-      const extracted = extractModelForPrompt(treeData);
-      const prompt = buildUserStoryPrompt(extracted);
-      usDispatch({type: "SET_LOADING"});
-      const raw = await generateUserStories(prompt);
-      const stories = parseStoriesFromText(raw);
-      usDispatch({type: "SET_SUCCESS", payload: {rawOutput: raw, stories}});
-    } catch (err) {
-      usDispatch({type: "SET_ERROR", payload: err instanceof Error ? err.message : "Unknown error"});
-    }
   };
 
   // Handle for goals drop on the nestable section
@@ -243,8 +225,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
     }
   }, [paddingX, showGoalSection, showGraphSection]); 
-  const isGenerating = usState.status === "loading";
-
   return (
     <div
       style={{
@@ -256,34 +236,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }}
       ref={parentRef}
     >
-      <div className="d-flex align-items-center">
-        <Button
-          variant="outline-primary"
-          size="sm"
-          disabled={isGenerating}
-          onClick={handleGenerate}
-        >
-          {isGenerating ? (
-            <>
-              <Spinner animation="border" size="sm" className="me-1" />
-              Generating...
-            </>
-          ) : (
-            "✨ Generate User Stories"
-          )}
-        </Button>
-      </div>
-
-      {usState.status === "error" && (
-        <Alert
-          variant="danger"
-          className="mt-2 mb-0 py-1 px-2"
-          style={{fontSize: "0.85rem"}}
-        >
-          {usState.error}
-        </Alert>
-      )}
-
       <div style={{display: "flex", height: "100%", marginTop: "0.5rem"}}>
         <ErrorModal
           show={existingError}
@@ -339,6 +291,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
               setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
             />
           </div>
+
+          {usState.status === "error" && (
+            <Alert
+              variant="danger"
+              className="mt-2 mb-0 py-1 px-2"
+              style={{fontSize: "0.85rem", margin: "0.5rem 10px 0"}}
+            >
+              {usState.error}
+            </Alert>
+          )}
 
           {usState.status !== "idle" && (
             <div style={{width: "100%", marginTop: "1rem", padding: "0 10px"}}>

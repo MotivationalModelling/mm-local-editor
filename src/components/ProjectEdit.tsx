@@ -12,9 +12,7 @@ const ProjectEdit: React.FC = () => {
 
     return (
         <GraphProvider>
-            <ProjectEditHeader showGoalSection={showGoalSection}
-                               setShowGoalSection={setShowGoalSection}
-                               showGraphSection={showGraphSection}/>
+            <ProjectEditHeader showGraphSection={showGraphSection}/>
             <ProgressBar showGoalSection={showGoalSection}
                          setShowGoalSection={setShowGoalSection}
                          setShowGraphSection={setShowGraphSection}/>
