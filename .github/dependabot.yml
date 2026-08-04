@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Australia/Melbourne
+    open-pull-requests-limit: 5
+    groups:
+      production-patch:
+        dependency-type: production
+        update-types:
+          - patch
+      production-minor:
+        dependency-type: production
+        update-types:
+          - minor
+      development-patch:
+        dependency-type: development
+        update-types:
+          - patch
+      development-minor:
+        dependency-type: development
+        update-types:
+          - minor
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Australia/Melbourne
+    open-pull-requests-limit: 5
+    groups:
+      actions-patch:
+        update-types:
+          - patch
+      actions-minor:
+        update-types:
+          - minor
