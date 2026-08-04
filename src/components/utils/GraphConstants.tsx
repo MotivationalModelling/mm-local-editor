@@ -3,6 +3,12 @@
 
 // --- Default Element Dimensions ---
 import {CellStateStyle} from "@maxgraph/core";
+import BeIcon from "/img/Cloud.png";
+import DoIcon from "/img/Function.png";
+import FeelIcon from "/img/Heart.png";
+import ConcernIcon from "/img/Risk.png";
+import WhoIcon from "/img/Stakeholder.png";
+import LineIcon from "/img/line.svg";
 
 export const LINE_SIZE = 50;             // Line length between nodes
 export const SYMBOL_WIDTH = 145;         // Base width of a symbol node
@@ -39,21 +45,21 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
     FUNCTIONAL: {
         type: "Functional",
         shape: "parallelogramShape",
-        imagePath: "img/Function.png",
+        imagePath: DoIcon,
         scale: {width: 1.045, height: 0.8},
         label: "Do",
     },
     EMOTIONAL: {
         type: "Emotional",
         shape: "heartShape",
-        imagePath: "img/Heart.png",
+        imagePath: FeelIcon,
         scale: {width: 0.9, height: 0.96},
         label: "Feel",
     },
     NEGATIVE: {
         type: "Negative",
         shape: "negativeShape",
-        imagePath: "img/Risk.png",
+        imagePath: ConcernIcon,
         scale: {width: 0.9, height: 0.96},
         shapeStyle: {
             fillColor: 'grey',
@@ -63,14 +69,14 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
     QUALITY: {
         type: "Quality",
         shape: "cloudShape",
-        imagePath: "img/Cloud.png",
+        imagePath: BeIcon,
         scale: {width: 1, height: 0.8},
         label: "Be",
     },
     STAKEHOLDER: {
         type: "Stakeholder",
         shape: "personShape",
-        imagePath: "img/Stakeholder.png",
+        imagePath: WhoIcon,
         scale: {width: 0.6, height: 1.0},
         shapeStyle: {
             verticalAlign: 'top',
@@ -82,7 +88,7 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
     CROWD: {
         type: "Crowd",
         shape: "crowdShape",
-        imagePath: "img/Stakeholder.png",
+        imagePath: WhoIcon,
         scale: {width: 0.7, height: 1.0},
         shapeStyle: {
             verticalAlign: 'top',
@@ -95,4 +101,4 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
 
 // --- Additional Assets ---
 // Path to the default line image used in the diagram.
-export const LINE_IMAGE_PATH = "img/line.svg";
+export const LINE_IMAGE_PATH = LineIcon;
