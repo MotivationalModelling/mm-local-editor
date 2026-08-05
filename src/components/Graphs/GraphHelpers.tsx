@@ -57,11 +57,14 @@ const goalLinks = new WeakMap<Cell, string>();
 // continues to work without HTML labels.
 export const getGoalLinkForCell = (cell: Cell): string | undefined => goalLinks.get(cell);
 
-const applyGoalLink = (style: CellStyle, url?: string) => {
-    if (!url) return;
+const applyGoalLink = (style: CellStyle, url?: string): CellStyle => {
+    if (!url) return style;
 
-    style.fontColor = GOAL_LINK_COLOR;
-    style.fontStyle = (style.fontStyle ?? 0) | constants.FONT.UNDERLINE;
+    return {
+        ...style,
+        fontColor: GOAL_LINK_COLOR,
+        fontStyle: (style.fontStyle ?? 0) | constants.FONT.UNDERLINE,
+    };
 };
 
 const registerGoalLink = (cell: Cell, url?: string) => {
@@ -225,9 +228,9 @@ export const renderFunction = (
 
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    let style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.fillColor = goalColor;
-    applyGoalLink(style, goal.url);
+    style = applyGoalLink(style, goal.url);
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -471,7 +474,7 @@ export const renderNonFunction = (
     }
 
     // Clone style to avoid modifying the default
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    let style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.shape = shape;
     style.perimeter = "none"
     style.align = "center";
@@ -482,7 +485,7 @@ export const renderNonFunction = (
     // Aggregated symbols can represent several goals, so only create a text
     // link when the rendered label has one unambiguous URL target.
     const goalUrl = descriptions.length === 1 ? descriptions[0].url : undefined;
-    applyGoalLink(style, goalUrl);
+    style = applyGoalLink(style, goalUrl);
 
     // Clone edge style
     const dotted: any = {
