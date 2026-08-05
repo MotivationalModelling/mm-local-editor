@@ -49,7 +49,7 @@ export type ParsedGoalId = ParsedFunctionalId | ParsedNonFunctionalId;
 
 export interface ClusterGoal extends GoalBase {
     SubGoals: ClusterGoal[]
-    url?: string;
+    url: string | undefined;
     x?: number;
     y?: number;
 }

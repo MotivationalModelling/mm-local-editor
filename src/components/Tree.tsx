@@ -363,18 +363,16 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
           )}
 
           {!isEditing && (
-            <div
-              className="link-icon"
-              title="Related link"
-              aria-label={`Related link for ${treeItem.content || treeItem.type}`}
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                onLinkClick(treeItem);
-              }}
-            >
-              <BsLink45Deg size={iconSize} />
-            </div>
+              <div className="link-icon"
+                  title="Related link"
+                  aria-label={`Related link for ${treeItem.content || treeItem.type}`}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                      event.stopPropagation();
+                      onLinkClick(treeItem);
+                  }}>
+                  <BsLink45Deg size={iconSize} />
+              </div>
           )}
 
           <div
@@ -483,17 +481,13 @@ const Tree: React.FC<TreeProps> = ({
       dispatch(setTreeData(stripTreeUiState(items)));
     };
 
-    const handleLinkSave = (url: string) => {
-      if (!linkGoal) return;
-
-      dispatch(updateUrlForGoalId({id: linkGoal.id, url}));
+    const handleLinkSave = (goal: TreeGoal, url: string) => {
+      dispatch(updateUrlForGoalId({id: goal.id, url}));
       setLinkGoal(null);
     };
 
-    const handleLinkRemove = () => {
-      if (!linkGoal) return;
-
-      dispatch(updateUrlForGoalId({id: linkGoal.id}));
+    const handleLinkRemove = (goal: TreeGoal) => {
+      dispatch(updateUrlForGoalId({id: goal.id, url: undefined}));
       setLinkGoal(null);
     };
 
@@ -527,11 +521,13 @@ const Tree: React.FC<TreeProps> = ({
             onConfirm={deleteItem}
           />
           {/* Reuse the goal link modal for hierarchy rows. */}
-          <GoalLinkModal show={linkGoal !== null}
-                         goal={linkGoal}
-                         onHide={() => setLinkGoal(null)}
-                         onRemove={handleLinkRemove}
-                         onSave={handleLinkSave}/>
+          {linkGoal && (
+              <GoalLinkModal show
+                             goal={linkGoal}
+                             onHide={() => setLinkGoal(null)}
+                             onRemove={() => handleLinkRemove(linkGoal)}
+                             onSave={(url) => handleLinkSave(linkGoal, url)}/>
+          )}
 
           <SortableTree
             items={sortableItems}

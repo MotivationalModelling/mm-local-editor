@@ -296,7 +296,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const graphListener = useCallback((graph: Graph): (() => void) => {
         const cellHistory: CellHistory = {};
         const goalLinkClickHandler = (_sender: string, evt: EventObject) => {
-            const cell = evt.getProperty("cell") as Cell | null;
+            const cell = evt.getProperty("cell") as Cell ?? null;
             if (!cell) return;
 
             const url = getGoalLinkForCell(cell);

@@ -64,17 +64,13 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
             }
         };
 
-        const handleLinkSave = (url: string) => {
-            if (!linkGoal) return;
-
-            dispatch(updateUrlForGoalId({id: linkGoal.id, url}));
+        const handleLinkSave = (goal: TreeGoal, url: string) => {
+            dispatch(updateUrlForGoalId({id: goal.id, url}));
             setLinkGoal(null);
         };
 
-        const handleLinkRemove = () => {
-            if (!linkGoal) return;
-
-            dispatch(updateUrlForGoalId({id: linkGoal.id}));
+        const handleLinkRemove = (goal: TreeGoal) => {
+            dispatch(updateUrlForGoalId({id: goal.id, url: undefined}));
             setLinkGoal(null);
         };
 
@@ -142,11 +138,13 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
                     </Tab.Content>
                 </Tab.Container>
                 {/* All goal tabs share one link modal. */}
-                <GoalLinkModal show={linkGoal !== null}
-                               goal={linkGoal}
-                               onHide={() => setLinkGoal(null)}
-                               onRemove={handleLinkRemove}
-                               onSave={handleLinkSave}/>
+                {linkGoal && (
+                    <GoalLinkModal show
+                                   goal={linkGoal}
+                                   onHide={() => setLinkGoal(null)}
+                                   onRemove={() => handleLinkRemove(linkGoal)}
+                                   onSave={(url) => handleLinkSave(linkGoal, url)}/>
+                )}
                 <GroupDropBtn />
             </div>
         );

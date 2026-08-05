@@ -120,15 +120,11 @@ const removeAllReferenceFromHierarchy = (
 const updateUrlForGoalReferences = (
     nodes: TreeGoal[],
     goalId: TreeGoal["id"],
-    url?: string,
+    url: string | undefined,
 ) => {
     nodes.forEach((node) => {
         if (node.id === goalId) {
-            if (url) {
-                node.url = url;
-            } else {
-                delete node.url;
-            }
+            node.url = url;
         }
         updateUrlForGoalReferences(node.children ?? [], goalId, url);
     });
@@ -250,16 +246,14 @@ export const treeDataSlice = createSlice({
         },
         updateUrlForGoalId: (state, action: PayloadAction<{
             id: TreeGoal["id"],
-            url?: string
+            url: string | undefined
         }>) => {
             const goal = state.goals[action.payload.id];
-            if (!goal) return;
-
-            if (action.payload.url) {
-                goal.url = action.payload.url;
-            } else {
-                delete goal.url;
+            if (!goal) {
+                throw new Error(`Cannot update URL for missing goal ${action.payload.id}`);
             }
+
+            goal.url = action.payload.url;
 
             // Keep saved hierarchy references consistent with the goal list.
             updateUrlForGoalReferences(state.tree, action.payload.id, action.payload.url);

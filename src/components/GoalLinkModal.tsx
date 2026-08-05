@@ -1,8 +1,9 @@
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 import {TreeGoal} from "./types.ts";
+import {linkTitleForGoal} from "./linkTitleForGoal.ts";
 
 type GoalLinkModalProps = {
 	show: boolean;
@@ -19,12 +20,8 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 	onRemove,
 	onSave,
 }) => {
-	const [url, setUrl] = useState("");
+	const [url, setUrl] = useState(goal?.url ?? "");
 	const normalizedUrl = url.trim();
-
-	useEffect(() => {
-		setUrl(goal?.url ?? "");
-	}, [goal]);
 
 	const isValidUrl = () => {
 		try {
@@ -54,8 +51,7 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 	return (
 		<Modal show={show} onHide={onHide} centered>
 			<Modal.Header closeButton>
-				{/* Identify the goal whose link is being edited in the dialog title. */}
-				<Modal.Title>Link for {goal?.content || "this goal"}</Modal.Title>
+				<Modal.Title>{linkTitleForGoal(goal)}</Modal.Title>
 			</Modal.Header>
 			<Form onSubmit={handleSubmit}>
 				<Modal.Body>
