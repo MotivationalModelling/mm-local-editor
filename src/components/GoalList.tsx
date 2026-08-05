@@ -11,8 +11,7 @@ import {BsPlus} from "react-icons/bs";
 import {
     addGoalToTab,
     deleteGoalFromGoalList,
-    selectGoalsForLabel,
-    updateUrlForGoalId
+    selectGoalsForLabel
 } from "./context/treeDataSlice.ts";
 import GoalLinkModal from "./GoalLinkModal.tsx";
 import GoalListTable from "./GoalListTable.tsx";
@@ -62,16 +61,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
                 groupSelected.forEach((item: TreeGoal) => dispatch(deleteGoalFromGoalList(item)));
                 setGroupSelected([]);
             }
-        };
-
-        const handleLinkSave = (goal: TreeGoal, url: string) => {
-            dispatch(updateUrlForGoalId({id: goal.id, url}));
-            setLinkGoal(null);
-        };
-
-        const handleLinkRemove = (goal: TreeGoal) => {
-            dispatch(updateUrlForGoalId({id: goal.id, url: undefined}));
-            setLinkGoal(null);
         };
 
         const GroupDropBtn = () => {
@@ -139,11 +128,8 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
                 </Tab.Container>
                 {/* All goal tabs share one link modal. */}
                 {linkGoal && (
-                    <GoalLinkModal show
-                                   goal={linkGoal}
-                                   onHide={() => setLinkGoal(null)}
-                                   onRemove={() => handleLinkRemove(linkGoal)}
-                                   onSave={(url) => handleLinkSave(linkGoal, url)}/>
+                    <GoalLinkModal goal={linkGoal}
+                                   onClose={() => setLinkGoal(null)}/>
                 )}
                 <GroupDropBtn />
             </div>

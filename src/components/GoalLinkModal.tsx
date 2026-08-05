@@ -2,25 +2,22 @@ import React, {useState} from "react";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
+import {useFileContext} from "./context/FileProvider";
+import {updateUrlForGoalId} from "./context/treeDataSlice.ts";
 import {TreeGoal} from "./types.ts";
 import {linkTitleForGoal} from "./linkTitleForGoal.ts";
 
 type GoalLinkModalProps = {
-	show: boolean;
-	goal: TreeGoal | null;
-	onHide: () => void;
-	onRemove: () => void;
-	onSave: (url: string) => void;
+	goal: TreeGoal;
+	onClose: () => void;
 };
 
 const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
-	show,
 	goal,
-	onHide,
-	onRemove,
-	onSave,
+	onClose,
 }) => {
-	const [url, setUrl] = useState(goal?.url ?? "");
+	const {dispatch} = useFileContext();
+	const [url, setUrl] = useState(goal.url ?? "");
 	const normalizedUrl = url.trim();
 
 	const isValidUrl = () => {
@@ -38,8 +35,14 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		if (isUrlValid) {
-			onSave(normalizedUrl);
+			dispatch(updateUrlForGoalId({id: goal.id, url: normalizedUrl}));
+			onClose();
 		}
+	};
+
+	const handleRemove = () => {
+		dispatch(updateUrlForGoalId({id: goal.id, url: undefined}));
+		onClose();
 	};
 
 	const handleOpen = () => {
@@ -49,7 +52,7 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 	};
 
 	return (
-		<Modal show={show} onHide={onHide} centered>
+		<Modal show onHide={onClose} centered>
 			<Modal.Header closeButton>
 				<Modal.Title>{linkTitleForGoal(goal)}</Modal.Title>
 			</Modal.Header>
@@ -80,8 +83,8 @@ const GoalLinkModal: React.FC<GoalLinkModalProps> = ({
 					>
 						Open link
 					</Button>
-					{goal?.url && (
-						<Button type="button" variant="outline-danger" onClick={onRemove}>
+					{goal.url && (
+						<Button type="button" variant="outline-danger" onClick={handleRemove}>
 							Remove
 						</Button>
 					)}

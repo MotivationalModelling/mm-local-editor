@@ -25,7 +25,7 @@ import {
     isTextEmpty,
 } from "./utils/GoalHint.tsx";
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setTreeData, updateUrlForGoalId} from "./context/treeDataSlice.ts";
+import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
 
 const INDENTATION_WIDTH = 24;
 
@@ -481,16 +481,6 @@ const Tree: React.FC<TreeProps> = ({
       dispatch(setTreeData(stripTreeUiState(items)));
     };
 
-    const handleLinkSave = (goal: TreeGoal, url: string) => {
-      dispatch(updateUrlForGoalId({id: goal.id, url}));
-      setLinkGoal(null);
-    };
-
-    const handleLinkRemove = (goal: TreeGoal) => {
-      dispatch(updateUrlForGoalId({id: goal.id, url: undefined}));
-      setLinkGoal(null);
-    };
-
     const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
         <TreeRow
           {...props}
@@ -522,11 +512,8 @@ const Tree: React.FC<TreeProps> = ({
           />
           {/* Reuse the goal link modal for hierarchy rows. */}
           {linkGoal && (
-              <GoalLinkModal show
-                             goal={linkGoal}
-                             onHide={() => setLinkGoal(null)}
-                             onRemove={() => handleLinkRemove(linkGoal)}
-                             onSave={(url) => handleLinkSave(linkGoal, url)}/>
+              <GoalLinkModal goal={linkGoal}
+                  onClose={() => setLinkGoal(null)}/>
           )}
 
           <SortableTree

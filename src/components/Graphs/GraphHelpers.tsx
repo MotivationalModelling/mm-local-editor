@@ -482,9 +482,9 @@ export const renderNonFunction = (
     style.labelPosition = "center";
     style.spacingTop = 0;
 
-    // Aggregated symbols can represent several goals, so only create a text
-    // link when the rendered label has one unambiguous URL target.
-    const goalUrl = descriptions.length === 1 ? descriptions[0].url : undefined;
+    // A non-functional symbol may combine several goals. Only a symbol for a
+    // single goal has one clear link target.
+    const goalUrl = (descriptions.length === 1) ? descriptions[0].url : undefined;
     style = applyGoalLink(style, goalUrl);
 
     // Clone edge style
