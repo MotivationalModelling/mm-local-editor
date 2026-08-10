@@ -273,10 +273,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const graphListener = useCallback((graph: Graph): (() => void) => {
         const cellHistory: CellHistory = {};
         const changeHandler = (_sender: string, evt: EventObject) => {
+                const changes = evt.getProperty("edit").changes;
+                const hasNonStyleChanges = changes.some(
+                    (change: {constructor: {name: string}}) => change.constructor.name != "StyleChange"
+                );
                 graph.getDataModel().beginUpdate();
                 evt.consume();
                 try {
-                    const changes = evt.getProperty("edit").changes;
                     for (let i = 0; i < changes.length; i++) {
                         const change = changes[i];
                         if (change.constructor.name == "GeometryChange") {
@@ -364,7 +367,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     }
                 } finally {
                     graph.getDataModel().endUpdate();
-                    graph.refresh();
+                    // Style changes are already redrawn by maxGraph and must retain the hidden label while editing.
+                    if (hasNonStyleChanges) {
+                        graph.refresh();
+                    }
                 }
             };
         graph.getDataModel().addListener(InternalEvent.CHANGE, changeHandler);
