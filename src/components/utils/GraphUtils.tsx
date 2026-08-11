@@ -185,25 +185,24 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
+// The goal ID may be negative, while the reference suffix remains non-negative.
+const INSTANCE_ID_PATTERN = /^(-?\d+)-(\d+)$/;
+
 export const validateInstanceId = (id: string): InstanceId => {
-    const bits = id.split("-").map(s => s.trim());
-    if (bits.length !== 2) {
+    if (!INSTANCE_ID_PATTERN.test(id)) {
         throw new Error(`badly formatted instanceId "${id}"`);
-    }
-    const [goalId, refId] = bits.map(Number);
-    if (isNaN(goalId) || isNaN(refId)) {
-        throw new Error(`instanceId must contain two numbers, got "${id}"`);
     }
     return id as InstanceId;
 };
 
 export const parseInstanceId = (instanceId: InstanceId) => {
-    const bits = instanceId.split("-").map(s => s.trim());
-    if (bits.length !== 2) {
+    const match = INSTANCE_ID_PATTERN.exec(instanceId);
+    if (!match) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
 
-    const [goalId, refId] = bits.map(Number);
+    const goalId = Number(match[1]);
+    const refId = Number(match[2]);
 
     return {goalId, refId};
 };
