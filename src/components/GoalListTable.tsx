@@ -25,14 +25,13 @@ const goalDescriptionForLabel = (label: Label): string => {
 interface Props {
 	label: Label
 	goals: TreeGoal[]
-    setDraggedItem: (item: TreeGoal | null) => void;
 	groupSelected: TreeGoal[]
 	setGroupSelected: (groupSelected: TreeGoal[]) => void
 	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
     inputRef: RefObject<HTMLInputElement>
 }
 
-const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
+const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
 	const treeData = useFileContext();
 	const {dispatch, treeIds} = treeData;
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
@@ -123,9 +122,9 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 	};
 
 
-	const handleDragStart = (row: TreeGoal) => {
-		console.log("drag start");
-		setDraggedItem(row);
+	const handleDragStart = (event: React.DragEvent<HTMLInputElement>, row: TreeGoal) => {
+		const draggedGoals = groupSelected.length > 1 ? groupSelected : [row];
+		event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
 	};
 
 	const handleCheckboxToggle = (row: TreeGoal) => {
@@ -208,7 +207,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 					</td>
 					<td>
 						<InputGroup>
-                            <Form.Control onDragStart={() => handleDragStart(row)}
+                            <Form.Control onDragStart={(event) => handleDragStart(event as React.DragEvent<HTMLInputElement>, row)}
                                           draggable={isGoalDraggable(row)} // Only draggable if not empty
                                           type="text"
                                           value={editingGoalId === row.id ? editedText : row.content} // Show edited text when editing

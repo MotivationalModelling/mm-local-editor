@@ -3,7 +3,7 @@ import {InstanceId, newTreeGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, findTreeGoalById, moveTreeItem} from "./context/treeDataSlice.ts";
+import {addGoalsToTree, deleteGoalReferenceFromHierarchy, findTreeGoalById, moveTreeItem} from "./context/treeDataSlice.ts";
 import TreeRow from "./TreeRow.tsx";
 import {useTree} from "@headless-tree/react";
 import {dragAndDropFeature, ItemInstance, syncDataLoaderFeature} from "@headless-tree/core";
@@ -37,16 +37,18 @@ TreeRow.displayName = "TreeRow";
 interface TreeProps {
     existingGoalReferenceInstanceId: GoalReference[]
     setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: GoalReference[]) => void
+    onGoalsDropped: (existingGoalIds: TreeGoal["id"][]) => void
 }
 
 const Tree: React.FC<TreeProps> = ({
                                        existingGoalReferenceInstanceId,
                                        setExistingGoalReferenceInstanceId,
+                                       onGoalsDropped,
                                    }) => {
     const [editingItemId, setEditingItemId] = useState<InstanceId | null>(null);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const deletingItemRef = useRef<TreeGoal | null>(null);
-    const {treeData, goals, dispatch} = useFileContext();
+    const {treeData, treeIds, goals, dispatch} = useFileContext();
     const topTreeGoal = useMemo(() => newTreeGoal({
         id: -999,
         content: "(Top Level Goal)",
@@ -77,6 +79,18 @@ const Tree: React.FC<TreeProps> = ({
             parentId: target.item.getId() === "-999" ? null : Number(target.item.getId()),
             insertionIndex: "insertionIndex" in target ? target.insertionIndex : undefined,
         })),
+        canDragForeignDragObjectOver: (dataTransfer) => dataTransfer.types.includes("text/plain"),
+        canDropForeignDragObject: (dataTransfer) => getDraggedGoalIds(dataTransfer).length > 0,
+        onDropForeignDragObject: (dataTransfer, target) => {
+            const goalIds = getDraggedGoalIds(dataTransfer);
+            const existingGoalIds = goalIds.filter((id) => (treeIds[id]?.length ?? 0) > 0);
+            onGoalsDropped(existingGoalIds);
+            dispatch(addGoalsToTree({
+                goalIds,
+                parentId: target.item.getId() === "-999" ? null : Number(target.item.getId()),
+                insertionIndex: "insertionIndex" in target ? target.insertionIndex : undefined,
+            }));
+        },
     });
 
     useEffect(() => {
@@ -136,3 +150,12 @@ const Tree: React.FC<TreeProps> = ({
 };
 
 export default Tree;
+
+const getDraggedGoalIds = (dataTransfer: DataTransfer): number[] => {
+    try {
+        const goalIds: unknown = JSON.parse(dataTransfer.getData("text/plain"));
+        return Array.isArray(goalIds) ? goalIds.filter((id) => typeof id === "number") : [];
+    } catch {
+        return [];
+    }
+};

@@ -236,6 +236,25 @@ export const treeDataSlice = createSlice({
             };
             state.tree.push(node);
         },
+        addGoalsToTree: (state, action: PayloadAction<{
+            goalIds: TreeGoal["id"][],
+            parentId: TreeGoal["id"] | null,
+            insertionIndex?: number
+        }>) => {
+            let children = state.tree;
+            if (action.payload.parentId !== null) {
+                const parent = findTreeGoalById(state.tree, action.payload.parentId);
+                if (!parent) return;
+                parent.children ??= [];
+                children = parent.children;
+            }
+
+            const newItems = action.payload.goalIds
+                .filter((id) => state.goals[id] && (state.treeIds[id]?.length ?? 0) === 0)
+                .map((id) => createTreeGoalNode(state.treeIds, state.goals[id]));
+            const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
+            children.splice(insertionIndex, 0, ...newItems);
+        },
         // remove goal(s) and its children from canvas
         removeGoalIdFromTree: (state, action: PayloadAction<{
             id: TreeGoal["id"],
@@ -335,7 +354,8 @@ export const treeDataSlice = createSlice({
 });
 
 export const {
-    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, deleteGoalReferenceFromHierarchy,
+    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree,
+    deleteGoalReferenceFromHierarchy,
     deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
     updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
 } = treeDataSlice.actions;

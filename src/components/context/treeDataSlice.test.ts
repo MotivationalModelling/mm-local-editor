@@ -6,6 +6,7 @@
 import {beforeAll, beforeEach, describe, expect, it} from "vitest";
 import {
     addGoal,
+    addGoalsToTree,
     addGoalToTab,
     addGoalToTree,
     createInitialState,
@@ -149,6 +150,16 @@ describe('treeDataSlice', () => {
         
         const state = treeDataSlice.reducer(initialState, addGoalToTree(goal));
         expect(Object.keys(state.treeIds)).toContain(String(goal.id));
+    });
+    it('should add goals at the Headless Tree drop target', () => {
+        const goal = newTreeGoal({id: 2, type: "Do", content: "Child"});
+        const parent = newTreeGoal({id: 1, type: "Do", children: []});
+        const state = treeDataSlice.reducer(
+            {...initialState, goals: {...initialState.goals, [goal.id]: goal}, tree: [parent]},
+            addGoalsToTree({goalIds: [goal.id], parentId: parent.id, insertionIndex: 0}),
+        );
+
+        expect(state.tree[0].children?.map((item) => item.id)).toEqual([goal.id]);
     });
     it('should move a nested goal using its goal id', () => {
         const child = newTreeGoal({id: 2, type: "Do", children: []});
