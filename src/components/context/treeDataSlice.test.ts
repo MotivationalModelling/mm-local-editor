@@ -13,6 +13,7 @@ import {
     deleteGoalFromGoalList,
     deleteGoalReferenceFromHierarchy,
     findTreeGoalByInstanceId,
+    moveTreeItem,
     removeItemIdFromTree,
     reset,
     selectGoalsForLabel,
@@ -148,6 +149,29 @@ describe('treeDataSlice', () => {
         
         const state = treeDataSlice.reducer(initialState, addGoalToTree(goal));
         expect(Object.keys(state.treeIds)).toContain(String(goal.id));
+    });
+    it('should move a nested goal using its goal id', () => {
+        const child = newTreeGoal({id: 2, type: "Do", children: []});
+        const source = newTreeGoal({id: 1, type: "Do", children: [child]});
+        const target = newTreeGoal({id: 3, type: "Do", children: []});
+        const state = treeDataSlice.reducer(
+            {...initialState, tree: [source, target]},
+            moveTreeItem({id: 2, parentId: 3, insertionIndex: 0}),
+        );
+
+        expect(state.tree[0].children).toEqual([]);
+        expect(state.tree[1].children?.map((item) => item.id)).toEqual([2]);
+    });
+    it('should not duplicate a goal moved within the same parent', () => {
+        const first = newTreeGoal({id: 2, type: "Do", children: []});
+        const second = newTreeGoal({id: 3, type: "Do", children: []});
+        const parent = newTreeGoal({id: 1, type: "Do", children: [first, second]});
+        const state = treeDataSlice.reducer(
+            {...initialState, tree: [parent]},
+            moveTreeItem({id: 2, parentId: 1, insertionIndex: 0}),
+        );
+
+        expect(state.tree[0].children?.map((item) => item.id)).toEqual([2, 3]);
     });
     it('should remove a goal\'s reference from the tree', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});

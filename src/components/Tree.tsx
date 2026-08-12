@@ -1,12 +1,12 @@
-import React, {useMemo, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {InstanceId, newTreeGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setChildrenOfNodeId, setTreeData} from "./context/treeDataSlice.ts";
+import {deleteGoalReferenceFromHierarchy, findTreeGoalById, moveTreeItem} from "./context/treeDataSlice.ts";
 import TreeRow from "./TreeRow.tsx";
 import {useTree} from "@headless-tree/react";
-import {createOnDropHandler, dragAndDropFeature, ItemInstance, syncDataLoaderFeature} from "@headless-tree/core";
+import {dragAndDropFeature, ItemInstance, syncDataLoaderFeature} from "@headless-tree/core";
 
 export const INDENTATION_WIDTH = 24;
 
@@ -54,7 +54,9 @@ const Tree: React.FC<TreeProps> = ({
         children: treeData,
     }), [treeData]);
     const goalForId = (id: string): TreeGoal => {
-        return (id === String(topTreeGoal.id)) ? topTreeGoal : goals[Number(id)];
+        return (id === String(topTreeGoal.id))
+            ? topTreeGoal
+            : findTreeGoalById(treeData, Number(id)) ?? goals[Number(id)];
     };
     const tree = useTree<TreeGoal>({
         rootItemId: String(topTreeGoal.id),
@@ -70,16 +72,16 @@ const Tree: React.FC<TreeProps> = ({
         features: [syncDataLoaderFeature, dragAndDropFeature],
         indent: 20,
         canReorder: true,
-        onDrop: createOnDropHandler((item, newChildren) => {
-            const children = newChildren.map(childId => goalForId(childId));
-            if (item.getId() === "-999") {
-                dispatch(setTreeData(children));
-            } else {
-                dispatch(setChildrenOfNodeId({id: item.getId(), children}))
-            }
-            console.log(`update item ${item.getId()} with children`, newChildren);
-        }),
+        onDrop: (items, target) => dispatch(moveTreeItem({
+            id: Number(items[0].getId()),
+            parentId: target.item.getId() === "-999" ? null : Number(target.item.getId()),
+            insertionIndex: "insertionIndex" in target ? target.insertionIndex : undefined,
+        })),
     });
+
+    useEffect(() => {
+        tree.scheduleRebuildTree();
+    }, [tree, treeData]);
 
     const deleteItem = () => {
       if (deletingItemRef.current) {
