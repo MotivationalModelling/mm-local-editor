@@ -40,11 +40,12 @@ const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId,
     };
 
     return (
-        <InputGroup key={item.getId()}
+        <InputGroup {...item.getProps()}
+                    key={item.getId()}
                     style={{paddingLeft: `${item.getItemMeta().level * 20}px`}}
                     ref={item.registerElement}
-                    className={className}>
-            <InputGroup.Text key={item.getId()} {...item.getProps()} className="hover">
+                    className={`${className ?? ""} ${item.isUnorderedDragTarget() ? "tree-row--drop-target" : ""}`}>
+            <InputGroup.Text key={item.getId()} {...item.getDragHandleProps()} className="hover">
                 <BsGripVertical size={iconSize}/>
             </InputGroup.Text>
             {(item.isFolder()) ? (

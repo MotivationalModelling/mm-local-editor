@@ -75,6 +75,7 @@ const Tree: React.FC<TreeProps> = ({
         indent: 20,
         canReorder: true,
         reorderAreaPercentage: 0.45,
+        seperateDragHandle: true,
         onDrop: (items, target) => dispatch(moveTreeItem({
             id: Number(items[0].getId()),
             parentId: target.item.getId() === "-999" ? null : Number(target.item.getId()),
