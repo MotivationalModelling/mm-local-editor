@@ -1,4 +1,5 @@
 import React from "react";
+import {useLocation} from "react-router-dom";
 import Footer from "./Footer";
 
 type LayoutProps = {
@@ -6,11 +7,13 @@ type LayoutProps = {
 };
 
 const Layout: React.FC<LayoutProps> = ({children}) => {
+	const {pathname} = useLocation();
+	const showFooter = pathname !== "/" && pathname !== "/papers" && pathname !== "/projects";
+
 	return (
 		<>
-			{/* Possible header content */}
 			<div style={{minHeight: "100vh"}}>{children}</div>
-			<Footer />
+			{showFooter && <Footer />}
 		</>
 	);
 };

@@ -1,0 +1,353 @@
+.page {
+    --ink: #11110f;
+    --muted: #6d6c66;
+    --line: #deddd6;
+    --paper: #f7f6f0;
+    min-height: 100vh;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 88px;
+    padding: 16px clamp(24px, 4vw, 68px);
+    border-bottom: 1px solid var(--line);
+}
+
+.brand,
+.nav,
+.navCta,
+.actions,
+.windowBrand {
+    display: flex;
+    align-items: center;
+}
+
+.brand {
+    gap: 12px;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-decoration: none;
+}
+
+.brand img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.nav {
+    gap: 28px;
+}
+
+.nav a {
+    color: var(--ink);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.nav a:hover {
+    opacity: 0.62;
+}
+
+.nav .navCta {
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 7px;
+    color: #fff;
+    background: var(--ink);
+    font-weight: 700;
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: minmax(420px, 0.85fr) minmax(620px, 1.15fr);
+    align-items: center;
+    gap: clamp(50px, 6vw, 110px);
+    width: min(100%, 1920px);
+    min-height: calc(100vh - 88px);
+    margin: 0 auto;
+    padding: clamp(54px, 7vh, 110px) clamp(24px, 4vw, 80px);
+}
+
+.intro {
+    max-width: 680px;
+}
+
+.intro h1 {
+    max-width: 680px;
+    margin: 0;
+    font-size: clamp(58px, 5.5vw, 112px);
+    font-weight: 500;
+    letter-spacing: -0.055em;
+    line-height: 1.04;
+    text-shadow: none;
+}
+
+.summary {
+    max-width: 520px;
+    margin: 26px 0 0;
+    color: var(--muted);
+    font-size: clamp(18px, 1.35vw, 26px);
+    line-height: 1.55;
+}
+
+.actions {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 34px;
+}
+
+.primaryAction,
+.importAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 24px;
+    border-radius: 7px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.primaryAction {
+    border: 1px solid var(--ink);
+    color: #fff;
+    background: var(--ink);
+}
+
+.importAction {
+    border: 1px solid #cac8be;
+    color: var(--ink);
+    background: transparent;
+    cursor: pointer;
+}
+
+.primaryAction:hover {
+    color: #fff;
+}
+
+.fileInput {
+    display: none;
+}
+
+.canvasStage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.modelWindow {
+    width: min(100%, 920px);
+    overflow: hidden;
+    border: 1px solid #bcb9af;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 24px 65px rgba(28, 25, 40, 0.15);
+}
+
+.windowBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0 22px;
+    color: #fff;
+    background: #25213e;
+}
+
+.windowBrand {
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.windowBrand img {
+    width: 28px;
+    height: 28px;
+    padding: 3px;
+    border-radius: 6px;
+    background: #fff;
+    object-fit: contain;
+}
+
+.localBadge {
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 99px;
+    color: #dcf3a8;
+    font-size: 11px;
+}
+
+.modelCanvas {
+    position: relative;
+    height: clamp(390px, 28vw, 540px);
+    overflow: hidden;
+    background-color: #faf9f5;
+    background-image: radial-gradient(#d8d5cb 0.8px, transparent 0.8px);
+    background-size: 18px 18px;
+}
+
+.connectors {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.connectors path {
+    fill: none;
+    stroke: #8c86a7;
+    stroke-width: 2;
+    stroke-dasharray: 5 5;
+}
+
+.node {
+    position: absolute;
+    top: 50%;
+    width: 164px;
+    min-height: 86px;
+    padding: 14px 15px;
+    border: 1px solid #d0cdc2;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(47, 43, 63, 0.08);
+    transform: translateY(-50%);
+}
+
+.node span {
+    display: block;
+    color: #77736b;
+    font-size: 10px;
+}
+
+.node strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.nodeGoal {
+    left: 30px;
+    border-top: 4px solid #6b53c5;
+}
+
+.nodeCentre {
+    left: calc(50% - 82px);
+    border: 2px solid #5c45c2;
+}
+
+.nodePositive {
+    right: 30px;
+    border-top: 4px solid #74a76c;
+}
+
+.canvasControls {
+    position: absolute;
+    right: 18px;
+    bottom: 16px;
+    display: flex;
+    overflow: hidden;
+    border: 1px solid #d8d5cb;
+    border-radius: 7px;
+    background: #fff;
+}
+
+.canvasControls i,
+.canvasControls span {
+    display: block;
+    min-width: 36px;
+    height: 32px;
+    color: #45423d;
+    font-size: 12px;
+    font-style: normal;
+    line-height: 32px;
+    text-align: center;
+}
+
+.canvasControls span {
+    min-width: 44px;
+    border-right: 1px solid #e3e0d8;
+    border-left: 1px solid #e3e0d8;
+}
+
+@media (max-width: 1120px) {
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .intro,
+    .intro h1 {
+        max-width: 720px;
+    }
+
+    .canvasStage {
+        width: min(100%, 760px);
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 700px) {
+    .header {
+        min-height: 72px;
+    }
+
+    .brand span,
+    .nav > a:not(.navCta) {
+        display: none;
+    }
+
+    .navCta {
+        min-height: 42px !important;
+        padding: 0 16px !important;
+    }
+
+    .hero {
+        min-height: auto;
+        gap: 56px;
+        padding-top: 50px;
+    }
+
+    .intro h1 {
+        font-size: clamp(48px, 13vw, 62px);
+        letter-spacing: -0.045em;
+        line-height: 1.08;
+    }
+
+    .modelCanvas {
+        height: 420px;
+    }
+
+    .node {
+        top: auto;
+        left: 50%;
+        right: auto;
+        width: 170px;
+        min-height: 74px;
+        transform: translateX(-50%);
+    }
+
+    .nodeGoal { top: 28px; }
+    .nodeCentre { top: 158px; }
+    .nodePositive { top: 290px; }
+
+    .connectors {
+        display: none;
+    }
+
+    .canvasControls {
+        display: none;
+    }
+
+}

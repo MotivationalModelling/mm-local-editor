@@ -1,0 +1,247 @@
+.page {
+    --ink: #11110f;
+    --muted: #74716a;
+    --line: #deddd6;
+    --paper: #f7f6f0;
+    min-height: 100vh;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 88px;
+    padding: 16px clamp(24px, 4vw, 68px);
+    border-bottom: 1px solid var(--line);
+}
+
+.brand,
+.backLink,
+.moreLink,
+.previewHeader a {
+    display: flex;
+    align-items: center;
+}
+
+.brand {
+    gap: 12px;
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-decoration: none;
+}
+
+.brand img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.backLink {
+    gap: 9px;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.main {
+    display: grid;
+    grid-template-columns: minmax(290px, 370px) minmax(520px, 1fr);
+    gap: clamp(28px, 4vw, 64px);
+    width: min(100%, 1720px);
+    min-height: calc(100vh - 88px);
+    margin: 0 auto;
+    padding: clamp(30px, 4vw, 64px) clamp(24px, 4vw, 68px);
+}
+
+.library {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.libraryHeading span,
+.previewHeader span {
+    color: #6b51c9;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.libraryHeading h1 {
+    margin: 6px 0 20px;
+    font-size: clamp(42px, 4vw, 64px);
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    text-shadow: none;
+}
+
+.paperList {
+    display: flex;
+    max-height: calc(100vh - 260px);
+    padding-right: 8px;
+    flex-direction: column;
+    gap: 9px;
+    overflow-y: auto;
+}
+
+.paperCard {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.56);
+    text-align: left;
+    cursor: pointer;
+}
+
+.paperCard:hover,
+.paperCardSelected {
+    border-color: #6b51c9;
+    background: #fff;
+}
+
+.paperCard > svg {
+    margin-top: 2px;
+    color: #6b51c9;
+    font-size: 20px;
+}
+
+.paperCard span,
+.paperCard strong,
+.paperCard small {
+    display: block;
+    min-width: 0;
+}
+
+.paperCard strong {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.paperCard small {
+    display: -webkit-box;
+    margin-top: 6px;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.moreLink {
+    gap: 8px;
+    margin-top: 18px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.preview {
+    display: flex;
+    min-width: 0;
+    min-height: 620px;
+    overflow: hidden;
+    flex-direction: column;
+    border: 1px solid #c9c6bd;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 22px 60px rgba(28, 25, 40, 0.12);
+}
+
+.previewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 78px;
+    padding: 15px 20px;
+    color: #fff;
+    background: #25213e;
+}
+
+.previewHeader > div {
+    min-width: 0;
+}
+
+.previewHeader strong {
+    display: block;
+    max-width: 720px;
+    margin-top: 5px;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.previewHeader a {
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 10px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 7px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.preview iframe {
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+    border: 0;
+    background: #ecebe6;
+}
+
+@media (max-width: 900px) {
+    .main {
+        grid-template-columns: 1fr;
+    }
+
+    .paperList {
+        display: grid;
+        max-height: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+    }
+
+    .preview {
+        min-height: 700px;
+    }
+}
+
+@media (max-width: 600px) {
+    .brand span {
+        display: none;
+    }
+
+    .paperList {
+        grid-template-columns: 1fr;
+    }
+
+    .preview {
+        min-height: 580px;
+    }
+
+    .previewHeader strong {
+        max-width: 190px;
+    }
+}

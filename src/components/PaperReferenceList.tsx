@@ -1,10 +1,6 @@
 import React from "react";
-
-import {Link} from "react-router-dom";
-
-import Card from "react-bootstrap/Card";
-import ListGroup from "react-bootstrap/ListGroup";
-import "./PaperReferenceList.css"
+import {BsFileEarmarkPdf} from "react-icons/bs";
+import styles from "./Papers.module.css";
 
 export interface Reference {
     title: string
@@ -12,42 +8,29 @@ export interface Reference {
     summary?: string
 }
 
-const PaperReference: React.FC<{paper: Reference}> = ({paper}) => {
-    return (
-        <Card>
-            <Card.Header as="h5">
-                {paper.title}
-            </Card.Header>
-            <Card.Body>
-                {(paper.summary) && (
-                    <Card.Text>
-                        {paper.summary}
-                    </Card.Text>
-                )}
-            </Card.Body>
-            <Card.Footer>
-                <Link to={paper.link} target="_blank">
-                    View
-                </Link>
-            </Card.Footer>
-        </Card>
-    );
-};
-
 interface Props {
     references: Reference[]
+    selectedLink: string
+    onSelect: (paper: Reference) => void
 }
 
-const PaperReferenceList: React.FC<Props> = ({references}) => {
-    return (
-        <ListGroup as="ul" variant="flush">
-            {references.map((paper, i) => (
-                <ListGroup.Item as="li" key={i} style={{background: "transparent", border: "none"}}>
-                    <PaperReference paper={paper} key={i}/>
-                </ListGroup.Item>
-            ))}
-        </ListGroup>
-    );
-};
+const PaperReferenceList: React.FC<Props> = ({references, selectedLink, onSelect}) => (
+    <div className={styles.paperList}>
+        {references.map((paper) => (
+            <button
+                type="button"
+                key={paper.link}
+                className={`${styles.paperCard} ${paper.link === selectedLink ? styles.paperCardSelected : ""}`}
+                onClick={() => onSelect(paper)}
+            >
+                <BsFileEarmarkPdf/>
+                <span>
+                    <strong>{paper.title}</strong>
+                    {paper.summary && <small>{paper.summary}</small>}
+                </span>
+            </button>
+        ))}
+    </div>
+);
 
 export default PaperReferenceList;
