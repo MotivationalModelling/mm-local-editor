@@ -6,7 +6,7 @@ The React application lives in `src/`; entry points are `src/main.tsx` and `src/
 
 ## Build, Test, and Development Commands
 
-Use npm with Node 18.18+ or 20.20+.
+Use npm with Node 18.18+ or 20.20+, or use Bun for local development.
 
 - `npm install` — install locked project dependencies.
 - `npm run dev` — start the Vite development server.
@@ -14,6 +14,8 @@ Use npm with Node 18.18+ or 20.20+.
 - `npm run preview` — serve the built output locally.
 - `npm run lint` — run ESLint on `.ts` and `.tsx` files; warnings fail the command.
 - `npm test` — launch Vitest in watch mode. Use `npm test -- --run` for one CI-style pass.
+
+The Bun equivalents are `bun install`, `bun run dev`, `bun run build`, and `bun run test -- --run`.
 
 ## Coding Style & Naming Conventions
 
@@ -34,3 +36,7 @@ No direct commits to `develop` or `main`. All changes go through feature branche
 ## Configuration & Generated Files
 
 Do not commit `dist/` or local dependency directories. Keep deployment settings in Vite/Cypress config files and review public assets for licensing and size before adding them.
+
+## Visual Theme
+
+Use a warm, minimal editorial theme across public pages. The core palette is warm paper `#f7f6f0`, near-black `#11110f`, muted text `#6d6c66`, borders `#deddd6`, deep purple `#25213e`, and purple accent `#6b51c9`. Prefer generous whitespace, responsive `clamp()` sizing, compact copy, 7–14px corner radii, and soft restrained shadows. Avoid photographic page backgrounds, decorative clutter, and dense overlapping text.

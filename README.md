@@ -11,7 +11,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### 1. Prerequisites
 
-You will need to have [Node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed on the computer before you can start the React installation process. It is recommended that you choose a version higher than [v20.20.0](https://nodejs.org/en/download/package-manager) or v18.18.0.
+You can develop with either [Bun](https://bun.sh/) or Node.js and npm. For Node.js, use v20.20.0+ or v18.18.0+.
 
 ### 1.1 [Optional]
 It is  recommended that you install [node version manager (NVM)](https://github.com/nvm-sh/nvm) as a tool for installing Nodejs, npm, and for managing Node versions on your device. For detailed instructions, visit:
@@ -87,8 +87,10 @@ npm run dev
 to start the server. Then the server will be running on port 5173
 
 ```
-https://localhost:5173
+http://localhost:5173
 ```
+With Bun, use `bun install` and `bun run dev` instead.
+
 Alternatively, if you choose [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/#windows-stable) as your package manager, you can run
 ```
 yarn install
@@ -102,7 +104,7 @@ to achieve the same outcome.
 ### 3. Running the app 
 If you followed the instructions above correctly, you should be able to open the app from your browser at 
 ```
-https://localhost:5173/mm-local-editor/
+http://localhost:5173/
 ```
 Feel free to have a play with it to try out its functionalities!
 ## React + TypeScript + Vite
