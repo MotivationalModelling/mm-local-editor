@@ -1,12 +1,15 @@
-import {BrowserRouter, Routes, Route} from "react-router-dom";
+import {BrowserRouter, Route, Routes} from "react-router-dom";
 import Welcome from "./components/Welcome";
 import Papers from "./components/Papers";
 import ProjectEdit from "./components/ProjectEdit";
 import Layout from "./components/Layout";
+import {getBasename} from "./components/utils/basename";
+
+const basename = getBasename();
 
 const App = () => {
 	return (
-		<BrowserRouter basename="/mm-local-editor/">
+		<BrowserRouter basename={basename}>
 			<Layout>
 				<Routes>
 					<Route path="/" element={<Welcome />} />
