@@ -1,87 +1,136 @@
-import React, {useState} from "react";
-
-import InputGroup from "react-bootstrap/InputGroup";
+import React, {useEffect, useState} from "react";
 import Form from "react-bootstrap/Form";
-import {BsFillTrash3Fill, BsGripVertical, BsXCircle} from "react-icons/bs";
-import {FaMinus, FaPlus} from "react-icons/fa";
+import {
+    BsChevronDown,
+    BsChevronRight,
+    BsFillTrash3Fill,
+    BsGripVertical,
+    BsXCircle,
+} from "react-icons/bs";
+import {ItemInstance} from "@headless-tree/core";
 
-import {InstanceId, TreeGoal} from "./types.ts";
+import IconForGoalType from "./IconForGoalType.tsx";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {updateTextForGoalId} from "./context/treeDataSlice.ts";
-import IconForGoalType from "./IconForGoalType.tsx";
+import {InstanceId, TreeGoal} from "./types.ts";
 import {isTextEmpty} from "./utils/GoalHint.tsx";
-import {GoalReference} from "./Tree.tsx";
-import {ItemInstance} from "@headless-tree/core";
 
 interface TreeRowProps {
     item: ItemInstance<TreeGoal>
     editingItemId: InstanceId | null
     setEditingItemId: (itemId: InstanceId | null) => void
-    existingGoalReferenceInstanceId: GoalReference[]
+    indentationWidth: number
     onDeleteItem: (item: TreeGoal) => void
-    className?: string
 }
 
-const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId, existingGoalReferenceInstanceId, onDeleteItem, className}) => {
+const ICON_SIZE = 16;
+
+const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId, indentationWidth, onDeleteItem}) => {
     const treeItem = item.getItemData();
-    const isEditing = (editingItemId === treeItem.instanceId);
-    const iconSize = 16;
+    const isEditing = editingItemId === treeItem.instanceId;
+    const hasChildren = item.getChildren().length > 0;
     const {dispatch, goals} = useFileContext();
-    const goal = goals[treeItem.id];    // use the Goal from goals referenced by the tree node's id
+    const goal = goals[treeItem.id];
     const [editedText, setEditedText] = useState(goal.content);
 
-    const keyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        if (e.key === "Enter") {
+    useEffect(() => {
+        if (!isEditing) {
+            setEditedText(goal.content);
+        }
+    }, [goal.content, isEditing]);
+
+    const finishEditing = () => {
+        if (isTextEmpty(editedText)) {
+            setEditedText(goal.content);
+        } else if (editedText !== goal.content) {
             dispatch(updateTextForGoalId({id: goal.id, text: editedText}));
-            setEditingItemId(null);
-        } else if (e.key === "Escape") {
-            setEditingItemId(null);
+        }
+        setEditingItemId(null);
+    };
+
+    const cancelEditing = () => {
+        setEditedText(goal.content);
+        setEditingItemId(null);
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            finishEditing();
+        } else if (event.key === "Escape") {
+            event.preventDefault();
+            cancelEditing();
         }
     };
 
     return (
-        <InputGroup {...item.getProps()}
-                    key={item.getId()}
-                    style={{paddingLeft: `${item.getItemMeta().level * 20}px`}}
-                    ref={item.registerElement}
-                    className={`${className ?? ""} ${item.isUnorderedDragTarget() ? "tree-row--drop-target" : ""}`}>
-            <InputGroup.Text key={item.getId()} {...item.getDragHandleProps()} className="hover">
-                <BsGripVertical size={iconSize}/>
-            </InputGroup.Text>
-            {(item.isFolder()) ? (
-                <InputGroup.Text>
-                    {(item.isExpanded()) ? <FaMinus size={iconSize} onClick={item.collapse}/>
-                                         : <FaPlus size={iconSize} onClick={item.expand}/>}
-                </InputGroup.Text>
-            ) : null}
-            <InputGroup.Text>
-                <IconForGoalType type={goal.type}/>
-            </InputGroup.Text>
-            <InputGroup.Text>   {/* XXX debug*/}
-                {goal.id}
-            </InputGroup.Text>
-            <Form.Control placeholder="Goal name"
-                          value={editedText}
-                          onClick={(e) => {
-                              setEditingItemId(goal.instanceId);
-                              e.stopPropagation();
-                          }}
-                          onKeyDown={keyDown}
-                          onChange={(e) => setEditedText(e.target.value)}
-                          isInvalid={isTextEmpty(editedText) /* || isGoalDuplicatedAtThisLevel(editedText) */}/>
-            <InputGroup.Text>
-                {(isEditing) ? (
-                    <BsXCircle size={iconSize}
-                               onClick={() => {
-                                   setEditingItemId(null);
-                                   setEditedText(goal.content);
-                               }}/>
-                ) : (
-                    <BsFillTrash3Fill size={iconSize}
-                                      onClick={() => onDeleteItem(goal)}/>
+        <div {...item.getProps()}
+             ref={item.registerElement}
+             className={`tree-row ${item.isUnorderedDragTarget() ? "tree-row--drop-target" : ""}`}
+             style={{paddingLeft: `${item.getItemMeta().level * indentationWidth}px`}}>
+            <button {...item.getDragHandleProps()}
+                    type="button"
+                    className="tree-row__button tree-row__drag-handle"
+                    aria-label={`Move ${goal.content}`}>
+                <BsGripVertical size={ICON_SIZE}/>
+            </button>
+            <button type="button"
+                    className={`tree-row__button tree-row__toggle ${hasChildren ? "" : "tree-row__toggle--empty"}`}
+                    aria-label={hasChildren ? `${item.isExpanded() ? "Collapse" : "Expand"} ${goal.content}` : undefined}
+                    disabled={!hasChildren}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        if (item.isExpanded()) {
+                            item.collapse();
+                        } else {
+                            item.expand();
+                        }
+                    }}>
+                {hasChildren && (
+                    item.isExpanded()
+                        ? <BsChevronDown size={ICON_SIZE}/>
+                        : <BsChevronRight size={ICON_SIZE}/>
                 )}
-            </InputGroup.Text>
-        </InputGroup>
+            </button>
+            <span className="tree-row__type-icon" aria-hidden="true">
+                <IconForGoalType type={goal.type} className="tree-row__type-image"/>
+            </span>
+            <Form.Control type="text"
+                          className="tree-row__input"
+                          placeholder="Goal name"
+                          aria-label={`Edit ${goal.type} goal`}
+                          value={editedText}
+                          onClick={(event) => event.stopPropagation()}
+                          onFocus={() => {
+                              item.setFocused();
+                              setEditingItemId(treeItem.instanceId);
+                          }}
+                          onKeyDown={handleKeyDown}
+                          onBlur={finishEditing}
+                          onChange={(event) => setEditedText(event.target.value)}
+                          isInvalid={isTextEmpty(editedText)}/>
+            <button type="button"
+                    className="tree-row__button tree-row__action"
+                    aria-label={isEditing ? `Cancel editing ${goal.content}` : `Delete ${goal.content}`}
+                    onMouseDown={(event) => {
+                        if (isEditing) {
+                            event.preventDefault();
+                        }
+                    }}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        if (isEditing) {
+                            cancelEditing();
+                        } else {
+                            onDeleteItem(treeItem);
+                        }
+                    }}>
+                {isEditing
+                    ? <BsXCircle size={ICON_SIZE}/>
+                    : <BsFillTrash3Fill size={ICON_SIZE}/>
+                }
+            </button>
+        </div>
     );
 };
 

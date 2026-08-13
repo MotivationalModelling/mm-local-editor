@@ -13,7 +13,7 @@ import {
     updateTextForGoalId
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
-import {BsFillTrash3Fill} from "react-icons/bs";
+import {BsFillTrash3Fill, BsGripVertical} from "react-icons/bs";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -122,7 +122,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 	};
 
 
-	const handleDragStart = (event: React.DragEvent<HTMLInputElement>, row: TreeGoal) => {
+	const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
 		const draggedGoals = groupSelected.length > 1 ? groupSelected : [row];
 		event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
 	};
@@ -207,9 +207,13 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 					</td>
 					<td>
 						<InputGroup>
-                            <Form.Control onDragStart={(event) => handleDragStart(event as React.DragEvent<HTMLInputElement>, row)}
-                                          draggable={isGoalDraggable(row)} // Only draggable if not empty
-                                          type="text"
+                            <InputGroup.Text className="goal-list-drag-handle"
+                                             draggable={isGoalDraggable(row)}
+                                             aria-label={`Drag ${row.content || label} goal`}
+                                             onDragStart={(event) => handleDragStart(event, row)}>
+                                <BsGripVertical/>
+                            </InputGroup.Text>
+                            <Form.Control type="text"
                                           value={editingGoalId === row.id ? editedText : row.content} // Show edited text when editing
                                           onChange={(e) => {
                                               if (editingGoalId === row.id) {

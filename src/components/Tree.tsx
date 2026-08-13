@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {InstanceId, newTreeGoal, TreeGoal} from "./types.ts";
+import {InstanceId, isNonFunctionalGoal, newTreeGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import "./Tree.css";
@@ -69,10 +69,12 @@ const Tree: React.FC<TreeProps> = ({
                 return goalForId(id).children?.map((child) => String(child.id)) ?? [];
             },
         },
-        isItemFolder: (item: ItemInstance<TreeGoal>): boolean => (item.getItemData().children?.length ?? 0) > 0,
+        isItemFolder: (item: ItemInstance<TreeGoal>): boolean => (
+            item.getId() === String(topTreeGoal.id) || !isNonFunctionalGoal(item.getItemData().type)
+        ),
         getItemName: (item: ItemInstance<TreeGoal>): string => item.getItemData().content,
         features: [syncDataLoaderFeature, dragAndDropFeature],
-        indent: 20,
+        indent: INDENTATION_WIDTH,
         canReorder: true,
         reorderAreaPercentage: 0.45,
         seperateDragHandle: true,
@@ -130,7 +132,7 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     return (
-        <div {...tree.getContainerProps()}
+        <div {...tree.getContainerProps("Goal hierarchy")}
              className="tree"
              ref={tree.registerElement}>
             <ConfirmModal show={showDeleteWarning}
@@ -143,11 +145,13 @@ const Tree: React.FC<TreeProps> = ({
                          item={item}
                          editingItemId={editingItemId}
                          setEditingItemId={setEditingItemId}
-                         existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-                         onDeleteItem={handleDeleteItem}
-                         className="py-1"/>
+                         indentationWidth={INDENTATION_WIDTH}
+                         onDeleteItem={handleDeleteItem}/>
             ))}
-            <div style={tree.getDragLineStyle()} className="dragline" />
+            {tree.getItems().length === 0 && (
+                <div className="tree-empty">Drag goals here to build the hierarchy</div>
+            )}
+            <div style={tree.getDragLineStyle()} className="dragline"/>
         </div>
     );
 };
