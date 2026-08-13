@@ -76,7 +76,7 @@ const Tree: React.FC<TreeProps> = ({
         features: [syncDataLoaderFeature, dragAndDropFeature],
         indent: INDENTATION_WIDTH,
         canReorder: true,
-        reorderAreaPercentage: 0.45,
+        reorderAreaPercentage: 0.35,
         seperateDragHandle: true,
         onDrop: (items, target) => dispatch(moveTreeItem({
             id: Number(items[0].getId()),
