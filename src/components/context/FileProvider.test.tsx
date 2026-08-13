@@ -4,6 +4,7 @@
 import {act, renderHook} from '@testing-library/react';
 import {beforeAll, describe, expect, it} from "vitest";
 import FileProvider, {createTreeIdsFromTreeData, useFileContext} from "./FileProvider";
+import ProjectProvider from "./ProjectProvider";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
 import {
@@ -17,7 +18,9 @@ import {
 
 // FileProvider provides data than UI
 const wrapper = ({children}: React.PropsWithChildren) => (
-    <FileProvider>{children}</FileProvider>
+    <ProjectProvider>
+        <FileProvider>{children}</FileProvider>
+    </ProjectProvider>
 );
 const {result} = renderHook(() => useFileContext(), {wrapper});
 const {dispatch} = result.current;

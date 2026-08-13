@@ -1,6 +1,7 @@
 import React from "react";
 import Modal from "react-bootstrap/Modal";
-import Button from "react-bootstrap/Button";
+import {BsExclamationTriangle, BsX} from "react-icons/bs";
+import styles from "./ConfirmModal.module.css";
 
 export type ConfirmModalProps = {
 	show: boolean;
@@ -8,7 +9,9 @@ export type ConfirmModalProps = {
 	message: React.ReactNode;
 	onHide?: () => void;
 	onConfirm: () => void;
-	extraContent?: React.ReactNode
+	extraContent?: React.ReactNode;
+	confirmLabel?: string;
+	destructive?: boolean;
 };
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -18,23 +21,45 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 	onHide,
 	onConfirm,
 	extraContent,
+	confirmLabel = "Confirm",
+	destructive = false,
 }) => {
 	return (
-		<Modal show={show} onHide={onHide} centered>
-			<Modal.Header closeButton>
-				<Modal.Title>{title}</Modal.Title>
+		<Modal
+			show={show}
+			onHide={onHide}
+			centered
+			dialogClassName={styles.dialog}
+			contentClassName={styles.content}
+			backdropClassName={styles.backdrop}
+		>
+			<Modal.Header className={styles.header}>
+				<div className={styles.titleGroup}>
+					<span className={`${styles.icon} ${destructive ? styles.iconDanger : ""}`}>
+						<BsExclamationTriangle/>
+					</span>
+					<Modal.Title className={styles.title}>{title}</Modal.Title>
+				</div>
+				<button type="button" className={styles.closeButton} onClick={onHide} aria-label="Close">
+					<BsX/>
+				</button>
 			</Modal.Header>
-			<Modal.Body>
+			<Modal.Body className={styles.body}>
 				{message}
 				{extraContent}
 			</Modal.Body>
-			<Modal.Footer>
-				<Button variant="secondary" onClick={onHide}>
+			<Modal.Footer className={styles.footer}>
+				<button type="button" className={styles.cancelButton} onClick={onHide}>
 					Cancel
-				</Button>
-				<Button variant="warning" data-cy="confirm-delete" onClick={onConfirm} style={{backgroundColor:"red"}}>
-					Confirm
-				</Button>
+				</button>
+				<button
+					type="button"
+					className={`${styles.confirmButton} ${destructive ? styles.confirmDanger : ""}`}
+					data-cy="confirm-delete"
+					onClick={onConfirm}
+				>
+					{confirmLabel}
+				</button>
 			</Modal.Footer>
 		</Modal>
 	);

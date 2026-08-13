@@ -1,8 +1,9 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useRef, useState} from "react";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
+import {useProjectContext} from "./ProjectContext";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -158,6 +159,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const initialState = createInitialState(tabData, storedTreeData);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
+    const {currentProjectId, saveProjectData} = useProjectContext();
+    const isFirstRender = useRef(true);
 
     useEffect(() => {
         console.log("FileProvider state updated:", state);
@@ -165,6 +168,12 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
     // Listen to changes in state and write back to localStorage
     useEffect(() => {
+        // Skip the initial run so a stale legacy buffer never clobbers the
+        // current project's data right after a page refresh.
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
         setStoredTreeData(state.tree);
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
@@ -175,7 +184,12 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         }));
 
         setTabData(tabsArray);
-    }, [state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
+
+        // Persist edits into the currently open project
+        if (currentProjectId) {
+            saveProjectData(currentProjectId, {treeData: state.tree, tabData: tabsArray});
+        }
+    }, [state.tree, state.tabs, state.goals, setStoredTreeData, setTabData, currentProjectId, saveProjectData]);
 
     const [xmlData, setXmlData] = useState("");
 

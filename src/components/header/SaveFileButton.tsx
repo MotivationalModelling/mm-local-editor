@@ -1,11 +1,13 @@
 import {useState} from "react";
 import Button from "react-bootstrap/Button";
 import {JSONData, useFileContext} from "../context/FileProvider";
+import {useProjectContext} from "../context/ProjectContext";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 
 const SaveFileButton = () => {
 	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();
+	const {currentProject} = useProjectContext();
 
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
@@ -30,16 +32,6 @@ const SaveFileButton = () => {
 		});
 	};
 
-	// Function to show error message when file name is empty
-	const showEmptyFileNameError = () => {
-		setErrorModal({
-			show: true,
-			title: "Invalid File Name",
-			message: "Please enter the file name",
-			onHide: () => setErrorModal(prev => ({...prev, show: false}))
-		});
-	};
-
 	async function triggerFileSave(
 		_fileName: string,
 		fileType: "json"
@@ -54,7 +46,7 @@ const SaveFileButton = () => {
 						},
 					},
 				],
-				suggestedName: `Model.json`
+				suggestedName: `${currentProject?.name ?? "Model"}.json`
 			});
 			const writable = await handle.createWritable();
 			await handleJSONFileInit(handle, writable);
@@ -101,7 +93,7 @@ const SaveFileButton = () => {
 	return (
 		<>
 			<Button variant="outline-primary" onClick={handleBtnClick}>
-				Save
+				Download JSON
 			</Button>
 			<ErrorModal {...errorModal} />
 		</>

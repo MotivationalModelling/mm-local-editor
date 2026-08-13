@@ -10,6 +10,7 @@ import {isChrome, isEdge, isOpera} from "react-device-detect";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
 import HomeButton from "./HomeButton.tsx";
+import {useProjectContext} from "../context/ProjectContext";
 
 type ProjectEditHeaderProps = {
 	showGoalSection: boolean;
@@ -19,11 +20,12 @@ type ProjectEditHeaderProps = {
 };
 
 const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
-	showGoalSection,
-	setShowGoalSection,
 	showGraphSection,
   }) => {
 	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+	const {currentProject, renameProject} = useProjectContext();
+	const [isEditingName, setIsEditingName] = useState(false);
+	const [nameDraft, setNameDraft] = useState("");
   
 	useEffect(() => {
 		if (isChrome || isEdge || isOpera) {
@@ -32,11 +34,43 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	}, []);
   
 	return (
-		<header className="w-full sticky top-0 z-10 border-b bg-white shadow-sm">
+		<header className="projectEditHeader w-full sticky top-0 z-10 border-b bg-white shadow-sm">
             <Container fluid>
                 <Row className="text-start align-content-start">
                     <Col xs="auto" className="d-flex align-items-center">
-                        <strong style={{fontSize: "35px"}}>AMMBER</strong>
+                        {isEditingName ? (
+                            <input
+                                autoFocus
+                                value={nameDraft}
+                                onChange={(e) => setNameDraft(e.target.value)}
+                                onBlur={() => {
+                                    const name = nameDraft.trim();
+                                    if (name && currentProject) {
+                                        renameProject(currentProject.id, name);
+                                    }
+                                    setIsEditingName(false);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.currentTarget.blur();
+                                    } else if (e.key === "Escape") {
+                                        setIsEditingName(false);
+                                    }
+                                }}
+                                style={{fontSize: "28px", fontWeight: "bold", maxWidth: "40vw"}}
+                            />
+                        ) : (
+                            <strong
+                                style={{fontSize: "35px", cursor: "pointer"}}
+                                title="Click to rename"
+                                onClick={() => {
+                                    setNameDraft(currentProject?.name ?? "AMMBER");
+                                    setIsEditingName(true);
+                                }}
+                            >
+                                {currentProject?.name ?? "AMMBER"}
+                            </strong>
+                        )}
                         <ResetGraphButton variant="outline-primary" className="ms-3"/>
                     </Col>
                     <Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center">

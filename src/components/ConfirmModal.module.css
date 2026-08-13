@@ -1,0 +1,126 @@
+.backdrop {
+    background: #25213e;
+}
+
+.dialog {
+    width: min(calc(100% - 32px), 480px);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.content {
+    overflow: hidden;
+    border: 1px solid #deddd6;
+    border-radius: 14px;
+    color: #11110f;
+    background: #f7f6f0;
+    box-shadow: 0 24px 80px rgba(17, 17, 15, 0.22);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 24px 14px;
+    border: 0;
+}
+
+.titleGroup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.icon,
+.closeButton,
+.cancelButton,
+.confirmButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    color: #6b51c9;
+    background: rgba(107, 81, 201, 0.1);
+}
+
+.iconDanger {
+    color: #9f352d;
+    background: rgba(159, 53, 45, 0.1);
+}
+
+.title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.closeButton {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    color: #6d6c66;
+    background: transparent;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.closeButton:hover {
+    color: #11110f;
+    background: rgba(17, 17, 15, 0.06);
+}
+
+.body {
+    padding: 8px 24px 24px;
+    color: #6d6c66;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.footer {
+    gap: 10px;
+    padding: 16px 24px 22px;
+    border-top: 1px solid #deddd6;
+}
+
+.cancelButton,
+.confirmButton {
+    min-height: 42px;
+    padding: 0 17px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cancelButton {
+    border: 1px solid #cac8be;
+    color: #11110f;
+    background: transparent;
+}
+
+.cancelButton:hover {
+    border-color: #11110f;
+}
+
+.confirmButton {
+    border: 1px solid #11110f;
+    color: #fff;
+    background: #11110f;
+}
+
+.confirmButton:hover {
+    opacity: 0.82;
+}
+
+.confirmDanger {
+    border-color: #9f352d;
+    background: #9f352d;
+}
