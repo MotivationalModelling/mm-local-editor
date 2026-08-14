@@ -22,7 +22,7 @@ export interface Goal extends GoalBase {
 }
 
 export interface GlobObject {
-    [key: string]: Array<{instanceId: InstanceId; content: string}>;
+    [key: string]: Array<{instanceId: InstanceId; content: string; url?: string}>;
 }
 
 // Common base for all goal reference info
@@ -49,6 +49,7 @@ export type ParsedGoalId = ParsedFunctionalId | ParsedNonFunctionalId;
 
 export interface ClusterGoal extends GoalBase {
     SubGoals: ClusterGoal[]
+    url: string | undefined;
     x?: number;
     y?: number;
 }
@@ -110,6 +111,7 @@ export const GoalListSchema = z.object({
 
 // note recursive types require a bit of extra fiddling
 export const ClusterGoalSchema: z.ZodType<ClusterGoal> = GoalBaseSchema.extend({
+    url: z.string().optional(),
     SubGoals: z.lazy(() => ClusterGoalSchema.array())
 });
 
@@ -128,6 +130,7 @@ export const GoalModelProjectSchema = z.object({
 export type TreeGoal = {
     id: number;
     content: string;
+    url?: string;
     type: Label;
     instanceId: InstanceId;
     children?: TreeGoal[];

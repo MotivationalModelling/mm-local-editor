@@ -3,7 +3,11 @@
 */
 import {act, renderHook} from '@testing-library/react';
 import {beforeAll, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, useFileContext} from "./FileProvider";
+import FileProvider, {
+    convertTreeDataToClusters,
+    createTreeIdsFromTreeData,
+    useFileContext
+} from "./FileProvider";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
 import {
@@ -186,5 +190,19 @@ describe('#createTreeIdsFromTreeData', () => {
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
         expect(treeIds[g1.id]).toEqual(["1-0"]);
         expect(treeIds[g2.id]).toEqual(["2-0"]);
+    });
+});
+
+describe('#convertTreeDataToClusters', () => {
+    it('preserves goal URLs used by the graph renderer', () => {
+        const treeGoal = newTreeGoal({
+            type: "Do",
+            id: 10,
+            url: "https://example.com",
+        });
+
+        const cluster = convertTreeDataToClusters([treeGoal]);
+
+        expect(cluster.ClusterGoals[0].url).toBe(treeGoal.url);
     });
 });

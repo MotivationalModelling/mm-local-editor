@@ -12,10 +12,11 @@ import {
     TreeItemComponentProps,
     TreeItems,
 } from "dnd-kit-sortable-tree";
-import {BsCheckCircle, BsFillTrash3Fill, BsGripVertical, BsPencilSquare, BsXCircle} from "react-icons/bs";
+import {BsCheckCircle, BsFillTrash3Fill, BsGripVertical, BsLink45Deg, BsPencilSquare, BsXCircle} from "react-icons/bs";
 import {InstanceId, Label, TreeGoal, isNonFunctionalGoal} from "../components/types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
+import GoalLinkModal from "./GoalLinkModal";
 import {
     handleContentSave,
     handleGoalBlur,
@@ -76,6 +77,7 @@ type TreeRowProps = TreeItemComponentProps<SortableTreeGoal> & {
     setEditingItemId: React.Dispatch<React.SetStateAction<InstanceId | null>>;
     setEditedText: React.Dispatch<React.SetStateAction<string>>;
     handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
+    onLinkClick: (goal: TreeGoal) => void;
     existingGoalReferenceInstanceId: GoalReference[];
     onDeleteItem: (item: TreeGoal) => void;
 };
@@ -181,6 +183,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     setEditingItemId,
     setEditedText,
     handleSynTableTree,
+    onLinkClick,
     existingGoalReferenceInstanceId,
     onDeleteItem,
     ...props
@@ -359,6 +362,19 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
             </div>
           )}
 
+          {!isEditing && (
+              <div className="link-icon"
+                  title="Related link"
+                  aria-label={`Related link for ${treeItem.content || treeItem.type}`}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                      event.stopPropagation();
+                      onLinkClick(treeItem);
+                  }}>
+                  <BsLink45Deg size={iconSize} />
+              </div>
+          )}
+
           <div
             className="edit-icon"
             onMouseDown={(event) => event.stopPropagation()}
@@ -420,6 +436,7 @@ const Tree: React.FC<TreeProps> = ({
     const [disableOnBlur, setDisableOnBlur] = useState(false);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [collapsedIds, setCollapsedIds] = useState<Set<InstanceId>>(new Set());
+    const [linkGoal, setLinkGoal] = useState<TreeGoal | null>(null);
     const deletingItemRef = useRef<TreeGoal | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const {treeData, dispatch} = useFileContext();
@@ -476,6 +493,7 @@ const Tree: React.FC<TreeProps> = ({
           setEditingItemId={setEditingItemId}
           setEditedText={setEditedText}
           handleSynTableTree={handleSynTableTree}
+          onLinkClick={setLinkGoal}
           existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
           onDeleteItem={handleDeleteItem}
         />
@@ -492,6 +510,11 @@ const Tree: React.FC<TreeProps> = ({
             onHide={handleDeleteCancel}
             onConfirm={deleteItem}
           />
+          {/* Reuse the goal link modal for hierarchy rows. */}
+          {linkGoal && (
+              <GoalLinkModal goal={linkGoal}
+                  onClose={() => setLinkGoal(null)}/>
+          )}
 
           <SortableTree
             items={sortableItems}

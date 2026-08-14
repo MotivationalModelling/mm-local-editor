@@ -9,6 +9,7 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {useFileContext} from "../context/FileProvider";
 import {useGraph} from "../context/GraphContext";
 import {returnFocusToGraph} from "../utils/GraphUtils";
+import {getGoalLinkForCell} from "../Graphs/GraphHelpers";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 
@@ -92,9 +93,31 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
             return;
         }
 
-        // Serialize the SVG element to a string
+        // Add real SVG anchors to a copy so exported links remain clickable
+        // without changing the live maxGraph DOM.
+        const svgForExport = svgElement.cloneNode(true) as SVGSVGElement;
+        const sourceElements = Array.from(svgElement.querySelectorAll("*"));
+        const clonedElements = Array.from(svgForExport.querySelectorAll("*"));
+
+        graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+            const url = getGoalLinkForCell(cell);
+            const labelNode = graph.getView().getState(cell)?.text?.node;
+            const labelIndex = labelNode ? sourceElements.indexOf(labelNode) : -1;
+            const clonedLabel = clonedElements[labelIndex];
+
+            if (!url || !clonedLabel?.parentNode) return;
+
+            const link = document.createElementNS("http://www.w3.org/2000/svg", "a");
+            link.setAttribute("href", url);
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
+            clonedLabel.parentNode.insertBefore(link, clonedLabel);
+            link.appendChild(clonedLabel);
+        });
+
+        // Serialize the linked SVG copy to a string
         const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svgElement);
+        const svgString = serializer.serializeToString(svgForExport);
         try {
             // If chromium browser
             if ('showSaveFilePicker' in self) {
