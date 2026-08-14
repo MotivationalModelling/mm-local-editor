@@ -1,12 +1,13 @@
 import React from "react";
 
 import Carousel from "react-bootstrap/Carousel";
+import LeonIcon from "/leon.png";
 
 export const DetailCarousel: React.FC = () => (
     <Carousel interval={null}>
         <Carousel.Item>
             <div className="content">
-                <img src="./leon.png"
+                <img src={LeonIcon}
                      alt="leon_icon"
                      style={{height: "100px", width: "auto"}}/>
                 <h1 className="my-4">AMMBER</h1>
