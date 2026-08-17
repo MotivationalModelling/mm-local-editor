@@ -12,6 +12,8 @@ import {returnFocusToGraph} from "../utils/GraphUtils";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 
+const PNG_EXPORT_SCALE = 3;
+
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
 const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => {
@@ -154,18 +156,21 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 
         // Create a canvas element
         const canvas = document.createElement('canvas');
-        // Set canvas dimensions to match the SVG size
-        canvas.width = svgElement.clientWidth;
-        canvas.height = svgElement.clientHeight;
+        // Render at a higher pixel density for a sharper PNG export
+        canvas.width = Math.round(svgElement.clientWidth * PNG_EXPORT_SCALE);
+        canvas.height = Math.round(svgElement.clientHeight * PNG_EXPORT_SCALE);
 
         const context = canvas.getContext('2d');
         if (!context) {
             console.error('Failed to get canvas context.');
             return;
         }
+        context.scale(PNG_EXPORT_SCALE, PNG_EXPORT_SCALE);
 
         // Use Canvg to render SVG onto the canvas
-        const v = Canvg.fromString(context, svgString);
+        const v = Canvg.fromString(context, svgString, {
+            ignoreDimensions: true
+        });
 
         // Render SVG onto the canvas
         await v.render();
