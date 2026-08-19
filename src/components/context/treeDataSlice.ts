@@ -342,7 +342,7 @@ export const treeDataSlice = createSlice({
     extraReducers: (builder) => {
         // XXX after every action, update copy in localstorage
         builder
-            .addMatcher(() => true, (state) => {
+            .addMatcher(() => true, () => {
                 // onChange.?(state)
             })
     },
