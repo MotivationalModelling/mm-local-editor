@@ -4,6 +4,8 @@ import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
 import useLocalStorage from "../utils/useLocalStorage.tsx"
 
+export type {JSONData} from "../modelJson.ts";
+
 // This hook manages the goals that are in use in the motivational model.
 //
 // The goals are made available to the app using two separate views of the
@@ -18,12 +20,6 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 // Previously the code to manage and update these data structures was all done
 // in-line and it was very hard to maintain and harder to test.
 
-
-// Type of the json data
-export type JSONData = {
-    tabData: TabContent[];
-    treeData: TreeGoal[];
-};
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
