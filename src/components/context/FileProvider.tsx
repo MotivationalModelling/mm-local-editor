@@ -5,7 +5,13 @@ import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "use-local-storage";
+import useLocalStorageImport from "use-local-storage";
+
+// Vite 8's development pre-bundler can expose CommonJS default exports as
+// {default: value}. Support both that shape and the normal production import.
+const useLocalStorage = (
+    useLocalStorageImport as unknown as {default?: typeof useLocalStorageImport}
+).default ?? useLocalStorageImport;
 
 // This hook manages the goals that are in use in the motivational model.
 //
