@@ -180,30 +180,30 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
 }
 
 // New state uses ":"; the legacy pattern is accepted only while stored/imported models are normalised.
-const INSTANCE_ID_PATTERN = /^(-?\d+):(\d+)$/;
+const INSTANCE_ID_RE = /^(-?\d+):(\d+)$/;
 const LEGACY_INSTANCE_ID_PATTERN = /^(-?\d+)-(\d+)$/;
 
 export const validateInstanceId = (id: string): InstanceId => {
-    if (!INSTANCE_ID_PATTERN.test(id)) {
+    if (!INSTANCE_ID_RE.test(id)) {
         throw new Error(`badly formatted instanceId "${id}"`);
     }
     return id as InstanceId;
 };
 
 export const parseInstanceId = (instanceId: InstanceId) => {
-    const match = INSTANCE_ID_PATTERN.exec(instanceId);
+    const match = INSTANCE_ID_RE.exec(instanceId);
     if (!match) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
 
-    const goalId = Number(match[1]);
-    const refId = Number(match[2]);
-
-    return {goalId, refId};
+    return {
+        goalId: Number(match[1]),
+        refId: Number(match[2]),
+    };
 };
 
 export const normalizeInstanceId = (instanceId: string): InstanceId => {
-    const match = INSTANCE_ID_PATTERN.exec(instanceId) ?? LEGACY_INSTANCE_ID_PATTERN.exec(instanceId);
+    const match = INSTANCE_ID_RE.exec(instanceId) ?? LEGACY_INSTANCE_ID_PATTERN.exec(instanceId);
     if (!match) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
