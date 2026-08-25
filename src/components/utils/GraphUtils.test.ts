@@ -39,19 +39,19 @@ describe('parseGoalRefId', () => {
 describe('parseFuncGoalRefId', () => {
     it('should raise an exception for an empty id', () => {
         const id = '';
-        expect(() => parseFuncGoalRefId(id)).toThrow('invalid id: got ""');
+        expect(() => parseFuncGoalRefId(id)).toThrow('invalid InstanceId: got ""');
     });
     it('should raise an exception for an empty id', () => {
         const refId = '';
-        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid id: got ""');
+        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid InstanceId: got ""');
     });
     it('should raise an exception for a bad id', () => {
         const refId = '-';
-        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid id: got "-"');
+        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid InstanceId: got "-"');
     });
     it('should raise an exception for a malformed id', () => {
         const refId = '-2';
-        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid id: got "-2"');
+        expect(() => parseFuncGoalRefId(refId)).toThrow('invalid InstanceId: got "-2"');
     });
     it('should parse a well-formed id', () => {
         const refId = '1:2';
@@ -91,8 +91,16 @@ describe('instance IDs', () => {
         expect(createInstanceId(-5, 1)).toBe('-5:1');
     });
 
-    it('should reject invalid components when creating an instance ID', () => {
-        expect(() => createInstanceId(1, -1)).toThrow('invalid instance ID components');
+    it('should identify invalid goal ID components when creating an instance ID', () => {
+        expect(() => createInstanceId(1.5, 1)).toThrow('non-numeric goalId: "1.5"');
+    });
+
+    it('should identify invalid reference ID components when creating an instance ID', () => {
+        expect(() => createInstanceId(1, 1.5)).toThrow('non-numeric refId: "1.5"');
+    });
+
+    it('should reject a negative reference ID when creating an instance ID', () => {
+        expect(() => createInstanceId(1, -1)).toThrow('negative refId: "-1"');
     });
 
     it('should parse the new separator with a negative goal id', () => {

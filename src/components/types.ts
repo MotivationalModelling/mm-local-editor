@@ -4,12 +4,20 @@ import {z} from "zod";
 // Core types (defined first to avoid circular refs)
 // ============================================
 export const INSTANCE_ID_SEPARATOR = ":";
-export type InstanceId = `${number}:${number}`
+export type InstanceId = `${number}${typeof INSTANCE_ID_SEPARATOR}${number}`
+
+const INSTANCE_ID_SCHEMA_RE = new RegExp(`^-?\\d+${INSTANCE_ID_SEPARATOR}\\d+$`);
 
 export const createInstanceId = (goalId: number, refId: number): InstanceId => {
     // Instance IDs are made only from integers, so neither component can contain the separator.
-    if (!Number.isInteger(goalId) || !Number.isInteger(refId) || refId < 0) {
-        throw new Error(`invalid instance ID components: "${goalId}" and "${refId}"`);
+    if (!Number.isInteger(goalId)) {
+        throw new Error(`non-numeric goalId: "${goalId}"`);
+    }
+    if (!Number.isInteger(refId)) {
+        throw new Error(`non-numeric refId: "${refId}"`);
+    }
+    if (refId < 0) {
+        throw new Error(`negative refId: "${refId}"`);
     }
     return `${goalId}${INSTANCE_ID_SEPARATOR}${refId}`;
 };
@@ -88,7 +96,7 @@ export const GoalTypeSchema = z.enum(
 );
 
 const instanceIdSchema = z.custom<InstanceId>((val) => {
-  return typeof val === "string" && /^-?\d+:\d+$/.test(val);
+  return typeof val === "string" && INSTANCE_ID_SCHEMA_RE.test(val);
 });
 
 export const GoalBaseSchema = z.object({

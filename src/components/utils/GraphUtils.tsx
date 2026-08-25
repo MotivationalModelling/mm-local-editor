@@ -1,4 +1,4 @@
-import {ClusterGoal, createInstanceId, GoalBase, TreeGoal, InstanceId} from '../types';
+import {ClusterGoal, createInstanceId, GoalBase, TreeGoal, InstanceId, INSTANCE_ID_SEPARATOR} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
 
@@ -95,15 +95,14 @@ export function formatFunGoalRefId(goal: ClusterGoal) {
 
 export const parseFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId} => {
     // A graph cell keeps its type outside the canonical instance ID, e.g. Functional-2:1.
-    let instanceId: InstanceId;
     try {
-        instanceId = validateInstanceId(id.trim());
-    } catch {
-        throw new Error(`invalid id: got "${id}"`);
-    }
+        const instanceId = validateInstanceId(id);
+        const {goalId} = parseInstanceId(instanceId);
 
-    const {goalId} = parseInstanceId(instanceId);
-    return {goalId, instanceId};
+        return {goalId, instanceId};
+    } catch {
+        throw new Error(`invalid InstanceId: got "${id}"`);
+    }
 };
 
 export const parseNonFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId}[] => {
@@ -179,9 +178,9 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
-// New state uses ":"; the legacy pattern is accepted only while stored/imported models are normalised.
-const INSTANCE_ID_RE = /^(-?\d+):(\d+)$/;
-const LEGACY_INSTANCE_ID_PATTERN = /^(-?\d+)-(\d+)$/;
+// New state uses the configured separator; the legacy pattern is accepted only while stored/imported models are normalised.
+const INSTANCE_ID_RE = new RegExp(`^(-?\\d+)${INSTANCE_ID_SEPARATOR}(\\d+)$`);
+const LEGACY_INSTANCE_ID_RE = /^(-?\d+)-(\d+)$/;
 
 export const validateInstanceId = (id: string): InstanceId => {
     if (!INSTANCE_ID_RE.test(id)) {
@@ -203,7 +202,7 @@ export const parseInstanceId = (instanceId: InstanceId) => {
 };
 
 export const normalizeInstanceId = (instanceId: string): InstanceId => {
-    const match = INSTANCE_ID_RE.exec(instanceId) ?? LEGACY_INSTANCE_ID_PATTERN.exec(instanceId);
+    const match = INSTANCE_ID_RE.exec(instanceId) ?? LEGACY_INSTANCE_ID_RE.exec(instanceId);
     if (!match) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
