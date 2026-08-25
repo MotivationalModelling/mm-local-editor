@@ -3,9 +3,15 @@ import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
-import {initialTabs} from "../../data/initialTabs.ts";
+import {createDefaultTabData, defaultTreeData, InitialTab, initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "use-local-storage";
+import useLocalStorageImport from "use-local-storage";
+
+// Vite 8's development pre-bundler can expose CommonJS default exports as
+// {default: value}. Support both that shape and the normal production import.
+const useLocalStorage = (
+    useLocalStorageImport as unknown as {default?: typeof useLocalStorageImport}
+).default ?? useLocalStorageImport;
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -33,6 +39,32 @@ export const DataType = {JSON: "AMMBER_JSON"};
 export const LocalStorageType = {
     TREE: "ammber/treeData",
     TAB: "ammber/tabData",
+    DEFAULT_MODEL: "ammber/defaultModel",
+};
+
+type DefaultModelData = {
+    tabData: InitialTab[]
+    treeData: TreeGoal[]
+}
+
+export const getDefaultModel = (): DefaultModelData => {
+    const storedModel = localStorage.getItem(LocalStorageType.DEFAULT_MODEL);
+    if (storedModel) {
+        try {
+            const model = JSON.parse(storedModel) as DefaultModelData;
+            if (Array.isArray(model.tabData) && Array.isArray(model.treeData)) {
+                createInitialState(model.tabData, model.treeData);
+                return model;
+            }
+        } catch {
+            // Fall back to the predefined model if saved data cannot be read.
+        }
+    }
+
+    return {
+        tabData: createDefaultTabData(),
+        treeData: defaultTreeData,
+    };
 };
 
 // XXX this should be a Set
@@ -61,6 +93,15 @@ export const createTabDataFromTabs = (goals: Record<TreeGoal["id"], TreeGoal>, t
     // This ensures the tabData is properly derived from the Redux state
     return Array.from(tabs.values());
 };
+
+const createInitialTabData = (
+    goals: Record<TreeGoal["id"], TreeGoal>,
+    tabs: Map<Label, TabContent>,
+): InitialTab[] => Array.from(tabs.entries()).map(([label, tabContent]) => ({
+    label,
+    icon: tabContent.icon,
+    rows: tabContent.goalIds.map((goalId) => goals[goalId]).filter(Boolean),
+}));
 
 export const useFileContext = () => {
     const fileContext = useContext(FileContext);
@@ -95,6 +136,8 @@ interface FileContextProps {
     goals: Record<TreeGoal["id"], TreeGoal>
     treeIds: Record<TreeGoal["id"], InstanceId[]>
     showLineBetweenNonFunctionalGoals: boolean
+    loadDefaultModel: () => void
+    saveCurrentModelAsDefault: () => void
 }
 
 // Create context for data tansfer and file handle
@@ -115,6 +158,8 @@ const FileContext = createContext<FileContextProps>({
     goals: {},
     treeIds: {},
     showLineBetweenNonFunctionalGoals: true,
+    loadDefaultModel: () => {},
+    saveCurrentModelAsDefault: () => {},
 });
 
 // Mapping of old types to new types
@@ -187,6 +232,17 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState ?? createInitialState());
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
+    const saveCurrentModelAsDefault = () => {
+        localStorage.setItem(LocalStorageType.DEFAULT_MODEL, JSON.stringify({
+            tabData: createInitialTabData(state.goals, state.tabs),
+            treeData: state.tree,
+        }));
+    };
+
+    const loadDefaultModel = () => {
+        dispatch(treeDataSlice.actions.reset(getDefaultModel()));
+    };
+
     useEffect(() => {
         console.log("FileProvider state updated:", state);
     }, [state]);
@@ -200,13 +256,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         setStoredTreeData(JSON.stringify(state.tree));
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
-        const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
-            label,
-            icon: tabContent.icon,
-            rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
-        }));
-
-        setTabData(JSON.stringify(tabsArray));
+        setTabData(JSON.stringify(createInitialTabData(state.goals, state.tabs)));
     }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
@@ -262,6 +312,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             setXmlData,
             jsonFileHandle,
             setJsonFileHandle,
+            loadDefaultModel,
+            saveCurrentModelAsDefault,
         }}>
             {children}
         </FileContext.Provider>

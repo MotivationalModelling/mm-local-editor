@@ -2,7 +2,6 @@ import React from "react";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
-import {createDefaultTabData, defaultTreeData} from "../../data/initialTabs";
 import {useFileContext} from "../context/FileProvider";
 import {reset} from "../context/treeDataSlice";
 
@@ -14,17 +13,14 @@ type ResetGraphProps = {
 }
 
 const ResetGraphButton: React.FC<ResetGraphProps>  = ({variant="", className=""}) => {
-	const {dispatch} = useFileContext();
+    const {dispatch, loadDefaultModel, saveCurrentModelAsDefault} = useFileContext();
 
     return (
         <DropdownButton as={ButtonGroup} title="Reset" variant={variant} className={className}>
             <Dropdown.Item onClick={() => dispatch(reset())}>Empty</Dropdown.Item>
-            <Dropdown.Item onClick={() => dispatch(reset({
-                                              treeData: defaultTreeData,
-                                              tabData: createDefaultTabData()
-                                          }))}>
-                Default
-            </Dropdown.Item>
+            <Dropdown.Item onClick={loadDefaultModel}>Default</Dropdown.Item>
+            <Dropdown.Divider/>
+            <Dropdown.Item onClick={saveCurrentModelAsDefault}>Save as Default</Dropdown.Item>
         </DropdownButton>
     );
 };

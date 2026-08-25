@@ -3,8 +3,8 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
-import {initialTabs} from "../../data/initialTabs.ts";
+import FileProvider, {createTreeIdsFromTreeData, getDefaultModel, LocalStorageType, useFileContext} from "./FileProvider";
+import {defaultTreeData, initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
 import {
@@ -187,6 +187,51 @@ describe('#createTreeIdsFromTreeData', () => {
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
         expect(treeIds[g1.id]).toEqual(["1-0"]);
         expect(treeIds[g2.id]).toEqual(["2-0"]);
+    });
+});
+
+describe('default model', () => {
+    beforeEach(() => {
+        localStorage.removeItem(LocalStorageType.DEFAULT_MODEL);
+    });
+
+    it('should use the predefined model when no custom default is saved', () => {
+        expect(getDefaultModel().treeData).toEqual(defaultTreeData);
+    });
+
+    it('should use the predefined model when the custom default is invalid', () => {
+        localStorage.setItem(LocalStorageType.DEFAULT_MODEL, JSON.stringify({
+            tabData: initialTabs,
+            treeData: [newTreeGoal({id: 999, type: "Do"})],
+        }));
+
+        expect(getDefaultModel().treeData).toEqual(defaultTreeData);
+    });
+
+    it('should save and load the current model as the default', () => {
+        const child = newTreeGoal({id: 102, type: "Do", content: "Child"});
+        const parent = newTreeGoal({
+            id: 101,
+            type: "Do",
+            content: "Parent",
+            children: [child],
+            x: 120,
+            y: 240,
+        });
+        const tabData = initialTabs.map((tab) => ({
+            ...tab,
+            rows: tab.label === "Do" ? [parent, child] : [],
+        }));
+        const {result: customResult} = renderHook(() => useFileContext(), {wrapper});
+
+        act(() => customResult.current.dispatch(reset({tabData, treeData: [parent]})));
+        act(() => customResult.current.saveCurrentModelAsDefault());
+        act(() => customResult.current.dispatch(reset()));
+        act(() => customResult.current.loadDefaultModel());
+
+        expect(customResult.current.tree).toEqual([parent]);
+        expect(customResult.current.tree[0].children).toEqual([child]);
+        expect(customResult.current.tree[0]).toMatchObject({x: 120, y: 240});
     });
 });
 

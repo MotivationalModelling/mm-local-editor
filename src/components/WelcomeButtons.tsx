@@ -1,7 +1,7 @@
 import React, {ChangeEvent, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import {useNavigate} from "react-router-dom";
-import {InitialTab, createDefaultTabData, defaultTreeData} from "../data/initialTabs";
+import {InitialTab} from "../data/initialTabs";
 import ErrorModal, {ErrorModalProps} from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
@@ -49,23 +49,20 @@ function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeGoal
 }
 
 const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
-	const [jsonFile, setJsonFile] = useState<File | null>(null);
-	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
-	const [errorModal, setErrorModal] = useState<ErrorModalProps>(defaultModalState);
+    const [jsonFile, setJsonFile] = useState<File | null>(null);
+    const [isJsonDragOver, setIsJsonDragOver] = useState(false);
+    const [errorModal, setErrorModal] = useState<ErrorModalProps>(defaultModalState);
 
-	const jsonFileRef = useRef<HTMLInputElement>(null);
+    const jsonFileRef = useRef<HTMLInputElement>(null);
 
-	const navigate = useNavigate();
+    const navigate = useNavigate();
 
-	const {dispatch} = useFileContext();
+    const {dispatch, loadDefaultModel} = useFileContext();
 
-	// Handle Create Model button click - load default data
-	const handleCreateModel = () => {
-		dispatch(reset({
-			treeData: defaultTreeData,
-			tabData: createDefaultTabData()
-		}));
-	};
+    // Handle Create Model button click - load default data
+    const handleCreateModel = () => {
+        loadDefaultModel();
+    };
 
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
