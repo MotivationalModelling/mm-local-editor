@@ -136,7 +136,9 @@ const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goa
     ...goal,
     // Upgrade IDs from saved models before they enter application state.
     instanceId: normalizeInstanceId(goal.instanceId),
-    children: normalizeTreeInstanceIds(goal.children ?? []),
+    ...(goal.children === undefined
+        ? {}
+        : {children: normalizeTreeInstanceIds(goal.children)}),
 }));
 
 const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((tab) => ({

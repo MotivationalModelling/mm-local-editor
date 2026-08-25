@@ -169,6 +169,7 @@ describe('treeDataSlice', () => {
         const state = createInitialState(legacyTabs, [legacyGoal]);
 
         expect(state.goals[-5].instanceId).toBe("-5:1");
+        expect(state.goals[-5]).not.toHaveProperty("children");
         expect(state.tree[0].instanceId).toBe("-5:1");
         expect(state.treeIds[-5]).toEqual(["-5:1"]);
     });
