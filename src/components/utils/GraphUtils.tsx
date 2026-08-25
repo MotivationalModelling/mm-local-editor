@@ -224,7 +224,7 @@ const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: InstanceI
 };
 
 export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
-    const sep = (type === 'STAKEHOLDER') ? ",\n" : ", ";
+    const sep = (type === 'STAKEHOLDER' || type === 'NEGATIVE' || type === 'QUALITY' || type === 'EMOTIONAL') ? ",\n" : ", ";
 
     return makeSquareLabel(items, sep);
 }
