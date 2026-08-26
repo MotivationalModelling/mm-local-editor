@@ -3,7 +3,12 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
+import FileProvider, {
+    createTreeIdsFromTreeData,
+    LocalStorageType,
+    resolveUseLocalStorage,
+    useFileContext,
+} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
@@ -23,6 +28,15 @@ const wrapper = ({children}: React.PropsWithChildren) => (
 const {result} = renderHook(() => useFileContext(), {wrapper});
 const {dispatch} = result.current;
 const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
+
+describe('use-local-storage module interop', () => {
+    it('accepts both direct and CommonJS-wrapped hook exports', () => {
+        const hook = () => "hook";
+
+        expect(resolveUseLocalStorage(hook)).toBe(hook);
+        expect(resolveUseLocalStorage({default: hook})).toBe(hook);
+    });
+});
 
 // FileProvider provides real data
 // Inner useFileContext will found nearest provider

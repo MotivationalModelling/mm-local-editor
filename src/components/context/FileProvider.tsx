@@ -5,7 +5,22 @@ import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "use-local-storage";
+import useLocalStorageImport from "use-local-storage";
+
+// Vite 8 consistently exposes the module.exports value for default imports
+// from CommonJS packages when this app (the importer) is ESM. Version 3 of
+// use-local-storage sets module.exports.default, so its runtime value can be
+// either the hook itself or {default: hook}, depending on the bundler/runtime.
+export const resolveUseLocalStorage = <T,>(moduleValue: T | {default: T}): T => (
+    typeof moduleValue === "object" && moduleValue !== null && "default" in moduleValue
+        ? moduleValue.default
+        : moduleValue as T
+);
+
+type UseLocalStorageHook = typeof useLocalStorageImport;
+const useLocalStorage = resolveUseLocalStorage<UseLocalStorageHook>(
+    useLocalStorageImport as unknown as UseLocalStorageHook | {default: UseLocalStorageHook}
+);
 
 // This hook manages the goals that are in use in the motivational model.
 //
