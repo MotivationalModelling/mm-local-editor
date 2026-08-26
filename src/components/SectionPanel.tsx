@@ -7,7 +7,7 @@ import Tree from "./Tree";
 import {useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
-import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
+import {addGoalToTree, hierarchyContainsGoalId, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
 import {TreeGoal, InstanceId} from "./types.ts";
 
@@ -143,13 +143,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
 
       if (draggedItem && draggedItem.content) {
-            // the first hierachy does not contain the dragged item
-            if (!tree.map((item) => item.id).includes(draggedItem.id)) {
-              dispatch(addGoalToTree(draggedItem));
-          } else {
+          const isDuplicateGoal = draggedItem.type === "Do"
+              ? hierarchyContainsGoalId(tree, draggedItem.id)
+              : tree.some((node) => node.id === draggedItem.id);
+
+          if (isDuplicateGoal) {
               setExistingItemIds([...existingItemIds, draggedItem.id]);
               setExistingError(true);
               hideErrorModalTimeout();
+          } else {
+              dispatch(addGoalToTree(draggedItem));
           }
       }
   };
@@ -157,12 +160,13 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
     
-    // Filter groupSelected to get only objects whose IDs are not in treeData
+    // Functional goals can only appear once anywhere in the hierarchy.
+    // Non-functional goals may be referenced under different parents, but
+    // the root level cannot contain the same goal more than once.
     const newItemsToAdd = groupSelected.filter(
-            // current hierachy
-            (item) => !tree.some(
-                ref => ref.id === item.id
-            )
+        (item) => item.type === "Do"
+            ? !hierarchyContainsGoalId(tree, item.id)
+            : !tree.some((node) => node.id === item.id)
     );
 
     // If all items are in the tree, then show the warning

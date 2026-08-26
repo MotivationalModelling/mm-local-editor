@@ -4,7 +4,6 @@ import DoIcon from "/img/Function.png";
 import BeIcon from "/img/Cloud.png";
 import FeelIcon from "/img/Heart.png";
 import ConcernIcon from "/img/Risk.png";
-import Nestable, {NestableProps} from "react-nestable";
 import {FaPlus, FaMinus} from "react-icons/fa";
 import {
     SimpleTreeItemWrapper,
@@ -16,6 +15,7 @@ import {BsCheckCircle, BsFillTrash3Fill, BsGripVertical, BsPencilSquare, BsXCirc
 import {InstanceId, Label, TreeGoal, isNonFunctionalGoal} from "../components/types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
+import ErrorModal from "./ErrorModal";
 import {
     handleContentSave,
     handleGoalBlur,
@@ -24,7 +24,11 @@ import {
     isTextEmpty,
 } from "./utils/GoalHint.tsx";
 import "./Tree.css";
-import {deleteGoalReferenceFromHierarchy, setTreeData} from "./context/treeDataSlice.ts";
+import {
+    deleteGoalReferenceFromHierarchy,
+    hierarchyHasDuplicateGoalIdsAtSameLevel,
+    setTreeData,
+} from "./context/treeDataSlice.ts";
 
 const INDENTATION_WIDTH = 24;
 
@@ -51,10 +55,13 @@ const treeInputStyle: React.CSSProperties = {
     height: "100%",
 };
 
-type SortableTreeGoal = TreeGoal & {
+type SortableTreeGoal = Omit<TreeGoal, "id" | "children"> & {
+    goalId: TreeGoal["id"];
     collapsed?: boolean;
     canHaveChildren?: boolean;
 };
+
+type SortableTreeItem = TreeItems<SortableTreeGoal>[number];
 
 type GoalReference = {
     goalId: TreeGoal["id"];
@@ -107,26 +114,30 @@ const IconComponent = ({type}: {type: Label}) => (
     />
 );
 
-const decorateTreeItems = (
+export const decorateTreeItems = (
     items: TreeGoal[],
     collapsedIds: Set<InstanceId>,
 ): TreeItems<SortableTreeGoal> => {
     return items.map((item) => ({
         ...item,
+        goalId: item.id,
+        id: item.instanceId,
         collapsed: collapsedIds.has(item.instanceId),
         canHaveChildren: !isNonFunctionalGoal(item.type),
         children: decorateTreeItems(item.children ?? [], collapsedIds),
     }));
 };
 
-const stripTreeUiState = (items: TreeItems<SortableTreeGoal>): TreeGoal[] => {
+export const stripTreeUiState = (items: TreeItems<SortableTreeGoal>): TreeGoal[] => {
     return items.map((treeItem) => {
-        const {children, collapsed, canHaveChildren, ...plainItem} = treeItem;
+        const {children, collapsed, canHaveChildren, goalId, id, ...plainItem} = treeItem;
         void collapsed;
         void canHaveChildren;
+        void id;
 
       return {
           ...plainItem,
+          id: goalId,
           children: stripTreeUiState(children ?? []),
       };
     });
@@ -185,15 +196,25 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
     onDeleteItem,
     ...props
 }, ref) => {
-    const treeItem = item as SortableTreeGoal;
+    const treeItem = item as SortableTreeItem;
+    const goalItem: TreeGoal = {
+        id: treeItem.goalId,
+        instanceId: treeItem.instanceId,
+        content: treeItem.content,
+        type: treeItem.type,
+        color: treeItem.color,
+        x: treeItem.x,
+        y: treeItem.y,
+        children: stripTreeUiState(treeItem.children ?? []),
+    };
     const isEditing = editingItemId === treeItem.instanceId;
     const iconSize = 25;
     const isReference = existingGoalReferenceInstanceId.some(
-      (itemRef) => itemRef.goalId === treeItem.id && itemRef.instanceId === treeItem.instanceId
+      (itemRef) => itemRef.goalId === treeItem.goalId && itemRef.instanceId === treeItem.instanceId
     );
 
     const handleEdit = () => {
-        if (isEmptyGoal(treeItem)) {
+        if (isEmptyGoal(goalItem)) {
           return;
         }
 
@@ -219,7 +240,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
             treeItem.content,
             editedText,
             (content) => {
-              handleSynTableTree(treeItem, content);
+              handleSynTableTree(goalItem, content);
               setEditingItemId(null);
             },
             handleCancel,
@@ -231,7 +252,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
           treeItem.content,
           editedText,
           (content) => {
-            handleSynTableTree(treeItem, content);
+            handleSynTableTree(goalItem, content);
             setEditingItemId(null);
           },
           handleCancel,
@@ -246,7 +267,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
           treeItem.content,
           editedText,
           (content) => {
-            handleSynTableTree(treeItem, content);
+            handleSynTableTree(goalItem, content);
             setEditingItemId(null);
           },
           handleCancel,
@@ -283,7 +304,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
           }}
           className="tree-list"
           onDoubleClick={() => {
-            if (!isEditing && !isEmptyGoal(treeItem)) {
+            if (!isEditing && !isEmptyGoal(goalItem)) {
               handleEdit();
             }
           }}
@@ -371,8 +392,8 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
               }
             }}
             style={{
-              opacity: !isEditing && isEmptyGoal(treeItem) ? 0.5 : 1,
-              cursor: !isEditing && isEmptyGoal(treeItem) ? "not-allowed" : "pointer",
+              opacity: !isEditing && isEmptyGoal(goalItem) ? 0.5 : 1,
+              cursor: !isEditing && isEmptyGoal(goalItem) ? "not-allowed" : "pointer",
             }}
           >
             {isEditing ? (
@@ -393,7 +414,7 @@ const TreeRow = React.forwardRef<HTMLDivElement, TreeRowProps>(({
               if (isEditing) {
                 handleCancel();
               } else {
-                onDeleteItem(treeItem);
+                onDeleteItem(goalItem);
               }
             }}
           >
@@ -419,6 +440,7 @@ const Tree: React.FC<TreeProps> = ({
     const [editedText, setEditedText] = useState("");
     const [disableOnBlur, setDisableOnBlur] = useState(false);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+    const [showDuplicateLevelWarning, setShowDuplicateLevelWarning] = useState(false);
     const [collapsedIds, setCollapsedIds] = useState<Set<InstanceId>>(new Set());
     const deletingItemRef = useRef<TreeGoal | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -460,8 +482,14 @@ const Tree: React.FC<TreeProps> = ({
     };
 
     const handleItemsChanged = (items: TreeItems<SortableTreeGoal>) => {
+      const nextTree = stripTreeUiState(items);
+      if (hierarchyHasDuplicateGoalIdsAtSameLevel(nextTree)) {
+        setShowDuplicateLevelWarning(true);
+        return;
+      }
+
       setCollapsedIds(collectCollapsedIds(items));
-      dispatch(setTreeData(stripTreeUiState(items)));
+      dispatch(setTreeData(nextTree));
     };
 
     const DndTreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<SortableTreeGoal>>((props, ref) => (
@@ -491,6 +519,12 @@ const Tree: React.FC<TreeProps> = ({
             message="You are going to delete a goal with children goals, are you sure?"
             onHide={handleDeleteCancel}
             onConfirm={deleteItem}
+          />
+          <ErrorModal
+            show={showDuplicateLevelWarning}
+            title="Move Failed"
+            message="The same goal cannot appear more than once at the same hierarchy level."
+            onHide={() => setShowDuplicateLevelWarning(false)}
           />
 
           <SortableTree

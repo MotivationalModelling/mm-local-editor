@@ -117,6 +117,48 @@ const removeAllReferenceFromHierarchy = (
         }));
 };
 
+export const hierarchyContainsGoalId = (
+    tree: TreeGoal[],
+    goalId: TreeGoal["id"],
+): boolean => tree.some((node) => (
+    node.id === goalId || hierarchyContainsGoalId(node.children ?? [], goalId)
+));
+
+export const hierarchyHasDuplicateGoalIdsAtSameLevel = (tree: TreeGoal[]): boolean => {
+    const goalIdsAtThisLevel = new Set<TreeGoal["id"]>();
+
+    for (const node of tree) {
+        if (goalIdsAtThisLevel.has(node.id)) {
+            return true;
+        }
+
+        goalIdsAtThisLevel.add(node.id);
+    }
+
+    return tree.some((node) => hierarchyHasDuplicateGoalIdsAtSameLevel(node.children ?? []));
+};
+
+const hierarchyHasDuplicateDoGoalIds = (
+    tree: TreeGoal[],
+    seenGoalIds: Set<TreeGoal["id"]> = new Set(),
+): boolean => {
+    for (const node of tree) {
+        if (node.type === "Do") {
+            if (seenGoalIds.has(node.id)) {
+                return true;
+            }
+
+            seenGoalIds.add(node.id);
+        }
+
+        if (hierarchyHasDuplicateDoGoalIds(node.children ?? [], seenGoalIds)) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
 const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): number => {
     const ids = treeIds[goalId]?.filter((id) => id !== null);  // filter out undefined & null
     if (!ids || ids.length === 0) return 0;
@@ -179,9 +221,29 @@ export const treeDataSlice = createSlice({
             state.goals[action.payload.id] = action.payload;
         },
         setTreeData: (state, action: PayloadAction<TreeGoal[]>) => {
+            if (
+                hierarchyHasDuplicateGoalIdsAtSameLevel(action.payload)
+                || hierarchyHasDuplicateDoGoalIds(action.payload)
+            ) {
+                return;
+            }
+
             state.tree = action.payload;
         },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
+            const goalType = state.goals[action.payload.id]?.type ?? action.payload.type;
+
+            // Functional goals represent the hierarchy itself and may only have
+            // one instance anywhere in the tree. Non-functional goals may be
+            // referenced multiple times under different functional goals.
+            const isDuplicateGoal = goalType === "Do"
+                ? hierarchyContainsGoalId(state.tree, action.payload.id)
+                : state.tree.some((node) => node.id === action.payload.id);
+
+            if (isDuplicateGoal) {
+                return;
+            }
+
             // Create a TreeGoal node with generated instanceId
             const instanceId = generateInstanceId(state.treeIds, action.payload.id);
             if (state.treeIds[action.payload.id]) {
@@ -304,4 +366,3 @@ export const {
     setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
 } = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
-

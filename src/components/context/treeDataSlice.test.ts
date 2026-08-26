@@ -13,15 +13,18 @@ import {
     deleteGoalFromGoalList,
     deleteGoalReferenceFromHierarchy,
     findTreeGoalByInstanceId,
+    hierarchyContainsGoalId,
+    hierarchyHasDuplicateGoalIdsAtSameLevel,
     removeItemIdFromTree,
     reset,
     selectGoalsForLabel,
+    setTreeData,
     treeDataSlice,
     updateTextForGoalId,
     updateTextForInstanceId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
-import {initialTabs} from "../../data/initialTabs.ts";
+import {createDefaultTabData, defaultTreeData, initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal, InstanceId} from "../types.ts";
 
 describe('treeDataSlice', () => {
@@ -153,6 +156,70 @@ describe('treeDataSlice', () => {
         const state = treeDataSlice.reducer(initialState, addGoalToTree(goal));
         expect(Object.keys(state.treeIds)).toContain(String(goal.id));
     });
+    it('should not add a duplicate Do goal when its existing instance is nested', () => {
+        const stateWithNestedGoal = createInitialState(createDefaultTabData(), defaultTreeData);
+        const goal = stateWithNestedGoal.goals[7];
+
+        const state = treeDataSlice.reducer(stateWithNestedGoal, addGoalToTree(goal));
+
+        expect(state.tree).toEqual(stateWithNestedGoal.tree);
+        expect(state.treeIds[goal.id]).toEqual(["7-1"]);
+    });
+    it.each(["Be", "Feel", "Who", "Concern"] as const)(
+        'should allow duplicate %s goal references',
+        (type) => {
+            const goal = newTreeGoal({id: 7, type, content: "student"});
+            const state1 = treeDataSlice.reducer(initialState, addGoalToTree(goal));
+            const nestedNode = {...state1.tree[0], children: []};
+            const parent = newTreeGoal({
+                id: 8,
+                type: "Do",
+                content: "parent",
+                instanceId: "8-1",
+                children: [nestedNode],
+            });
+            const stateWithNestedReference = {
+                ...state1,
+                tree: [parent],
+            };
+            const state2 = treeDataSlice.reducer(stateWithNestedReference, addGoalToTree(goal));
+
+            expect(state2.tree).toHaveLength(2);
+            expect(state2.tree[0].children?.[0].instanceId).toBe("7-1");
+            expect(state2.tree[1].instanceId).toBe("7-2");
+        }
+    );
+    it.each(["Be", "Feel", "Who", "Concern"] as const)(
+        'should not add duplicate %s goal references at the root level',
+        (type) => {
+            const goal = newTreeGoal({id: 7, type, content: "student"});
+            const state1 = treeDataSlice.reducer(initialState, addGoalToTree(goal));
+            const state2 = treeDataSlice.reducer(state1, addGoalToTree(goal));
+
+            expect(state2.tree).toHaveLength(1);
+            expect(state2.treeIds[goal.id]).toEqual(["7-1"]);
+        }
+    );
+    it('should reject hierarchy moves that create duplicate sibling references', () => {
+        const goal = newTreeGoal({id: 7, type: "Who", content: "student"});
+        const parent = newTreeGoal({id: 8, type: "Do", content: "parent"});
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoal(parent));
+        state = treeDataSlice.reducer(state, addGoalToTree(parent));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        const originalTree = state.tree;
+        const duplicateSiblingTree: TreeGoal[] = [{
+            ...state.tree[0],
+            children: [
+                {...state.tree[1], instanceId: "7-1"},
+                {...state.tree[1], instanceId: "7-2"},
+            ],
+        }];
+
+        const nextState = treeDataSlice.reducer(state, setTreeData(duplicateSiblingTree));
+
+        expect(nextState.tree).toEqual(originalTree);
+    });
     it('should remove a goal\'s reference from the tree', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
 
@@ -209,6 +276,61 @@ describe('treeDataSlice', () => {
 
         expect(newTree.length).toEqual(1);
         expect(tree[0].children?.length).toEqual(0);
+    });
+});
+
+describe('hierarchyContainsGoalId', () => {
+    it('finds a goal recursively', () => {
+        const tree: TreeGoal[] = [{
+            id: 1,
+            instanceId: "1-1",
+            type: "Do",
+            content: "parent",
+            children: [{
+                id: 2,
+                instanceId: "2-1",
+                type: "Do",
+                content: "nested",
+                children: [],
+            }],
+        }];
+
+        expect(hierarchyContainsGoalId(tree, 2)).toBe(true);
+        expect(hierarchyContainsGoalId(tree, 3)).toBe(false);
+    });
+});
+
+describe('hierarchyHasDuplicateGoalIdsAtSameLevel', () => {
+    const reference = (instanceId: InstanceId): TreeGoal => ({
+        id: 2,
+        instanceId,
+        type: "Who",
+        content: "student",
+        children: [],
+    });
+
+    it('rejects duplicate references under the same parent', () => {
+        const tree: TreeGoal[] = [{
+            id: 1,
+            instanceId: "1-1",
+            type: "Do",
+            content: "parent",
+            children: [reference("2-1"), reference("2-2")],
+        }];
+
+        expect(hierarchyHasDuplicateGoalIdsAtSameLevel(tree)).toBe(true);
+    });
+
+    it('allows the same reference under different parents', () => {
+        const tree: TreeGoal[] = [1, 3].map((id, index) => ({
+            id,
+            instanceId: `${id}-1` as InstanceId,
+            type: "Do" as const,
+            content: `parent ${id}`,
+            children: [reference(`2-${index + 1}` as InstanceId)],
+        }));
+
+        expect(hierarchyHasDuplicateGoalIdsAtSameLevel(tree)).toBe(false);
     });
 });
 
