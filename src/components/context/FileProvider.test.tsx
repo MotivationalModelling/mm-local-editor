@@ -197,7 +197,7 @@ describe('corrupted localStorage recovery', () => {
     const seededTabs = JSON.stringify(initialTabs);
 
     // The module-level renderHook provider above stays mounted and would
-    // sync to the corrupted storage via use-local-storage's storage events,
+    // sync to the corrupted storage via usehooks-ts's storage events,
     // rendering a second copy of the recovery modal.
     beforeAll(() => cleanup());
 

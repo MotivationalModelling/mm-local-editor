@@ -5,7 +5,7 @@ import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "use-local-storage";
+import {useLocalStorage} from "usehooks-ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -151,8 +151,8 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
 // so an unparseable value is neither silently discarded nor overwritten on
 // load: the provider can surface it and leave it intact for inspection.
 const rawStringStorage = {
-    parser: (raw: string) => raw,
-    serializer: (value: string | undefined) => value ?? "",
+    deserializer: (raw: string) => raw,
+    serializer: (value: string) => value,
 };
 
 // createInitialState throws when the stored JSON cannot be parsed or is
