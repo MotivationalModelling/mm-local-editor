@@ -20,7 +20,6 @@ const ProjectEdit: React.FC = () => {
                          setShowGraphSection={setShowGraphSection}/>
             <SectionPanel showGoalSection={showGoalSection}
                           showGraphSection={showGraphSection}
-                          setShowGoalSection={setShowGoalSection}
                           paddingX={15}/>
         </GraphProvider>
     );
