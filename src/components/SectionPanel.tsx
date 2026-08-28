@@ -42,21 +42,18 @@ const DEFAULT_HEIGHT = "800px";
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
-  setShowGoalSection: (showGoalSection: boolean) => void;
   paddingX: number;
 };
 
 const SectionPanel: React.FC<SectionPanelProps> = ({
   showGoalSection,
   showGraphSection,
-  setShowGoalSection,
   paddingX,
 }) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
-  const [draggedItem, setDraggedItem] = useState<TreeGoal | null>(null);
   // Simply store ids of all items in the tree for fast check instead of recursive search
     const {dispatch, tree} = useFileContext();
 
@@ -132,28 +129,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }, delayTime);
   };
 
-  // Handle for goals drop on the nestable section
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-
-      // Temporary Group drop
-      if (groupSelected.length > 1) {
-          handleDropGroupSelected();
-          return;
-      }
-
-      if (draggedItem && draggedItem.content) {
-            // the first hierachy does not contain the dragged item
-            if (!tree.map((item) => item.id).includes(draggedItem.id)) {
-              dispatch(addGoalToTree(draggedItem));
-          } else {
-              setExistingItemIds([...existingItemIds, draggedItem.id]);
-              setExistingError(true);
-              hideErrorModalTimeout();
-          }
-      }
-  };
-
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
     
@@ -161,7 +136,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     const newItemsToAdd = groupSelected.filter(
             // current hierachy
             (item) => !tree.some(
-                ref => ref.id === item.id
+                goal => goal.id === item.id
             )
     );
 
@@ -187,11 +162,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     setExistingItemIds([]);
     setExistingError(false);
     setGroupSelected([]);
-  };
-
-  // Handle synchronize data in table data and tree data
-  const handleSynTableTree = (treeItem: TreeGoal, editedText: string) => {
-    dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -236,8 +206,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       <ErrorModal
         show={existingError}
         title="Drop Failed"
-        message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
-        } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
+        message={`The selected ${(existingItemIds.length > 1) ? "goals" : "goal"
+        } already ${existingItemIds.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />
       {/* <DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/> */}
@@ -260,10 +230,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         {/* First Panel Content */}
         <GoalList
           ref={goalListRef}
-          setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
+          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
@@ -271,7 +240,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       {/* Cluster Hierarchy Section */}
       <div
         style={{
-          ...defaultStyle,
+          // ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPORTIONS.minWidth,
           minHeight: DEFAULT_HEIGHT,
@@ -280,19 +249,18 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           backgroundColor: "rgba(35, 144, 231, 0.1)",
           overflow: "auto",
         }}
-        onDrop={handleDrop}
-        onDragOver={(event) => event.preventDefault()}
         ref={sectionTwoRef}
       >
-        <Tree
-
-          // existingItemIds={existingItemIds}
-          // setTreeIds={setTreeIds}
-          handleSynTableTree={handleSynTableTree}
-          // setExistingItemIds={setExistingItemIds}
-          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
-        />
+          <Tree existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+                setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
+                onGoalsDropped={(existingGoalIds) => {
+                  setGroupSelected([]);
+                  if (existingGoalIds.length > 0) {
+                    setExistingItemIds(existingGoalIds);
+                    setExistingError(true);
+                    hideErrorModalTimeout();
+                  }
+                }}/>
       </div>
 
       {/* Graph Render Section */}
