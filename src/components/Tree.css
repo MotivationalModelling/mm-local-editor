@@ -1,23 +1,147 @@
-.delete-icon,
-.edit-icon {
-	visibility: hidden;
-	margin-right: 10px;
+.tree {
+    box-sizing: border-box;
+    min-height: 100%;
+    min-width: 360px;
+    padding: 0.25rem;
+    position: relative;
+    width: 100%;
 }
 
-.delete-icon:hover,
-.edit-icon:hover {
-	cursor: pointer;
+.tree:focus {
+    outline: none;
 }
 
-.tree-list:hover .delete-icon,
-.tree-list:hover .edit-icon {
-	visibility: visible;
+.tree-row {
+    align-items: center;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-sizing: border-box;
+    display: flex;
+    gap: 0.25rem;
+    margin: 0.125rem 0;
+    min-height: 2.5rem;
+    padding-right: 0.25rem;
+    transition: background-color 120ms ease, border-color 120ms ease;
+    width: 100%;
 }
 
-.tree-list:hover {
-	cursor: move;
+.tree-row:hover,
+.tree-row:focus-within {
+    background-color: rgba(255, 255, 255, 0.72);
+    border-color: rgba(13, 110, 253, 0.2);
 }
 
-input:focus {
-	cursor: text;
+.tree-row:focus {
+    outline: 2px solid rgba(13, 110, 253, 0.35);
+    outline-offset: -2px;
+}
+
+.tree-row--drop-target {
+    background-color: rgba(13, 110, 253, 0.12);
+    border-color: rgba(13, 110, 253, 0.55);
+}
+
+.tree-row__button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 0.25rem;
+    color: #495057;
+    display: inline-flex;
+    flex: 0 0 1.75rem;
+    height: 1.75rem;
+    justify-content: center;
+    padding: 0;
+}
+
+.tree-row__button:hover:not(:disabled) {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.tree-row__button:focus-visible {
+    outline: 2px solid rgba(13, 110, 253, 0.5);
+    outline-offset: 1px;
+}
+
+.tree-row__drag-handle {
+    cursor: grab;
+}
+
+.tree-row__drag-handle:active {
+    cursor: grabbing;
+}
+
+.goal-list-drag-handle[draggable="true"] {
+    cursor: grab;
+}
+
+.goal-list-drag-handle[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.tree-row__toggle:disabled {
+    opacity: 0;
+}
+
+.tree-row__type-icon {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 2.25rem;
+    justify-content: center;
+}
+
+.tree-row__type-image {
+    height: 1.5rem;
+    max-width: 2rem;
+    object-fit: contain;
+}
+
+.tree-row__input {
+    flex: 1 1 auto;
+    min-width: 7rem;
+}
+
+.tree-row__action {
+    color: #6c757d;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.tree-row:hover .tree-row__action,
+.tree-row:focus-within .tree-row__action {
+    opacity: 1;
+}
+
+.tree-empty {
+    align-items: center;
+    border: 2px dashed rgba(13, 110, 253, 0.28);
+    border-radius: 0.5rem;
+    color: #6c757d;
+    display: flex;
+    justify-content: center;
+    min-height: 9rem;
+    padding: 1rem;
+    pointer-events: none;
+    text-align: center;
+}
+
+/* From https://headless-tree.lukasbach.com/dnd/overview */
+.dragline {
+    background-color: #0d6efd;
+    height: 2px;
+    margin-top: -1px;
+    z-index: 2;
+}
+
+.dragline::before {
+    background: #fff;
+    border: 2px solid #0d6efd;
+    border-radius: 99px;
+    content: "";
+    height: 4px;
+    left: 0;
+    position: absolute;
+    top: -3px;
+    width: 4px;
 }

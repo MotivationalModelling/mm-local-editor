@@ -7,20 +7,19 @@ import {useFileContext} from "./context/FileProvider";
 import {Label, newTreeGoal, TreeGoal} from "./types.ts";
 
 import styles from "./TabButtons.module.css";
-import {BsPlus} from "react-icons/bs";
+import {BsPlusLg} from "react-icons/bs";
 import {addGoalToTab, deleteGoalFromGoalList, selectGoalsForLabel} from "./context/treeDataSlice.ts";
 import GoalListTable from "./GoalListTable.tsx";
 
 
 type GoalListProps = {
-    setDraggedItem: (item: TreeGoal | null) => void;
     groupSelected: TreeGoal[];
     setGroupSelected: (groupSelected: TreeGoal[]) => void;
     handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void;
     handleDropGroupSelected: () => void;
 };
 
-const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, handleDropGroupSelected,}, ref) => {
+const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({groupSelected, setGroupSelected, handleSynTableTree, handleDropGroupSelected,}, ref) => {
         const treeData = useFileContext();
         const {dispatch, tabs} = treeData;
         const [activeKey, setActiveKey] = useState<Label>(tabs.keys().next().value ?? "Do");
@@ -100,7 +99,6 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
                             <Tab.Pane key={label} eventKey={label}>
                                 <GoalListTable label={label}
                                                goals={selectGoalsForLabel({treeData}, label)}
-                                               setDraggedItem={setDraggedItem}
                                                groupSelected={groupSelected}
                                                setGroupSelected={setGroupSelected}
                                                handleSynTableTree={handleSynTableTree}
@@ -109,7 +107,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({setDraggedIte
                                     <Button className="me-2"
                                             onClick={() => handleAddRow(activeKey)}
                                             variant="primary">
-                                        <BsPlus/>
+                                        <BsPlusLg/>
                                     </Button>
                                     <div className="text-muted">
                                         Drag goals to arrange hierarchy
