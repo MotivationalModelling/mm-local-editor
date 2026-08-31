@@ -4,7 +4,8 @@ import {z} from "zod";
 // Core types (defined first to avoid circular refs)
 // ============================================
 export const INSTANCE_ID_SEPARATOR = ":";
-export type InstanceId = `${number}${typeof INSTANCE_ID_SEPARATOR}${number}`
+type InstanceIdSeparator = typeof INSTANCE_ID_SEPARATOR;
+export type InstanceId = `${number}${InstanceIdSeparator}${number}`
 
 const INSTANCE_ID_SCHEMA_RE = new RegExp(`^-?\\d+${INSTANCE_ID_SEPARATOR}\\d+$`);
 
@@ -95,8 +96,9 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
-const instanceIdSchema = z.custom<InstanceId>((val) => {
-  return typeof val === "string" && INSTANCE_ID_SCHEMA_RE.test(val);
+const instanceIdSchema = z.string().regex(INSTANCE_ID_SCHEMA_RE).transform((val): InstanceId => {
+  // The regex establishes the InstanceId shape before narrowing the schema output type.
+  return val as InstanceId;
 });
 
 export const GoalBaseSchema = z.object({
