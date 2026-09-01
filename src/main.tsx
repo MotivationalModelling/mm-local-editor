@@ -7,13 +7,16 @@ import "react-nestable/dist/styles/index.css";
 import App from "./App.tsx";
 import "./index.css";
 import FileProvider from "./components/context/FileProvider.tsx";
+import {UserStoriesProvider} from "./components/context/UserStoriesContext.tsx";
 import {enableMapSet} from "immer";
 
 enableMapSet();
 
 const rootContainer = document.getElementById("root");
 ReactDOM.createRoot(rootContainer!).render(
-    <FileProvider>
-        <App/>
-    </FileProvider>
+    <UserStoriesProvider>
+        <FileProvider>
+            <App/>
+        </FileProvider>
+    </UserStoriesProvider>
 );

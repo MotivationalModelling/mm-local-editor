@@ -202,7 +202,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         // Convert Map<Label, TabContent> to InitialTab[] for storage
         const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
             label,
-            icon: tabContent.icon,
+            icon: normalizeIconPath(tabContent.icon),
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 

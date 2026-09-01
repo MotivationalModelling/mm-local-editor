@@ -6,7 +6,7 @@ import Layout from "./components/Layout";
 
 const App = () => {
 	return (
-		<BrowserRouter basename="/mm-local-editor/">
+		<BrowserRouter basename={import.meta.env.BASE_URL}>
 			<Layout>
 				<Routes>
 					<Route path="/" element={<Welcome />} />

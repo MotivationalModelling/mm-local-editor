@@ -1,10 +1,13 @@
 import {Resizable, ResizeCallback} from "re-resizable";
 import React, {useEffect, useRef, useState} from "react";
+import Alert from "react-bootstrap/Alert";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
 import Tree from "./Tree";
 import {useFileContext} from "./context/FileProvider";
+import UserStoriesPanel from "./UserStoriesPanel";
+import {useUserStories} from "./context/UserStoriesContext";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
@@ -50,12 +53,14 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   showGraphSection,
   paddingX,
 }) => {
+  void setShowGoalSection;
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
   // Simply store ids of all items in the tree for fast check instead of recursive search
     const {dispatch, tree} = useFileContext();
+    const {state: usState} = useUserStories();
 
   const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
 
@@ -190,17 +195,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }
     }
   }, [paddingX, showGoalSection, showGraphSection]); 
-
   return (
     <div
       style={{
         width: "100%",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
         padding: paddingX,
       }}
       ref={parentRef}
-      // onClick={() => setIsHintVisible(false)}
     >
       {/* Additional helper components */}
       <ErrorModal
@@ -263,27 +267,90 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
                 }}/>
       </div>
 
-      {/* Graph Render Section */}
-      <Resizable
-        handleClasses={{left: "left-handler"}}
-        enable={{left: true}}
-        style={{
-          ...defaultStyle,
-          backgroundColor: "rgb(236, 244, 244)",
-          display: showGraphSection ? "flex" : "none",
-        }}
-        size={{
-          width: sectionThreeWidth,
-          height: "100%",
-        }}
-        maxWidth={DEFINED_PROPORTIONS.maxWidth}
-        minWidth={DEFINED_PROPORTIONS.minWidth}
-        minHeight={DEFAULT_HEIGHT}
-        onResize={handleResizeSectionThree}
-      >
-        {/* Third Panel Content */}
-        <GraphWorker showGraphSection={showGraphSection}/>
-      </Resizable>
+        <Resizable
+          handleClasses={{right: "right-handler"}}
+          enable={{right: true}}
+          style={{
+            ...defaultStyle,
+            backgroundColor: "rgb(236, 244, 244)",
+            display: showGoalSection ? "flex" : "none",
+          }}
+          size={{width: sectionOneWidth, height: "100%"}}
+          maxWidth={DEFINED_PROPORTIONS.maxWidth}
+          minWidth={DEFINED_PROPORTIONS.minWidth}
+          minHeight={DEFAULT_HEIGHT}
+          onResize={handleResizeSectionOne}
+        >
+          <GoalList
+            ref={goalListRef}
+            setDraggedItem={setDraggedItem}
+            groupSelected={groupSelected}
+            setGroupSelected={setGroupSelected}
+            handleSynTableTree={handleSynTableTree}
+            handleDropGroupSelected={handleDropGroupSelected}
+          />
+        </Resizable>
+
+        <div style={{display: "flex", flexDirection: "column", width: "100%"}}>
+          <div
+            style={{
+              ...defaultStyle,
+              width: "100%",
+              minWidth: DEFINED_PROPORTIONS.minWidth,
+              minHeight: DEFAULT_HEIGHT,
+              height: DEFAULT_HEIGHT,
+              padding: "10px",
+              backgroundColor: "rgba(35, 144, 231, 0.1)",
+              overflow: "auto",
+            }}
+            onDrop={handleDrop}
+            onDragOver={(event) => event.preventDefault()}
+            ref={sectionTwoRef}
+          >
+            <Tree
+              handleSynTableTree={handleSynTableTree}
+              existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+              setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
+            />
+          </div>
+
+          {usState.status === "error" && (
+            <Alert
+              variant="danger"
+              className="mt-2 mb-0 py-1 px-2"
+              style={{fontSize: "0.85rem", margin: "0.5rem 10px 0"}}
+            >
+              {usState.error}
+            </Alert>
+          )}
+
+          {usState.status !== "idle" && (
+            <div style={{width: "100%", marginTop: "1rem", padding: "0 10px"}}>
+              <UserStoriesPanel />
+            </div>
+          )}
+        </div>
+
+        <Resizable
+          handleClasses={{left: "left-handler"}}
+          enable={{left: true}}
+          style={{
+            ...defaultStyle,
+            backgroundColor: "rgb(236, 244, 244)",
+            display: showGraphSection ? "flex" : "none",
+          }}
+          size={{
+            width: sectionThreeWidth,
+            height: "100%",
+          }}
+          maxWidth={DEFINED_PROPORTIONS.maxWidth}
+          minWidth={DEFINED_PROPORTIONS.minWidth}
+          minHeight={DEFAULT_HEIGHT}
+          onResize={handleResizeSectionThree}
+        >
+          <GraphWorker showGraphSection={showGraphSection}/>
+        </Resizable>
+      </div>
     </div>
   );
 };
