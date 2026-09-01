@@ -30,8 +30,9 @@ import {Cluster, GlobObject, InstanceId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
-import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {SYMBOL_CONFIGS, VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {makeHtmlListLabel} from "./GraphLabelUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -44,6 +45,28 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
+
+// These non-functional shapes render their labels as HTML bullet lists.
+const LIST_LABEL_SHAPES = new Set([
+    SYMBOL_CONFIGS.EMOTIONAL.shape,
+    SYMBOL_CONFIGS.NEGATIVE.shape,
+    SYMBOL_CONFIGS.QUALITY.shape,
+]);
+
+const isListLabelCell = (cell: Cell) => LIST_LABEL_SHAPES.has(cell.getStyle().shape ?? "");
+
+// Preserve default graph labels while formatting supported shapes as lists.
+const configureListLabels = (graph: Graph) => {
+    const getLabel = graph.getLabel.bind(graph);
+    const isHtmlLabel = graph.isHtmlLabel.bind(graph);
+
+    graph.getLabel = (cell) => {
+        const label = getLabel(cell);
+
+        return label && isListLabelCell(cell) ? makeHtmlListLabel(label.split(",")) : label;
+    };
+    graph.isHtmlLabel = (cell) => isListLabelCell(cell) || isHtmlLabel(cell);
+};
 
 // Extracted outside component - no useCallback needed, better for testing
 const recentreView = (graphInstance: Graph) => {
@@ -302,7 +325,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 if (cellID != null) {
                                     const oldWidth = cellHistory[cellID][0];
                                     const oldHeight = cellHistory[cellID][1];
-                                    if (oldWidth && oldHeight && newWidth && newHeight) {
+                                    // Keep list-label font sizes stable when their shapes are resized.
+                                    if (oldWidth && oldHeight && newWidth && newHeight && !isListLabelCell(cell)) {
                                         let newFontSize =
                                             adjustFontSize(
                                                 oldStyle,
@@ -587,6 +611,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             // Creates the graph with the custom plugins
             const graphInstance = new Graph(graphContainer, undefined, plugins);
 
+            configureListLabels(graphInstance);
             setGraphStyle(graphInstance);
             const removeChangeListener = graphListener(graphInstance);
             fixEditorPosition(graphInstance);
