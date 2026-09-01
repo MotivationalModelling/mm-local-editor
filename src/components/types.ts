@@ -4,8 +4,8 @@ import {z} from "zod";
 // Core types (defined first to avoid circular refs)
 // ============================================
 export const INSTANCE_ID_SEPARATOR = ":";
-type InstanceIdSeparator = typeof INSTANCE_ID_SEPARATOR;
-export type InstanceId = `${number}${InstanceIdSeparator}${number}`
+// Use `typeof` to derive the separator type from the constant and keep them in sync.
+export type InstanceId = `${number}${typeof INSTANCE_ID_SEPARATOR}${number}`
 
 const INSTANCE_ID_SCHEMA_RE = new RegExp(`^-?\\d+${INSTANCE_ID_SEPARATOR}\\d+$`);
 
