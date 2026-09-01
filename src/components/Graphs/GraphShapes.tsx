@@ -12,7 +12,6 @@ import {
   Point,
   utils,
   CellRenderer,
-  Shape,
 } from "@maxgraph/core";
 
 import {
@@ -48,6 +47,11 @@ class ParallelogramShape extends ActorShape {
 
   isRoundable(): boolean {
     return true;
+  }
+
+  resetStyles(): void {
+    super.resetStyles();
+    this.startSize = 0.12;
   }
 
   /**

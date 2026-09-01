@@ -11,12 +11,11 @@ export function canEditGoal(goal: { content: string }): boolean {
   return !isEmptyGoal(goal);
 }
 
-// Validate if save should be allowed (prevent saving empty content to existing goals)
+// Validate if save should be allowed (prevent saving empty content)
+// TODO: also validate that the goal name is not a duplicate at the same tree level
 export function canSaveContentEdit(originalContent: string, newContent: string): boolean {
-  // Allow save if:
-  // 1. New content is not empty, OR
-  // 2. Original content was empty (initial entry)
-  return !isTextEmpty(newContent) || (isTextEmpty(originalContent)&& !isTextEmpty(newContent));
+  void originalContent;
+  return !isTextEmpty(newContent);
 }
 
 // Handle content edit save with validation
@@ -26,11 +25,9 @@ export function handleContentSave(
   onSave: (content: string) => void,
   onCancel: () => void
 ): void {
+  void onCancel;
   if (canSaveContentEdit(originalContent, newContent)) {
     onSave(newContent);
-  } else {
-    // If trying to save empty content to existing goal, cancel
-    onCancel();
   }
 }
 
