@@ -53,7 +53,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   showGraphSection,
   paddingX,
 }) => {
-  void setShowGoalSection;
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
@@ -73,7 +72,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const sectionTwoRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const goalListRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle section one resize and section three auto resize
   const handleResizeSectionOne: ResizeCallback = (_event, _direction, ref) => {
@@ -206,66 +205,14 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       }}
       ref={parentRef}
     >
-      {/* Additional helper components */}
-      <ErrorModal
-        show={existingError}
-        title="Drop Failed"
-        message={`The selected ${(existingItemIds.length > 1) ? "goals" : "goal"
-        } already ${existingItemIds.length > 1 ? "exist" : "exists"}.`}
-        onHide={handleGroupDropModal}
-      />
-      {/* <DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/> */}
-
-      {/* Goal List Section */}
-      <Resizable
-        handleClasses={{right: "right-handler"}}
-        enable={{right: true}}
-        style={{
-          ...defaultStyle,
-          backgroundColor: "rgb(236, 244, 244)",
-          display: showGoalSection ? "flex" : "none",
-        }}
-        size={{width: sectionOneWidth, height: "100%"}}
-        maxWidth={DEFINED_PROPORTIONS.maxWidth}
-        minWidth={DEFINED_PROPORTIONS.minWidth}
-        minHeight={DEFAULT_HEIGHT}
-        onResize={handleResizeSectionOne}
-      >
-        {/* First Panel Content */}
-        <GoalList
-          ref={goalListRef}
-          groupSelected={groupSelected} 
-          setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text}))}
-          handleDropGroupSelected={handleDropGroupSelected}
+      <div style={{display: "flex", height: "100%", marginTop: "0.5rem"}}>
+        <ErrorModal
+          show={existingError}
+          title="Drop Failed"
+          message={`The selected ${existingItemIds.length > 1 ? "goals" : "goal"
+          } already ${existingItemIds.length > 1 ? "exist" : "exists"}.`}
+          onHide={handleGroupDropModal}
         />
-      </Resizable>
-
-      {/* Cluster Hierarchy Section */}
-      <div
-        style={{
-          // ...defaultStyle,
-          width: "100%",
-          minWidth: DEFINED_PROPORTIONS.minWidth,
-          minHeight: DEFAULT_HEIGHT,
-          height: DEFAULT_HEIGHT,
-          padding: "10px",
-          backgroundColor: "rgba(35, 144, 231, 0.1)",
-          overflow: "auto",
-        }}
-        ref={sectionTwoRef}
-      >
-          <Tree existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-                setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
-                onGoalsDropped={(existingGoalIds) => {
-                  setGroupSelected([]);
-                  if (existingGoalIds.length > 0) {
-                    setExistingItemIds(existingGoalIds);
-                    setExistingError(true);
-                    hideErrorModalTimeout();
-                  }
-                }}/>
-      </div>
 
         <Resizable
           handleClasses={{right: "right-handler"}}
@@ -283,10 +230,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         >
           <GoalList
             ref={goalListRef}
-            setDraggedItem={setDraggedItem}
             groupSelected={groupSelected}
             setGroupSelected={setGroupSelected}
-            handleSynTableTree={handleSynTableTree}
+            handleSynTableTree={(treeItem, text) => dispatch(updateTextForGoalId({id: treeItem.id, text}))}
             handleDropGroupSelected={handleDropGroupSelected}
           />
         </Resizable>
@@ -303,14 +249,19 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
               backgroundColor: "rgba(35, 144, 231, 0.1)",
               overflow: "auto",
             }}
-            onDrop={handleDrop}
-            onDragOver={(event) => event.preventDefault()}
             ref={sectionTwoRef}
           >
             <Tree
-              handleSynTableTree={handleSynTableTree}
               existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
               setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
+              onGoalsDropped={(existingGoalIds) => {
+                setGroupSelected([]);
+                if (existingGoalIds.length > 0) {
+                  setExistingItemIds(existingGoalIds);
+                  setExistingError(true);
+                  hideErrorModalTimeout();
+                }
+              }}
             />
           </div>
 

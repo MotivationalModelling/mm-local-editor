@@ -155,13 +155,28 @@ const rawStringStorage = {
     serializer: (value: string) => value,
 };
 
+const normalizeIconPath = (icon: string): string => {
+    const filename = icon.split("/").filter(Boolean).pop();
+    if (!filename || !filename.toLowerCase().endsWith(".png")) return icon;
+
+    const baseUrl = import.meta.env.BASE_URL;
+    const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+    return `${normalizedBaseUrl}img/${filename}`;
+};
+
 // createInitialState throws when the stored JSON cannot be parsed or is
 // inconsistent, e.g. the tree referencing goals that are not in tabData, or a
 // value that is not the expected shape. Return null so the provider can ask the
 // user how to recover instead of crashing.
 const tryCreateInitialState = (tabData: string, treeData: string) => {
     try {
-        return createInitialState(JSON.parse(tabData), JSON.parse(treeData));
+        const parsedTabData: typeof initialTabs = JSON.parse(tabData);
+        const normalizedTabData = parsedTabData.map((tab) => ({
+            ...tab,
+            icon: normalizeIconPath(tab.icon),
+        }));
+
+        return createInitialState(normalizedTabData, JSON.parse(treeData));
     } catch (error) {
         console.error("Saved data could not be loaded:", error);
         return null;
