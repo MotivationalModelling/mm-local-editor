@@ -54,8 +54,8 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
-  // Simply store ids of all items in the tree for fast check instead of recursive search
-    const {dispatch, tree} = useFileContext();
+  // Use the flat instance index to check all hierarchy levels without recursive search.
+  const {dispatch, treeIds} = useFileContext();
 
   const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
 
@@ -131,13 +131,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
-    
-    // Filter groupSelected to get only objects whose IDs are not in treeData
+    // Filter out goals that already have an instance at any hierarchy level.
     const newItemsToAdd = groupSelected.filter(
-            // current hierachy
-            (item) => !tree.some(
-                goal => goal.id === item.id
-            )
+      (item) => !treeIds[item.id]?.length
     );
 
     // If all items are in the tree, then show the warning
