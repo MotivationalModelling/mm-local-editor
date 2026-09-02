@@ -20,13 +20,14 @@ import {
     handleContentSave,
     handleGoalBlur,
     handleGoalKeyPress,
+    hierarchyEntityName,
     isEmptyGoal,
     isTextEmpty,
 } from "./utils/GoalHint.tsx";
 import "./Tree.css";
 import {
     deleteGoalReferenceFromHierarchy,
-    hierarchyHasDuplicateGoalIdsAtSameLevel,
+    findDuplicateGoalAtSameLevel,
     setTreeData,
 } from "./context/treeDataSlice.ts";
 
@@ -441,6 +442,7 @@ const Tree: React.FC<TreeProps> = ({
     const [disableOnBlur, setDisableOnBlur] = useState(false);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [showDuplicateLevelWarning, setShowDuplicateLevelWarning] = useState(false);
+    const [duplicateLevelItemName, setDuplicateLevelItemName] = useState<"goal" | "stakeholder">("goal");
     const [collapsedIds, setCollapsedIds] = useState<Set<InstanceId>>(new Set());
     const deletingItemRef = useRef<TreeGoal | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -483,7 +485,9 @@ const Tree: React.FC<TreeProps> = ({
 
     const handleItemsChanged = (items: TreeItems<SortableTreeGoal>) => {
       const nextTree = stripTreeUiState(items);
-      if (hierarchyHasDuplicateGoalIdsAtSameLevel(nextTree)) {
+      const duplicateGoal = findDuplicateGoalAtSameLevel(nextTree);
+      if (duplicateGoal) {
+        setDuplicateLevelItemName(hierarchyEntityName(duplicateGoal.type));
         setShowDuplicateLevelWarning(true);
         return;
       }
@@ -523,7 +527,7 @@ const Tree: React.FC<TreeProps> = ({
           <ErrorModal
             show={showDuplicateLevelWarning}
             title="Move Failed"
-            message="The same goal cannot appear more than once at the same hierarchy level."
+            message={`The same ${duplicateLevelItemName} cannot appear more than once at the same hierarchy level.`}
             onHide={() => setShowDuplicateLevelWarning(false)}
           />
 

@@ -8,7 +8,7 @@ import {useFileContext} from "./context/FileProvider";
 
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, hierarchyContainsGoalId, updateTextForGoalId} from "./context/treeDataSlice.ts";
-import {isEmptyGoal} from "./utils/GoalHint.tsx";
+import {hierarchyEntityName, isEmptyGoal} from "./utils/GoalHint.tsx";
 import {TreeGoal, InstanceId} from "./types.ts";
 
 const defaultStyle = {
@@ -65,6 +65,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
     const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeGoal["id"]; instanceId: InstanceId}[]>([])
   const [existingError, setExistingError] = useState<boolean>(false);
+  const [existingItemName, setExistingItemName] = useState<"goal" | "stakeholder">("goal");
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
 
@@ -148,6 +149,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
               : tree.some((node) => node.id === draggedItem.id);
 
           if (isDuplicateGoal) {
+              setExistingItemName(hierarchyEntityName(draggedItem.type));
               setExistingItemIds([...existingItemIds, draggedItem.id]);
               setExistingError(true);
               hideErrorModalTimeout();
@@ -171,6 +173,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
 
     // If all items are in the tree, then show the warning
     if (newItemsToAdd.length === 0) {
+      setExistingItemName(
+        groupSelected.every((item) => item.type === "Who") ? "stakeholder" : "goal"
+      );
       setExistingItemIds([...groupSelected.map((item) => item.id)]);
       setExistingError(true);
       hideErrorModalTimeout();
@@ -240,7 +245,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       <ErrorModal
         show={existingError}
         title="Drop Failed"
-        message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
+        message={`The selected ${(groupSelected.length > 1) ? `${existingItemName}s` : existingItemName
         } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />

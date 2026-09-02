@@ -124,19 +124,30 @@ export const hierarchyContainsGoalId = (
     node.id === goalId || hierarchyContainsGoalId(node.children ?? [], goalId)
 ));
 
-export const hierarchyHasDuplicateGoalIdsAtSameLevel = (tree: TreeGoal[]): boolean => {
+export const findDuplicateGoalAtSameLevel = (tree: TreeGoal[]): TreeGoal | undefined => {
     const goalIdsAtThisLevel = new Set<TreeGoal["id"]>();
 
     for (const node of tree) {
         if (goalIdsAtThisLevel.has(node.id)) {
-            return true;
+            return node;
         }
 
         goalIdsAtThisLevel.add(node.id);
     }
 
-    return tree.some((node) => hierarchyHasDuplicateGoalIdsAtSameLevel(node.children ?? []));
+    for (const node of tree) {
+        const duplicateGoal = findDuplicateGoalAtSameLevel(node.children ?? []);
+        if (duplicateGoal) {
+            return duplicateGoal;
+        }
+    }
+
+    return undefined;
 };
+
+export const hierarchyHasDuplicateGoalIdsAtSameLevel = (tree: TreeGoal[]): boolean => (
+    findDuplicateGoalAtSameLevel(tree) !== undefined
+);
 
 const hierarchyHasDuplicateDoGoalIds = (
     tree: TreeGoal[],

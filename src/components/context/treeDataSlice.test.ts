@@ -12,6 +12,7 @@ import {
     createTreeGoalNode,
     deleteGoalFromGoalList,
     deleteGoalReferenceFromHierarchy,
+    findDuplicateGoalAtSameLevel,
     findTreeGoalByInstanceId,
     hierarchyContainsGoalId,
     hierarchyHasDuplicateGoalIdsAtSameLevel,
@@ -319,6 +320,7 @@ describe('hierarchyHasDuplicateGoalIdsAtSameLevel', () => {
         }];
 
         expect(hierarchyHasDuplicateGoalIdsAtSameLevel(tree)).toBe(true);
+        expect(findDuplicateGoalAtSameLevel(tree)?.type).toBe("Who");
     });
 
     it('allows the same reference under different parents', () => {

@@ -1,3 +1,9 @@
+import {Label} from "../types.ts";
+
+export const hierarchyEntityName = (type: Label): "goal" | "stakeholder" => (
+  type === "Who" ? "stakeholder" : "goal"
+);
+
 export function isEmptyGoal(goal: { content: string }): boolean {
   return goal.content.trim() === "";
 }

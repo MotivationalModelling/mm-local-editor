@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 
 import {decorateTreeItems, stripTreeUiState} from "./Tree.tsx";
 import {TreeGoal} from "./types.ts";
+import {hierarchyEntityName} from "./utils/GoalHint.tsx";
 
 const collectDragIds = (items: ReturnType<typeof decorateTreeItems>): Array<string | number> => (
     items.flatMap((item) => [item.id, ...collectDragIds(item.children ?? [])])
@@ -34,5 +35,12 @@ describe("hierarchy drag identifiers", () => {
         expect(collectDragIds(sortableItems)).toEqual(["1-1", "2-1", "2-2"]);
         expect(new Set(collectDragIds(sortableItems)).size).toBe(3);
         expect(stripTreeUiState(sortableItems)).toEqual(tree);
+    });
+});
+
+describe("hierarchy duplicate entity names", () => {
+    it("calls Who goals stakeholders", () => {
+        expect(hierarchyEntityName("Who")).toBe("stakeholder");
+        expect(hierarchyEntityName("Do")).toBe("goal");
     });
 });
