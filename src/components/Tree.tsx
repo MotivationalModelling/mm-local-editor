@@ -131,6 +131,8 @@ const Tree: React.FC<TreeProps> = ({
       setExistingGoalReferenceInstanceId([]);
     };
 
+    const visibleItems = tree.getItems().filter((item) => goalForId(item.getId()));
+
     return (
         <div {...tree.getContainerProps("Goal hierarchy")}
              className="tree"
@@ -140,7 +142,7 @@ const Tree: React.FC<TreeProps> = ({
                           message="You are going to delete a goal with children goals, are you sure?"
                           onHide={handleDeleteCancel}
                           onConfirm={deleteItem}/>
-            {tree.getItems().map((item) => (
+            {visibleItems.map((item) => (
                 <TreeRow key={item.getId()}
                          item={item}
                          editingItemId={editingItemId}
@@ -148,7 +150,7 @@ const Tree: React.FC<TreeProps> = ({
                          indentationWidth={INDENTATION_WIDTH}
                          onDeleteItem={handleDeleteItem}/>
             ))}
-            {tree.getItems().length === 0 && (
+            {visibleItems.length === 0 && (
                 <div className="tree-empty">Drag goals here to build the hierarchy</div>
             )}
             <div style={tree.getDragLineStyle()} className="dragline"/>
