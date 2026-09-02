@@ -30,8 +30,8 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
-import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
+import {getCellNumericIds, removeGoalRelationshipLabels, validateInstanceId} from "../utils/GraphUtils";
+import {connectGoalInstances, removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
@@ -359,6 +359,29 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 numericCellIds.forEach((instanceId, i) => {
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
+                            }
+                        }
+                        else if (change.constructor.name === "TerminalChange" && !isRenderingRef.current) {
+                            const edge = change.cell as Cell;
+                            const sourceId = edge.source?.getId();
+                            const targetId = edge.target?.getId();
+                            if (!sourceId || !targetId) continue;
+
+                            removeGoalRelationshipLabels(graph, edge);
+
+                            try {
+                                const sourceRefs = parseGoalRefId(sourceId);
+                                const targetRefs = parseGoalRefId(targetId);
+                                // A combined non-functional vertex represents several goals and
+                                // therefore cannot express one unambiguous Tree relationship.
+                                if (sourceRefs.length === 1 && targetRefs.length === 1) {
+                                    dispatch(connectGoalInstances({
+                                        sourceInstanceId: sourceRefs[0].instanceId,
+                                        targetInstanceId: targetRefs[0].instanceId,
+                                    }));
+                                }
+                            } catch (connectionError) {
+                                console.warn("Could not persist edge connection in the goal tree", connectionError);
                             }
                         }
                     }

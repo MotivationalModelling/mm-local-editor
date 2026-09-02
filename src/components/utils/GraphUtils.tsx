@@ -1,6 +1,6 @@
 import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
-import {Graph, Cell} from '@maxgraph/core';
+import {Graph, Cell, CellStateStyle, Geometry, Point} from '@maxgraph/core';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -10,6 +10,45 @@ export function getSymbolKeyByType(type: string): SymbolKey | undefined {
 
 export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined => {
     return Object.values(SYMBOL_CONFIGS).find(config => config.shape === shape);
+};
+
+/** Adds direction labels that stay anchored near the two ends of an edge. */
+export const addGoalRelationshipLabels = (graph: Graph, edge: Cell): void => {
+    const style: CellStateStyle = {
+        fillColor: "none",
+        strokeColor: "none",
+        fontColor: "#333333",
+        fontSize: 11,
+        fontStyle: 1,
+        editable: false,
+        movable: false,
+        resizable: false,
+    };
+
+    const addLabel = (text: "Parent" | "Child", position: number) => {
+        // Build the relative geometry before adding the label to the model.
+        // Changing `relative` after insertVertex can leave the first render using
+        // panel coordinates, which makes the Child label jump to the boundary.
+        const geometry = new Geometry(position, 0, 0, 0);
+        geometry.relative = true;
+        geometry.offset = new Point(0, -16);
+
+        const label = new Cell(text, geometry, style);
+        label.setVertex(true);
+        label.setConnectable(false);
+        graph.addCell(label, edge);
+    };
+
+    addLabel("Parent", -0.85);
+    addLabel("Child", 0.85);
+};
+
+/** Removes the temporary direction hints once both edge ends are connected. */
+export const removeGoalRelationshipLabels = (graph: Graph, edge: Cell): void => {
+    const labels = edge.getChildren().filter((child) => (
+        child.getValue() === "Parent" || child.getValue() === "Child"
+    ));
+    if (labels.length > 0) graph.removeCells(labels, false);
 };
 
 /**

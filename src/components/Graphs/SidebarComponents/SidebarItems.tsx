@@ -1,7 +1,7 @@
 import {useEffect, useRef} from "react";
 import {Graph, MaxToolbar, Cell, CellStateStyle, Geometry, Point, gestureUtils} from "@maxgraph/core";
 
-import {getSymbolConfigByShape} from "../../utils/GraphUtils";
+import {addGoalRelationshipLabels, getSymbolConfigByShape} from "../../utils/GraphUtils";
 import {useFileContext} from "../../context/FileProvider.tsx";
 import {Label, newTreeGoal} from "../../types.ts";
 import {addGoal, addGoalToTree} from "../../context/treeDataSlice.ts";
@@ -98,7 +98,8 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
                 false
             );
             goal.parent = graph.getDefaultParent();
-            graph.importCells([goal], 0, 0, cell);
+            const [edge] = graph.importCells([goal], 0, 0, cell);
+            if (edge) addGoalRelationshipLabels(graph, edge);
         }
     };
 
