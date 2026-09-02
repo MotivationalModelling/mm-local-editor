@@ -551,7 +551,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob
         );
         rootGoal = rootGoalWrapper.value;
-        layoutFunctions(graph, rootGoal);
+        layoutFunctions(graph);
         restoreSavedPositions(graph, cluster.ClusterGoals);
 
         // render non-functional goals
