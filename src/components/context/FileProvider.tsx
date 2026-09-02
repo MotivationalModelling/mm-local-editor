@@ -1,8 +1,13 @@
 import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "../utils/useLocalStorage.tsx"
+import {useLocalStorage} from "usehooks-ts";
+
+export type {JSONData} from "../modelJson.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -18,12 +23,6 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 // Previously the code to manage and update these data structures was all done
 // in-line and it was very hard to maintain and harder to test.
 
-
-// Type of the json data
-export type JSONData = {
-    tabData: TabContent[];
-    treeData: TreeGoal[];
-};
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
@@ -144,28 +143,57 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
     };
 };
 
+// The two persisted keys are kept as raw JSON strings (see rawStringStorage)
+// so an unparseable value is neither silently discarded nor overwritten on
+// load: the provider can surface it and leave it intact for inspection.
+const rawStringStorage = {
+    deserializer: (raw: string) => raw,
+    serializer: (value: string) => value,
+};
+
+// createInitialState throws when the stored JSON cannot be parsed or is
+// inconsistent, e.g. the tree referencing goals that are not in tabData, or a
+// value that is not the expected shape. Return null so the provider can ask the
+// user how to recover instead of crashing.
+const tryCreateInitialState = (tabData: string, treeData: string) => {
+    try {
+        return createInitialState(JSON.parse(tabData), JSON.parse(treeData));
+    } catch (error) {
+        console.error("Saved data could not be loaded:", error);
+        return null;
+    }
+};
+
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     // Load from localStorage
-    const [storedTreeData, setStoredTreeData] = useLocalStorage<TreeGoal[]>(
+    const [storedTreeData, setStoredTreeData] = useLocalStorage<string>(
         LocalStorageType.TREE,
-        []
+        "[]",
+        rawStringStorage
     );
-    const [tabData, setTabData] = useLocalStorage<typeof initialTabs>(
+    const [tabData, setTabData] = useLocalStorage<string>(
         LocalStorageType.TAB,
-        initialTabs
+        JSON.stringify(initialTabs),
+        rawStringStorage
     );
 
-    const initialState = createInitialState(tabData, storedTreeData);
-    const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
+    const initialState = tryCreateInitialState(tabData, storedTreeData);
+    const corrupted = initialState === null;
+    const [abandoned, setAbandoned] = useState(false);
+    const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState ?? createInitialState());
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
     useEffect(() => {
         console.log("FileProvider state updated:", state);
     }, [state]);
 
-    // Listen to changes in state and write back to localStorage
+    // Listen to changes in state and write back to localStorage. While the
+    // corruption modal is up, the stored data must stay untouched so the
+    // user can still choose to inspect it.
     useEffect(() => {
-        setStoredTreeData(state.tree);
+        if (corrupted) return;
+
+        setStoredTreeData(JSON.stringify(state.tree));
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
         const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
@@ -174,8 +202,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 
-        setTabData(tabsArray);
-    }, [state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
+        setTabData(JSON.stringify(tabsArray));
+    }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
 
@@ -185,6 +213,39 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("Tree data:", state.tree);
         console.log("Tab data:", computedTabData);
     }, [state.tree, computedTabData]);
+
+    const revertToDefault = () => {
+        setTabData(JSON.stringify(initialTabs));
+        setStoredTreeData("[]");
+    };
+
+    if (corrupted) {
+        return (abandoned) ? (
+            <Alert variant="warning" className="m-5">
+                Editing is paused and your saved data has been left unchanged. You can
+                inspect or repair it in the browser developer tools, then reload the page.
+            </Alert>
+        ) : (
+            <Modal show centered backdrop="static" keyboard={false}>
+                <Modal.Header>
+                    <Modal.Title>Saved data is corrupted</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Your saved model could not be loaded. You can abandon editing and
+                    leave the saved data untouched for inspection, or revert to the
+                    default state, replacing the saved data.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setAbandoned(true)}>
+                        Abandon
+                    </Button>
+                    <Button variant="warning" onClick={revertToDefault} style={{backgroundColor: "red"}}>
+                        Revert to default
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        );
+    }
 
     return (
         <FileContext.Provider value={{
