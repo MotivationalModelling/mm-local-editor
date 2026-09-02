@@ -639,9 +639,7 @@ export const layoutFunctions = (graph: Graph) => {
     const rootGoals = graph.getChildVertices(parent).filter((goal) => (
         graph.getIncomingEdges(goal, null).length === 0
     ));
-    let nextRootX = graph.gridSize;
-
-    rootGoals.forEach((rootGoal) => {
+    rootGoals.reduce((nextRootX, rootGoal) => {
         const layout = new GoalModelLayout(
             graph,
             FUNCTIONAL_GOALS_SPACING.vertical,
@@ -659,16 +657,16 @@ export const layoutFunctions = (graph: Graph) => {
         };
         collectSubtree(rootGoal);
 
-        const goals = Array.from(subtree);
+        const goals = [...subtree];
         const bounds = graph.getBoundingBoxFromGeometry(goals);
-        if (!bounds) return;
+        if (!bounds) return nextRootX;
 
         const offsetX = nextRootX - bounds.x;
         graph.batchUpdate(() => {
             goals.forEach((goal) => graph.translateCell(goal, offsetX, 0));
         });
-        nextRootX += bounds.width + FUNCTIONAL_GOALS_SPACING.horizonal;
-    });
+        return nextRootX + bounds.width + FUNCTIONAL_GOALS_SPACING.horizonal;
+    }, graph.gridSize);
 };
 
 /**
