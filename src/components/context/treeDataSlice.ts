@@ -3,9 +3,9 @@ import {
     createTabDataFromTabs,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {createInstanceId, InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
+import {normalizeInstanceId, parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)
@@ -129,19 +129,35 @@ const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId
 const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): InstanceId => {
     // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
-    return `${goalId}-${maxSuffix}`
+    return createInstanceId(goalId, maxSuffix)
 };
+
+const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({
+    ...goal,
+    // Upgrade IDs from saved models before they enter application state.
+    instanceId: normalizeInstanceId(goal.instanceId),
+    ...(goal.children === undefined
+        ? {}
+        : {children: normalizeTreeInstanceIds(goal.children)}),
+}));
+
+const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((tab) => ({
+    ...tab,
+    rows: normalizeTreeInstanceIds(tab.rows),
+}));
 
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeGoal[] = []) => {
-    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
+    const normalizedTabData = normalizeTabInstanceIds(tabData);
+    const normalizedTreeData = normalizeTreeInstanceIds(treeData);
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(normalizedTabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
     return {
         tabs,
         goals,
-        tree: treeData,
-        treeIds: createTreeIdsFromTreeData(goals, treeData),
+        tree: normalizedTreeData,
+        treeIds: createTreeIdsFromTreeData(goals, normalizedTreeData),
         showLineBetweenNonFunctionalGoals: true,
     };
 };
@@ -155,6 +171,15 @@ export const findTreeGoalByInstanceId = (nodes: TreeGoal[], instanceId: Instance
         if (matchingNode) {
             return matchingNode;
         }
+    }
+    return undefined;
+};
+
+export const findTreeGoalById = (nodes: TreeGoal[], id: TreeGoal["id"]): TreeGoal | undefined => {
+    for (const node of nodes) {
+        if (node.id === id) return node;
+        const matchingNode = findTreeGoalById(node.children ?? [], id);
+        if (matchingNode) return matchingNode;
     }
     return undefined;
 };
@@ -201,6 +226,33 @@ export const treeDataSlice = createSlice({
         setTreeData: (state, action: PayloadAction<TreeGoal[]>) => {
             state.tree = action.payload;
         },
+        setChildrenOfNodeId: (state, action: PayloadAction<{id: TreeGoal["id"], children: TreeGoal[]}>) => {
+            const goal = state.goals[action.payload.id];
+
+            goal.children = action.payload.children;
+        },
+        moveTreeItem: (state, action: PayloadAction<{
+            id: TreeGoal["id"],
+            parentId: TreeGoal["id"] | null,
+            insertionIndex?: number
+        }>) => {
+            const item = findTreeGoalById(state.tree, action.payload.id);
+            const parent = action.payload.parentId === null
+                ? null
+                : findTreeGoalById(state.tree, action.payload.parentId);
+            if (!item || (action.payload.parentId !== null && (
+                !parent || findTreeGoalById([item], action.payload.parentId)
+            ))) return;
+
+            state.tree = removeItemIdFromTree(state.tree, item.id, item.instanceId);
+            const children = action.payload.parentId === null
+                ? state.tree
+                : findTreeGoalById(state.tree, action.payload.parentId)?.children;
+            if (!children) return;
+
+            const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
+            children.splice(insertionIndex, 0, item);
+        },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
             // Create a TreeGoal node with generated instanceId
             const instanceId = generateInstanceId(state.treeIds, action.payload.id);
@@ -215,6 +267,25 @@ export const treeDataSlice = createSlice({
                 children: [],
             };
             state.tree.push(node);
+        },
+        addGoalsToTree: (state, action: PayloadAction<{
+            goalIds: TreeGoal["id"][],
+            parentId: TreeGoal["id"] | null,
+            insertionIndex?: number
+        }>) => {
+            let children = state.tree;
+            if (action.payload.parentId !== null) {
+                const parent = findTreeGoalById(state.tree, action.payload.parentId);
+                if (!parent) return;
+                parent.children ??= [];
+                children = parent.children;
+            }
+
+            const newItems = action.payload.goalIds
+                .filter((id) => state.goals[id] && (state.treeIds[id]?.length ?? 0) === 0)
+                .map((id) => createTreeGoalNode(state.treeIds, state.goals[id]));
+            const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
+            children.splice(insertionIndex, 0, ...newItems);
         },
         // remove goal(s) and its children from canvas
         removeGoalIdFromTree: (state, action: PayloadAction<{
@@ -304,7 +375,7 @@ export const treeDataSlice = createSlice({
     extraReducers: (builder) => {
         // XXX after every action, update copy in localstorage
         builder
-            .addMatcher(() => true, (state) => {
+            .addMatcher(() => true, () => {
                 // onChange.?(state)
             })
     },
@@ -316,8 +387,9 @@ export const treeDataSlice = createSlice({
 });
 
 export const {
-    addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList,
-    updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId,
-    setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree,
+    deleteGoalReferenceFromHierarchy,
+    deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
+    updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
 } = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;

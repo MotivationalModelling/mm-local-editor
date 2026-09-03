@@ -1,5 +1,6 @@
 import {useState, useEffect} from "react";
 import FormControl from "react-bootstrap/FormControl";
+import {CellEditorHandler} from "@maxgraph/core";
 import {useGraph} from "../context/GraphContext";
 
 const ScaleTextButton = () => {
@@ -47,16 +48,13 @@ const ScaleTextButton = () => {
         if (!graph || newFontSize < 8 || newFontSize > 40) return;
 
         const cells = graph.getSelectionCells();
-        graph.getDataModel().beginUpdate();
-        try {
-            cells.forEach((cell) => {
-                const style = graph.getCellStyle(cell);
-                style.fontSize = newFontSize;
-                graph.getDataModel().setStyle(cell, style);
-            });
-        } finally {
-            graph.getDataModel().endUpdate();
-            graph.refresh();
+        graph.setCellStyles("fontSize", newFontSize, cells);
+
+        const cellEditor = graph.getPlugin<CellEditorHandler>("CellEditorHandler");
+        const editorElement = graph.container.querySelector<HTMLElement>(".mxCellEditor");
+        if (cells.length > 0 && graph.isEditing() && editorElement) {
+            editorElement.style.fontSize = `${newFontSize}px`;
+            cellEditor.resize();
         }
     };
 

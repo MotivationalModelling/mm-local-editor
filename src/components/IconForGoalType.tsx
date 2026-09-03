@@ -24,12 +24,19 @@ const iconFromType = (type: Label) => {
     throw Error(`iconFromType: Unknown type "${type}"`);
 };
 
-const IconForGoalType: FC<{type: Label}> = ({type}) => (
+interface IconForGoalTypeProps {
+    type: Label
+    className?: string
+}
+
+const IconForGoalType: FC<IconForGoalTypeProps> = ({type, className="ms-2 me-1"}) => (
     <img src={iconFromType(type)}
          alt={`${type} icon`}
-         className="ms-2 me-1"
+         className={className}
          style={{
              height: type === "Who" ? "30px" : "20px",
+             width: "30px",
+             objectFit: "contain"
          }}/>
 );
 
