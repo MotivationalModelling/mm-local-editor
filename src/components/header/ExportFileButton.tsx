@@ -1,7 +1,6 @@
 import {useState} from "react";
 import {Graph} from "@maxgraph/core";
 import {Canvg} from 'canvg';
-import * as d3 from 'd3';
 import Dropdown from "react-bootstrap/Dropdown";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
@@ -11,6 +10,7 @@ import {useGraph} from "../context/GraphContext";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import {prepareSvgForPng} from "./SvgExportUtils";
 
 const PNG_EXPORT_SCALE = 3;
 
@@ -142,17 +142,12 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
             return;
         }
 
-        // Append a white background rect to the SVG
-        // Use D3 to select the SVG and append a white background rect
-        const svg = d3.select(svgElement);
-        svg.insert("rect", ":first-child")
-            .attr("width", "100%")
-            .attr("height", "100%")
-            .attr("fill", "white");
+        // Prepare a separate SVG so PNG-only changes never alter the live graph.
+        const exportSvg = prepareSvgForPng(svgElement);
 
         // Serialize the SVG element to a string
         const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svgElement);
+        const svgString = serializer.serializeToString(exportSvg);
 
         // Create a canvas element
         const canvas = document.createElement('canvas');

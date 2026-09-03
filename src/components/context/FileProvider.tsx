@@ -1,4 +1,4 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useMemo, useReducer, useState} from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
@@ -208,6 +208,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const [xmlData, setXmlData] = useState("");
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
+    // Keep the graph input stable during provider renders that do not change the model tree.
+    const computedCluster = useMemo(() => convertTreeDataToClusters(state.tree), [state.tree]);
 
     useEffect(() => {
         console.log("Tree data:", state.tree);
@@ -253,7 +255,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             dispatch,
             treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),
+            cluster: computedCluster,
             xmlData,
             setXmlData,
             jsonFileHandle,
