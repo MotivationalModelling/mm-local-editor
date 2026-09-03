@@ -158,7 +158,7 @@ describe('#createTreeIdsFromTreeData', () => {
         const treeIds = createTreeIdsFromTreeData(goals, treeData);
 
         expect(Object.keys(treeIds)).toEqual([`${g1.id}`]);
-        expect(treeIds[g1.id]).toEqual(["1-0"]);
+        expect(treeIds[g1.id]).toEqual(["1:0"]);
     });
     it('should raise an exception when a node is in the tree but not in goals', () => {
         const g1 = newTreeGoal({type: "Do", id: 1});
@@ -174,8 +174,8 @@ describe('#createTreeIdsFromTreeData', () => {
         const treeIds = createTreeIdsFromTreeData(goals, treeData);
 
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
-        expect(treeIds[g1.id]).toEqual(["1-0"]);
-        expect(treeIds[g2.id]).toEqual(["2-0"]);
+        expect(treeIds[g1.id]).toEqual(["1:0"]);
+        expect(treeIds[g2.id]).toEqual(["2:0"]);
     });
     it('should handle nested nodes', () => {
         const g2 = newTreeGoal({type: "Do", id: 2});
@@ -185,8 +185,8 @@ describe('#createTreeIdsFromTreeData', () => {
         const treeIds = createTreeIdsFromTreeData(goals, treeData);
 
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
-        expect(treeIds[g1.id]).toEqual(["1-0"]);
-        expect(treeIds[g2.id]).toEqual(["2-0"]);
+        expect(treeIds[g1.id]).toEqual(["1:0"]);
+        expect(treeIds[g2.id]).toEqual(["2:0"]);
     });
 });
 
@@ -197,7 +197,7 @@ describe('corrupted localStorage recovery', () => {
     const seededTabs = JSON.stringify(initialTabs);
 
     // The module-level renderHook provider above stays mounted and would
-    // sync to the corrupted storage via use-local-storage's storage events,
+    // sync to the corrupted storage via usehooks-ts's storage events,
     // rendering a second copy of the recovery modal.
     beforeAll(() => cleanup());
 

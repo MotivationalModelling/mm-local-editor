@@ -6,6 +6,7 @@
 import {beforeAll, beforeEach, describe, expect, it} from "vitest";
 import {
     addGoal,
+    addGoalsToTree,
     addGoalToTab,
     addGoalToTree,
     createInitialState,
@@ -13,6 +14,7 @@ import {
     deleteGoalFromGoalList,
     deleteGoalReferenceFromHierarchy,
     findTreeGoalByInstanceId,
+    moveTreeItem,
     removeItemIdFromTree,
     reset,
     selectGoalsForLabel,
@@ -93,7 +95,7 @@ describe('treeDataSlice', () => {
 
         expect(state2.goals[goal.id].content).toEqual(text);
     });
-    it('should update text of goal in tree by instanceId (canvas double-click edit)', () => {
+    it('should update text of goal by instanceId (canvas double-click edit)', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
         const newText = "Updated via canvas";
 
@@ -110,10 +112,6 @@ describe('treeDataSlice', () => {
 
         // Verify goals record is updated
         expect(state.goals[goal.id].content).toEqual(newText);
-
-        // Verify tree node is also updated
-        const treeNode = findTreeGoalByInstanceId(state.tree, instanceId);
-        expect(treeNode?.content).toEqual(newText);
     });
     it('should add a goal to correct tab', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
@@ -152,6 +150,59 @@ describe('treeDataSlice', () => {
         
         const state = treeDataSlice.reducer(initialState, addGoalToTree(goal));
         expect(Object.keys(state.treeIds)).toContain(String(goal.id));
+    });
+    it('should generate multiple instance IDs for a negative goal id', () => {
+        const goal = initialState.goals[-5];
+
+        const state1 = treeDataSlice.reducer(initialState, addGoalToTree(goal));
+        const state2 = treeDataSlice.reducer(state1, addGoalToTree(goal));
+
+        expect(state2.treeIds[goal.id]).toEqual(["-5:1", "-5:2"]);
+    });
+    it('should upgrade legacy instance IDs when creating state', () => {
+        // This cast represents untyped JSON/local-storage data created by an older version.
+        const legacyGoal = {...newTreeGoal({id: -5, type: "Who"}), instanceId: "-5-1"} as unknown as TreeGoal;
+        const legacyTabs = [{label: "Who" as const, icon: "", rows: [legacyGoal]}];
+
+        const state = createInitialState(legacyTabs, [legacyGoal]);
+
+        expect(state.goals[-5].instanceId).toBe("-5:1");
+        expect(state.goals[-5]).not.toHaveProperty("children");
+        expect(state.tree[0].instanceId).toBe("-5:1");
+        expect(state.treeIds[-5]).toEqual(["-5:1"]);
+    });
+    it('should add goals at the Headless Tree drop target', () => {
+        const goal = newTreeGoal({id: 2, type: "Do", content: "Child"});
+        const parent = newTreeGoal({id: 1, type: "Do", children: []});
+        const state = treeDataSlice.reducer(
+            {...initialState, goals: {...initialState.goals, [goal.id]: goal}, tree: [parent]},
+            addGoalsToTree({goalIds: [goal.id], parentId: parent.id, insertionIndex: 0}),
+        );
+
+        expect(state.tree[0].children?.map((item) => item.id)).toEqual([goal.id]);
+    });
+    it('should move a nested goal using its goal id', () => {
+        const child = newTreeGoal({id: 2, type: "Do", children: []});
+        const source = newTreeGoal({id: 1, type: "Do", children: [child]});
+        const target = newTreeGoal({id: 3, type: "Do", children: []});
+        const state = treeDataSlice.reducer(
+            {...initialState, tree: [source, target]},
+            moveTreeItem({id: 2, parentId: 3, insertionIndex: 0}),
+        );
+
+        expect(state.tree[0].children).toEqual([]);
+        expect(state.tree[1].children?.map((item) => item.id)).toEqual([2]);
+    });
+    it('should not duplicate a goal moved within the same parent', () => {
+        const first = newTreeGoal({id: 2, type: "Do", children: []});
+        const second = newTreeGoal({id: 3, type: "Do", children: []});
+        const parent = newTreeGoal({id: 1, type: "Do", children: [first, second]});
+        const state = treeDataSlice.reducer(
+            {...initialState, tree: [parent]},
+            moveTreeItem({id: 2, parentId: 1, insertionIndex: 0}),
+        );
+
+        expect(state.tree[0].children?.map((item) => item.id)).toEqual([2, 3]);
     });
     it('should remove a goal\'s reference from the tree', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
@@ -227,21 +278,21 @@ describe('findTreeGoalByInstanceId', () => {
     ];
     it('should handle an empty tree', () => {
         const tree: TreeGoal[] = [];
-        const instanceId: InstanceId = "2-3";
+        const instanceId: InstanceId = "2:3";
         expect(findTreeGoalByInstanceId(tree, instanceId)).toBeUndefined();
     });
     it('should return the tree node with correct Id', () => {
-        const targetInstanceId: InstanceId = "1-1";
+        const targetInstanceId: InstanceId = "1:1";
         const targetId = 1;
         expect(findTreeGoalByInstanceId(testTree, targetInstanceId)?.id).toBe(targetId);
     });
     it('should return the correct tree node in children level', () => {
-        const targetInstanceId: InstanceId = "3-1";
+        const targetInstanceId: InstanceId = "3:1";
         const targetId = 3;
         expect(findTreeGoalByInstanceId(testTree, targetInstanceId)?.id).toBe(targetId);
     });
     it('should return undefined if node not found', () => {
-        const nonExistentId: InstanceId = "999-999";
+        const nonExistentId: InstanceId = "999:999";
         expect(findTreeGoalByInstanceId(testTree, nonExistentId)).toBeUndefined();
     });
 });

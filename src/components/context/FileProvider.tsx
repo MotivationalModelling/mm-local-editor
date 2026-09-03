@@ -5,13 +5,9 @@ import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorageImport from "use-local-storage";
+import {useLocalStorage} from "usehooks-ts";
 
-// Support both CommonJS and ES module default exports.
-const useLocalStorage = (
-    (useLocalStorageImport as unknown as {default?: typeof useLocalStorageImport}).default ??
-    useLocalStorageImport
-);
+export type {JSONData} from "../modelJson.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -27,12 +23,6 @@ const useLocalStorage = (
 // Previously the code to manage and update these data structures was all done
 // in-line and it was very hard to maintain and harder to test.
 
-
-// Type of the json data
-export type JSONData = {
-    tabData: TabContent[];
-    treeData: TreeGoal[];
-};
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
@@ -157,8 +147,8 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
 // so an unparseable value is neither silently discarded nor overwritten on
 // load: the provider can surface it and leave it intact for inspection.
 const rawStringStorage = {
-    parser: (raw: string) => raw,
-    serializer: (value: string | undefined) => value ?? "",
+    deserializer: (raw: string) => raw,
+    serializer: (value: string) => value,
 };
 
 // createInitialState throws when the stored JSON cannot be parsed or is
