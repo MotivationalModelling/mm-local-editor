@@ -1,11 +1,17 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useMemo, useReducer, useState} from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import useLocalStorage from "use-local-storage";
+import useLocalStorageImport from "use-local-storage";
+
+// Support both CommonJS and ES module default exports.
+const useLocalStorage = (
+    (useLocalStorageImport as unknown as {default?: typeof useLocalStorageImport}).default ??
+    useLocalStorageImport
+);
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -212,6 +218,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const [xmlData, setXmlData] = useState("");
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
+    // Keep the graph input stable during provider renders that do not change the model tree.
+    const computedCluster = useMemo(() => convertTreeDataToClusters(state.tree), [state.tree]);
 
     useEffect(() => {
         console.log("Tree data:", state.tree);
@@ -257,7 +265,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             dispatch,
             treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),
+            cluster: computedCluster,
             xmlData,
             setXmlData,
             jsonFileHandle,

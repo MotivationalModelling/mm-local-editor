@@ -1,5 +1,6 @@
 import {
     Cell,
+    CellEditorHandler,
     CellStyle,
     Client,
     DragSource,
@@ -37,6 +38,7 @@ import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstance
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
+import {captureNonFunctionalGeometry, restoreNonFunctionalGeometry} from "./GraphGeometryUtils";
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
@@ -59,6 +61,7 @@ const isListLabelCell = (cell: Cell) => LIST_LABEL_SHAPES.has(cell.getStyle().sh
 const configureListLabels = (graph: Graph) => {
     const getLabel = graph.getLabel.bind(graph);
     const isHtmlLabel = graph.isHtmlLabel.bind(graph);
+    const cellEditor = graph.getPlugin<CellEditorHandler>("CellEditorHandler");
 
     graph.getLabel = (cell) => {
         const label = getLabel(cell);
@@ -66,6 +69,39 @@ const configureListLabels = (graph: Graph) => {
         return label && isListLabelCell(cell) ? makeHtmlListLabel(label.split(",")) : label;
     };
     graph.isHtmlLabel = (cell) => isListLabelCell(cell) || isHtmlLabel(cell);
+
+    if (cellEditor) {
+        const getInitialValue = cellEditor.getInitialValue.bind(cellEditor);
+        const getCurrentValue = cellEditor.getCurrentValue.bind(cellEditor);
+        const startEditing = cellEditor.startEditing.bind(cellEditor);
+
+        // Match the list presentation while editing without changing the stored comma-separated value.
+        cellEditor.getInitialValue = (state, trigger) => {
+            if (!isListLabelCell(state.cell)) return getInitialValue(state, trigger);
+
+            return makeHtmlListLabel(graph.getEditingValue(state.cell, trigger).split(","));
+        };
+        cellEditor.getCurrentValue = (state) => {
+            if (isListLabelCell(state.cell) && cellEditor.textarea) {
+                const items = Array.from(cellEditor.textarea.querySelectorAll("li"));
+
+                if (items.length > 0) {
+                    return items.map(item => item.textContent?.trim() ?? "").join(",");
+                }
+            }
+
+            return getCurrentValue(state);
+        };
+        cellEditor.startEditing = (cell, trigger = null) => {
+            startEditing(cell, trigger);
+
+            if (isListLabelCell(cell) && cellEditor.textarea) {
+                // Keep the temporary editor inside the shape-specific label bounds.
+                cellEditor.textarea.style.boxSizing = "border-box";
+                cellEditor.textarea.style.overflow = "auto";
+            }
+        };
+    }
 };
 
 // Extracted outside component - no useCallback needed, better for testing
@@ -86,6 +122,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     treeIdsRef.current = treeIds;
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
+    const editedNonFunctionalCellIdsRef = useRef(new Set<string>());
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -390,6 +427,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
+                                const cellId = cell.getId();
+                                if (cellId?.startsWith("Nonfunctional-")) {
+                                    editedNonFunctionalCellIdsRef.current.add(cellId);
+                                }
                                 numericCellIds.forEach((instanceId, i) => {
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
@@ -535,6 +576,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const renderGraph = useCallback(() => {
         if (!graph) return;
+        const nonFunctionalGeometry = captureNonFunctionalGeometry(graph);
+        const editedNonFunctionalCellIds = new Set(editedNonFunctionalCellIdsRef.current);
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
         let rootGoal: Cell | null = null;
@@ -590,8 +633,15 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob,
             showLineBetweenNonFunctionalGoals
         );
+        restoreNonFunctionalGeometry(
+            graph,
+            nonFunctionalGeometry,
+            editedNonFunctionalCellIds,
+            VERTEX_FONT.size * 0.25
+        );
 
         graph.getDataModel().endUpdate();
+        editedNonFunctionalCellIdsRef.current.clear();
         isRenderingRef.current = false;
     }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
 

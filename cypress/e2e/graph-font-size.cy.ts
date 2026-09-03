@@ -7,7 +7,7 @@ describe('Graph Font Size UI Tests', () => {
   });
 
   it('should not display duplicate text when font size changes during editing', () => {
-    cy.get('#graphContainer text').contains('Feel').then(($text) => {
+    cy.contains('#graphContainer li', 'Feel').then(($text) => {
       cy.wrap(parseFloat(getComputedStyle($text[0]).fontSize)).as('initialFontSize');
     });
     cy.get('#graphContainer').contains('Feel').dblclick({force: true});
@@ -19,7 +19,7 @@ describe('Graph Font Size UI Tests', () => {
       .should('have.value', '24');
 
     cy.get('.mxCellEditor').should('be.visible');
-    cy.get('#graphContainer text').contains('Feel').should('not.be.visible');
+    cy.contains('#graphContainer li', 'Feel').should('not.be.visible');
     cy.get('.mxCellEditor').should('have.css', 'font-size', '24px');
 
     cy.contains('Font size').parent().find('input[type="number"]')
@@ -30,12 +30,14 @@ describe('Graph Font Size UI Tests', () => {
     cy.get('.mxCellEditor').type('{esc}');
     cy.get('.mxCellEditor').should('not.exist');
     cy.get('@initialFontSize').then((initialFontSize) => {
-      cy.get('#graphContainer text').contains('Feel')
-        .should('be.visible')
-        .and(($text) => {
-          const updatedFontSize = parseFloat(getComputedStyle($text[0]).fontSize);
-          expect(updatedFontSize).to.be.closeTo(Number(initialFontSize) * 25 / 16, 0.1);
-        });
+      cy.get('#graphContainer li').should(($items) => {
+        const feelItems = Array.from($items)
+          .filter((item) => item.textContent?.trim() === 'Feel');
+
+        expect(feelItems).to.have.length(1);
+        const updatedFontSize = parseFloat(getComputedStyle(feelItems[0]).fontSize);
+        expect(updatedFontSize).to.be.closeTo(Number(initialFontSize) * 25 / 16, 0.1);
+      });
     });
   });
 
@@ -78,7 +80,7 @@ describe('Graph Font Size UI Tests', () => {
       cy.wrap(pathData).as('dottedPathData');
     });
 
-    cy.get('#graphContainer text').contains('Feel').dblclick({force: true});
+    cy.contains('#graphContainer li', 'Feel').dblclick({force: true});
     cy.contains('Font size').click();
     cy.contains('Font size').parent().find('input[type="number"]')
       .type('{selectall}24')
