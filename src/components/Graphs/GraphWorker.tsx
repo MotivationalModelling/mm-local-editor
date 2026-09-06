@@ -31,7 +31,8 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {getCellNumericIds} from "../utils/GraphUtils";
+import {validateInstanceId} from "../instanceId";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";

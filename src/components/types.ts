@@ -1,27 +1,14 @@
 import {z} from "zod";
+import {createInstanceId, readInstanceId, type InstanceId} from "./instanceId";
 
 // ============================================
 // Core types (defined first to avoid circular refs)
 // ============================================
-export const INSTANCE_ID_SEPARATOR = ":";
-// Use `typeof` to derive the separator type from the constant and keep them in sync.
-export type InstanceId = `${number}${typeof INSTANCE_ID_SEPARATOR}${number}`
+// Instance IDs live in their own dependency-free module so both the JSON layer and the
+// graph layer can use them. The type is re-exported here because callers almost always
+// want it alongside the other core types; import the functions from ./instanceId.
+export type {InstanceId};
 
-const INSTANCE_ID_SCHEMA_RE = new RegExp(`^-?\\d+${INSTANCE_ID_SEPARATOR}\\d+$`);
-
-export const createInstanceId = (goalId: number, refId: number): InstanceId => {
-    // Instance IDs are made only from integers, so neither component can contain the separator.
-    if (!Number.isInteger(goalId)) {
-        throw new Error(`non-numeric goalId: "${goalId}"`);
-    }
-    if (!Number.isInteger(refId)) {
-        throw new Error(`non-numeric refId: "${refId}"`);
-    }
-    if (refId < 0) {
-        throw new Error(`negative refId: "${refId}"`);
-    }
-    return `${goalId}${INSTANCE_ID_SEPARATOR}${refId}`;
-};
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
@@ -96,7 +83,9 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
-const instanceIdSchema = z.string().regex(INSTANCE_ID_SCHEMA_RE).transform((val): InstanceId => {
+const instanceIdSchema = z.string()
+  .refine((val) => readInstanceId(val) !== null, "badly formatted instanceId")
+  .transform((val): InstanceId => {
   // The regex establishes the InstanceId shape before narrowing the schema output type.
   return val as InstanceId;
 });

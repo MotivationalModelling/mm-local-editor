@@ -3,9 +3,9 @@ import {
     createTabDataFromTabs,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {createInstanceId, InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {createInstanceId, normalizeInstanceId, parseInstanceId, validateInstanceId} from "../instanceId.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {normalizeInstanceId, parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)

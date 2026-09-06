@@ -1,13 +1,16 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
+import {INSTANCE_ID_SEPARATOR, readInstanceId} from "./instanceId.ts";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
 const LabelSchema = z.enum(labels);
 
 const InstanceIdSchema = z.custom<InstanceId>(
-    (value) => typeof value === "string" && /^\d+-\d+$/.test(value),
-    "instanceId must contain two numbers separated by a hyphen"
+    // Imported files may predate the separator change, so the legacy spelling is
+    // allowed through here and normalizeInstanceId() upgrades it on the way into state
+    (value) => readInstanceId(value, {acceptLegacy: true}) !== null,
+    `instanceId must be two numbers separated by "${INSTANCE_ID_SEPARATOR}", e.g. "12${INSTANCE_ID_SEPARATOR}1"`
 );
 
 const TreeGoalSchema: z.ZodType<TreeGoal> = z.lazy(() => z.object({
@@ -72,7 +75,7 @@ export const ModelJsonSchema = z.object({
 
 
     // TreeData: id and type has to be consistent with TabData
-    const instanceIds = new Set<InstanceId>();
+    const instanceIds = new Set<string>();
     const validateTree = (goals: TreeGoal[], path: (string | number)[]) => {
         goals.forEach((goal, index) => {
             const goalPath = [...path, index];
@@ -93,8 +96,8 @@ export const ModelJsonSchema = z.object({
             }
 
             // instance id has to match id
-            const instanceGoalId = Number(goal.instanceId.split("-")[0]);
-            if (instanceGoalId !== goal.id) {
+            const instanceIdParts = readInstanceId(goal.instanceId, {acceptLegacy: true});
+            if (instanceIdParts !== null && instanceIdParts.goalId !== goal.id) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: [...goalPath, "instanceId"],
@@ -102,14 +105,20 @@ export const ModelJsonSchema = z.object({
                 });
             }
 
-            if (instanceIds.has(goal.instanceId)) {
+            // Compare on the canonical spelling so a legacy and a current ID for the
+            // same instance are still recognised as duplicates
+            const canonicalInstanceId = (instanceIdParts === null)
+                ? goal.instanceId
+                : `${instanceIdParts.goalId}${INSTANCE_ID_SEPARATOR}${instanceIdParts.refId}`;
+
+            if (instanceIds.has(canonicalInstanceId)) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: [...goalPath, "instanceId"],
                     message: `duplicate instanceId "${goal.instanceId}"`,
                 });
             }
-            instanceIds.add(goal.instanceId);
+            instanceIds.add(canonicalInstanceId);
 
             validateTree(goal.children ?? [], [...goalPath, "children"]);
         });
