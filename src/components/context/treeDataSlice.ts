@@ -184,6 +184,22 @@ export const findTreeGoalById = (nodes: TreeGoal[], id: TreeGoal["id"]): TreeGoa
     return undefined;
 };
 
+const updateTreeGoalTextById = (
+    nodes: TreeGoal[],
+    goalId: TreeGoal["id"],
+    text: string,
+) => {
+    nodes.forEach((node) => {
+        if (node.id === goalId) {
+            node.content = text;
+        }
+
+        if (node.children?.length) {
+            updateTreeGoalTextById(node.children, goalId, text);
+        }
+    });
+};
+
 // Note: in the state here, "tabs" and "tree" content contain goalId's which are used to index into
 // "goals" to get the Goal. This is a little confusing with "tree" especially because the tree structure
 // has a full copy of the Goal but in practice it is only used to hold the structure of the goalId's.
@@ -305,6 +321,7 @@ export const treeDataSlice = createSlice({
                 ...state.goals[action.payload.id],
                 content: action.payload.text
             };
+            updateTreeGoalTextById(state.tree, action.payload.id, action.payload.text);
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
