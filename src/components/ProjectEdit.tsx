@@ -10,13 +10,8 @@ const ProjectEdit: React.FC = () => {
 
     return (
         <GraphProvider>
-            <ProjectEditHeader showGraphSection={showGraphSection}/>
-            <ProgressBar showGoalSection={showGoalSection}
-                         setShowGoalSection={setShowGoalSection}
-                         setShowGraphSection={setShowGraphSection}/>
-            <SectionPanel showGoalSection={showGoalSection}
-                          showGraphSection={showGraphSection}
-                          paddingX={15}/>
+            <ProjectEditHeader showGraphSection={activeTab === "model"}/>
+            <SectionPanel activeTab={activeTab} onTabChange={setActiveTab}/>
         </GraphProvider>
     );
 };
