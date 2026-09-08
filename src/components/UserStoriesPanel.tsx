@@ -117,7 +117,7 @@ const UserStoriesPanel = () => {
       {clipboardError && <Alert variant="danger">{clipboardError}</Alert>}
 
       <div className="row g-3">
-        <div className="col-12 col-lg-4">
+        <div className="col-12">
           <Card className="h-100">
             <Card.Header className="d-flex justify-content-between align-items-center">
               <span>Consistency principles</span>
@@ -157,7 +157,7 @@ const UserStoriesPanel = () => {
             </Card.Body>
           </Card>
         </div>
-        <div className="col-12 col-lg-8">
+        <div className="col-12">
           <div className="d-flex align-items-center justify-content-between mb-2">
             <strong>User stories</strong>
             {usState.status !== "idle" && (

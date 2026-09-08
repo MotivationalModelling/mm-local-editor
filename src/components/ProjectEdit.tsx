@@ -2,13 +2,11 @@ import React, {useState} from "react";
 
 import ProjectEditHeader from "./header/ProjectEditHeader";
 import "./ProjectEdit.css";
-import SectionPanel from "./SectionPanel";
-import ProgressBar from "./ProgressBar";
+import SectionPanel, {ProjectEditTab} from "./SectionPanel";
 import {GraphProvider} from "./context/GraphContext";
 
 const ProjectEdit: React.FC = () => {
-    const [showGoalSection, setShowGoalSection] = useState(true);
-    const [showGraphSection, setShowGraphSection] = useState(false);
+    const [activeTab, setActiveTab] = useState<ProjectEditTab>("goal");
 
     return (
         <GraphProvider>

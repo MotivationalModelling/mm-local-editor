@@ -1,9 +1,198 @@
-.right-handler:hover {
-  background-color: gray;
-  opacity: 50%;
+.section-panel {
+  height: max(800px, calc(100vh - 100px));
+  padding: 20px 15px 15px;
 }
 
-.left-handler:hover {
+.section-panel__columns {
+  display: flex;
+  height: 100%;
+}
+
+.section-panel__resizable {
+  flex-shrink: 0;
+}
+
+.section-panel__workspace {
+  flex: 1;
+  order: 1;
+}
+
+.section-panel__columns--swapped > .section-panel__resizable {
+  order: 2;
+}
+
+.section-panel__swap-button {
+  position: absolute;
+  top: 35px;
+  right: -14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background-color: #fff;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.section-panel__columns--swapped .section-panel__swap-button {
+  right: auto;
+  left: -14px;
+}
+
+.section-panel__swap-button:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background-color: #eff6ff;
+  color: #0d6efd;
+}
+
+.section-panel__swap-button:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+.section-panel__swap-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.section-panel__resize-handle {
+  touch-action: none;
+}
+
+.section-panel__resize-handle:hover,
+.section-panel__resize-handle:active {
   background-color: gray;
-  opacity: 50%;
+  opacity: 0.5;
+}
+
+.section-panel__hierarchy,
+.section-panel__workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid lightgrey;
+  /* border-radius: 4px; */
+  overflow: hidden;
+}
+
+.section-panel__hierarchy {
+  height: 100%;
+  background-color: rgba(35, 144, 231, 0.1);
+}
+
+.section-panel__heading,
+.section-panel__tabs {
+  flex-shrink: 0;
+  height: 50px;
+  margin: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #23468c;
+}
+
+.section-panel__heading {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.section-panel__tabs {
+  flex-wrap: nowrap;
+  gap: 24px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.section-panel__tabs > .nav-item {
+  flex: 0 0 auto;
+}
+
+.section-panel__tabs > .nav-item > .nav-link {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #d9e3f7;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.section-panel__tabs > .nav-item > .nav-link:hover {
+  color: #fff;
+  border-bottom-color: #d9e3f7;
+}
+
+.section-panel__tabs > .nav-item > .nav-link.active {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+.section-panel__tabs > .nav-item > .nav-link:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: -4px;
+  box-shadow: none;
+}
+
+.section-panel__tree,
+.section-panel__content {
+  flex: 1;
+  min-height: 0;
+}
+
+.section-panel__tree {
+  padding: 10px;
+  overflow: auto;
+}
+
+.section-panel__pane {
+  height: 100%;
+  overflow: auto;
+}
+
+.section-panel__goal,
+.section-panel__model {
+  background-color: rgb(236, 244, 244);
+}
+
+/* Give the graph a full-height canvas inside the model tab. */
+.section-panel__model > div > .container {
+  height: 100%;
+  max-width: none;
+}
+
+.section-panel__model > div > .container > .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  height: 100%;
+}
+
+.section-panel__model > div > .container > .row > div {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+.section-panel__stories {
+  background-color: white;
+}
+
+.section-panel__stories .d-flex {
+  flex-wrap: wrap;
 }
