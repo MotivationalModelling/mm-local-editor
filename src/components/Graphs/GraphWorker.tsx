@@ -32,7 +32,7 @@ import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, removeGoalRelationshipLabels, validateInstanceId} from "../utils/GraphUtils";
-import {connectGoalInstances, removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
+import {connectGoalInstances, checkGoalConnectionValidation, InvalidGoalConnection, removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
@@ -57,10 +57,12 @@ interface CellHistory {
 
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
+    const {cluster, dispatch, treeData, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
     const {graph, setGraph} = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
+    const treeDataRef = useRef(treeData);
+    treeDataRef.current = treeData;
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
 
@@ -384,6 +386,47 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 // A combined non-functional vertex represents several goals and
                                 // therefore cannot express one unambiguous Tree relationship.
                                 if (sourceRefs.length === 1 && targetRefs.length === 1) {
+                                    const issueMessages: Record<InvalidGoalConnection, {title: string, message: string}> = {
+                                        self: {
+                                            title: "Invalid Connection",
+                                            message: "A goal cannot be connected to itself.",
+                                        },
+                                        repetitive: {
+                                            title: "Repetitive Connection",
+                                            message: "These goals are already directly connected as parent and child.",
+                                        },
+                                        "existing-relation": {
+                                            title: "Existing Relationship",
+                                            message: "These goals already have a parent-child relationship in the hierarchy.",
+                                        },
+                                        "invalid-parent-connection": {
+                                            title: "Invalid Ancestor Connection",
+                                            message: "The child end cannot connect to a parent or any higher ancestor.",
+                                        },
+                                        "same-parent": {
+                                            title: "Invalid Sibling Connection",
+                                            message: "Goals that already have the same parent cannot be connected to each other.",
+                                        },
+                                    };
+                                    const issue = checkGoalConnectionValidation(
+                                        treeDataRef.current,
+                                        sourceRefs[0].instanceId,
+                                        targetRefs[0].instanceId,
+                                    );
+                                    if (issue) {
+                                        queueMicrotask(() => {
+                                            if (edge.getParent()) {
+                                                graph.removeCells([edge], true);
+                                                graph.refresh();
+                                            }
+                                        });
+                                        setErrorModal({
+                                            show: true,
+                                            ...issueMessages[issue],
+                                            onHide: () => setErrorModal(prev => ({...prev, show: false})),
+                                        });
+                                        continue;
+                                    }
                                     dispatch(connectGoalInstances({
                                         sourceInstanceId: sourceRefs[0].instanceId,
                                         targetInstanceId: targetRefs[0].instanceId,

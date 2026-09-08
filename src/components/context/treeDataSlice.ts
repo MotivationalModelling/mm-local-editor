@@ -178,6 +178,49 @@ export const containsInstanceId = (node: TreeGoal, instanceId: InstanceId): bool
     (node.children ?? []).some((child) => containsInstanceId(child, instanceId))
 );
 
+export type InvalidGoalConnection = "self" | "repetitive" | "existing-relation" | "invalid-parent-connection" | "same-parent";
+
+const findParentByInstanceId = (
+    nodes: TreeGoal[],
+    instanceId: InstanceId,
+    parent: TreeGoal | null = null,
+): TreeGoal | null | undefined => {
+    for (const node of nodes) {
+        if (node.instanceId === instanceId) return parent;
+        const matchingParent = findParentByInstanceId(node.children ?? [], instanceId, node);
+        if (matchingParent !== undefined) return matchingParent;
+    }
+    return undefined;
+};
+
+/** Check if parent -> child connection is invalid. */
+export const checkGoalConnectionValidation = (
+    tree: TreeGoal[],
+    sourceInstanceId: InstanceId,
+    targetInstanceId: InstanceId,
+): InvalidGoalConnection | null => {
+    if (sourceInstanceId === targetInstanceId) return "self";
+
+    const source = findTreeGoalByInstanceId(tree, sourceInstanceId);
+    const target = findTreeGoalByInstanceId(tree, targetInstanceId);
+    if (!source || !target) return null;
+
+    if (source.children?.some((child) => child.instanceId === targetInstanceId)) {
+        return "repetitive";
+    }
+    if (containsInstanceId(target, sourceInstanceId)) return "invalid-parent-connection";
+    if (containsInstanceId(source, targetInstanceId)) return "existing-relation";
+
+    const sourceParent = findParentByInstanceId(tree, sourceInstanceId);
+    const targetParent = findParentByInstanceId(tree, targetInstanceId);
+    // null means a top-level goal, not a real shared parent. Top-level goals
+    // must remain connectable so a new hierarchy can be created.
+    if (sourceParent && targetParent && sourceParent.instanceId === targetParent.instanceId) {
+        return "same-parent";
+    }
+    return null;
+};
+
 export const detachTreeGoal = (nodes: TreeGoal[], instanceId: InstanceId): TreeGoal | undefined => {
     for (let index = 0; index < nodes.length; index++) {
         if (nodes[index].instanceId === instanceId) {
