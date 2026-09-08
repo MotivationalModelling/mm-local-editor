@@ -1,8 +1,16 @@
 import {describe, expect, it} from "vitest";
-import {isNonFunctionCell} from "./GraphCellUtils";
+import {hasCellId, isNonFunctionCell} from "./GraphCellUtils";
 import {isListLabelCell} from "./GraphLabelUtils";
 
 describe("graph cell classification", () => {
+    it.each([
+        ["0", true],
+        ["Nonfunctional-[2:1]", true],
+        ["", false],
+        [null, false],
+    ])("checks whether cell ID %s is present", (id, expected) => {
+        expect(hasCellId(id as string | null)).toBe(expected);
+    });
     it.each([
         ["Nonfunctional-[2:1,3:1]", true],
         ["Functional-1:1", false],

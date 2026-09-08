@@ -34,7 +34,7 @@ import WarningMessage from "./WarningMessage";
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
 import {convertEditingValueToList, isListLabelCell, makeHtmlListLabel, readListEditorValue} from "./GraphLabelUtils";
-import {isNonFunctionCell} from "./GraphCellUtils";
+import {hasCellId, isNonFunctionCell} from "./GraphCellUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -212,7 +212,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         //    map by id to use parsed info we saved earlier.
         deletedCells.forEach(cell => {
             const id = cell.getId();
-            if (!id) return;
+            if (!hasCellId(id)) return;
             const parsed = parsedById.get(id);
             if (!parsed) {
                 console.warn('Deleted cell has no parsed info (unexpected):', id);
@@ -423,7 +423,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 });
                             } else {
                                 const cellId = cell.getId();
-                                if (isNonFunctionCell(cell) && cellId) {
+                                if (isNonFunctionCell(cell) && hasCellId(cellId)) {
                                     editedNonFunctionalCellIdsRef.current.add(cellId);
                                 }
                                 numericCellIds.forEach((instanceId, i) => {

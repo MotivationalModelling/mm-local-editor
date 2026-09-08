@@ -4,7 +4,7 @@ import {applyNonFunctionalLayout, captureNonFunctionalLayout, captureNonFunction
 
 describe("non-functional geometry preservation", () => {
     const createCell = (
-        id: string,
+        id: string | null,
         value: string,
         shape: string,
         x: number,
@@ -62,6 +62,23 @@ describe("non-functional geometry preservation", () => {
         const {graph, setGeometry} = createGraph(() => [cloud]);
         applyNonFunctionalLayout(graph, {"Nonfunctional-[3:1]": {x: 9, y: 9, width: 9, height: 9}});
         expect(setGeometry).not.toHaveBeenCalled();
+    });
+
+    it.each(["0", "", null])("handles snapshot lookup for cell ID %s explicitly", id => {
+        const cell = createCell(id, "Edited", "rect", 0, 0, 100, 100);
+        const {graph, setGeometry} = createGraph(() => [cell]);
+        // Supply the snapshot directly to isolate ID lookup from non-functional
+        // prefix classification. "0" is a valid lookup key, not a grouped ID.
+        const snapshots = new Map([[id ?? "", {
+            value: "Original", x: 10, y: 20, width: 240, height: 180,
+        }]]);
+        restoreNonFunctionalGeometry(graph, snapshots, new Set(), 4);
+        if (id === "0") {
+            expect(setGeometry).toHaveBeenCalledOnce();
+            expect(cell.getGeometry()).toMatchObject({x: 10, y: 20, width: 240, height: 180});
+        } else {
+            expect(setGeometry).not.toHaveBeenCalled();
+        }
     });
 
     it("restores unaffected shapes after a concern text edit", () => {

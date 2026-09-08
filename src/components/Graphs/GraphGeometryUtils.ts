@@ -1,6 +1,6 @@
 import type {Graph} from "@maxgraph/core";
 import {getListLabelArea} from "./GraphLabelUtils";
-import {isNonFunctionCell} from "./GraphCellUtils";
+import {hasCellId, isNonFunctionCell} from "./GraphCellUtils";
 import type {NonFunctionalLayout} from "../modelJson";
 
 export const captureNonFunctionalLayout = (graph: Graph): NonFunctionalLayout => (
@@ -14,7 +14,7 @@ export const captureNonFunctionalLayout = (graph: Graph): NonFunctionalLayout =>
 export const applyNonFunctionalLayout = (graph: Graph, layout: NonFunctionalLayout) => {
     graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
         const id = cell.getId();
-        if (!isNonFunctionCell(cell) || !id) return;
+        if (!isNonFunctionCell(cell) || !hasCellId(id)) return;
         const saved = layout[id];
         const geometry = cell.getGeometry()?.clone();
         if (saved && geometry) {
@@ -41,7 +41,7 @@ export const captureNonFunctionalGeometry = (graph: Graph) => {
         const id = cell.getId();
         const geometry = cell.getGeometry();
 
-        if (isNonFunctionCell(cell) && id && geometry) {
+        if (isNonFunctionCell(cell) && hasCellId(id) && geometry) {
             snapshots.set(id, {
                 value: String(cell.getValue() ?? ""),
                 x: geometry.x,
@@ -64,9 +64,10 @@ export const restoreNonFunctionalGeometry = (
     const cells = graph.getChildVertices(graph.getDefaultParent());
     const hasTextChanges = cells.some(cell => {
         const id = cell.getId();
-        const snapshot = id ? snapshots.get(id) : undefined;
+        if (!hasCellId(id)) return false;
+        const snapshot = snapshots.get(id);
 
-        return snapshot && id && (
+        return snapshot !== undefined && (
             editedCellIds.has(id) || snapshot.value !== String(cell.getValue() ?? "")
         );
     });
@@ -76,9 +77,9 @@ export const restoreNonFunctionalGeometry = (
 
     cells.forEach(cell => {
         const id = cell.getId();
-        const snapshot = id ? snapshots.get(id) : undefined;
-
-        if (!id || !snapshot) return;
+        if (!hasCellId(id)) return;
+        const snapshot = snapshots.get(id);
+        if (snapshot === undefined) return;
 
         const textChanged = editedCellIds.has(id) || snapshot.value !== String(cell.getValue() ?? "");
         const geometry = cell.getGeometry()?.clone();
