@@ -6,6 +6,7 @@ import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
 import {useLocalStorage} from "usehooks-ts";
+import type {NonFunctionalLayout} from "../modelJson";
 
 export type {JSONData} from "../modelJson.ts";
 
@@ -78,6 +79,7 @@ type SliceActions<T, Name extends string> = {
 type DispatchActions = SliceActions<typeof treeDataSlice.actions, "treeData">
 
 interface FileContextProps {
+    nonFunctionalLayout: NonFunctionalLayout
     jsonFileHandle: FileSystemFileHandle | null
     setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void
     tabData: TabContent[]
@@ -95,6 +97,7 @@ interface FileContextProps {
 
 // Create context for data tansfer and file handle
 const FileContext = createContext<FileContextProps>({
+    nonFunctionalLayout: {},
     jsonFileHandle: null,
     setJsonFileHandle: () => { },
     tabData: [],

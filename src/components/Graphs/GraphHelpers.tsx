@@ -460,9 +460,11 @@ export const renderNonFunction = (
 
     // Constrain list labels to their safe areas and wrap long content.
     if (labelArea) {
-        style.overflow = "fill";
-        style.verticalAlign = "top";
-        style.whiteSpace = "wrap";
+        Object.assign(style, {
+            overflow: "fill",
+            verticalAlign: "top",
+            whiteSpace: "wrap",
+        });
     }
 
     // Clone edge style

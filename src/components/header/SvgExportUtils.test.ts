@@ -3,8 +3,41 @@
  */
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {prepareSvgForPng} from "./SvgExportUtils";
+import type {ListLabelExportSource} from "./SvgExportUtils";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+
+// jsdom does not perform SVG layout. Supply a known screen-to-SVG transform
+// so these unit tests can assert coordinates; Cypress tests real browser layout.
+const mockSvgScreenTransform = (svg: SVGSVGElement, group: SVGGElement, scale = 1, translateX = 0, translateY = 0) => {
+    Object.defineProperty(group, "getScreenCTM", {
+        value: () => ({inverse: () => ({scale, translateX, translateY})}),
+        configurable: true,
+    });
+    Object.defineProperty(svg, "createSVGPoint", {
+        value: () => ({
+            x: 0,
+            y: 0,
+            matrixTransform(matrix: {scale: number; translateX: number; translateY: number}) {
+                return {x: (this.x - matrix.translateX) / matrix.scale, y: (this.y - matrix.translateY) / matrix.scale};
+            },
+        }),
+        configurable: true,
+    });
+};
+
+// Range geometry is also unavailable in jsdom. Each test supplies explicit
+// glyph positions, independently of the exporter's line-detection algorithm.
+const mockRangeGeometry = (getRect: (node: Node, start: number, end: number) => Partial<DOMRect>) => {
+    let node: Node;
+    let start = 0;
+    let end = 0;
+    vi.spyOn(document, "createRange").mockImplementation(() => ({
+        setStart(nextNode: Node, offset: number) { node = nextNode; start = offset; },
+        setEnd(_node: Node, offset: number) { end = offset; },
+        getBoundingClientRect: () => getRect(node, start, end),
+    } as Range));
+};
 
 const createTestSvg = (items: string[]) => {
     const svg = document.createElementNS(SVG_NAMESPACE, "svg");
@@ -26,20 +59,10 @@ const createTestSvg = (items: string[]) => {
     svg.appendChild(group);
     document.body.appendChild(svg);
 
-    Object.defineProperty(group, "getScreenCTM", {
-        value: () => ({inverse: () => ({})}),
-    });
-    Object.defineProperty(svg, "createSVGPoint", {
-        value: () => ({
-            x: 0,
-            y: 0,
-            matrixTransform() {
-                return {x: this.x, y: this.y};
-            },
-        }),
-    });
-
-    return svg;
+    mockSvgScreenTransform(svg, group);
+    // Keep model text separate from DOM text, as the production graph does.
+    const source: ListLabelExportSource = {foreignObject, items: [...items]};
+    return {svg, group, source};
 };
 
 afterEach(() => {
@@ -49,32 +72,19 @@ afterEach(() => {
 
 describe("prepareSvgForPng", () => {
     it("converts HTML list labels to SVG text without changing the live SVG", () => {
-        const svg = createTestSvg(["Independent", "Responsible"]);
-        let activeTextNode: Node | null = null;
-        let startOffset = 0;
-        let endOffset = 0;
+        const {svg, source} = createTestSvg(["Independent", "Responsible"]);
+        mockRangeGeometry((activeTextNode, startOffset, endOffset) => {
+            const itemIndex = Array.from(svg.querySelectorAll("li"))
+                .findIndex(item => item.firstChild === activeTextNode);
+            return {
+                left: 100 + startOffset * 8,
+                top: 20 + itemIndex * 20,
+                width: Math.max(endOffset - startOffset, 1) * 8,
+                height: 16,
+            };
+        });
 
-        vi.spyOn(document, "createRange").mockImplementation(() => ({
-            setStart(node: Node, offset: number) {
-                activeTextNode = node;
-                startOffset = offset;
-            },
-            setEnd(_node: Node, offset: number) {
-                endOffset = offset;
-            },
-            getBoundingClientRect() {
-                const itemIndex = Array.from(svg.querySelectorAll("li"))
-                    .findIndex(item => item.firstChild === activeTextNode);
-                return {
-                    left: 100 + startOffset * 8,
-                    top: 20 + itemIndex * 20,
-                    width: Math.max(endOffset - startOffset, 1) * 8,
-                    height: 16,
-                } as DOMRect;
-            },
-        } as Range));
-
-        const exportSvg = prepareSvgForPng(svg);
+        const exportSvg = prepareSvgForPng(svg, [source]);
         const exportedText = Array.from(exportSvg.querySelectorAll("text"))
             .map(element => element.textContent);
 
@@ -86,32 +96,53 @@ describe("prepareSvgForPng", () => {
     });
 
     it("preserves the browser's wrapped line breaks", () => {
-        const svg = createTestSvg(["Long label"]);
-        let startOffset = 0;
-        let endOffset = 0;
+        const {svg, source} = createTestSvg(["Long label"]);
+        mockRangeGeometry((_node, startOffset, endOffset) => {
+            const secondLine = startOffset >= 5;
+            return {
+                left: 100 + (secondLine ? startOffset - 5 : startOffset) * 8,
+                top: secondLine ? 40 : 20,
+                width: Math.max(endOffset - startOffset, 1) * 8,
+                height: 16,
+            };
+        });
 
-        vi.spyOn(document, "createRange").mockImplementation(() => ({
-            setStart(_node: Node, offset: number) {
-                startOffset = offset;
-            },
-            setEnd(_node: Node, offset: number) {
-                endOffset = offset;
-            },
-            getBoundingClientRect() {
-                const secondLine = startOffset >= 5;
-                return {
-                    left: 100 + (secondLine ? startOffset - 5 : startOffset) * 8,
-                    top: secondLine ? 40 : 20,
-                    width: Math.max(endOffset - startOffset, 1) * 8,
-                    height: 16,
-                } as DOMRect;
-            },
-        } as Range));
-
-        const exportSvg = prepareSvgForPng(svg);
+        const exportSvg = prepareSvgForPng(svg, [source]);
         const exportedText = Array.from(exportSvg.querySelectorAll("text"))
             .map(element => element.textContent);
 
         expect(exportedText).toEqual(["•", "Long", "label"]);
+    });
+
+    it("converts screen coordinates back through zoom and translation", () => {
+        const {svg, group, source} = createTestSvg(["A"]);
+        mockSvgScreenTransform(svg, group, 2, 60, 20);
+        mockRangeGeometry(() => ({left: 100, top: 40, width: 16, height: 32}));
+        const output = prepareSvgForPng(svg, [source]);
+        const text = output.querySelectorAll("text")[1];
+        expect(text.getAttribute("x")).toBe("20");
+        expect(text.getAttribute("y")).toBe("10");
+    });
+
+    it("does not substitute unrelated foreignObjects or trust stale DOM text", () => {
+        const {svg, source} = createTestSvg(["Model text"]);
+        const unrelated = document.createElementNS(SVG_NAMESPACE, "foreignObject");
+        unrelated.setAttribute("id", "unrelated");
+        svg.insertBefore(unrelated, svg.firstChild);
+        mockRangeGeometry(() => ({left: 100, top: 20, width: 80, height: 16}));
+        const output = prepareSvgForPng(svg, [source]);
+        expect(output.querySelector("#unrelated")).not.toBeNull();
+        expect(output.querySelectorAll("foreignObject")).toHaveLength(1);
+        source.foreignObject.querySelector("li")!.textContent = "Stale text";
+        expect(() => prepareSvgForPng(svg, [source])).toThrow("does not match the model");
+    });
+
+    it("preserves text across inline elements and keeps Unicode intact", () => {
+        const {svg, source} = createTestSvg(["A & 中文 😀"]);
+        source.foreignObject.querySelector("li")!.innerHTML = "<span>A &amp; </span><span>中文 😀</span>";
+        mockRangeGeometry(() => ({left: 100, top: 20, width: 80, height: 16}));
+        const output = prepareSvgForPng(svg, [source]);
+        expect(Array.from(output.querySelectorAll("text"), text => text.textContent))
+            .toEqual(["•", "A & 中文 😀"]);
     });
 });

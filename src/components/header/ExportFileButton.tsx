@@ -10,7 +10,7 @@ import {useGraph} from "../context/GraphContext";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
-import {prepareSvgForPng} from "./SvgExportUtils";
+import {getListLabelExportSources, prepareSvgForPng} from "./SvgExportUtils";
 
 const PNG_EXPORT_SCALE = 3;
 
@@ -137,13 +137,22 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 
     // Function to export graph as PNG
     const exportGraphAsPNG = async (graph: Graph) => {
+        // Commit the editor buffer before pairing model text with rendered labels.
+        graph.stopEditing(false);
         const svgElement = (graph) && findSVGElementInGraph(graph);
         if (!svgElement) {
             return;
         }
 
         // Prepare a separate SVG so PNG-only changes never alter the live graph.
-        const exportSvg = prepareSvgForPng(svgElement);
+        let exportSvg: SVGSVGElement;
+        try {
+            exportSvg = prepareSvgForPng(svgElement, getListLabelExportSources(graph));
+        } catch (error) {
+            setErrorModal(prev => ({...prev, show: true, title: "Cannot Export Model",
+                message: error instanceof Error ? error.message : "Could not prepare the labels for export."}));
+            return;
+        }
 
         // Serialize the SVG element to a string
         const serializer = new XMLSerializer();

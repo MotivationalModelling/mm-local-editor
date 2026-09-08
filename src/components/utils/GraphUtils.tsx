@@ -1,6 +1,8 @@
-import {ClusterGoal, createInstanceId, GoalBase, TreeGoal, InstanceId, INSTANCE_ID_SEPARATOR} from '../types';
+import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
+import {parseInstanceId, validateInstanceId} from './InstanceId';
+export {normalizeInstanceId, parseInstanceId, validateInstanceId} from './InstanceId';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -177,38 +179,6 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
         throw new Error(`Unexpected type: ${type}`);
     }
 }
-
-// New state uses the configured separator; the legacy pattern is accepted only while stored/imported models are normalised.
-const INSTANCE_ID_RE = new RegExp(`^(-?\\d+)${INSTANCE_ID_SEPARATOR}(\\d+)$`);
-const LEGACY_INSTANCE_ID_RE = /^(-?\d+)-(\d+)$/;
-
-export const validateInstanceId = (id: string): InstanceId => {
-    if (!INSTANCE_ID_RE.test(id)) {
-        throw new Error(`badly formatted instanceId "${id}"`);
-    }
-    return id as InstanceId;
-};
-
-export const parseInstanceId = (instanceId: InstanceId) => {
-    const match = INSTANCE_ID_RE.exec(instanceId);
-    if (!match) {
-        throw new Error(`badly formatted instanceId "${instanceId}"`);
-    }
-
-    return {
-        goalId: Number(match[1]),
-        refId: Number(match[2]),
-    };
-};
-
-export const normalizeInstanceId = (instanceId: string): InstanceId => {
-    const match = INSTANCE_ID_RE.exec(instanceId) ?? LEGACY_INSTANCE_ID_RE.exec(instanceId);
-    if (!match) {
-        throw new Error(`badly formatted instanceId "${instanceId}"`);
-    }
-
-    return createInstanceId(Number(match[1]), Number(match[2]));
-};
 
 // Check and retrieve if the non-functional goal has pre-defined color by instanceId
 export const getNonFunctionalGoalColor = (

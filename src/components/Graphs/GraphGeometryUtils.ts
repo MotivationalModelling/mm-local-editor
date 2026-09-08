@@ -1,5 +1,29 @@
 import type {Graph} from "@maxgraph/core";
 import {getListLabelArea} from "./GraphLabelUtils";
+import {isNonFunctionCell} from "./GraphCellUtils";
+import type {NonFunctionalLayout} from "../modelJson";
+
+export const captureNonFunctionalLayout = (graph: Graph): NonFunctionalLayout => (
+    Object.fromEntries(Array.from(captureNonFunctionalGeometry(graph), ([id, geometry]) => [
+        id, {x: geometry.x, y: geometry.y, width: geometry.width, height: geometry.height},
+    ]))
+);
+
+// Match stable grouped-cell IDs; leave missing/new groups to automatic layout.
+// Stored coordinates are graph units, independent of viewport zoom.
+export const applyNonFunctionalLayout = (graph: Graph, layout: NonFunctionalLayout) => {
+    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+        const id = cell.getId();
+        if (!isNonFunctionCell(cell) || !id) return;
+        const saved = layout[id];
+        const geometry = cell.getGeometry()?.clone();
+        if (saved && geometry) {
+            const {x, y, width, height} = saved;
+            Object.assign(geometry, {x, y, width, height});
+            graph.getDataModel().setGeometry(cell, geometry);
+        }
+    });
+};
 
 export interface NonFunctionalGeometrySnapshot {
     value: string;
@@ -17,7 +41,7 @@ export const captureNonFunctionalGeometry = (graph: Graph) => {
         const id = cell.getId();
         const geometry = cell.getGeometry();
 
-        if (id?.startsWith("Nonfunctional-") && geometry) {
+        if (isNonFunctionCell(cell) && id && geometry) {
             snapshots.set(id, {
                 value: String(cell.getValue() ?? ""),
                 x: geometry.x,

@@ -87,6 +87,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 			dispatch(reset({
 				tabData: initialTabs,
 				treeData: convertedJsonData.treeData,
+				nonFunctionalLayout: convertedJsonData.nonFunctionalLayout,
 			}));
 			setJsonFile(file);
 			setErrorModal(defaultModalState);

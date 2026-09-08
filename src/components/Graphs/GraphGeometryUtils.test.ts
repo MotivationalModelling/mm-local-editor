@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import type {Graph} from "@maxgraph/core";
-import {captureNonFunctionalGeometry, restoreNonFunctionalGeometry} from "./GraphGeometryUtils";
+import {applyNonFunctionalLayout, captureNonFunctionalLayout, captureNonFunctionalGeometry, restoreNonFunctionalGeometry} from "./GraphGeometryUtils";
 
 describe("non-functional geometry preservation", () => {
     const createCell = (
@@ -44,6 +44,25 @@ describe("non-functional geometry preservation", () => {
 
         return {graph, setGeometry};
     };
+
+    it("round-trips saved geometry without storing label text or changing functional cells", () => {
+        const cloud = createCell("Nonfunctional-[2:1]", "Original", "cloudShape", -10, 20, 240, 160);
+        const root = createCell("Functional-1:1", "Root", "rect", 50, 60, 90, 100);
+        const {graph} = createGraph(() => [root, cloud]);
+        const layout = captureNonFunctionalLayout(graph);
+        expect(layout).toEqual({"Nonfunctional-[2:1]": {x: -10, y: 20, width: 240, height: 160}});
+        cloud.setGeometry({...cloud.getGeometry(), width: 40, height: 300});
+        applyNonFunctionalLayout(graph, JSON.parse(JSON.stringify(layout)));
+        expect(cloud.getGeometry()).toMatchObject({x: -10, y: 20, width: 240, height: 160});
+        expect(root.getGeometry()).toMatchObject({x: 50, y: 60, width: 90, height: 100});
+    });
+
+    it("ignores obsolete layout IDs without resizing unrelated nodes", () => {
+        const cloud = createCell("Nonfunctional-[2:1]", "New group", "cloudShape", 0, 0, 200, 100);
+        const {graph, setGeometry} = createGraph(() => [cloud]);
+        applyNonFunctionalLayout(graph, {"Nonfunctional-[3:1]": {x: 9, y: 9, width: 9, height: 9}});
+        expect(setGeometry).not.toHaveBeenCalled();
+    });
 
     it("restores unaffected shapes after a concern text edit", () => {
         let cells = [

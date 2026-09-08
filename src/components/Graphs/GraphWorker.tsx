@@ -31,14 +31,16 @@ import {Cluster, GlobObject, InstanceId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
-import {SYMBOL_CONFIGS, VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
-import {makeHtmlListLabel} from "./GraphLabelUtils";
+import {convertEditingValueToList, isListLabelCell, makeHtmlListLabel, readListEditorValue} from "./GraphLabelUtils";
+import {isNonFunctionCell} from "./GraphCellUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
-import {captureNonFunctionalGeometry, restoreNonFunctionalGeometry} from "./GraphGeometryUtils";
+import {applyNonFunctionalLayout, captureNonFunctionalGeometry, restoreNonFunctionalGeometry} from "./GraphGeometryUtils";
+import type {NonFunctionalLayout} from "../modelJson";
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
@@ -47,15 +49,6 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
-
-// These non-functional shapes render their labels as HTML bullet lists.
-const LIST_LABEL_SHAPES = new Set([
-    SYMBOL_CONFIGS.EMOTIONAL.shape,
-    SYMBOL_CONFIGS.NEGATIVE.shape,
-    SYMBOL_CONFIGS.QUALITY.shape,
-]);
-
-const isListLabelCell = (cell: Cell) => LIST_LABEL_SHAPES.has(cell.getStyle().shape ?? "");
 
 // Preserve default graph labels while formatting supported shapes as lists.
 const configureListLabels = (graph: Graph) => {
@@ -66,7 +59,11 @@ const configureListLabels = (graph: Graph) => {
     graph.getLabel = (cell) => {
         const label = getLabel(cell);
 
-        return label && isListLabelCell(cell) ? makeHtmlListLabel(label.split(",")) : label;
+        if (label && isListLabelCell(cell)) {
+            return makeHtmlListLabel(convertEditingValueToList(label));
+        } else {
+            return label;
+        }
     };
     graph.isHtmlLabel = (cell) => isListLabelCell(cell) || isHtmlLabel(cell);
 
@@ -77,20 +74,18 @@ const configureListLabels = (graph: Graph) => {
 
         // Match the list presentation while editing without changing the stored comma-separated value.
         cellEditor.getInitialValue = (state, trigger) => {
-            if (!isListLabelCell(state.cell)) return getInitialValue(state, trigger);
-
-            return makeHtmlListLabel(graph.getEditingValue(state.cell, trigger).split(","));
+            if (isListLabelCell(state.cell)) {
+                return makeHtmlListLabel(convertEditingValueToList(graph.getEditingValue(state.cell, trigger)));
+            } else {
+                return getInitialValue(state, trigger);
+            }
         };
         cellEditor.getCurrentValue = (state) => {
             if (isListLabelCell(state.cell) && cellEditor.textarea) {
-                const items = Array.from(cellEditor.textarea.querySelectorAll("li"));
-
-                if (items.length > 0) {
-                    return items.map(item => item.textContent?.trim() ?? "").join(",");
-                }
+                return readListEditorValue(cellEditor.textarea) ?? getCurrentValue(state);
+            } else {
+                return getCurrentValue(state);
             }
-
-            return getCurrentValue(state);
         };
         cellEditor.startEditing = (cell, trigger = null) => {
             startEditing(cell, trigger);
@@ -116,7 +111,8 @@ interface CellHistory {
 
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
+    const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals, nonFunctionalLayout} = useFileContext();
+    const appliedLayoutRef = useRef<NonFunctionalLayout | null>(null);
     const {graph, setGraph} = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
@@ -413,7 +409,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             const numericCellIds = getCellNumericIds(cell);
-                            const newGoalValues = change.value.split(",");
+                            const newGoalValues = convertEditingValueToList(change.value);
 
                             // Check if the number of items matches
                             const nUpdated = numericCellIds.length;
@@ -427,7 +423,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 });
                             } else {
                                 const cellId = cell.getId();
-                                if (cellId?.startsWith("Nonfunctional-")) {
+                                if (isNonFunctionCell(cell) && cellId) {
                                     editedNonFunctionalCellIdsRef.current.add(cellId);
                                 }
                                 numericCellIds.forEach((instanceId, i) => {
@@ -632,17 +628,29 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob,
             showLineBetweenNonFunctionalGoals
         );
-        restoreNonFunctionalGeometry(
-            graph,
-            nonFunctionalGeometry,
-            editedNonFunctionalCellIds,
-            VERTEX_FONT.size * 0.25
-        );
+        // A newly opened model owns its saved layout, not snapshots from the
+        // previous model. Apply once so later manual resizing is not undone.
+        if (appliedLayoutRef.current !== nonFunctionalLayout) {
+            applyNonFunctionalLayout(graph, nonFunctionalLayout);
+            appliedLayoutRef.current = nonFunctionalLayout;
+        } else {
+            // Subsequent redraws must preserve the imported layout plus any
+            // manual adjustments made since opening it, not replay old values.
+            if (Object.keys(nonFunctionalLayout).length > 0) {
+                applyNonFunctionalLayout(graph, Object.fromEntries(nonFunctionalGeometry));
+            }
+            restoreNonFunctionalGeometry(
+                graph,
+                nonFunctionalGeometry,
+                editedNonFunctionalCellIds,
+                VERTEX_FONT.size * 0.25
+            );
+        }
 
         graph.getDataModel().endUpdate();
         editedNonFunctionalCellIdsRef.current.clear();
         isRenderingRef.current = false;
-    }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
+    }, [graph, cluster, showLineBetweenNonFunctionalGoals, nonFunctionalLayout]);
 
     // First useEffect to set up graph. Only run on mount.
     useEffect(() => {

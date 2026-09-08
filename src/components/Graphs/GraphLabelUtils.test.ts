@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {getListLabelArea, LIST_LABEL_AREAS, makeHtmlListLabel} from "./GraphLabelUtils";
+import {convertEditingValueToList, convertListToEditingValue, getListLabelArea, LIST_LABEL_AREAS, makeHtmlListLabel, normalizeListLabelItems} from "./GraphLabelUtils";
 
 describe("makeHtmlListLabel", () => {
     it("formats each item as a list item", () => {
@@ -16,6 +16,22 @@ describe("makeHtmlListLabel", () => {
 
     it("returns an empty label when there are no items", () => {
         expect(makeHtmlListLabel([])).toBe("");
+    });
+
+    it("escapes every HTML delimiter without URL-encoding Unicode or newlines", () => {
+        expect(makeHtmlListLabel([`<>&\"' 中文😀\nnext`])).toContain("&lt;&gt;&amp;&quot;&#39; 中文😀\nnext");
+    });
+
+    it("preserves empty entries and whitespace when converting the stored format", () => {
+        const value = " First ,, Third ";
+        expect(convertEditingValueToList(value)).toEqual([" First ", "", " Third "]);
+        expect(convertListToEditingValue(convertEditingValueToList(value))).toBe(value);
+    });
+
+    it("normalizes HTML line endings for display without changing model input", () => {
+        const items = ["A\r\nB\rC\0D"];
+        expect(normalizeListLabelItems(items)).toEqual(["A\nB\nC\uFFFDD"]);
+        expect(items).toEqual(["A\r\nB\rC\0D"]);
     });
 });
 
