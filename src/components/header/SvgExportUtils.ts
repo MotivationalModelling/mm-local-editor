@@ -1,4 +1,5 @@
 import type {Graph} from "@maxgraph/core";
+import {buildExportableSVG} from "../utils/ExportGraph";
 import {convertEditingValueToList, isListLabelCell, normalizeListLabelItems} from "../Graphs/GraphLabelUtils";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -169,4 +170,18 @@ export const prepareSvgForPng = (svgElement: SVGSVGElement, sources: ListLabelEx
     background.setAttribute("fill", "white");
     exportSvg.insertBefore(background, exportSvg.firstChild);
     return exportSvg;
+};
+
+// Measure labels while they are attached to the live graph, then apply the
+// full-model bounds to the converted copy. Detached labels have no DOM layout.
+export const prepareGraphForPng = (graph: Graph, svgElement: SVGSVGElement) => {
+    const converted = prepareSvgForPng(svgElement, getListLabelExportSources(graph));
+    const prepared = buildExportableSVG(graph, converted);
+    // prepareSvgForPng owns this background. Explicit bounds cover negative
+    // coordinates too; a percentage-sized rectangle would still start at zero.
+    const background = prepared.clone.firstElementChild!;
+    for (const key of ["x", "y", "width", "height"] as const) {
+        background.setAttribute(key, String(prepared[key]));
+    }
+    return prepared;
 };

@@ -64,6 +64,11 @@ describe('Graph export tests', () => {
       });
 
       cy.contains('Export').click();
+      cy.contains('Export as SVG').click();
+      cy.wrap(null).should(() => {
+        expect(exportedFiles.some(file => file.name === 'Graph.svg')).to.equal(true);
+      });
+      cy.contains('Export').click();
       cy.contains('Export as PNG').click();
       cy.wrap(null).should(() => {
         expect(exportedFiles.some(file => file.name === 'Graph.png')).to.equal(true);
@@ -84,6 +89,11 @@ describe('Graph export tests', () => {
         const png = exportedFiles.find(file => file.name === 'Graph.png')!.data as Blob;
 
         return cy.window().then(async (window) => {
+          // Image coordinates now start at the full-model viewBox, not the
+          // visible canvas origin. Use the independently exported SVG bounds.
+          const svgFile = exportedFiles.find(file => file.name === 'Graph.svg')!.data as Blob;
+          const parsed = new window.DOMParser().parseFromString(await svgFile.text(), 'image/svg+xml');
+          const bounds = parsed.documentElement.getAttribute('viewBox')!.split(' ').map(Number);
           const imageUrl = window.URL.createObjectURL(png);
           const image = new window.Image();
           image.src = imageUrl;
@@ -97,20 +107,23 @@ describe('Graph export tests', () => {
           canvas.height = image.naturalHeight;
           const context = canvas.getContext('2d')!;
           context.drawImage(image, 0, 0);
-          const scaleX = image.naturalWidth / svgRect.width;
-          const scaleY = image.naturalHeight / svgRect.height;
+          const scaleX = image.naturalWidth / bounds[2];
+          const scaleY = image.naturalHeight / bounds[3];
+          expect(image.naturalWidth).to.equal(Math.round(bounds[2] * 3));
+          expect(image.naturalHeight).to.equal(Math.round(bounds[3] * 3));
+          expect(Array.from(context.getImageData(0, 0, 1, 1).data)).to.deep.equal([255, 255, 255, 255]);
 
           labelRects.forEach(rect => {
             const pixels = context.getImageData(
-              Math.max(0, Math.floor(rect.x * scaleX)),
-              Math.max(0, Math.floor(rect.y * scaleY)),
+              Math.max(0, Math.floor((rect.x - bounds[0]) * scaleX)),
+              Math.max(0, Math.floor((rect.y - bounds[1]) * scaleY)),
               Math.max(1, Math.ceil(rect.width * scaleX)),
               Math.max(1, Math.ceil(rect.height * scaleY)),
             ).data;
             let darkPixels = 0;
 
             for (let index = 0; index < pixels.length; index += 4) {
-              if (pixels[index] < 80 && pixels[index + 1] < 80 && pixels[index + 2] < 80) {
+              if (pixels[index + 3] === 255 && pixels[index] < 80 && pixels[index + 1] < 80 && pixels[index + 2] < 80) {
                 darkPixels++;
               }
             }

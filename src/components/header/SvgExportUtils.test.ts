@@ -2,7 +2,8 @@
  * @jest-environment jsdom
  */
 import {afterEach, describe, expect, it, vi} from "vitest";
-import {prepareSvgForPng} from "./SvgExportUtils";
+import {prepareGraphForPng, prepareSvgForPng} from "./SvgExportUtils";
+import type {Graph} from "@maxgraph/core";
 import type {ListLabelExportSource} from "./SvgExportUtils";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -71,6 +72,23 @@ afterEach(() => {
 });
 
 describe("prepareSvgForPng", () => {
+    it("covers negative model coordinates with an opaque background without changing the live SVG", () => {
+        const {svg} = createTestSvg([]);
+        const graph = {
+            getGraphBounds: () => ({x: -100, y: -50, width: 400, height: 300}),
+            getView: () => ({getScale: () => 2}),
+            getDefaultParent: () => null,
+            getChildVertices: () => [],
+        } as unknown as Graph;
+        const {clone, width, height} = prepareGraphForPng(graph, svg);
+        expect(clone.getAttribute("viewBox")).toBe("-140 -90 480 380");
+        expect([width, height]).toEqual([480, 380]);
+        const background = clone.firstElementChild!;
+        expect(["x", "y", "width", "height", "fill"].map(key => background.getAttribute(key)))
+            .toEqual(["-140", "-90", "480", "380", "white"]);
+        expect(svg.hasAttribute("viewBox")).toBe(false);
+        expect(svg.querySelector("rect")).toBeNull();
+    });
     it("converts HTML list labels to SVG text without changing the live SVG", () => {
         const {svg, source} = createTestSvg(["Independent", "Responsible"]);
         mockRangeGeometry((activeTextNode, startOffset, endOffset) => {
