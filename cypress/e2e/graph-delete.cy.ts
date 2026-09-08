@@ -35,4 +35,22 @@ describe('Graph Deletion UI Tests', () => {
 
      cy.get('#graphContainer').contains('Do 1').should('not.exist');
   });
+
+    it('should keep a deleted root goal\'s children from overlapping', () => {
+        cy.get('#graphContainer').contains('Do').click({force: true});
+
+        cy.get('body').type('{backspace}');
+
+        cy.get('.modal input[type="checkbox"]').should('not.be.checked');
+        cy.get('[data-cy="confirm-delete"]').click();
+
+        cy.get('#graphContainer').contains('Do1').should('be.visible').then(($firstGoal) => {
+            cy.get('#graphContainer').contains('Do3').should('be.visible').then(($secondGoal) => {
+                const firstGoalBounds = $firstGoal[0].getBoundingClientRect();
+                const secondGoalBounds = $secondGoal[0].getBoundingClientRect();
+
+                expect(firstGoalBounds.left).not.to.equal(secondGoalBounds.left);
+            });
+        });
+    });
 });
