@@ -27,14 +27,14 @@ import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster, GlobObject, InstanceId} from "../types.ts";
+import {Cluster, GlobObject} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
 import {convertEditingValueToList, isListLabelCell, makeHtmlListLabel, readListEditorValue} from "./GraphLabelUtils";
-import {hasCellId, isNonFunctionCell} from "./GraphCellUtils";
+import {isNonFunctionCell} from "./GraphCellUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -164,15 +164,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         // 2) Validate all IDs up-front
         type InvalidInfo = { id: string | null, reason: string };
         const invalids: InvalidInfo[] = [];
-        const parsedById = new Map<string, { goalId: number; instanceId: InstanceId }>();
+        const parsedByCell = new Map<Cell, ReturnType<typeof parseGoalRefId>>();
 
         toRemove.forEach(cell => {
             const id = cell.getId();
             try {
-                const pairs = parseGoalRefId(id!);
-                pairs!.forEach(({goalId, instanceId}) => {
-                    parsedById.set(id!, {goalId, instanceId});
-                });
+                parsedByCell.set(cell, parseGoalRefId(id!));
 
             } catch (err) {
                 invalids.push({
@@ -209,20 +206,18 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         cells.forEach(cell => removeCellRecursively(cell));
 
         // 5) Dispatch Redux actions only for actually deleted cells,
-        //    map by id to use parsed info we saved earlier.
+        //    reuse the validated records for the same cell objects.
         deletedCells.forEach(cell => {
-            const id = cell.getId();
-            if (!hasCellId(id)) return;
-            const parsed = parsedById.get(id);
-            if (!parsed) {
-                console.warn('Deleted cell has no parsed info (unexpected):', id);
-                return;
-            }
-            dispatch(removeGoalIdFromTree({
-                id: parsed.goalId,
-                instanceId: parsed.instanceId,
-                removeChildren: removeChildrenFlag,
-            }));
+            const pairs = parsedByCell.get(cell);
+            // removeCells also returns connected edges, which have no goal records.
+            if (!pairs) return;
+            pairs.forEach(({goalId, instanceId}) => {
+                dispatch(removeGoalIdFromTree({
+                    id: goalId,
+                    instanceId,
+                    removeChildren: removeChildrenFlag,
+                }));
+            });
         });
         setShowDeleteWarning(false);
     };
@@ -422,9 +417,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
-                                const cellId = cell.getId();
-                                if (isNonFunctionCell(cell) && hasCellId(cellId)) {
-                                    editedNonFunctionalCellIdsRef.current.add(cellId);
+                                if (isNonFunctionCell(cell)) {
+                                    // The predicate has already matched a non-empty ID prefix.
+                                    editedNonFunctionalCellIdsRef.current.add(cell.getId()!);
                                 }
                                 numericCellIds.forEach((instanceId, i) => {
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
