@@ -6,6 +6,7 @@ import Card from "react-bootstrap/Card";
 import Form from "react-bootstrap/Form";
 import Table from "react-bootstrap/Table";
 import {BsCheckCircle, BsPencilSquare, BsXCircle} from "react-icons/bs";
+import ProjectBackgroundModal from "./ProjectBackgroundModal";
 import {useFileContext} from "./context/FileProvider";
 import {parseStoriesFromText, useUserStories, UserStory} from "./context/UserStoriesContext";
 import {checkConsistencyPrinciples} from "./utils/consistencyChecker";
@@ -14,7 +15,7 @@ import {generateUserStories} from "./utils/llmService";
 import {buildUserStoryPrompt} from "./utils/promptBuilder";
 
 const buildStorySentence = (s: UserStory): string => {
-  return `As a ${s.role}, I want to ${s.action} so that ${s.qualityGoal}. I want to feel ${s.emotionalGoal}.`;
+  return `As a ${s.role}, I want to ${s.action} so that ${s.immediateUserValue}.`;
 };
 
 export const getStoryText = (story: UserStory): string => {
@@ -23,11 +24,7 @@ export const getStoryText = (story: UserStory): string => {
 
 const exportStoriesAsTxt = (stories: UserStory[]): void => {
   const text = stories
-    .map((s) => {
-      const header = getStoryText(s).trim();
-      const tasks = s.subTasks.map((t) => `  - ${t}`).join("\n");
-      return tasks.length > 0 ? `${header}\n${tasks}` : header;
-    })
+    .map((s) => getStoryText(s).trim())
     .join("\n\n");
 
   const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
@@ -43,11 +40,7 @@ const exportStoriesAsTxt = (stories: UserStory[]): void => {
 
 const copyStoriesToClipboard = async (stories: UserStory[]): Promise<void> => {
   const text = stories
-    .map((s) => {
-      const header = getStoryText(s).trim();
-      const tasks = s.subTasks.map((t) => `  - ${t}`).join("\n");
-      return tasks.length > 0 ? `${header}\n${tasks}` : header;
-    })
+    .map((s) => getStoryText(s).trim())
     .join("\n\n");
 
   await navigator.clipboard.writeText(text);
@@ -59,6 +52,8 @@ const UserStoriesPanel = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState<string>("");
   const [clipboardError, setClipboardError] = useState<string | null>(null);
+  const [showBackgroundModal, setShowBackgroundModal] = useState(false);
+  const [projectBackground, setProjectBackground] = useState("");
 
   const extractedModel = useMemo(() => extractModelForPrompt(treeData), [treeData]);
   const cpResults = useMemo(() => {
@@ -98,11 +93,12 @@ const UserStoriesPanel = () => {
     }
   };
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (background: string) => {
+    setShowBackgroundModal(false);
     usDispatch({type: "CLEAR"});
     usDispatch({type: "SET_LOADING"});
     try {
-      const prompt = buildUserStoryPrompt(extractedModel);
+      const prompt = buildUserStoryPrompt(extractedModel, background);
       const raw = await generateUserStories(prompt);
       const stories = parseStoriesFromText(raw);
       usDispatch({type: "SET_SUCCESS", payload: {rawOutput: raw, stories}});
@@ -126,8 +122,8 @@ const UserStoriesPanel = () => {
             <Card.Header className="d-flex justify-content-between align-items-center">
               <span>Consistency principles</span>
               {usState.status === "success" && (
-                <Badge bg={passedCount === 9 ? "success" : "secondary"}>
-                  {passedCount}/9
+                <Badge bg={passedCount === cpResults.length ? "success" : "secondary"}>
+                  {passedCount}/{cpResults.length}
                 </Badge>
               )}
             </Card.Header>
@@ -210,19 +206,6 @@ const UserStoriesPanel = () => {
                   ) : (
                     <>
                       {isRejected ? <p><s>{textToShow}</s></p> : <p>{textToShow}</p>}
-                      {s.subTasks.length > 0 && (
-                        <ul className="mt-2">
-                          {s.subTasks.map((t, idx) => (
-                            <li key={`${s.id}-${idx}`}>{isRejected ? <s>{t}</s> : t}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <div className="d-flex gap-2">
-                        <Badge bg="info" className="me-2">{s.qualityGoal}</Badge>
-                        <Badge bg="warning" text="dark">
-                          {s.emotionalGoal}
-                        </Badge>
-                      </div>
                     </>
                   )}
                 </Card.Body>
@@ -280,13 +263,20 @@ const UserStoriesPanel = () => {
           </Button>
           <Button
             variant="outline-warning"
-            onClick={handleRegenerate}
+            onClick={() => setShowBackgroundModal(true)}
             disabled={isLoading}
           >
             Regenerate
           </Button>
         </div>
       )}
+      <ProjectBackgroundModal
+        show={showBackgroundModal}
+        projectBackground={projectBackground}
+        onProjectBackgroundChange={setProjectBackground}
+        onCancel={() => setShowBackgroundModal(false)}
+        onConfirm={handleRegenerate}
+      />
     </div>
   );
 };

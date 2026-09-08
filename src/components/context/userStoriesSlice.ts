@@ -4,8 +4,7 @@ export type UserStory = {
   id: string;
   role: string;
   action: string;
-  qualityGoal: string;
-  emotionalGoal: string;
+  immediateUserValue: string;
   subTasks: string[];
   status: "pending" | "approved" | "rejected" | "edited";
   editedText: string;
@@ -32,32 +31,20 @@ export function parseStoriesFromText(raw: string): UserStory[] {
     .filter((b) => b.length > 0 && b.startsWith("As a "));
 
   return blocks.map((block) => {
-    const lines = block.split("\n").map((l) => l.trimEnd());
-    const firstLine = (lines[0] ?? "").trim();
+    const storyText = block.replace(/\s+/g, " ").trim();
 
-    const match = firstLine.match(
-      /^As a\s+(.*?),\s*I want to\s+(.*?)\s+so that\s+(.*?)\.\s*I want to feel\s+(.*?)\.?\s*$/
-    );
+    const match = storyText.match(/^As a\s+(.*?),\s*I want to\s+(.*?)\s+so that\s+(.*?)\./);
 
     const role = (match?.[1] ?? "").trim();
     const action = (match?.[2] ?? "").trim();
-    const qualityGoal = (match?.[3] ?? "").trim();
-    const emotionalGoal = (match?.[4] ?? "").trim();
-
-    const subTasks = lines
-      .slice(1)
-      .map((l) => l.trim())
-      .filter((l) => l.startsWith("-") || l.startsWith("•") || l.startsWith("*") || l.startsWith("  -"))
-      .map((l) => l.replace(/^(-|•|\*)\s+/, "").replace(/^-\s+/, "").trim())
-      .filter((l) => l.length > 0);
+    const immediateUserValue = (match?.[3] ?? "").trim();
 
     return {
       id: crypto.randomUUID(),
       role,
       action,
-      qualityGoal,
-      emotionalGoal,
-      subTasks,
+      immediateUserValue,
+      subTasks: [],
       status: "pending",
       editedText: "",
     };
@@ -114,4 +101,3 @@ export const {
   editStory,
   clearStories,
 } = userStoriesSlice.actions;
-
