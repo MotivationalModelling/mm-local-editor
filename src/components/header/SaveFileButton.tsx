@@ -1,112 +1,79 @@
-import {useState} from "react";
+import {useLayoutEffect, useRef, useState} from "react";
+import {flushSync} from "react-dom";
 import Button from "react-bootstrap/Button";
 import {useFileContext} from "../context/FileProvider";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
-import type {JSONData} from "../modelJson.ts";
+import {createModelJson} from "../modelJson";
+import {useGraph} from "../context/GraphContext";
+import {captureNonFunctionalLayout} from "../Graphs/GraphGeometryUtils";
 
 const SaveFileButton = () => {
-	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();
+    const {setJsonFileHandle, treeData, tabData, goals, nonFunctionalLayout} = useFileContext();
+    const {graph} = useGraph();
+    const currentModel = useRef({treeData, tabData, goals, nonFunctionalLayout});
+    useLayoutEffect(() => {
+        currentModel.current = {treeData, tabData, goals, nonFunctionalLayout};
+    }, [treeData, tabData, goals, nonFunctionalLayout]);
+    const [errorModal, setErrorModal] = useState<ErrorModalProps>({
+        show: false,
+        title: "Cannot Save Model",
+        message: "",
+        onHide: () => setErrorModal(previous => ({...previous, show: false})),
+    });
 
-	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
-		show: false,
-		title: "",
-		message: "",
-		onHide: () => setErrorModal(prev => ({...prev, show: false}))
-	});
+    const showSaveError = (message: string) => {
+        setErrorModal(previous => ({...previous, show: true, message}));
+    };
 
-	// Function to check if there are any goals with content
-	const hasGoalsWithContent = (): boolean => {
-		// Check if any goal in the goals object has non-empty content
-		return Object.values(goals).some(goal => goal.content.trim() !== "");
-	};
+    const handleSave = async () => {
+        try {
+            // maxGraph owns the unsaved editor buffer. Commit it through the
+            // existing validation handler and flush React's resulting update
+            // before reading the model. Only needed when an edit is active.
+            if (graph?.isEditing()) {
+                flushSync(() => graph.stopEditing(false));
+            }
+            const snapshot = currentModel.current;
+            if (!Object.values(snapshot.goals).some(goal => goal.content.trim() !== "")) {
+                showSaveError("No goals have been added. Please add at least one goal before saving.");
+                return;
+            }
+            // Capture current model data and validate it before opening a file.
+            const layout = graph ? captureNonFunctionalLayout(graph) : snapshot.nonFunctionalLayout;
+            const json = JSON.stringify(createModelJson(snapshot.tabData, snapshot.treeData, snapshot.goals, layout));
+            const handle = await window.showSaveFilePicker({
+                suggestedName: "Model.json",
+                types: [{description: "JSON Files", accept: {"application/json": [".json"]}}],
+            });
+            const writable = await handle.createWritable();
+            try {
+                await writable.write(json);
+                await writable.close();
+            } catch (error) {
+                // Discard a failed write rather than commit partial file data.
+                await writable.abort().catch(() => undefined);
+                throw error;
+            }
+            setJsonFileHandle(handle);
+        } catch (error) {
+            if (error instanceof DOMException && error.name === "AbortError") {
+                // Cancelling the native file picker is not an application error.
+                return;
+            } else {
+                showSaveError(error instanceof Error ? error.message : "The model could not be saved.");
+            }
+        } finally {
+            returnFocusToGraph();
+        }
+    };
 
-	// Function to show error message when no goals are present
-	const showNoGoalsError = () => {
-		setErrorModal({
-			show: true,
-			title: "Cannot Save Model",
-			message: "No goals have been added. Please add at least one goal before saving.",
-			onHide: () => setErrorModal(prev => ({...prev, show: false}))
-		});
-	};
-
-	// Function to show error message when file name is empty
-	const showEmptyFileNameError = () => {
-		setErrorModal({
-			show: true,
-			title: "Invalid File Name",
-			message: "Please enter the file name",
-			onHide: () => setErrorModal(prev => ({...prev, show: false}))
-		});
-	};
-
-	async function triggerFileSave(
-		_fileName: string,
-		fileType: "json"
-	): Promise<void> {
-		try {
-			const handle = await window.showSaveFilePicker({
-				types: [
-					{
-						description: "JSON Files",
-						accept: {
-							"application/json": [".json"],
-						},
-					},
-				],
-				suggestedName: `Model.json`
-			});
-			const writable = await handle.createWritable();
-			await handleJSONFileInit(handle, writable);
-		} catch (error) {
-			console.error(`Error creating ${fileType} file: ${error}`);
-		}
-	}
-
-	// Handle after create JSON file
-	const handleJSONFileInit = async (
-		handle: FileSystemFileHandle,
-		writable: FileSystemWritableFileStream
-	) => {
-		try {
-			const jsonData: JSONData = {
-				tabData: tabData,
-				treeData: treeData || [],
-			};
-			const json = JSON.stringify(jsonData);
-			await writable.write(json);
-			await writable.close();
-			setJsonFileHandle(handle);
-		} catch (error) {
-			console.log(`Error initialize JSON File: ${error}`);
-		}
-	};
-
-	const handleBtnClick = async () => {
-		if (!hasGoalsWithContent()) {
-			showNoGoalsError();
-			return;
-		}
-
-		try {
-			// Always show the save dialog, never reuse file handle
-			await triggerFileSave("", "json");
-		} catch (error) {
-			console.error(`Error creating files: ${error}`);
-		}
-        returnFocusToGraph();
-	};
-	// className="m-2"
-
-	return (
-		<>
-			<Button variant="outline-primary" onClick={handleBtnClick}>
-				Save
-			</Button>
-			<ErrorModal {...errorModal} />
-		</>
-	);
+    return (
+        <>
+            <Button variant="outline-primary" onClick={handleSave}>Save</Button>
+            <ErrorModal {...errorModal}/>
+        </>
+    );
 };
 
 export default SaveFileButton;
