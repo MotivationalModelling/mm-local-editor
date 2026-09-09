@@ -151,6 +151,26 @@ describe('treeDataSlice', () => {
         const state = treeDataSlice.reducer(initialState, addGoalToTree(goal));
         expect(Object.keys(state.treeIds)).toContain(String(goal.id));
     });
+    it('should generate multiple instance IDs for a negative goal id', () => {
+        const goal = initialState.goals[-5];
+
+        const state1 = treeDataSlice.reducer(initialState, addGoalToTree(goal));
+        const state2 = treeDataSlice.reducer(state1, addGoalToTree(goal));
+
+        expect(state2.treeIds[goal.id]).toEqual(["-5:1", "-5:2"]);
+    });
+    it('should upgrade legacy instance IDs when creating state', () => {
+        // This cast represents untyped JSON/local-storage data created by an older version.
+        const legacyGoal = {...newTreeGoal({id: -5, type: "Who"}), instanceId: "-5-1"} as unknown as TreeGoal;
+        const legacyTabs = [{label: "Who" as const, icon: "", rows: [legacyGoal]}];
+
+        const state = createInitialState(legacyTabs, [legacyGoal]);
+
+        expect(state.goals[-5].instanceId).toBe("-5:1");
+        expect(state.goals[-5]).not.toHaveProperty("children");
+        expect(state.tree[0].instanceId).toBe("-5:1");
+        expect(state.treeIds[-5]).toEqual(["-5:1"]);
+    });
     it('should add goals at the Headless Tree drop target', () => {
         const goal = newTreeGoal({id: 2, type: "Do", content: "Child"});
         const parent = newTreeGoal({id: 1, type: "Do", children: []});
@@ -258,21 +278,21 @@ describe('findTreeGoalByInstanceId', () => {
     ];
     it('should handle an empty tree', () => {
         const tree: TreeGoal[] = [];
-        const instanceId: InstanceId = "2-3";
+        const instanceId: InstanceId = "2:3";
         expect(findTreeGoalByInstanceId(tree, instanceId)).toBeUndefined();
     });
     it('should return the tree node with correct Id', () => {
-        const targetInstanceId: InstanceId = "1-1";
+        const targetInstanceId: InstanceId = "1:1";
         const targetId = 1;
         expect(findTreeGoalByInstanceId(testTree, targetInstanceId)?.id).toBe(targetId);
     });
     it('should return the correct tree node in children level', () => {
-        const targetInstanceId: InstanceId = "3-1";
+        const targetInstanceId: InstanceId = "3:1";
         const targetId = 3;
         expect(findTreeGoalByInstanceId(testTree, targetInstanceId)?.id).toBe(targetId);
     });
     it('should return undefined if node not found', () => {
-        const nonExistentId: InstanceId = "999-999";
+        const nonExistentId: InstanceId = "999:999";
         expect(findTreeGoalByInstanceId(testTree, nonExistentId)).toBeUndefined();
     });
 });

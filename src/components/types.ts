@@ -3,7 +3,25 @@ import {z} from "zod";
 // ============================================
 // Core types (defined first to avoid circular refs)
 // ============================================
-export type InstanceId = `${number}-${number}`
+export const INSTANCE_ID_SEPARATOR = ":";
+// Use `typeof` to derive the separator type from the constant and keep them in sync.
+export type InstanceId = `${number}${typeof INSTANCE_ID_SEPARATOR}${number}`
+
+const INSTANCE_ID_SCHEMA_RE = new RegExp(`^-?\\d+${INSTANCE_ID_SEPARATOR}\\d+$`);
+
+export const createInstanceId = (goalId: number, refId: number): InstanceId => {
+    // Instance IDs are made only from integers, so neither component can contain the separator.
+    if (!Number.isInteger(goalId)) {
+        throw new Error(`non-numeric goalId: "${goalId}"`);
+    }
+    if (!Number.isInteger(refId)) {
+        throw new Error(`non-numeric refId: "${refId}"`);
+    }
+    if (refId < 0) {
+        throw new Error(`negative refId: "${refId}"`);
+    }
+    return `${goalId}${INSTANCE_ID_SEPARATOR}${refId}`;
+};
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
@@ -31,12 +49,12 @@ export interface GoalRefId {
   instanceId: InstanceId;
 }
 
-// Parsed structure for functional goals like "Functional-8-1"
+// Parsed structure for functional goals like "Functional-8:1"
 export interface ParsedFunctionalId extends GoalRefId {
   type: "Functional";
 }
 
-// Parsed structure for nonfunctional goals like "Nonfunctional-[8-1;9-2]"
+// Parsed structure for nonfunctional goals like "Nonfunctional-[8:1;9:2]"
 export interface ParsedNonFunctionalId {
   type: "Nonfunctional";
   pairs: GoalRefId[];
@@ -78,8 +96,9 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
-const instanceIdSchema = z.custom<InstanceId>((val) => {
-  return typeof val === "string" && /^\d+-\d+$/.test(val);
+const instanceIdSchema = z.string().regex(INSTANCE_ID_SCHEMA_RE).transform((val): InstanceId => {
+  // The regex establishes the InstanceId shape before narrowing the schema output type.
+  return val as InstanceId;
 });
 
 export const GoalBaseSchema = z.object({
@@ -138,7 +157,7 @@ export type TreeGoal = {
 
 export const newTreeGoal = (initFields: Pick<TreeGoal, "type"> & Partial<TreeGoal>): TreeGoal => {
     const id = initFields.id ?? Date.now();
-    const instanceId = initFields.instanceId ?? `${id}-0`;
+    const instanceId = initFields.instanceId ?? createInstanceId(id, 0);
     return {id, content: "", instanceId, ...initFields};
 };
 

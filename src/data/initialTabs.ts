@@ -17,49 +17,49 @@ export const defaultTreeData: TreeGoal[] = [{
     id: 1,
     content: "Do",
     type: "Do",
-    instanceId: "1-1",
+    instanceId: "1:1",
     children: [{
         id: 6,
         content: "Do1",
         type: "Do",
-        instanceId: "6-1",
+        instanceId: "6:1",
         children: [{
             id: 7,
             content: "Do2",
             type: "Do",
-            instanceId: "7-1",
+            instanceId: "7:1",
             children: []
         }]
     }, {
         id: 8,
         content: "Do3",
         type: "Do",
-        instanceId: "8-1",
+        instanceId: "8:1",
         children: []
     }]
 }, {
     id: 2,
     content: "Be",
     type: "Be",
-    instanceId: "2-1",
+    instanceId: "2:1",
     children: []
 }, {
     id: 3,
     content: "Feel",
     type: "Feel",
-    instanceId: "3-1",
+    instanceId: "3:1",
     children: []
 }, {
     id: 4,
     content: "Who",
     type: "Who",
-    instanceId: "4-1",
+    instanceId: "4:1",
     children: []
 }, {
     id: 5,
     content: "Concern",
     type: "Concern",
-    instanceId: "5-1",
+    instanceId: "5:1",
     children: []
 }];
 

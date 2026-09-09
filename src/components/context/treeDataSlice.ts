@@ -3,9 +3,9 @@ import {
     createTabDataFromTabs,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {createInstanceId, InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
+import {normalizeInstanceId, parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)
@@ -129,19 +129,35 @@ const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId
 const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): InstanceId => {
     // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
-    return `${goalId}-${maxSuffix}`
+    return createInstanceId(goalId, maxSuffix)
 };
+
+const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({
+    ...goal,
+    // Upgrade IDs from saved models before they enter application state.
+    instanceId: normalizeInstanceId(goal.instanceId),
+    ...(goal.children === undefined
+        ? {}
+        : {children: normalizeTreeInstanceIds(goal.children)}),
+}));
+
+const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((tab) => ({
+    ...tab,
+    rows: normalizeTreeInstanceIds(tab.rows),
+}));
 
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeGoal[] = []) => {
-    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
+    const normalizedTabData = normalizeTabInstanceIds(tabData);
+    const normalizedTreeData = normalizeTreeInstanceIds(treeData);
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(normalizedTabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
     return {
         tabs,
         goals,
-        tree: treeData,
-        treeIds: createTreeIdsFromTreeData(goals, treeData),
+        tree: normalizedTreeData,
+        treeIds: createTreeIdsFromTreeData(goals, normalizedTreeData),
         showLineBetweenNonFunctionalGoals: true,
     };
 };
