@@ -123,13 +123,14 @@ const typeMapping: Record<Label, GoalType> = {
 };
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
+export const convertTreeDataToClusters = (treeData: TreeGoal[], goals: Record<TreeGoal["id"], TreeGoal>): Cluster => {
     const convertTreeGoalToClusterGoal = (item: TreeGoal): ClusterGoal => {
+        const goal = goals[item.id] ?? item;
         return {
             GoalID: item.id,
             instanceId: item.instanceId,
-            GoalType: typeMapping[item.type],
-            GoalContent: item.content,
+            GoalType: typeMapping[goal.type],
+            GoalContent: goal.content,
             GoalNote: "",
             SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
             GoalColor: item.color,
@@ -253,7 +254,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             dispatch,
             treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),
+            cluster: convertTreeDataToClusters(state.tree, state.goals),
             xmlData,
             setXmlData,
             jsonFileHandle,
