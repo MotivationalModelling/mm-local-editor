@@ -22,6 +22,23 @@ const goalDescriptionForLabel = (label: Label): string => {
     return goalNames[label] ?? "Goal name";
 };
 
+const createGoalDragImage = (goals: TreeGoal[]): HTMLElement => {
+    const dragImage = document.createElement("div");
+    dragImage.className = "d-grid gap-1";
+    dragImage.style.position = "fixed";
+    dragImage.style.top = "-1000px";
+
+    goals.forEach((goal) => {
+        const item = document.createElement("div");
+        item.className = "p-2 bg-white border rounded shadow-sm";
+        item.textContent = goal.content;
+        dragImage.appendChild(item);
+    });
+
+    document.body.appendChild(dragImage);
+    return dragImage;
+};
+
 interface Props {
 	label: Label
 	goals: TreeGoal[]
@@ -122,10 +139,14 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 	};
 
 
-	const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
-		const draggedGoals = groupSelected.length > 1 ? groupSelected : [row];
-		event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
-	};
+    const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
+        const draggedGoals = groupSelected.length > 1 ? groupSelected : [row];
+        event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
+
+        const dragImage = createGoalDragImage(draggedGoals);
+        event.dataTransfer.setDragImage(dragImage, 0, 0);
+        setTimeout(() => dragImage.remove(), 0);
+    };
 
 	const handleCheckboxToggle = (row: TreeGoal) => {
 		// Ignore the item if the content is empty
