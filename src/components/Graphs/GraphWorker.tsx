@@ -455,8 +455,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                         undoManager.undo();
                     }
                 }
-                // if windows control key pressed ...
-            } else if (Client.IS_WIN && evt.ctrlKey) {
+                // Windows and Linux use Control instead of Command.
+            } else if (!Client.IS_MAC && evt.ctrlKey) {
                 if (evt.code === "KeyZ") {
                     // ... and provided that we have some history to undo
                     //   DO NOT DELETE : removing this guard can crash the web browser
