@@ -104,17 +104,17 @@ describe('Graph Font Size UI Tests', () => {
     cy.contains('Font size').click();
     increase();
     fontInput().should('have.value', '17');
-    cy.get('#graphContainer').focus().trigger('keydown', {
-      key: 'z', code: 'KeyZ', keyCode: 90, which: 90, metaKey: true, ctrlKey: true,
+    cy.window().then(win => {
+      const isMac = win.navigator.appVersion.includes('Mac');
+      cy.get('#graphContainer').focus().trigger('keydown', {
+        key: 'z', code: 'KeyZ', keyCode: 90, which: 90, metaKey: isMac, ctrlKey: !isMac,
+      });
     });
     fontInput().should('have.value', '16');
     ['Do', 'Do1', 'Feel', 'Who'].forEach(label => expectFontSize(label, 16));
   });
 
   it('should not display duplicate text when font size changes during editing', () => {
-    cy.get('#graphContainer text').contains('Feel').then(($text) => {
-      cy.wrap(parseFloat(getComputedStyle($text[0]).fontSize)).as('initialFontSize');
-    });
     cy.get('#graphContainer').contains('Feel').dblclick({force: true});
     cy.get('.mxCellEditor').should('be.visible');
 
@@ -137,14 +137,18 @@ describe('Graph Font Size UI Tests', () => {
     decrease();
     cy.get('.mxCellEditor').should('have.css', 'font-size', '25px');
 
-    cy.get('.mxCellEditor').type('{esc}');
+    cy.get('.mxCellEditor').type('{esc}', {scrollBehavior: false});
     cy.get('.mxCellEditor').should('not.exist');
-    cy.get('@initialFontSize').then((initialFontSize) => {
+    // Refocus the viewport after editing so clipping is not mistaken for a hidden label.
+    cy.contains('Zoom').parent().find('button').eq(1).click();
+    cy.get('#graphContainer text').contains('Do3').then(($reference) => {
+      // Both labels now share the same zoom, and Do3 retains the default size of 16.
+      const referenceFontSize = parseFloat(getComputedStyle($reference[0]).fontSize);
       cy.get('#graphContainer text').contains('Feel')
         .should('be.visible')
         .and(($text) => {
           const updatedFontSize = parseFloat(getComputedStyle($text[0]).fontSize);
-          expect(updatedFontSize).to.be.closeTo(Number(initialFontSize) * 25 / 16, 0.1);
+          expect(updatedFontSize).to.be.closeTo(referenceFontSize * 25 / 16, 0.1);
         });
     });
   });
