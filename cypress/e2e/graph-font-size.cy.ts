@@ -8,8 +8,14 @@ describe('Graph Font Size UI Tests', () => {
   });
 
   const fontInput = () => cy.get('input[aria-label="Font size"]');
-  const increase = () => cy.get('button[aria-label="Increase font size"]').click();
-  const decrease = () => cy.get('button[aria-label="Decrease font size"]').click();
+  const increase = () => {
+    fontInput().focus();
+    cy.press(Cypress.Keyboard.Keys.UP);
+  };
+  const decrease = () => {
+    fontInput().focus();
+    cy.press(Cypress.Keyboard.Keys.DOWN);
+  };
   const selectGoal = (label: string, addToSelection = false) => (
     cy.get('#graphContainer text').contains(new RegExp(`^${label}$`)).click({
       force: true, metaKey: addToSelection, ctrlKey: addToSelection,
@@ -36,10 +42,10 @@ describe('Graph Font Size UI Tests', () => {
     });
   });
 
-  it('should leave mixed sizes blank and preserve their difference when stepping', () => {
+  it('should keep mixed sizes blank and preserve their difference when stepping', () => {
     cy.contains('Font size').click();
     selectGoal('Do');
-    fontInput().clear().type('20{enter}');
+    fontInput().type('{selectall}20');
     expectFontSize('Do1', 16);
     selectGoal('Do', true);
     fontInput().should('have.value', '');
@@ -51,23 +57,48 @@ describe('Graph Font Size UI Tests', () => {
 
     clearSelection();
     fontInput().should('have.value', '');
-    fontInput().type('24{enter}');
+    fontInput().type('{selectall}24');
     ['Do', 'Do1', 'Feel', 'Who'].forEach(label => expectFontSize(label, 24));
   });
 
-  it('should commit on blur and reject empty or out-of-range input', () => {
+  it('should preserve individual sizes when stepping the whole model', () => {
     cy.contains('Font size').click();
     selectGoal('Do');
-    cy.get('#graphContainer text').contains(/^Do$/).invoke('css', 'font-size').as('originalSize');
-    fontInput().clear().type('24');
-    cy.get('@originalSize').then(size => {
-      cy.get('#graphContainer text').contains(/^Do$/).should('have.css', 'font-size', size);
+    selectGoal('Do1', true);
+    fontInput().type('{selectall}20');
+    clearSelection();
+    fontInput().should('have.value', '');
+    increase();
+    increase();
+    fontInput().should('have.value', '');
+    ['Do', 'Do1'].forEach(label => expectFontSize(label, 22));
+    ['Do2', 'Do3', 'Be', 'Feel', 'Who', 'Concern'].forEach(label => expectFontSize(label, 18));
+    clearSelection();
+    decrease();
+    fontInput().should('have.value', '');
+    ['Do', 'Do1'].forEach(label => expectFontSize(label, 21));
+    ['Do2', 'Feel', 'Who'].forEach(label => expectFontSize(label, 17));
+  });
+
+  it('should apply valid font sizes immediately and ignore invalid sizes on the graph', () => {
+    cy.contains('Font size').click();
+    selectGoal('Do');
+    cy.get('#graphContainer text').contains(/^Do$/).invoke('css', 'font-size').as('originalSize', {type: 'static'});
+    fontInput().type('{selectall}24').should('be.focused');
+    cy.get('@originalSize').then(originalSize => {
+      cy.get('#graphContainer text').contains(/^Do$/).should(($text) => {
+        expect(parseFloat(getComputedStyle($text[0]).fontSize))
+          .to.be.closeTo(parseFloat(String(originalSize)) * 24 / 16, 0.1);
+      });
     });
-    fontInput().blur().should('have.value', '24');
+    cy.get('#graphContainer text').contains(/^Do$/).invoke('css', 'font-size').as('appliedSize', {type: 'static'});
     ['', '7', '41'].forEach(value => {
-      fontInput().clear();
-      if (value) fontInput().type(value);
-      fontInput().blur().should('have.value', '24');
+      if (value) fontInput().type(`{selectall}${value}`);
+      else fontInput().clear();
+      fontInput().should('have.value', value || '16').blur();
+      cy.get('@appliedSize').then(size => {
+        cy.get('#graphContainer text').contains(/^Do$/).should('have.css', 'font-size', size);
+      });
     });
     clearSelection();
     fontInput().should('have.value', '').focus().blur().should('have.value', '');
@@ -75,14 +106,31 @@ describe('Graph Font Size UI Tests', () => {
     expectFontSize('Feel', 16);
   });
 
-  it('should clamp each element independently at the size limits', () => {
+  it('should keep native stepping within the size limits', () => {
     cy.contains('Font size').click();
     selectGoal('Do');
-    fontInput().clear().type('40{enter}');
+    fontInput().type('{selectall}40');
+    increase();
+    expectFontSize('Do', 40);
+    decrease();
+    expectFontSize('Do', 39);
+    fontInput().type('{selectall}8');
+    decrease();
+    expectFontSize('Do', 8);
+    increase();
+    expectFontSize('Do', 9);
+    expectFontSize('Do1', 16);
+  });
+
+  it('should clamp mixed sizes independently', () => {
+    cy.contains('Font size').click();
+    selectGoal('Do');
+    fontInput().type('{selectall}40');
     selectGoal('Do1');
-    fontInput().clear().type('8{enter}');
+    fontInput().type('{selectall}8');
     selectGoal('Do', true);
     increase();
+    fontInput().should('have.value', '');
     expectFontSize('Do', 40);
     expectFontSize('Do1', 9);
     selectGoal('Do', true);
@@ -90,17 +138,20 @@ describe('Graph Font Size UI Tests', () => {
     decrease();
     expectFontSize('Do', 38);
     expectFontSize('Do1', 8);
+    expectFontSize('Feel', 16);
   });
 
-  it('should commit a draft to its original selection when another goal is clicked', () => {
+  it('should keep font changes on the edited goal when another goal is selected', () => {
     cy.contains('Font size').click();
     selectGoal('Do');
-    fontInput().clear().type('24');
+    fontInput().type('{selectall}24');
     expectFontSize('Do1', 16);
     expectFontSize('Do', 24);
   });
 
-  it('should undo a global adjustment in one step and update the displayed size', () => {
+  it('should undo a global adjustment in one step and update the displayed size', function () {
+    // The existing graph shortcuts support only macOS and Windows.
+    if (Cypress.platform !== 'darwin' && Cypress.platform !== 'win32') this.skip();
     cy.contains('Font size').click();
     increase();
     fontInput().should('have.value', '17');
@@ -120,7 +171,7 @@ describe('Graph Font Size UI Tests', () => {
 
     cy.contains('Font size').click();
     cy.contains('Font size').parent().find('input[type="number"]')
-      .type('{selectall}24{enter}')
+      .type('{selectall}24')
       .should('have.value', '24');
 
     cy.get('.mxCellEditor').should('be.visible');
@@ -128,7 +179,7 @@ describe('Graph Font Size UI Tests', () => {
     cy.get('.mxCellEditor').should('have.css', 'font-size', '24px');
 
     cy.contains('Font size').parent().find('input[type="number"]')
-      .type('{selectall}25{enter}')
+      .type('{selectall}25')
       .should('have.value', '25');
     cy.get('.mxCellEditor').should('have.css', 'font-size', '25px');
 
@@ -167,7 +218,7 @@ describe('Graph Font Size UI Tests', () => {
 
     cy.contains('Font size').click();
     cy.contains('Font size').parent().find('input[type="number"]')
-      .type('{selectall}17{enter}')
+      .type('{selectall}17')
       .should('have.value', '17');
 
     cy.get('@shapePathData').then((shapePathData) => {
@@ -195,7 +246,7 @@ describe('Graph Font Size UI Tests', () => {
     cy.get('#graphContainer text').contains('Feel').dblclick({force: true});
     cy.contains('Font size').click();
     cy.contains('Font size').parent().find('input[type="number"]')
-      .type('{selectall}24{enter}')
+      .type('{selectall}24')
       .should('have.value', '24');
 
     cy.get('@dottedPathData').then((pathData) => {
