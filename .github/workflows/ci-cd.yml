@@ -13,6 +13,13 @@ on:
     branches:
       - develop
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # =========================================================================
   # CI JOB: Build, Test (Runs on Push and PR)
@@ -20,15 +27,16 @@ jobs:
   ci:
     name: Build and Test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -36,16 +44,27 @@ jobs:
         run: npm ci
 
       - name: Run Vitest (Unit/Component Tests)
-        run: npm test
+        run: npm run test:unit
 
       - name: Run Vite Build Check
         run: npm run build
 
       - name: Run Cypress E2E Tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           start: npm run dev
           wait-on: 'http://localhost:5173/mm-local-editor/'
+
+      - name: Upload Cypress Failure Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cypress-failure-${{ github.run_id }}
+          path: |
+            cypress/screenshots
+            cypress/videos
+          if-no-files-found: ignore
+          retention-days: 7
   # =========================================================================
   # CD JOB: Deploy to GitHub Pages
   # Runs ONLY on PUSH to the 'develop' branch (which happens after a successful merge)
@@ -58,17 +77,23 @@ jobs:
     # This condition ensures deployment runs ONLY when a push occurs 
     # directly to the 'develop' branch (which covers merges).
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    
+
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
           
