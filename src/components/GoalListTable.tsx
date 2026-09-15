@@ -14,6 +14,7 @@ import {
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {BsFillTrash3Fill, BsGripVertical} from "react-icons/bs";
+import {GoalDragImage, GoalDragImageGroup} from "./GoalDragImage.tsx";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -21,18 +22,6 @@ const goalDescriptionForLabel = (label: Label): string => {
     };
     return goalNames[label] ?? "Goal name";
 };
-
-const GoalDragImageItem: React.FC<{goal: TreeGoal}> = ({goal}) => (
-    <div className="p-2 bg-white border rounded shadow-sm">
-        {goal.content}
-    </div>
-);
-
-const GoalDragImage = React.forwardRef<HTMLDivElement, {goals: TreeGoal[]}>(({goals}, ref) => (
-    <div ref={ref} className="d-grid gap-1" style={{position: "fixed", top: "-1000px"}} aria-hidden="true">
-        {goals.map((goal) => <GoalDragImageItem key={goal.id} goal={goal}/>)}
-    </div>
-));
 
 interface Props {
 	label: Label
@@ -278,13 +267,13 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 			))}
 			</tbody>
 		</Table>
-            <GoalDragImage ref={groupDragImageRef} goals={groupSelected}/>
+            <GoalDragImageGroup ref={groupDragImageRef} goals={groupSelected}/>
             {goals.map((goal) => (
                 <GoalDragImage key={goal.id}
                                ref={(element) => {
                                    singleDragImageRefs.current[goal.id] = element;
                                }}
-                               goals={[goal]}/>
+                               goal={goal}/>
             ))}
         </>
 	);
