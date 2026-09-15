@@ -35,4 +35,29 @@ describe('Graph Deletion UI Tests', () => {
 
      cy.get('#graphContainer').contains('Do 1').should('not.exist');
   });
+
+  it('removes every goal represented by a grouped cell from the hierarchy', () => {
+    const root = {id: 1, content: 'Root goal', type: 'Do', instanceId: '1:1', children: []};
+    const concerns = [
+      {id: 2, content: 'First concern', type: 'Concern', instanceId: '2:1', children: []},
+      {id: 3, content: 'Second concern', type: 'Concern', instanceId: '3:1', children: []},
+    ];
+    cy.visit('/projectEdit', {onBeforeLoad(window) {
+      window.localStorage.setItem('ammber/treeData', JSON.stringify([root, ...concerns]));
+      window.localStorage.setItem('ammber/tabData', JSON.stringify(
+        ['Do', 'Be', 'Feel', 'Concern', 'Who'].map(label => ({
+          label, icon: '', rows: label === 'Do' ? [root] : label === 'Concern' ? concerns : [],
+        })),
+      ));
+    }});
+    cy.get('#graphTab').click();
+    cy.contains('#graphContainer li', 'First concern').click({force: true});
+    cy.get('body').type('{backspace}');
+    cy.contains('#graphContainer li', 'First concern').should('not.exist');
+    cy.contains('#graphContainer li', 'Second concern').should('not.exist');
+    cy.window().should(window => {
+      const tree = JSON.parse(window.localStorage.getItem('ammber/treeData')!);
+      expect(tree.map((goal: {id: number}) => goal.id)).to.deep.equal([1]);
+    });
+  });
 });
