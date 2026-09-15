@@ -1,4 +1,4 @@
-import React, {RefObject, useState} from "react";
+import React, {RefObject, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
 import Row from "react-bootstrap/Row";
@@ -22,22 +22,17 @@ const goalDescriptionForLabel = (label: Label): string => {
     return goalNames[label] ?? "Goal name";
 };
 
-const createGoalDragImage = (goals: TreeGoal[]): HTMLElement => {
-    const dragImage = document.createElement("div");
-    dragImage.className = "d-grid gap-1";
-    dragImage.style.position = "fixed";
-    dragImage.style.top = "-1000px";
+const GoalDragImageItem: React.FC<{goal: TreeGoal}> = ({goal}) => (
+    <div className="p-2 bg-white border rounded shadow-sm">
+        {goal.content}
+    </div>
+);
 
-    goals.forEach((goal) => {
-        const item = document.createElement("div");
-        item.className = "p-2 bg-white border rounded shadow-sm";
-        item.textContent = goal.content;
-        dragImage.appendChild(item);
-    });
-
-    document.body.appendChild(dragImage);
-    return dragImage;
-};
+const GoalDragImage = React.forwardRef<HTMLDivElement, {goals: TreeGoal[]}>(({goals}, ref) => (
+    <div ref={ref} className="d-grid gap-1" style={{position: "fixed", top: "-1000px"}} aria-hidden="true">
+        {goals.map((goal) => <GoalDragImageItem key={goal.id} goal={goal}/>)}
+    </div>
+));
 
 interface Props {
 	label: Label
@@ -54,6 +49,8 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
 	const [newRowAllowed, setNewRowAllowed] = useState<boolean>(false);
+    const groupDragImageRef = useRef<HTMLDivElement>(null);
+    const singleDragImageRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
 	// add new row
 	const handleKeyPress = (
@@ -140,12 +137,15 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 
 
     const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
-        const draggedGoals = groupSelected.length > 1 ? groupSelected : [row];
+        const draggedGoals = (groupSelected.length > 1) ? groupSelected : [row];
         event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
 
-        const dragImage = createGoalDragImage(draggedGoals);
-        event.dataTransfer.setDragImage(dragImage, 0, 0);
-        setTimeout(() => dragImage.remove(), 0);
+        const dragImage = (draggedGoals.length > 1)
+            ? groupDragImageRef.current
+            : singleDragImageRefs.current[row.id];
+        if (dragImage) {
+            event.dataTransfer.setDragImage(dragImage, 0, 0);
+        }
     };
 
 	const handleCheckboxToggle = (row: TreeGoal) => {
@@ -200,6 +200,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 	};
 
 	return (
+        <>
 		<Table striped bordered hover>
 			<thead>
 				<tr>
@@ -277,6 +278,15 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 			))}
 			</tbody>
 		</Table>
+            <GoalDragImage ref={groupDragImageRef} goals={groupSelected}/>
+            {goals.map((goal) => (
+                <GoalDragImage key={goal.id}
+                               ref={(element) => {
+                                   singleDragImageRefs.current[goal.id] = element;
+                               }}
+                               goals={[goal]}/>
+            ))}
+        </>
 	);
 };
 

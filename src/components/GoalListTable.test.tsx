@@ -1,19 +1,22 @@
 /**
 * @jest-environment jsdom
 */
-import React, {createRef} from "react";
-import {fireEvent, render, screen} from "@testing-library/react";
-import {describe, expect, it, vi} from "vitest";
+import {createRef} from "react";
+import {cleanup, fireEvent, render, screen} from "@testing-library/react";
+import {afterEach, describe, expect, it, vi} from "vitest";
 import FileProvider from "./context/FileProvider.tsx";
 import GoalListTable from "./GoalListTable.tsx";
 import {newTreeGoal} from "./types.ts";
 
+afterEach(cleanup);
+
 describe("GoalListTable", () => {
-    it("shows every selected goal in the drag image", () => {
+    it.each([1, 2])("shows all %i selected goal(s) in the drag image", (selectionCount) => {
         const goals = [
             newTreeGoal({id: 10, type: "Do", content: "First goal"}),
             newTreeGoal({id: 11, type: "Do", content: "Second goal"}),
         ];
+        const selectedGoals = goals.slice(0, selectionCount);
         const dataTransfer = {
             setData: vi.fn(),
             setDragImage: vi.fn(),
@@ -23,7 +26,7 @@ describe("GoalListTable", () => {
             <FileProvider>
                 <GoalListTable label="Do"
                                goals={goals}
-                               groupSelected={goals}
+                               groupSelected={selectedGoals}
                                setGroupSelected={vi.fn()}
                                handleSynTableTree={vi.fn()}
                                inputRef={createRef<HTMLInputElement>()}/>
@@ -32,7 +35,7 @@ describe("GoalListTable", () => {
         fireEvent.dragStart(screen.getByLabelText("Drag First goal goal"), {dataTransfer});
 
         const dragImage = dataTransfer.setDragImage.mock.calls[0][0] as HTMLElement;
-        expect(dragImage.textContent).toContain("First goal");
-        expect(dragImage.textContent).toContain("Second goal");
+        expect(dragImage.className).toBe("d-grid gap-1");
+        selectedGoals.forEach((goal) => expect(dragImage.textContent).toContain(goal.content));
     });
 });
