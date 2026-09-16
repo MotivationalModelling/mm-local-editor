@@ -1,4 +1,4 @@
-import React, {RefObject, useRef, useState} from "react";
+import React, {RefObject, useState} from "react";
 import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
 import Row from "react-bootstrap/Row";
@@ -14,7 +14,6 @@ import {
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {BsFillTrash3Fill, BsGripVertical} from "react-icons/bs";
-import {GoalDragImage, GoalDragImageGroup} from "./GoalDragImage.tsx";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -29,17 +28,16 @@ interface Props {
 	groupSelected: TreeGoal[]
 	setGroupSelected: (groupSelected: TreeGoal[]) => void
 	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
+    handleDragStart: (event: React.DragEvent<HTMLElement>, row: TreeGoal) => void
     inputRef: RefObject<HTMLInputElement>
 }
 
-const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
+const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, handleDragStart, inputRef}) => {
 	const treeData = useFileContext();
 	const {dispatch, treeIds} = treeData;
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
 	const [editedText, setEditedText] = useState<string>("");
 	const [newRowAllowed, setNewRowAllowed] = useState<boolean>(false);
-    const groupDragImageRef = useRef<HTMLDivElement>(null);
-    const singleDragImageRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
 	// add new row
 	const handleKeyPress = (
@@ -124,19 +122,6 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 		setGroupSelected(filteredGroupSelected);
 	};
 
-
-    const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
-        const draggedGoals = (groupSelected.length > 1) ? groupSelected : [row];
-        event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
-
-        const dragImage = (draggedGoals.length > 1)
-            ? groupDragImageRef.current
-            : singleDragImageRefs.current[row.id];
-        if (dragImage) {
-            event.dataTransfer.setDragImage(dragImage, 0, 0);
-        }
-    };
-
 	const handleCheckboxToggle = (row: TreeGoal) => {
 		// Ignore the item if the content is empty
 		if (isEmptyGoal(row)) {
@@ -189,7 +174,6 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 	};
 
 	return (
-        <>
 		<Table striped bordered hover>
 			<thead>
 				<tr>
@@ -267,15 +251,6 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 			))}
 			</tbody>
 		</Table>
-            <GoalDragImageGroup ref={groupDragImageRef} goals={groupSelected}/>
-            {goals.map((goal) => (
-                <GoalDragImage key={goal.id}
-                               ref={(element) => {
-                                   singleDragImageRefs.current[goal.id] = element;
-                               }}
-                               goal={goal}/>
-            ))}
-        </>
 	);
 };
 
