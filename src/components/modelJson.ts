@@ -1,19 +1,20 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
-import {INSTANCE_ID_SEPARATOR, readInstanceId} from "./instanceId.ts";
+import {INSTANCE_ID_SEPARATOR, normalizeInstanceId, parseInstanceId, readInstanceId} from "./instanceId.ts";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
 const LabelSchema = z.enum(labels);
 
-const InstanceIdSchema = z.custom<InstanceId>(
-    // Imported files may predate the separator change, so the legacy spelling is
-    // allowed through here and normalizeInstanceId() upgrades it on the way into state
+// Imported files may predate the separator change, so the legacy spelling is accepted
+// and canonicalised here. Parsing at the boundary is what keeps the InstanceId type
+// honest: everything downstream, including the tree walk below, sees only "12:1".
+const InstanceIdSchema = z.custom<string>(
     (value) => readInstanceId(value, {acceptLegacy: true}) !== null,
     `instanceId must be two numbers separated by "${INSTANCE_ID_SEPARATOR}", e.g. "12${INSTANCE_ID_SEPARATOR}1"`
-);
+).transform(normalizeInstanceId);
 
-const TreeGoalSchema: z.ZodType<TreeGoal> = z.lazy(() => z.object({
+const TreeGoalSchema: z.ZodType<TreeGoal, z.ZodTypeDef, unknown> = z.lazy(() => z.object({
     id: z.number().int(),
     content: z.string(),
     type: LabelSchema,
@@ -75,7 +76,7 @@ export const ModelJsonSchema = z.object({
 
 
     // TreeData: id and type has to be consistent with TabData
-    const instanceIds = new Set<string>();
+    const instanceIds = new Set<InstanceId>();
     const validateTree = (goals: TreeGoal[], path: (string | number)[]) => {
         goals.forEach((goal, index) => {
             const goalPath = [...path, index];
@@ -95,9 +96,10 @@ export const ModelJsonSchema = z.object({
                 });
             }
 
-            // instance id has to match id
-            const instanceIdParts = readInstanceId(goal.instanceId, {acceptLegacy: true});
-            if (instanceIdParts !== null && instanceIdParts.goalId !== goal.id) {
+            // A malformed instanceId fails InstanceIdSchema, which aborts the parse before
+            // this runs, so every ID here is canonical: it parses, and two spellings of one
+            // instance have already converged to the same string.
+            if (parseInstanceId(goal.instanceId).goalId !== goal.id) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: [...goalPath, "instanceId"],
@@ -105,20 +107,14 @@ export const ModelJsonSchema = z.object({
                 });
             }
 
-            // Compare on the canonical spelling so a legacy and a current ID for the
-            // same instance are still recognised as duplicates
-            const canonicalInstanceId = (instanceIdParts === null)
-                ? goal.instanceId
-                : `${instanceIdParts.goalId}${INSTANCE_ID_SEPARATOR}${instanceIdParts.refId}`;
-
-            if (instanceIds.has(canonicalInstanceId)) {
+            if (instanceIds.has(goal.instanceId)) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: [...goalPath, "instanceId"],
                     message: `duplicate instanceId "${goal.instanceId}"`,
                 });
             }
-            instanceIds.add(canonicalInstanceId);
+            instanceIds.add(goal.instanceId);
 
             validateTree(goal.children ?? [], [...goalPath, "children"]);
         });

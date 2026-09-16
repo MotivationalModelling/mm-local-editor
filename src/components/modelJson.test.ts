@@ -43,10 +43,15 @@ describe('parseModelJson instance IDs', () => {
         expect(() => parse(model)).not.toThrow();
     });
 
-    // normalizeInstanceId() upgrades these once they are in state, so the schema
-    // has to let them through rather than blocking the migration
-    it('should still accept legacy hyphenated instance IDs', () => {
-        expect(() => parse(buildModel([goal(1, "1-1")]))).not.toThrow();
+    // Legacy files have to import, but nothing downstream should ever see the old
+    // spelling, so the schema upgrades it rather than passing it through
+    it('should accept a legacy hyphenated instance ID and canonicalise it', () => {
+        expect(parse(buildModel([goal(1, "1-1")])).treeData[0].instanceId).toBe("1:1");
+    });
+
+    it('should canonicalise nested instance IDs too', () => {
+        const parsed = parse(buildModel([goal(1, "1-1", [goal(6, "6-2")])]));
+        expect(parsed.treeData[0].children?.[0].instanceId).toBe("6:2");
     });
 
     it('should accept a negative goal ID in either format', () => {
@@ -61,9 +66,9 @@ describe('parseModelJson instance IDs', () => {
             ],
         });
 
-        expect(() => parse(model("-5:1"))).not.toThrow();
+        expect(parse(model("-5:1")).treeData[0].instanceId).toBe("-5:1");
         // Splitting on "-" used to read an empty string here and report goal ID 0
-        expect(() => parse(model("-5-1"))).not.toThrow();
+        expect(parse(model("-5-1")).treeData[0].instanceId).toBe("-5:1");
     });
 
     it('should reject a malformed instance ID', () => {
