@@ -1,5 +1,5 @@
 import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
-import {parseInstanceId, validateInstanceId} from '../instanceId';
+import {normalizeInstanceId, parseInstanceId} from '../instanceId';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
 
@@ -97,7 +97,7 @@ export function formatFunGoalRefId(goal: ClusterGoal) {
 export const parseFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId} => {
     // A graph cell keeps its type outside the canonical instance ID, e.g. Functional-2:1.
     try {
-        const instanceId = validateInstanceId(id);
+        const instanceId = normalizeInstanceId(id);
         const {goalId} = parseInstanceId(instanceId);
 
         return {goalId, instanceId};

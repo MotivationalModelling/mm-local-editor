@@ -32,7 +32,7 @@ import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds} from "../utils/GraphUtils";
-import {validateInstanceId} from "../instanceId";
+import {normalizeInstanceId} from "../instanceId";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -332,7 +332,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
-                                    const instanceId = validateInstanceId(cellID.replace("Functional-", ""));
+                                    const instanceId = normalizeInstanceId(cellID.replace("Functional-", ""));
                                     dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
                                 }
                             }

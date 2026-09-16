@@ -4,7 +4,7 @@ import {
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
 import {InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
-import {createInstanceId, normalizeInstanceId, parseInstanceId, validateInstanceId} from "../instanceId.ts"
+import {createInstanceId, normalizeInstanceId, parseInstanceId} from "../instanceId.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 
 
@@ -310,7 +310,7 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             text: string
         }>) => {
-            const instanceId = validateInstanceId(action.payload.instanceId);
+            const instanceId = normalizeInstanceId(action.payload.instanceId);
             const {text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             state.goals[goalId] = {
@@ -322,7 +322,7 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             color: string
         }>) => {
-            const instanceId = validateInstanceId(action.payload.instanceId);
+            const instanceId = normalizeInstanceId(action.payload.instanceId);
             const {color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             const node = findTreeGoalByInstanceId(state.tree, instanceId);

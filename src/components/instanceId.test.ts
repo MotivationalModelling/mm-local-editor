@@ -4,7 +4,6 @@ import {
     normalizeInstanceId,
     parseInstanceId,
     readInstanceId,
-    validateInstanceId,
 } from "./instanceId.ts";
 
 describe("readInstanceId", () => {
@@ -66,7 +65,13 @@ describe('instance IDs', () => {
         expect(normalizeInstanceId('-5-1')).toBe('-5:1');
     });
 
-    it('should reject the legacy separator in new application state', () => {
-        expect(() => validateInstanceId('-5-1')).toThrow('badly formatted instanceId "-5-1"');
+    // State compares instance IDs by string equality, so a spelling createInstanceId
+    // would not have produced must not survive the trip in
+    it('should normalise a spelling createInstanceId would not have produced', () => {
+        expect(normalizeInstanceId('01:1')).toBe('1:1');
+    });
+
+    it('should reject a value that is not an instance ID at all', () => {
+        expect(() => normalizeInstanceId('nonsense')).toThrow('badly formatted instanceId "nonsense"');
     });
 });

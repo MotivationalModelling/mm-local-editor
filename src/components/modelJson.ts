@@ -1,24 +1,16 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
-import {INSTANCE_ID_SEPARATOR, normalizeInstanceId, parseInstanceId, readInstanceId} from "./instanceId.ts";
+import {ImportedInstanceIdSchema, parseInstanceId} from "./instanceId.ts";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
 const LabelSchema = z.enum(labels);
 
-// Imported files may predate the separator change, so the legacy spelling is accepted
-// and canonicalised here. Parsing at the boundary is what keeps the InstanceId type
-// honest: everything downstream, including the tree walk below, sees only "12:1".
-const InstanceIdSchema = z.custom<string>(
-    (value) => readInstanceId(value, {acceptLegacy: true}) !== null,
-    `instanceId must be two numbers separated by "${INSTANCE_ID_SEPARATOR}", e.g. "12${INSTANCE_ID_SEPARATOR}1"`
-).transform(normalizeInstanceId);
-
 const TreeGoalSchema: z.ZodType<TreeGoal, z.ZodTypeDef, unknown> = z.lazy(() => z.object({
     id: z.number().int(),
     content: z.string(),
     type: LabelSchema,
-    instanceId: InstanceIdSchema,
+    instanceId: ImportedInstanceIdSchema,
     children: z.array(TreeGoalSchema).optional(),
     color: z.string().optional(),
     x: z.number().finite().optional(),
@@ -96,7 +88,7 @@ export const ModelJsonSchema = z.object({
                 });
             }
 
-            // A malformed instanceId fails InstanceIdSchema, which aborts the parse before
+            // A malformed instanceId fails ImportedInstanceIdSchema, which aborts the parse before
             // this runs, so every ID here is canonical: it parses, and two spellings of one
             // instance have already converged to the same string.
             if (parseInstanceId(goal.instanceId).goalId !== goal.id) {

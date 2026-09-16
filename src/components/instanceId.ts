@@ -3,11 +3,11 @@
  * with a per-goal sequence number, e.g. "12:1". The same goal appearing twice gets
  * "12:1" and "12:2".
  *
- * This module is the single home for that format. It deliberately imports nothing, so
- * the JSON layer and the graph layer can both use it without dragging in each other's
- * dependencies - which is what forced an earlier copy of these rules into modelJson.ts,
- * where it fell out of step and started rejecting the app's own exports.
+ * This module is the single home for that format: the patterns, the readers, and the
+ * schema guarding the import boundary. Splitting them up is what let modelJson.ts keep
+ * a stale copy of the rules and start rejecting the app's own exports.
  */
+import {z} from "zod";
 
 export const INSTANCE_ID_SEPARATOR = ":";
 
@@ -36,8 +36,7 @@ const INSTANCE_ID_FORMATS = {
  *
  * Whether the legacy spelling counts is the only thing that ever varies, so it is the
  * only option: pass `acceptLegacy` when the ID comes from outside the app (an imported
- * file, localStorage) and may predate the separator change. Leave it off for IDs that
- * are already in application state, where anything but the current format is a bug.
+ * file, localStorage) and may predate the separator change.
  */
 export const readInstanceId = (
     value: unknown,
@@ -67,17 +66,6 @@ export const createInstanceId = (goalId: number, refId: number): InstanceId => {
     return `${goalId}${INSTANCE_ID_SEPARATOR}${refId}`;
 };
 
-// The three readers below differ only in how strict they are and what they hand back.
-// Strict is the default: an ID already in application state should never be legacy.
-
-// Asserts an ID is in the current format
-export const validateInstanceId = (id: string): InstanceId => {
-    if (readInstanceId(id) === null) {
-        throw new Error(`badly formatted instanceId "${id}"`);
-    }
-    return id as InstanceId;
-};
-
 // Splits an ID that is already in the current format
 export const parseInstanceId = (instanceId: InstanceId): InstanceIdParts => {
     const parts = readInstanceId(instanceId);
@@ -87,7 +75,13 @@ export const parseInstanceId = (instanceId: InstanceId): InstanceIdParts => {
     return parts;
 };
 
-// Upgrades an ID arriving from a saved or imported model, which may still be legacy
+/**
+ * Rewrites any accepted spelling into the canonical one, and throws if there isn't one.
+ *
+ * This is the only way a string becomes an InstanceId, so no spelling that createInstanceId
+ * would not have produced - a legacy separator, a leading zero - can reach state and fail a
+ * string comparison against an ID made there.
+ */
 export const normalizeInstanceId = (instanceId: string): InstanceId => {
     const parts = readInstanceId(instanceId, {acceptLegacy: true});
     if (parts === null) {
@@ -95,3 +89,17 @@ export const normalizeInstanceId = (instanceId: string): InstanceId => {
     }
     return createInstanceId(parts.goalId, parts.refId);
 };
+
+// Both schemas parse rather than merely check, so the InstanceId they claim to produce
+// is one. They differ only in whether a legacy spelling is still let in, mirroring the
+// option on readInstanceId.
+const instanceIdSchema = (acceptLegacy: boolean) => z.custom<string>(
+    (value) => readInstanceId(value, {acceptLegacy}) !== null,
+    `instanceId must be two numbers separated by "${INSTANCE_ID_SEPARATOR}", e.g. "12${INSTANCE_ID_SEPARATOR}1"`
+).transform(normalizeInstanceId);
+
+// For data already inside the app, where a legacy ID would be a bug
+export const InstanceIdSchema = instanceIdSchema(false);
+
+// For the import boundary, where a legacy file still has to open
+export const ImportedInstanceIdSchema = instanceIdSchema(true);

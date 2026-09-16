@@ -1,12 +1,12 @@
 import {z} from "zod";
-import {createInstanceId, readInstanceId, type InstanceId} from "./instanceId";
+import {createInstanceId, InstanceIdSchema, type InstanceId} from "./instanceId";
 
 // ============================================
 // Core types (defined first to avoid circular refs)
 // ============================================
-// Instance IDs live in their own dependency-free module so both the JSON layer and the
-// graph layer can use them. The type is re-exported here because callers almost always
-// want it alongside the other core types; import the functions from ./instanceId.
+// Instance IDs live in their own module, which owns the format, the readers and the
+// import schema. The type is re-exported here because callers almost always want it
+// alongside the other core types; import everything else from ./instanceId.
 export type {InstanceId};
 
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
@@ -83,16 +83,9 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
-const instanceIdSchema = z.string()
-  .refine((val) => readInstanceId(val) !== null, "badly formatted instanceId")
-  .transform((val): InstanceId => {
-  // The regex establishes the InstanceId shape before narrowing the schema output type.
-  return val as InstanceId;
-});
-
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
-    instanceId: instanceIdSchema,
+    instanceId: InstanceIdSchema,
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string(),
@@ -116,8 +109,9 @@ export const GoalListSchema = z.object({
     Stakeholder: GoalSchema.array()
 });
 
-// note recursive types require a bit of extra fiddling
-export const ClusterGoalSchema: z.ZodType<ClusterGoal> = GoalBaseSchema.extend({
+// note recursive types require a bit of extra fiddling. The input type is left open
+// because InstanceIdSchema canonicalises, so what it takes in is not what it hands back.
+export const ClusterGoalSchema: z.ZodType<ClusterGoal, z.ZodTypeDef, unknown> = GoalBaseSchema.extend({
     SubGoals: z.lazy(() => ClusterGoalSchema.array())
 });
 
