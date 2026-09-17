@@ -1,18 +1,20 @@
 import {Link} from "react-router-dom";
 
 type WelcomeFooterProps = {
-	name: string;
-	destination: string;
+	onPapersClick?: () => void;
 };
 
-// Footer section in welcome page including copyrights, papers, user manual...
-const WelcomeFooter = ({name, destination}: WelcomeFooterProps) => {
+const WelcomeFooter = ({onPapersClick}: WelcomeFooterProps) => {
 	return (
 		<div className="text-center mt-auto">
 			<p>
-				<Link to={`/${destination}`} className="text-decoration-none">
-					{name}
-				</Link>
+                <span
+					onClick={onPapersClick}
+					className="text-decoration-none"
+					style={{cursor: "pointer", color: "#0d6efd"}}
+				>
+                    Papers
+                </span>
 				&nbsp;|&nbsp;
 				<Link
 					to="/papers/AMMBER_User_Manual.pdf"

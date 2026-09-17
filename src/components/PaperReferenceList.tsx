@@ -1,49 +1,53 @@
 import React from "react";
-
 import {Link} from "react-router-dom";
-
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
-import "./PaperReferenceList.css"
+import {Paper} from "../data/papers";
+import "./PaperReferenceList.css";
 
-export interface Reference {
-    title: string
-    link: string
-    summary?: string
-}
-
-const PaperReference: React.FC<{paper: Reference}> = ({paper}) => {
+const PaperReference: React.FC<{paper: Paper}> = ({paper}) => {
     return (
         <Card>
             <Card.Header as="h5">
                 {paper.title}
             </Card.Header>
             <Card.Body>
-                {(paper.summary) && (
+                <Card.Subtitle className="mb-2 text-muted">
+                    {paper.authors} ({paper.year})
+                </Card.Subtitle>
+                {paper.description && (
                     <Card.Text>
-                        {paper.summary}
+                        {paper.description}
                     </Card.Text>
                 )}
             </Card.Body>
             <Card.Footer>
-                <Link to={paper.link} target="_blank">
-                    View
-                </Link>
+                {paper.link ? (
+                    <Link to={paper.link} target="_blank" rel="noopener noreferrer">
+                        View
+                    </Link>
+                ) : (
+                    <span className="text-muted">Coming soon</span>
+                )}
             </Card.Footer>
         </Card>
     );
 };
 
 interface Props {
-    references: Reference[]
+    references: Paper[];
 }
 
 const PaperReferenceList: React.FC<Props> = ({references}) => {
     return (
-        <ListGroup as="ul" variant="flush">
-            {references.map((paper, i) => (
-                <ListGroup.Item as="li" key={i} style={{background: "transparent", border: "none"}}>
-                    <PaperReference paper={paper} key={i}/>
+        <ListGroup as="ul" variant="flush" className="paper-reference-list">
+            {references.map((paper) => (
+                <ListGroup.Item
+                    as="li"
+                    key={paper.id}
+                    style={{background: "transparent", border: "none"}}
+                >
+                    <PaperReference paper={paper}/>
                 </ListGroup.Item>
             ))}
         </ListGroup>

@@ -11,3 +11,24 @@
 .container::-webkit-scrollbar-thumb:hover {
     background: #999;
   }
+/* Paper reference card styling */
+.paper-reference-list .card {
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.paper-reference-list .card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.paper-reference-list .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 1.1rem;
+}
+
+.paper-reference-list .card-body .card-subtitle {
+    font-size: 0.9rem;
+}
