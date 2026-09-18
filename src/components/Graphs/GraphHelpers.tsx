@@ -634,13 +634,39 @@ export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
 /**
   * Automatically lays-out the functional hierarchy of the graph.
   */
-export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
-    const layout = new GoalModelLayout(
-        graph,
-        FUNCTIONAL_GOALS_SPACING.vertical,
-        FUNCTIONAL_GOALS_SPACING.horizonal
-    );
-    layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
+export const layoutFunctions = (graph: Graph) => {
+    const parent = graph.getDefaultParent();
+    const rootGoals = graph.getChildVertices(parent).filter((goal) => (
+        graph.getIncomingEdges(goal, null).length === 0
+    ));
+    rootGoals.reduce((nextRootX, rootGoal) => {
+        const layout = new GoalModelLayout(
+            graph,
+            FUNCTIONAL_GOALS_SPACING.vertical,
+            FUNCTIONAL_GOALS_SPACING.horizonal
+        );
+        layout.execute(parent, rootGoal);
+
+        const subtree = new Set<Cell>();
+        const collectSubtree = (goal: Cell) => {
+            if (subtree.has(goal)) return;
+            subtree.add(goal);
+            graph.getOutgoingEdges(goal, null).forEach((edge) => {
+                if (edge.target) collectSubtree(edge.target);
+            });
+        };
+        collectSubtree(rootGoal);
+
+        const goals = [...subtree];
+        const bounds = graph.getBoundingBoxFromGeometry(goals);
+        if (!bounds) return nextRootX;
+
+        const offsetX = nextRootX - bounds.x;
+        graph.batchUpdate(() => {
+            goals.forEach((goal) => graph.translateCell(goal, offsetX, 0));
+        });
+        return nextRootX + bounds.width + FUNCTIONAL_GOALS_SPACING.horizonal;
+    }, graph.gridSize);
 };
 
 /**
