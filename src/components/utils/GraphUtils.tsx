@@ -1,4 +1,5 @@
-import {ClusterGoal, createInstanceId, GoalBase, TreeGoal, InstanceId, INSTANCE_ID_SEPARATOR} from '../types';
+import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
+import {normalizeInstanceId, parseInstanceId} from './instanceId';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
 
@@ -96,7 +97,7 @@ export function formatFunGoalRefId(goal: ClusterGoal) {
 export const parseFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId} => {
     // A graph cell keeps its type outside the canonical instance ID, e.g. Functional-2:1.
     try {
-        const instanceId = validateInstanceId(id);
+        const instanceId = normalizeInstanceId(id);
         const {goalId} = parseInstanceId(instanceId);
 
         return {goalId, instanceId};
@@ -178,39 +179,6 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
-// New state uses the configured separator; the legacy pattern is accepted only while stored/imported models are normalised.
-const INSTANCE_ID_RE = new RegExp(`^(-?\\d+)${INSTANCE_ID_SEPARATOR}(\\d+)$`);
-const LEGACY_INSTANCE_ID_RE = /^(-?\d+)-(\d+)$/;
-
-export const validateInstanceId = (id: string): InstanceId => {
-    if (!INSTANCE_ID_RE.test(id)) {
-        throw new Error(`badly formatted instanceId "${id}"`);
-    }
-    return id as InstanceId;
-};
-
-export const parseInstanceId = (instanceId: InstanceId) => {
-    const match = INSTANCE_ID_RE.exec(instanceId);
-    if (!match) {
-        throw new Error(`badly formatted instanceId "${instanceId}"`);
-    }
-
-    return {
-        goalId: Number(match[1]),
-        refId: Number(match[2]),
-    };
-};
-
-export const normalizeInstanceId = (instanceId: string): InstanceId => {
-    const match = INSTANCE_ID_RE.exec(instanceId) ?? LEGACY_INSTANCE_ID_RE.exec(instanceId);
-    if (!match) {
-        throw new Error(`badly formatted instanceId "${instanceId}"`);
-    }
-
-    return createInstanceId(Number(match[1]), Number(match[2]));
-};
-
-// Check and retrieve if the non-functional goal has pre-defined color by instanceId
 export const getNonFunctionalGoalColor = (
     clusterGoals: ClusterGoal[],
     nonFunctionGoals: {instanceId: InstanceId; content: string;}[],

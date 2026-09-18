@@ -1,27 +1,14 @@
 import {z} from "zod";
+import {createInstanceId, InstanceIdSchema, type InstanceId} from "./utils/instanceId";
 
 // ============================================
 // Core types (defined first to avoid circular refs)
 // ============================================
-export const INSTANCE_ID_SEPARATOR = ":";
-// Use `typeof` to derive the separator type from the constant and keep them in sync.
-export type InstanceId = `${number}${typeof INSTANCE_ID_SEPARATOR}${number}`
+// Instance IDs live in their own module, which owns the format, the readers and the
+// import schema. The type is re-exported here because callers almost always want it
+// alongside the other core types; import everything else from ./instanceId.
+export type {InstanceId};
 
-const INSTANCE_ID_SCHEMA_RE = new RegExp(`^-?\\d+${INSTANCE_ID_SEPARATOR}\\d+$`);
-
-export const createInstanceId = (goalId: number, refId: number): InstanceId => {
-    // Instance IDs are made only from integers, so neither component can contain the separator.
-    if (!Number.isInteger(goalId)) {
-        throw new Error(`non-numeric goalId: "${goalId}"`);
-    }
-    if (!Number.isInteger(refId)) {
-        throw new Error(`non-numeric refId: "${refId}"`);
-    }
-    if (refId < 0) {
-        throw new Error(`negative refId: "${refId}"`);
-    }
-    return `${goalId}${INSTANCE_ID_SEPARATOR}${refId}`;
-};
 export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
@@ -96,14 +83,9 @@ export const GoalTypeSchema = z.enum(
     ["Functional", "Quality", "Stakeholder", "Negative", "Emotional"]
 );
 
-const instanceIdSchema = z.string().regex(INSTANCE_ID_SCHEMA_RE).transform((val): InstanceId => {
-  // The regex establishes the InstanceId shape before narrowing the schema output type.
-  return val as InstanceId;
-});
-
 export const GoalBaseSchema = z.object({
     GoalID: z.number(),
-    instanceId: instanceIdSchema,
+    instanceId: InstanceIdSchema,
     GoalType: GoalTypeSchema,
     GoalContent: z.string(),
     GoalNote: z.string(),
@@ -127,8 +109,9 @@ export const GoalListSchema = z.object({
     Stakeholder: GoalSchema.array()
 });
 
-// note recursive types require a bit of extra fiddling
-export const ClusterGoalSchema: z.ZodType<ClusterGoal> = GoalBaseSchema.extend({
+// note recursive types require a bit of extra fiddling. The input type is left open
+// because InstanceIdSchema canonicalises, so what it takes in is not what it hands back.
+export const ClusterGoalSchema: z.ZodType<ClusterGoal, z.ZodTypeDef, unknown> = GoalBaseSchema.extend({
     SubGoals: z.lazy(() => ClusterGoalSchema.array())
 });
 
@@ -157,7 +140,7 @@ export type TreeGoal = {
 
 export const newTreeGoal = (initFields: Pick<TreeGoal, "type"> & Partial<TreeGoal>): TreeGoal => {
     const id = initFields.id ?? Date.now();
-    const instanceId = initFields.instanceId ?? createInstanceId(id, 0);
+    const instanceId = initFields.instanceId ?? createInstanceId({goalId: id, refId: 0});
     return {id, content: "", instanceId, ...initFields};
 };
 

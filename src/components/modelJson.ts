@@ -1,20 +1,16 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
+import {ImportedInstanceIdSchema, parseInstanceId} from "./utils/instanceId.ts";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
 const LabelSchema = z.enum(labels);
 
-const InstanceIdSchema = z.custom<InstanceId>(
-    (value) => typeof value === "string" && /^\d+-\d+$/.test(value),
-    "instanceId must contain two numbers separated by a hyphen"
-);
-
-const TreeGoalSchema: z.ZodType<TreeGoal> = z.lazy(() => z.object({
+const TreeGoalSchema: z.ZodType<TreeGoal, z.ZodTypeDef, unknown> = z.lazy(() => z.object({
     id: z.number().int(),
     content: z.string(),
     type: LabelSchema,
-    instanceId: InstanceIdSchema,
+    instanceId: ImportedInstanceIdSchema,
     children: z.array(TreeGoalSchema).optional(),
     color: z.string().optional(),
     x: z.number().finite().optional(),
@@ -92,9 +88,10 @@ export const ModelJsonSchema = z.object({
                 });
             }
 
-            // instance id has to match id
-            const instanceGoalId = Number(goal.instanceId.split("-")[0]);
-            if (instanceGoalId !== goal.id) {
+            // A malformed instanceId fails ImportedInstanceIdSchema, which aborts the parse before
+            // this runs, so every ID here is canonical: it parses, and two spellings of one
+            // instance have already converged to the same string.
+            if (parseInstanceId(goal.instanceId).goalId !== goal.id) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: [...goalPath, "instanceId"],
