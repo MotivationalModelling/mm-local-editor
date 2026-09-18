@@ -1,7 +1,6 @@
 import {useState} from "react";
 import {Graph} from "@maxgraph/core";
 import {Canvg} from 'canvg';
-import * as d3 from 'd3';
 import Dropdown from "react-bootstrap/Dropdown";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
@@ -12,6 +11,8 @@ import {returnFocusToGraph} from "../utils/GraphUtils";
 import {buildExportableSVG} from "../utils/ExportGraph";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import {prepareGraphForPng} from "./SvgExportUtils";
+import type {ExportableSVG} from "../utils/ExportGraph";
 
 const PNG_EXPORT_SCALE = 3;
 
@@ -130,27 +131,26 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 
     // Function to export graph as PNG
     const exportGraphAsPNG = async (graph: Graph) => {
+        // Commit the editor buffer before pairing model text with rendered labels.
+        graph.stopEditing(false);
         const svgElement = (graph) && findSVGElementInGraph(graph);
         if (!svgElement) {
             return;
         }
 
-        // Rasterise a bounded copy so no node falls outside the exported area
-        const {clone, x, y, width, height} = buildExportableSVG(graph, svgElement);
-
-        // Give the copy (not the live canvas) an opaque background. The rect needs
-        // explicit coordinates: percentages would resolve against the viewBox size
-        // but still start at 0, missing anything at a negative coordinate.
-        d3.select(clone)
-            .insert("rect", ":first-child")
-            .attr("x", x)
-            .attr("y", y)
-            .attr("width", width)
-            .attr("height", height)
-            .attr("fill", "white");
+        // Prepare a separate SVG so PNG-only changes never alter the live graph.
+        let prepared: ExportableSVG;
+        try {
+            prepared = prepareGraphForPng(graph, svgElement);
+        } catch (error) {
+            setErrorModal(prev => ({...prev, show: true, title: "Cannot Export Model",
+                message: error instanceof Error ? error.message : "Could not prepare the labels for export."}));
+            return;
+        }
 
         // Serialize the SVG element to a string
         const serializer = new XMLSerializer();
+        const {clone, width, height} = prepared;
         const svgString = serializer.serializeToString(clone);
 
         // Create a canvas element
