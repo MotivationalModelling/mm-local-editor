@@ -61,9 +61,6 @@ export const SYMBOL_CONFIGS: Record<SymbolKey, SymbolConfig> = {
         shape: "negativeShape",
         imagePath: ConcernIcon,
         scale: {width: 0.9, height: 0.96},
-        shapeStyle: {
-            fillColor: 'grey',
-        },
         label: "Concern",
     },
     QUALITY: {
