@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist -f",
-    "test": "vitest"
+    "test": "vitest",
+    "test:unit": "vitest run",
+    "test:e2e": "cypress run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
