@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {ModelJsonError, parseModelJson} from "./modelJson.ts";
 import {InstanceId, TreeGoal} from "./types.ts";
-import {createInstanceId, INSTANCE_ID_SEPARATOR} from "./instanceId.ts";
+import {createInstanceId, INSTANCE_ID_SEPARATOR} from "./utils/instanceId.ts";
 
 // Every label needs a tab, and each goal must be listed in the tab for its type
 const buildModel = (treeData: TreeGoal[]) => ({

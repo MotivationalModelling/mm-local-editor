@@ -1,5 +1,5 @@
 import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
-import {normalizeInstanceId, parseInstanceId} from '../instanceId';
+import {normalizeInstanceId, parseInstanceId} from './instanceId';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
 

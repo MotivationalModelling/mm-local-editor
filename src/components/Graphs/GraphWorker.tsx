@@ -32,7 +32,7 @@ import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds} from "../utils/GraphUtils";
-import {normalizeInstanceId} from "../instanceId";
+import {normalizeInstanceId} from "../utils/instanceId.ts";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";

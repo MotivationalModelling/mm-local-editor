@@ -1,6 +1,6 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
-import {ImportedInstanceIdSchema, parseInstanceId} from "./instanceId.ts";
+import {ImportedInstanceIdSchema, parseInstanceId} from "./utils/instanceId.ts";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
