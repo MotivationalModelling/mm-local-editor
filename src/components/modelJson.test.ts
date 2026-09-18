@@ -31,7 +31,7 @@ describe('parseModelJson instance IDs', () => {
     // The regression: the schema still required the old hyphen separator, so a
     // file this app had just exported was rejected on import
     it('should accept the instance ID format the app exports', () => {
-        const instanceId = createInstanceId(1, 1);
+        const instanceId = createInstanceId({goalId: 1, refId: 1});
         expect(instanceId).toBe(`1${INSTANCE_ID_SEPARATOR}1`);
 
         const result = parse(buildModel([goal(1, instanceId)]));

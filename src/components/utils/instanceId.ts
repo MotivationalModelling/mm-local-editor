@@ -52,7 +52,7 @@ export const readInstanceId = (
     return (match === null) ? null : {goalId: Number(match[1]), refId: Number(match[2])};
 };
 
-export const createInstanceId = (goalId: number, refId: number): InstanceId => {
+export const createInstanceId = ({goalId, refId}: InstanceIdParts): InstanceId => {
     // Instance IDs are made only from integers, so neither component can contain the separator.
     if (!Number.isInteger(goalId)) {
         throw new Error(`non-numeric goalId: "${goalId}"`);
@@ -87,7 +87,7 @@ export const normalizeInstanceId = (instanceId: string): InstanceId => {
     if (parts === null) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
-    return createInstanceId(parts.goalId, parts.refId);
+    return createInstanceId(parts);
 };
 
 // Both schemas parse rather than merely check, so the InstanceId they claim to produce

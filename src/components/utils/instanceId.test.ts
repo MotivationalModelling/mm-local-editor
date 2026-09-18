@@ -42,19 +42,19 @@ describe("readInstanceId", () => {
 
 describe('instance IDs', () => {
     it('should create an instance ID with the new separator', () => {
-        expect(createInstanceId(-5, 1)).toBe('-5:1');
+        expect(createInstanceId({goalId: -5, refId: 1})).toBe('-5:1');
     });
 
     it('should identify invalid goal ID components when creating an instance ID', () => {
-        expect(() => createInstanceId(1.5, 1)).toThrow('non-numeric goalId: "1.5"');
+        expect(() => createInstanceId({goalId: 1.5, refId: 1})).toThrow('non-numeric goalId: "1.5"');
     });
 
     it('should identify invalid reference ID components when creating an instance ID', () => {
-        expect(() => createInstanceId(1, 1.5)).toThrow('non-numeric refId: "1.5"');
+        expect(() => createInstanceId({goalId: 1, refId: 1.5})).toThrow('non-numeric refId: "1.5"');
     });
 
     it('should reject a negative reference ID when creating an instance ID', () => {
-        expect(() => createInstanceId(1, -1)).toThrow('negative refId: "-1"');
+        expect(() => createInstanceId({goalId: 1, refId: -1})).toThrow('negative refId: "-1"');
     });
 
     it('should parse the new separator with a negative goal id', () => {

@@ -129,7 +129,7 @@ const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId
 const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): InstanceId => {
     // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
-    return createInstanceId(goalId, maxSuffix)
+    return createInstanceId({goalId, refId: maxSuffix})
 };
 
 const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({

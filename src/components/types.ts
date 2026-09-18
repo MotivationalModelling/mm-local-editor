@@ -140,7 +140,7 @@ export type TreeGoal = {
 
 export const newTreeGoal = (initFields: Pick<TreeGoal, "type"> & Partial<TreeGoal>): TreeGoal => {
     const id = initFields.id ?? Date.now();
-    const instanceId = initFields.instanceId ?? createInstanceId(id, 0);
+    const instanceId = initFields.instanceId ?? createInstanceId({goalId: id, refId: 0});
     return {id, content: "", instanceId, ...initFields};
 };
 
