@@ -10,6 +10,7 @@ import styles from "./TabButtons.module.css";
 import {BsPlusLg} from "react-icons/bs";
 import {addGoalToTab, deleteGoalFromGoalList, selectGoalsForLabel} from "./context/treeDataSlice.ts";
 import GoalListTable from "./GoalListTable.tsx";
+import {GoalDragImage, GoalDragImageGroup} from "./GoalDragImage.tsx";
 
 
 type GoalListProps = {
@@ -25,6 +26,20 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({groupSelected
         const [activeKey, setActiveKey] = useState<Label>(tabs.keys().next().value ?? "Do");
 
         const inputRef = useRef<HTMLInputElement>(null);
+        const groupDragImageRef = useRef<HTMLDivElement>(null);
+        const singleDragImageRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+        const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
+            const draggedGoals = (groupSelected.length > 1) ? groupSelected : [row];
+            event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
+
+            const dragImage = (draggedGoals.length > 1)
+                ? groupDragImageRef.current
+                : singleDragImageRefs.current[row.id];
+            if (dragImage) {
+                event.dataTransfer.setDragImage(dragImage, 0, 0);
+            }
+        };
 
         // Function to handle selecting a tab
         const handleSelect = (selectedKey: Label) => {
@@ -102,6 +117,7 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({groupSelected
                                                groupSelected={groupSelected}
                                                setGroupSelected={setGroupSelected}
                                                handleSynTableTree={handleSynTableTree}
+                                               handleDragStart={handleDragStart}
                                                inputRef={inputRef}/>
                                 <div className="d-flex justify-content-between align-items-center mt-3">
                                     <Button className="me-2"
@@ -117,6 +133,14 @@ const GoalList = React.forwardRef<HTMLDivElement, GoalListProps>(({groupSelected
                         ))}
                     </Tab.Content>
                 </Tab.Container>
+                <GoalDragImageGroup ref={groupDragImageRef} goals={groupSelected}/>
+                {selectGoalsForLabel({treeData}, activeKey).map((goal) => (
+                    <GoalDragImage key={goal.id}
+                                   ref={(element) => {
+                                       singleDragImageRefs.current[goal.id] = element;
+                                   }}
+                                   goal={goal}/>
+                ))}
                 <GroupDropBtn />
             </div>
         );
