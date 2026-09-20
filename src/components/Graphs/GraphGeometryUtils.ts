@@ -1,0 +1,108 @@
+import type {Graph} from "@maxgraph/core";
+import {getListLabelArea} from "./GraphLabelUtils";
+import {hasCellId, isNonFunctionCell} from "./GraphCellUtils";
+import type {NonFunctionalLayout} from "../modelJson";
+
+export const captureNonFunctionalLayout = (graph: Graph): NonFunctionalLayout => (
+    Object.fromEntries(Array.from(captureNonFunctionalGeometry(graph), ([id, geometry]) => [
+        id, {x: geometry.x, y: geometry.y, width: geometry.width, height: geometry.height},
+    ]))
+);
+
+// Match stable grouped-cell IDs; leave missing/new groups to automatic layout.
+// Stored coordinates are graph units, independent of viewport zoom.
+export const applyNonFunctionalLayout = (graph: Graph, layout: NonFunctionalLayout) => {
+    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+        const id = cell.getId();
+        if (!isNonFunctionCell(cell) || !hasCellId(id)) return;
+        const saved = layout[id];
+        const geometry = cell.getGeometry()?.clone();
+        if (saved && geometry) {
+            const {x, y, width, height} = saved;
+            Object.assign(geometry, {x, y, width, height});
+            graph.getDataModel().setGeometry(cell, geometry);
+        }
+    });
+};
+
+export interface NonFunctionalGeometrySnapshot {
+    value: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+// Preserve manual non-functional geometry while a text edit rebuilds the graph.
+export const captureNonFunctionalGeometry = (graph: Graph) => {
+    const snapshots = new Map<string, NonFunctionalGeometrySnapshot>();
+
+    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+        const id = cell.getId();
+        const geometry = cell.getGeometry();
+
+        if (isNonFunctionCell(cell) && hasCellId(id) && geometry) {
+            snapshots.set(id, {
+                value: String(cell.getValue() ?? ""),
+                x: geometry.x,
+                y: geometry.y,
+                width: geometry.width,
+                height: geometry.height,
+            });
+        }
+    });
+
+    return snapshots;
+};
+
+export const restoreNonFunctionalGeometry = (
+    graph: Graph,
+    snapshots: Map<string, NonFunctionalGeometrySnapshot>,
+    editedCellIds: ReadonlySet<string>,
+    labelPadding: number
+) => {
+    const cells = graph.getChildVertices(graph.getDefaultParent());
+    const hasTextChanges = cells.some(cell => {
+        const id = cell.getId();
+        if (!hasCellId(id)) return false;
+        const snapshot = snapshots.get(id);
+
+        return snapshot !== undefined && (
+            editedCellIds.has(id) || snapshot.value !== String(cell.getValue() ?? "")
+        );
+    });
+
+    // Keep existing layout behaviour for renders unrelated to label edits.
+    if (!hasTextChanges) return;
+
+    cells.forEach(cell => {
+        const id = cell.getId();
+        if (!hasCellId(id)) return;
+        const snapshot = snapshots.get(id);
+        if (snapshot === undefined) return;
+
+        const textChanged = editedCellIds.has(id) || snapshot.value !== String(cell.getValue() ?? "");
+        const geometry = cell.getGeometry()?.clone();
+        const labelArea = getListLabelArea(cell.getStyle().shape ?? "");
+
+        if (!geometry) return;
+
+        geometry.x = snapshot.x;
+        geometry.y = snapshot.y;
+        geometry.width = snapshot.width;
+        geometry.height = snapshot.height;
+
+        // Grow only the edited shape, and only when its safe label area is too short.
+        if (textChanged && labelArea) {
+            const labelWidth = snapshot.width * labelArea.width;
+            const preferred = graph.getPreferredSizeForCell(cell, labelWidth);
+
+            if (preferred) {
+                const labelHeight = preferred.height + labelPadding;
+                geometry.height = Math.max(snapshot.height, labelHeight / labelArea.height);
+            }
+        }
+
+        graph.getDataModel().setGeometry(cell, geometry);
+    });
+};

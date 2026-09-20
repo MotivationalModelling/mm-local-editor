@@ -1,16 +1,21 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
+import {normalizeInstanceId, parseInstanceId} from "./utils/InstanceId";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
 const LabelSchema = z.enum(labels);
 
-const InstanceIdSchema = z.custom<InstanceId>(
-    (value) => typeof value === "string" && /^\d+-\d+$/.test(value),
-    "instanceId must contain two numbers separated by a hyphen"
-);
+const InstanceIdSchema = z.string().transform((value, context) => {
+    try {
+        return normalizeInstanceId(value);
+    } catch {
+        context.addIssue({code: z.ZodIssueCode.custom, message: `Invalid instanceId "${value}"`, fatal: true});
+        return z.NEVER;
+    }
+});
 
-const TreeGoalSchema: z.ZodType<TreeGoal> = z.lazy(() => z.object({
+const TreeGoalSchema: z.ZodType<TreeGoal, z.ZodTypeDef, unknown> = z.lazy(() => z.object({
     id: z.number().int(),
     content: z.string(),
     type: LabelSchema,
@@ -27,9 +32,19 @@ const TabContentSchema: z.ZodType<TabContent> = z.object({
     goalIds: z.array(z.number().int()),
 });
 
+// Optional presentation data; legacy files continue to use automatic layout.
+const NonFunctionalLayoutSchema = z.record(z.object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+}));
+export type NonFunctionalLayout = z.infer<typeof NonFunctionalLayoutSchema>;
+
 export const ModelJsonSchema = z.object({
     tabData: z.array(TabContentSchema),
     treeData: z.array(TreeGoalSchema),
+    nonFunctionalLayout: NonFunctionalLayoutSchema.optional(),
 }).superRefine(({tabData, treeData}, context) => {
     const tabsByLabel = new Map<Label, TabContent>();
     const labelByGoalId = new Map<number, Label>();
@@ -93,7 +108,7 @@ export const ModelJsonSchema = z.object({
             }
 
             // instance id has to match id
-            const instanceGoalId = Number(goal.instanceId.split("-")[0]);
+            const instanceGoalId = parseInstanceId(goal.instanceId).goalId;
             if (instanceGoalId !== goal.id) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -127,10 +142,50 @@ export class ModelJsonError extends Error {
     }
 }
 
+// The tree owns placement and instance IDs; goals owns the latest text/type.
+// Build an export-only snapshot so every occurrence of a goal gets its current
+// content without changing the live hierarchy or duplicating editor state.
+const snapshotTreeForSave = (
+    tree: readonly TreeGoal[],
+    goals: Readonly<Record<number, TreeGoal>>,
+): TreeGoal[] => tree.map(node => {
+    const goal = goals[node.id];
+    if (!goal) {
+        throw new ModelJsonError(`Cannot save: goal ${node.id} is missing from the model.`);
+    }
+    return {
+        ...node,
+        content: goal.content,
+        type: goal.type,
+        ...(node.children ? {children: snapshotTreeForSave(node.children, goals)} : {}),
+    };
+});
+
+export const createModelJson = (
+    tabData: TabContent[],
+    treeData: TreeGoal[],
+    goals: Readonly<Record<number, TreeGoal>>,
+    nonFunctionalLayout?: NonFunctionalLayout,
+): JSONData => {
+    // Apply the same validation/normalization on save and open. An invalid
+    // snapshot must fail before the file picker can overwrite an existing file.
+    return validateModelJson({tabData, treeData: snapshotTreeForSave(treeData, goals), nonFunctionalLayout});
+};
+
 const formatSchemaError = (error: z.ZodError): string => {
     const issue = error.issues[0];
     const location = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
     return `${location}${issue.message}`;
+};
+
+const validateModelJson = (value: unknown): JSONData => {
+    const result = ModelJsonSchema.safeParse(value);
+    if (!result.success) {
+        throw new ModelJsonError(
+            `The JSON is not a valid AMMBER model. ${formatSchemaError(result.error)}`
+        );
+    }
+    return result.data;
 };
 
 export const parseModelJson = (fileContent: string): JSONData => {
@@ -145,12 +200,5 @@ export const parseModelJson = (fileContent: string): JSONData => {
         throw new ModelJsonError("The selected file does not contain valid JSON.");
     }
 
-    const result = ModelJsonSchema.safeParse(parsedData);
-    if (!result.success) {
-        throw new ModelJsonError(
-            `The JSON is not a valid AMMBER model. ${formatSchemaError(result.error)}`
-        );
-    }
-
-    return result.data;
+    return validateModelJson(parsedData);
 };
