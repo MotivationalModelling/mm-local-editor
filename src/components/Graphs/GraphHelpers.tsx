@@ -2,8 +2,9 @@ import {
     Graph,
     Rectangle,
     Cell,
+    Geometry,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject, TreeNode} from "../types.ts";
+import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
@@ -208,6 +209,8 @@ export const renderFunction = (
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
 
+    style.perimeter = "none"; // Disables the perimeter check so the line reaches the center
+
     const goalName = formatFunGoalRefId(goal)
     // insert new vertex and edge into graph
     // between functional goal, should connect with edge, rather than cell hierachy
@@ -226,7 +229,17 @@ export const renderFunction = (
     );
     // console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
-        graph.insertEdge(null, null, "", source, node);
+        // Insert the edge with specific constraints
+        const edge = graph.insertEdge(null, null, "", source, node);
+
+        // Force the connection to the center of the target (the parallelogram)
+        // entryX/Y = 0.5 means 50% of the width/height (the center)
+        graph.setCellStyles("entryX", "0.5", [edge]);
+        graph.setCellStyles("entryY", "0.5", [edge]);
+
+        // Ensure the line is behind the shape (Z-Index / Order)
+        // This moves the edge to the back of the graph display list
+        graph.orderCells(true, [edge]);
     }
     // if no root goal is registered, then store this as root
     if (rootGoalWrapper.value === null) {
@@ -357,7 +370,7 @@ const adjustHorizontalPositions = (node: Cell, source: Cell, graph: Graph) => {
 };
 
 // Get the config type based on the type and the descriptions
-const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{instanceId: string; content: string;}>) => {
+const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{ instanceId: string; content: string; }>) => {
     const symbolKey = getSymbolKeyByType(type);
     if (symbolKey) {
         const config = SYMBOL_CONFIGS[symbolKey];
@@ -376,11 +389,12 @@ const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{insta
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{instanceId: TreeNode["instanceId"]; content: string;}>,
+    descriptions: Array<{ instanceId: InstanceId; content: string; }>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None",
-    color: string | undefined
+    color: string | undefined,
+    showLineBetweenNonFunctionalGoals: boolean
 ) => {
 
     console.log("Rendering non-functional goal: ", descriptions);
@@ -435,6 +449,7 @@ export const renderNonFunction = (
     // Clone style to avoid modifying the default
     const style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.shape = shape;
+    style.perimeter = "none"
     style.align = "center";
     style.verticalAlign = "middle";
     style.labelPosition = "center";
@@ -469,7 +484,7 @@ export const renderNonFunction = (
         symbolKey
     );
 
-    console.log("Nonfunctional-goal-dependencies:",descriptions);
+    console.log("Nonfunctional-goal-dependencies:", descriptions);
     // Insert the vertex
     const node = graph.insertVertex(
         null,
@@ -481,15 +496,20 @@ export const renderNonFunction = (
         height,
         style
     );
-    console.log("Nonfunctional-goal-node:",node);
+    console.log("Nonfunctional-goal-node:", node);
     // Insert an invisible edge
-    const edge = graph.insertEdge(null, null, "", source, node, dotted);
+    if (showLineBetweenNonFunctionalGoals) {
+        const edge = graph.insertEdge(null, null, "", source, node, dotted);
+        // Ensure the line is behind the shape (Z-Index / Order)
+        // This moves the edge to the back of the graph display list
+        graph.orderCells(true, [edge]);
+    }
     // edge.visible = false; // Make the edge invisible
 
     // Adjust node geometry based on text size
     const nodeGeo = node.getGeometry();
     const preferred = graph.getPreferredSizeForCell(node); // Get preferred size for width based on text
-    
+
     if (nodeGeo && preferred && isTypeAdjustableByText(symbolKey)) {
         // Adjust height based on the number of lines and font size
         const lines: string[] = squareLabel.split(/\n/);
@@ -582,15 +602,71 @@ export const renderLegend = (graph: Graph): Cell => {
 };
 
 /**
+ * Overrides layout-computed positions with any coordinates previously saved
+ * by the user. Must be called after layoutFunctions and before
+ * associateNonFunctions so that non-functional symbols are placed relative
+ * to the restored positions.
+ */
+export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
+    const positionMap = new Map<string, { x: number; y: number }>();
+    const collect = (goal: ClusterGoal) => {
+        if (goal.GoalType === "Functional" && goal.x !== undefined && goal.y !== undefined) {
+            positionMap.set(generateCellId("Functional", goal.instanceId), { x: goal.x, y: goal.y });
+        }
+        goal.SubGoals.forEach(collect);
+    };
+    goals.forEach(collect);
+
+    if (positionMap.size === 0) return;
+
+    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+        const id = cell.getId();
+        const pos = id ? positionMap.get(id) : undefined;
+        if (pos) {
+            const geo = cell.getGeometry();
+            if (geo) {
+                graph.getDataModel().setGeometry(cell, new Geometry(pos.x, pos.y, geo.width, geo.height));
+            }
+        }
+    });
+};
+
+/**
   * Automatically lays-out the functional hierarchy of the graph.
   */
-export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
-    const layout = new GoalModelLayout(
-        graph,
-        FUNCTIONAL_GOALS_SPACING.vertical,
-        FUNCTIONAL_GOALS_SPACING.horizonal
-    );
-    layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
+export const layoutFunctions = (graph: Graph) => {
+    const parent = graph.getDefaultParent();
+    const rootGoals = graph.getChildVertices(parent).filter((goal) => (
+        graph.getIncomingEdges(goal, null).length === 0
+    ));
+    rootGoals.reduce((nextRootX, rootGoal) => {
+        const layout = new GoalModelLayout(
+            graph,
+            FUNCTIONAL_GOALS_SPACING.vertical,
+            FUNCTIONAL_GOALS_SPACING.horizonal
+        );
+        layout.execute(parent, rootGoal);
+
+        const subtree = new Set<Cell>();
+        const collectSubtree = (goal: Cell) => {
+            if (subtree.has(goal)) return;
+            subtree.add(goal);
+            graph.getOutgoingEdges(goal, null).forEach((edge) => {
+                if (edge.target) collectSubtree(edge.target);
+            });
+        };
+        collectSubtree(rootGoal);
+
+        const goals = [...subtree];
+        const bounds = graph.getBoundingBoxFromGeometry(goals);
+        if (!bounds) return nextRootX;
+
+        const offsetX = nextRootX - bounds.x;
+        graph.batchUpdate(() => {
+            goals.forEach((goal) => graph.translateCell(goal, offsetX, 0));
+        });
+        return nextRootX + bounds.width + FUNCTIONAL_GOALS_SPACING.horizonal;
+    }, graph.gridSize);
 };
 
 /**
@@ -604,7 +680,8 @@ export const associateNonFunctions = (
     emotionsGlob: GlobObject,
     negativesGlob: GlobObject,
     qualitiesGlob: GlobObject,
-    stakeholdersGlob: GlobObject
+    stakeholdersGlob: GlobObject,
+    showLineBetweenNonFunctionalGoals: boolean
 ) => {
     console.log("Glob: ", emotionsGlob, negativesGlob, qualitiesGlob, stakeholdersGlob);
     // fetch all the functional goals
@@ -625,7 +702,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.NEGATIVE.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
         // render all stakeholders
@@ -636,7 +714,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.STAKEHOLDER.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
 
@@ -648,7 +727,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.EMOTIONAL.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
 
@@ -660,7 +740,8 @@ export const associateNonFunctions = (
                 graph,
                 goal,
                 SYMBOL_CONFIGS.QUALITY.type,
-                color
+                color,
+                showLineBetweenNonFunctionalGoals
             );
         }
     });

@@ -1,8 +1,13 @@
 import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster, ClusterGoal, GoalType, Label, newTreeItem, TabContent, TreeItem, TreeNode} from "../types.ts";
-import useLocalStorage from "../utils/useLocalStorage.tsx"
+import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
+import {useLocalStorage} from "usehooks-ts";
+
+export type {JSONData} from "../modelJson.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -19,12 +24,6 @@ import useLocalStorage from "../utils/useLocalStorage.tsx"
 // in-line and it was very hard to maintain and harder to test.
 
 
-// Type of the json data
-export type JSONData = {
-    tabData: TabContent[];
-    treeData: TreeItem[];
-};
-
 export const DataType = {JSON: "AMMBER_JSON"};
 
 export const LocalStorageType = {
@@ -33,11 +32,11 @@ export const LocalStorageType = {
 };
 
 // XXX this should be a Set
-export const createTreeIdsFromTreeData = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeItem[]): Record<TreeItem["id"], TreeItem["instanceId"][]> => {
-    const treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]> = Object.fromEntries(Object.keys(goals).map((goalId) => (
+export const createTreeIdsFromTreeData = (goals: Record<TreeGoal["id"], TreeGoal>, treeData: TreeGoal[]): Record<TreeGoal["id"], InstanceId[]> => {
+    const treeIds: Record<TreeGoal["id"], InstanceId[]> = Object.fromEntries(Object.keys(goals).map((goalId) => (
         [Number(goalId), []]
     )));
-    const addInstanceIdsToTreeIds = (nodes: TreeItem[]) => {
+    const addInstanceIdsToTreeIds = (nodes: TreeGoal[]) => {
         nodes.forEach((node) => {
             if (treeIds[node.id]) {
                 treeIds[node.id].push(node.instanceId);
@@ -53,19 +52,7 @@ export const createTreeIdsFromTreeData = (goals: Record<TreeItem["id"], TreeItem
     return treeIds
 };
 
-export const createTreeDataFromTreeNode = (goals: Record<TreeItem["id"], TreeItem>, treeNode: TreeNode[]): TreeItem[] => {
-    return treeNode.map((tn) => {
-        const goal = goals[tn.goalId];
-        return newTreeItem({
-            ...goal,
-            instanceId: tn.instanceId,
-            ...(tn.children) ? {children: createTreeDataFromTreeNode(goals, tn.children)} : {},
-            color: tn.color
-        });
-    });
-};
-
-export const createTabDataFromTabs = (goals: Record<TreeItem["id"], TreeItem>, tabs: Map<Label, TabContent>): TabContent[] => {
+export const createTabDataFromTabs = (goals: Record<TreeGoal["id"], TreeGoal>, tabs: Map<Label, TabContent>): TabContent[] => {
     // Convert Map<Label, TabContent> to TabContent[]
     // This ensures the tabData is properly derived from the Redux state
     return Array.from(tabs.values());
@@ -94,18 +81,16 @@ interface FileContextProps {
     jsonFileHandle: FileSystemFileHandle | null
     setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void
     tabData: TabContent[]
-    treeData: TreeItem[]
+    treeData: TreeGoal[]
     cluster: Cluster
     xmlData: string
     dispatch: React.Dispatch<DispatchActions>
-    // setTabData: (tabData: TabContent[]) => void;
-    // setTreeData: (jsonData: TreeItem[]) => void;
     setXmlData: (xmlData: string) => void
-    // resetData: () => void;
-    tree: TreeNode[]
+    tree: TreeGoal[]
     tabs: Map<Label, TabContent>
-    goals: Record<TreeItem["id"], TreeItem>
-    treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>
+    goals: Record<TreeGoal["id"], TreeGoal>
+    treeIds: Record<TreeGoal["id"], InstanceId[]>
+    showLineBetweenNonFunctionalGoals: boolean
 }
 
 // Create context for data tansfer and file handle
@@ -125,6 +110,7 @@ const FileContext = createContext<FileContextProps>({
     tabs: new Map(),
     goals: {},
     treeIds: {},
+    showLineBetweenNonFunctionalGoals: true,
 });
 
 // Mapping of old types to new types
@@ -137,54 +123,77 @@ const typeMapping: Record<Label, GoalType> = {
 };
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-export const convertTreeDataToClusters = (goals: Record<TreeItem["id"], TreeItem>, treeData: TreeNode[]): Cluster => {
-    const convertTreeItemToGoal = (item: TreeNode): ClusterGoal => {
-        const goal = goals[item.goalId];
+export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
+    const convertTreeGoalToClusterGoal = (item: TreeGoal): ClusterGoal => {
         return {
-            GoalID: item.goalId,
+            GoalID: item.id,
             instanceId: item.instanceId,
-            GoalType: typeMapping[goal.type],
-            GoalContent: goal.content,
-            GoalNote: "", // Assuming GoalNote is not present in TreeItem and set as empty
-            SubGoals: (item.children) ? item.children.map(convertTreeItemToGoal) : [],
+            GoalType: typeMapping[item.type],
+            GoalContent: item.content,
+            GoalNote: "",
+            SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
             GoalColor: item.color,
+            x: item.x,
+            y: item.y,
         };
     };
 
     return {
-        ClusterGoals: treeData.map(convertTreeItemToGoal),
+        ClusterGoals: treeData.map(convertTreeGoalToClusterGoal),
     };
 };
 
+// The two persisted keys are kept as raw JSON strings (see rawStringStorage)
+// so an unparseable value is neither silently discarded nor overwritten on
+// load: the provider can surface it and leave it intact for inspection.
+const rawStringStorage = {
+    deserializer: (raw: string) => raw,
+    serializer: (value: string) => value,
+};
+
+// createInitialState throws when the stored JSON cannot be parsed or is
+// inconsistent, e.g. the tree referencing goals that are not in tabData, or a
+// value that is not the expected shape. Return null so the provider can ask the
+// user how to recover instead of crashing.
+const tryCreateInitialState = (tabData: string, treeData: string) => {
+    try {
+        return createInitialState(JSON.parse(tabData), JSON.parse(treeData));
+    } catch (error) {
+        console.error("Saved data could not be loaded:", error);
+        return null;
+    }
+};
+
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
-    // const treeDataSlice = createTreeDataSlice();
-    // XXX note: we should pass in initialTabs and tree if they exist in localStorage
-
-    const [treeData, setTreeData] = useLocalStorage<TreeItem[]>(
+    // Load from localStorage
+    const [storedTreeData, setStoredTreeData] = useLocalStorage<string>(
         LocalStorageType.TREE,
-        []
+        "[]",
+        rawStringStorage
     );
-    const [tabData, setTabData] = useLocalStorage<typeof initialTabs>(
+    const [tabData, setTabData] = useLocalStorage<string>(
         LocalStorageType.TAB,
-        initialTabs
+        JSON.stringify(initialTabs),
+        rawStringStorage
     );
 
-    const initialState = createInitialState(tabData, treeData);
-    console.log("transformation from localstorage to data: ", treeData);
-    const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState);
+    const initialState = tryCreateInitialState(tabData, storedTreeData);
+    const corrupted = initialState === null;
+    const [abandoned, setAbandoned] = useState(false);
+    const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState ?? createInitialState());
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
     useEffect(() => {
         console.log("FileProvider state updated:", state);
     }, [state]);
 
-    // Listen to changes in redux state and write back to localStorage
+    // Listen to changes in state and write back to localStorage. While the
+    // corruption modal is up, the stored data must stay untouched so the
+    // user can still choose to inspect it.
     useEffect(() => {
-        // Convert TreeNode[] to TreeItem[] for storage
-        // Here we map TreeNode.goalId to TreeItem from state.goals
-        const treeItems = createTreeDataFromTreeNode(state.goals, state.tree);
+        if (corrupted) return;
 
-        setTreeData(treeItems);
+        setStoredTreeData(JSON.stringify(state.tree));
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
         const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
@@ -193,27 +202,58 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 
-        setTabData(tabsArray);
-    }, [state.tree, state.tabs, state.goals, setTreeData, setTabData]);
+        setTabData(JSON.stringify(tabsArray));
+    }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
 
-    // Debug: Log computed values
-    const computedTreeData = createTreeDataFromTreeNode(state.goals, state.tree);
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
 
     useEffect(() => {
-        console.log("Computed treeData:", computedTreeData);
-        console.log("Computed tabData:", computedTabData);
-    }, [computedTreeData, computedTabData]);
+        console.log("Tree data:", state.tree);
+        console.log("Tab data:", computedTabData);
+    }, [state.tree, computedTabData]);
+
+    const revertToDefault = () => {
+        setTabData(JSON.stringify(initialTabs));
+        setStoredTreeData("[]");
+    };
+
+    if (corrupted) {
+        return (abandoned) ? (
+            <Alert variant="warning" className="m-5">
+                Editing is paused and your saved data has been left unchanged. You can
+                inspect or repair it in the browser developer tools, then reload the page.
+            </Alert>
+        ) : (
+            <Modal show centered backdrop="static" keyboard={false}>
+                <Modal.Header>
+                    <Modal.Title>Saved data is corrupted</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Your saved model could not be loaded. You can abandon editing and
+                    leave the saved data untouched for inspection, or revert to the
+                    default state, replacing the saved data.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setAbandoned(true)}>
+                        Abandon
+                    </Button>
+                    <Button variant="warning" onClick={revertToDefault} style={{backgroundColor: "red"}}>
+                        Revert to default
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        );
+    }
 
     return (
         <FileContext.Provider value={{
             ...state,
             dispatch,
-            treeData: computedTreeData,
+            treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.goals, state.tree),
+            cluster: convertTreeDataToClusters(state.tree),
             xmlData,
             setXmlData,
             jsonFileHandle,

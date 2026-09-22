@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
 
 type WelcomeFooterProps = {
 	name: string;
@@ -6,7 +6,7 @@ type WelcomeFooterProps = {
 };
 
 // Footer section in welcome page including copyrights, papers, user manual...
-const WelcomeFooter = ({ name, destination }: WelcomeFooterProps) => {
+const WelcomeFooter = ({name, destination}: WelcomeFooterProps) => {
 	return (
 		<div className="text-center mt-auto">
 			<p>
@@ -15,7 +15,7 @@ const WelcomeFooter = ({ name, destination }: WelcomeFooterProps) => {
 				</Link>
 				&nbsp;|&nbsp;
 				<Link
-					to="/papers/usermanual.pdf"
+					to="/papers/AMMBER_User_Manual.pdf"
 					target="_blank"
 					className="text-decoration-none"
 				>

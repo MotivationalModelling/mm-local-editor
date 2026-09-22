@@ -11,7 +11,7 @@ describe('Graph Deletion UI Tests', () => {
 
   it('should delete a single cell without children directly', () => {
 
-    cy.get('#graphContainer').contains('Concern').click({ force: true });
+    cy.get('#graphContainer').contains('Concern').click({force: true});
 
     cy.get('body').type('{backspace}');
 
@@ -20,14 +20,14 @@ describe('Graph Deletion UI Tests', () => {
 
   it('should show a dialog when delete cells with children', () => {
 
-    cy.get('#graphContainer').contains('Do').click({ force: true });
+    cy.get('#graphContainer').contains('Do').click({force: true});
 
     cy.get('body').type('{backspace}');
 
     cy.get('.modal-title').should('contain', 'Delete goal with children');
     cy.contains('Delete associated goal(s)').should('be.visible');
 
-    cy.get('input[type="checkbox"]').check({ force: true });
+    cy.get('input[type="checkbox"]').check({force: true});
 
     cy.get('[data-cy="confirm-delete"]').click();
 
@@ -35,4 +35,22 @@ describe('Graph Deletion UI Tests', () => {
 
      cy.get('#graphContainer').contains('Do 1').should('not.exist');
   });
+
+    it('should keep a deleted root goal\'s children from overlapping', () => {
+        cy.get('#graphContainer').contains('Do').click({force: true});
+
+        cy.get('body').type('{backspace}');
+
+        cy.get('.modal input[type="checkbox"]').should('not.be.checked');
+        cy.get('[data-cy="confirm-delete"]').click();
+
+        cy.get('#graphContainer').contains('Do1').should('be.visible').then(($firstGoal) => {
+            cy.get('#graphContainer').contains('Do3').should('be.visible').then(($secondGoal) => {
+                const firstGoalBounds = $firstGoal[0].getBoundingClientRect();
+                const secondGoalBounds = $secondGoal[0].getBoundingClientRect();
+
+                expect(firstGoalBounds.left).not.to.equal(secondGoalBounds.left);
+            });
+        });
+    });
 });

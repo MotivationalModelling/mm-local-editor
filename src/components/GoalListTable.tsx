@@ -4,7 +4,7 @@ import Table from "react-bootstrap/Table";
 import Row from "react-bootstrap/Row";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
-import {Label, newTreeItem, TreeItem} from "./types.ts";
+import {Label, newTreeGoal, TreeGoal} from "./types.ts";
 import {handleGoalBlur, handleGoalKeyPress, isEmptyGoal, isGoalDraggable, isTextEmpty} from "./utils/GoalHint.tsx";
 import {
     addGoalToTab,
@@ -13,7 +13,7 @@ import {
     updateTextForGoalId
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
-import {BsFillTrash3Fill} from "react-icons/bs";
+import {BsFillTrash3Fill, BsGripVertical} from "react-icons/bs";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -24,15 +24,15 @@ const goalDescriptionForLabel = (label: Label): string => {
 
 interface Props {
 	label: Label
-	goals: TreeItem[]
-    setDraggedItem: (item: TreeItem | null) => void;
-	groupSelected: TreeItem[]
-	setGroupSelected: (groupSelected: TreeItem[]) => void
-	handleSynTableTree: (treeItem: TreeItem, editedText: string) => void
+	goals: TreeGoal[]
+	groupSelected: TreeGoal[]
+	setGroupSelected: (groupSelected: TreeGoal[]) => void
+	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
+    handleDragStart: (event: React.DragEvent<HTMLElement>, row: TreeGoal) => void
     inputRef: RefObject<HTMLInputElement>
 }
 
-const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
+const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, handleDragStart, inputRef}) => {
 	const treeData = useFileContext();
 	const {dispatch, treeIds} = treeData;
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
@@ -46,17 +46,17 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 	) => {
 		if (e.key === "Enter") {
 			e.preventDefault(); // Prevent default Enter key behavior
-			dispatch(addGoalToTab(newTreeItem({type: label})));
+			dispatch(addGoalToTab(newTreeGoal({type: label})));
 		}
 	};
 
 	// Function to update tree data while user finish input changes
-	const handleSave = (treeItem: TreeItem, text: string) => {
+	const handleSave = (treeItem: TreeGoal, text: string) => {
 		handleSynTableTree(treeItem, text);
 	};
 
 	// Handle key press with GoalHint functions
-	const handleTableKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, row: TreeItem, label: Label) => {
+	const handleTableKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, row: TreeGoal, label: Label) => {
 
 		// If we're editing this specific goal
 		if (editingGoalId === row.id && !newRowAllowed) {
@@ -90,7 +90,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 	};
 
 	// Handle blur with GoalHint functions
-	const handleTableBlur = (row: TreeItem) => {
+	const handleTableBlur = (row: TreeGoal) => {
 		if (editingGoalId === row.id) {
 			handleGoalBlur(
 				row.content, // original content
@@ -113,7 +113,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 		}
 	};
 
-	const handleDeleteRow = (row: TreeItem) => {
+	const handleDeleteRow = (row: TreeGoal) => {
 		dispatch(deleteGoalFromGoalList(row));
 		const filteredGroupSelected = groupSelected.filter(
 			(item) => item.id !== row.id
@@ -122,20 +122,14 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 		setGroupSelected(filteredGroupSelected);
 	};
 
-
-	const handleDragStart = (row: TreeItem) => {
-		console.log("drag start");
-		setDraggedItem(row);
-	};
-
-	const handleCheckboxToggle = (row: TreeItem) => {
+	const handleCheckboxToggle = (row: TreeGoal) => {
 		// Ignore the item if the content is empty
 		if (isEmptyGoal(row)) {
 			return;
 		}
 		const isRowSelected = groupSelected.some((item) => item.id === row.id);
 
-		let newGroupSelected: TreeItem[];
+		let newGroupSelected: TreeGoal[];
 
 		// Create a new array based on the current groupSelected state
 		if (isRowSelected) {
@@ -146,7 +140,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 
 		setGroupSelected(newGroupSelected);
 	};
-	const isChecked = (row: TreeItem): boolean | undefined => {
+	const isChecked = (row: TreeGoal): boolean | undefined => {
 		return groupSelected.some((item) => item.id === row.id);
 	};
 
@@ -162,7 +156,7 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 		);
 	};
 
-    const isGoalInHierarchy = (goal: TreeItem): boolean => {
+    const isGoalInHierarchy = (goal: TreeGoal): boolean => {
         return treeIds[goal.id]?.length > 0;
     };
 
@@ -208,9 +202,13 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 					</td>
 					<td>
 						<InputGroup>
-                            <Form.Control onDragStart={() => handleDragStart(row)}
-                                          draggable={isGoalDraggable(row)} // Only draggable if not empty
-                                          type="text"
+                            <InputGroup.Text className="goal-list-drag-handle"
+                                             draggable={isGoalDraggable(row)}
+                                             aria-label={`Drag ${row.content || label} goal`}
+                                             onDragStart={(event) => handleDragStart(event, row)}>
+                                <BsGripVertical/>
+                            </InputGroup.Text>
+                            <Form.Control type="text"
                                           value={editingGoalId === row.id ? editedText : row.content} // Show edited text when editing
                                           onChange={(e) => {
                                               if (editingGoalId === row.id) {

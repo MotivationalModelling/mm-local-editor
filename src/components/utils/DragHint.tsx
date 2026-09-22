@@ -1,5 +1,5 @@
 import React from "react";
-import { PiHandGrabbingLight } from "react-icons/pi";
+import {PiHandGrabbingLight} from "react-icons/pi";
 import "./DragHint.css";
 
 type DragHintProps = {
@@ -19,7 +19,7 @@ const DragHint: React.FC<DragHintProps> = ({
 				<div className="hint">
 					<div
 						className="rectangle"
-						style={{ width: width, height: `${height}vh` }}
+						style={{width: width, height: `${height}vh`}}
 					/>
 
 					<div className="hand-icon">

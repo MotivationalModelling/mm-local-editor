@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 
 import WelcomeHeader from "./WelcomeHeader";
 import WelcomeFooter from "./WelcomeFooter";
 import WelcomeButtons from "./WelcomeButtons";
-import { DetailCarousel } from "./DetailCarousel";
+import {DetailCarousel} from "./DetailCarousel";
 
 const Welcome = () => {
 	const [isDragging, setIsDragging] = useState(false);
@@ -19,7 +19,7 @@ const Welcome = () => {
 			className="d-flex p-3 flex-column text-center"
 			onDragOver={handleDragOver}
 			id="bg"
-			style={{ minHeight: "inherit" }}
+			style={{minHeight: "inherit"}}
 		>
 			<WelcomeHeader />
 			<div>

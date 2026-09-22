@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { makeLabelForGoalType } from "../utils/GraphUtils";
+import {describe, it, expect} from "vitest";
+import {makeLabelForGoalType} from "../utils/GraphUtils";
 import {SymbolKey} from "../utils/GraphConstants.tsx";
 
 describe("makeLabelForGoalType", () => {

@@ -1,5 +1,5 @@
-import { Resizable, ResizeCallback } from "re-resizable";
-import React, { useEffect, useRef, useState } from "react";
+import {Resizable, ResizeCallback} from "re-resizable";
+import React, {useEffect, useRef, useState} from "react";
 
 import ErrorModal from "./ErrorModal";
 import GoalList from "./GoalList";
@@ -9,7 +9,7 @@ import {useFileContext} from "./context/FileProvider";
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
-import {TreeItem} from "./types.ts";
+import {TreeGoal, InstanceId} from "./types.ts";
 
 const defaultStyle = {
   display: "flex",
@@ -42,28 +42,25 @@ const DEFAULT_HEIGHT = "800px";
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
-  setShowGoalSection: (showGoalSection: boolean) => void;
   paddingX: number;
 };
 
 const SectionPanel: React.FC<SectionPanelProps> = ({
   showGoalSection,
   showGraphSection,
-  setShowGoalSection,
   paddingX,
 }) => {
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
 
-  const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
-  // Simply store ids of all items in the tree for fast check instead of recursive search
-    const {dispatch, tree} = useFileContext();
+  // Use the flat instance index to check all hierarchy levels without recursive search.
+  const {dispatch, treeIds} = useFileContext();
 
-  const [groupSelected, setGroupSelected] = useState<TreeItem[]>([]);
+  const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
 
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
-    const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeItem["id"]; instanceId: TreeItem["instanceId"]}[]>([])
+    const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeGoal["id"]; instanceId: InstanceId}[]>([])
   const [existingError, setExistingError] = useState<boolean>(false);
 
   // const [isHintVisible, setIsHintVisible] = useState(true);
@@ -132,37 +129,11 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     }, delayTime);
   };
 
-  // Handle for goals drop on the nestable section
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-
-      // Temporary Group drop
-      if (groupSelected.length > 1) {
-          handleDropGroupSelected();
-          return;
-      }
-
-      if (draggedItem && draggedItem.content) {
-            // the first hierachy does not contain the dragged item
-            if (!tree.map((index) => index.goalId).includes(draggedItem.id)) {
-              dispatch(addGoalToTree(draggedItem));
-          } else {
-              setExistingItemIds([...existingItemIds, draggedItem.id]);
-              setExistingError(true);
-              hideErrorModalTimeout();
-          }
-      }
-  };
-
   // Add selected items where they are not in the tree to the tree and reset selected items, uncheck the checkboxes
   const handleDropGroupSelected = () => {
-    
-    // Filter groupSelected to get only objects whose IDs are not in treeData
+    // Filter out goals that already have an instance at any hierarchy level.
     const newItemsToAdd = groupSelected.filter(
-            // current hierachy
-            (item) => !tree.some(
-                ref => ref.goalId === item.id
-            )
+      (item) => !treeIds[item.id]?.length
     );
 
     // If all items are in the tree, then show the warning
@@ -187,11 +158,6 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
     setExistingItemIds([]);
     setExistingError(false);
     setGroupSelected([]);
-  };
-
-  // Handle synchronize data in table data and tree data
-  const handleSynTableTree = (treeItem: TreeItem, editedText: string) => {
-    dispatch(updateTextForGoalId({id: treeItem.id, text: editedText}));
   };
 
   // Get the parent div inner width and set starter width for section one and section three
@@ -236,22 +202,22 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       <ErrorModal
         show={existingError}
         title="Drop Failed"
-        message={`The selected ${(groupSelected.length > 1) ? "goals" : "goal"
-        } already ${groupSelected.length > 1 ? "exist" : "exists"}.`}
+        message={`The selected ${(existingItemIds.length > 1) ? "goals" : "goal"
+        } already ${existingItemIds.length > 1 ? "exist" : "exists"}.`}
         onHide={handleGroupDropModal}
       />
       {/* <DragHint isHintVisible={isHintVisible} width={sectionOneWidth-paddingX*2} height={4}/> */}
 
       {/* Goal List Section */}
       <Resizable
-        handleClasses={{ right: "right-handler" }}
-        enable={{ right: true }}
+        handleClasses={{right: "right-handler"}}
+        enable={{right: true}}
         style={{
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",
           display: showGoalSection ? "flex" : "none",
         }}
-        size={{ width: sectionOneWidth, height: "100%" }}
+        size={{width: sectionOneWidth, height: "100%"}}
         maxWidth={DEFINED_PROPORTIONS.maxWidth}
         minWidth={DEFINED_PROPORTIONS.minWidth}
         minHeight={DEFAULT_HEIGHT}
@@ -260,10 +226,9 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         {/* First Panel Content */}
         <GoalList
           ref={goalListRef}
-          setDraggedItem={setDraggedItem}
           groupSelected={groupSelected} 
           setGroupSelected={setGroupSelected}
-          handleSynTableTree={(treeItem: TreeItem, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text: text}))}
+          handleSynTableTree={(treeItem: TreeGoal, text: string) => dispatch(updateTextForGoalId({id: treeItem.id, text}))}
           handleDropGroupSelected={handleDropGroupSelected}
         />
       </Resizable>
@@ -271,7 +236,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       {/* Cluster Hierarchy Section */}
       <div
         style={{
-          ...defaultStyle,
+          // ...defaultStyle,
           width: "100%",
           minWidth: DEFINED_PROPORTIONS.minWidth,
           minHeight: DEFAULT_HEIGHT,
@@ -280,25 +245,24 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           backgroundColor: "rgba(35, 144, 231, 0.1)",
           overflow: "auto",
         }}
-        onDrop={handleDrop}
-        onDragOver={(event) => event.preventDefault()}
         ref={sectionTwoRef}
       >
-        <Tree
-
-          // existingItemIds={existingItemIds}
-          // setTreeIds={setTreeIds}
-          handleSynTableTree={handleSynTableTree}
-          // setExistingItemIds={setExistingItemIds}
-          existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
-          setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
-        />
+          <Tree existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
+                setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
+                onGoalsDropped={(existingGoalIds) => {
+                  setGroupSelected([]);
+                  if (existingGoalIds.length > 0) {
+                    setExistingItemIds(existingGoalIds);
+                    setExistingError(true);
+                    hideErrorModalTimeout();
+                  }
+                }}/>
       </div>
 
       {/* Graph Render Section */}
       <Resizable
-        handleClasses={{ left: "left-handler" }}
-        enable={{ left: true }}
+        handleClasses={{left: "left-handler"}}
+        enable={{left: true}}
         style={{
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",

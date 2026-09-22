@@ -1,5 +1,8 @@
 import React, {useEffect, useState} from "react";
-import {ButtonGroup, Col, Container, Row} from "react-bootstrap";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
 
 import SaveFileButton from "./SaveFileButton";
 import ExportFileButton from "./ExportFileButton";
@@ -37,12 +40,12 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
                         <ResetGraphButton variant="outline-primary" className="ms-3"/>
                     </Col>
                     <Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center">
-                        <ButtonGroup className="ms-3">
+                        <ButtonGroup>
                             {/* Pass showGraphSection to ExportFileButton to control enablement */}
                             <ExportFileButton showGraphSection={showGraphSection}/>
                             {isBrowserSupported && <SaveFileButton/>}
                         </ButtonGroup>
-                        <HomeButton className="ms-3"/>
+                        <HomeButton/>
                     </Col>
                 </Row>
             </Container>

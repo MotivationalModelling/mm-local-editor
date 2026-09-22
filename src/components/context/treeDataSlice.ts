@@ -1,51 +1,47 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {
     createTabDataFromTabs,
-    createTreeDataFromTreeNode,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {InstanceId, Label, TabContent, TreeItem, TreeNode} from "../types.ts"
+import {createInstanceId, InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {parseInstanceId} from "../utils/GraphUtils.tsx";
+import {normalizeInstanceId, parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
 
 
-export const newTreeNode = (
-    treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>,
+// Create a new TreeGoal node for the tree (without content/type - those are in goals)
+export const createTreeGoalNode = (
+    treeIds: Record<TreeGoal["id"], InstanceId[]>,
     {
-        goalId,
-        instanceId = generateInstanceId(treeIds, goalId),
+        id,
+        instanceId = generateInstanceId(treeIds, id),
         children = [],
+        content = "",
+        type,
+        color,
     }: {
-        goalId: TreeItem["id"];
-        instanceId?: TreeItem["instanceId"];
-        children?: TreeNode[];
+        id: TreeGoal["id"];
+        instanceId?: TreeGoal["instanceId"];
+        children?: TreeGoal[];
+        content?: string;
+        type: TreeGoal["type"];
+        color?: string;
     },
-) => {
+): TreeGoal => {
     // Update treeIds mapping
-    if (treeIds[goalId]) {
-        treeIds[goalId].push(instanceId);
+    if (treeIds[id]) {
+        treeIds[id].push(instanceId);
     } else {
-        treeIds[goalId] = [instanceId];
+        treeIds[id] = [instanceId];
     }
 
     return {
-        goalId,
+        id,
         instanceId,
         children,
+        content,
+        type,
+        color,
     };
-};
-
-
-export const createTreeFromTreeData = (
-    treeData: TreeItem[],
-): TreeNode[] => {
-    return treeData.map((ti) => ({
-        goalId: ti.id,
-        // if ti.instanceId exists, use it, else compute one
-        instanceId: ti.instanceId,
-        children: createTreeFromTreeData(ti.children ?? []),
-        color: ti.color
-    }));
 };
 
 export const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab): TabContent => ({
@@ -56,7 +52,7 @@ export const createTabContentFromInitialTab = ({label, icon, rows}: InitialTab):
 
 const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
     tabs: Map<Label, TabContent>,
-    goals: Record<TreeItem["id"], TreeItem>
+    goals: Record<TreeGoal["id"], TreeGoal>
 } => {
     const tabs: Map<Label, TabContent> = new Map(initialTabs.map((tab) => [tab.label, createTabContentFromInitialTab(tab)]));
     const allGoals = initialTabs.map((tab) => tab.rows).flat();
@@ -67,13 +63,13 @@ const createGoalsAndTabsFromTabContent = (initialTabs: InitialTab[]): {
 
 // remove each item from tree
 export const removeItemIdFromTree = (
-    items: TreeNode[],
-    id: TreeNode["goalId"],
-    instanceId?: TreeNode["instanceId"],
+    items: TreeGoal[],
+    id: TreeGoal["id"],
+    instanceId?: InstanceId,
     removeChildren: boolean = true
-): TreeNode[] => {
+): TreeGoal[] => {
     return items.reduce((acc, item) => {
-        if (item.goalId === id && item.instanceId === instanceId) {
+        if (item.id === id && item.instanceId === instanceId) {
 
             if (!removeChildren && item.children) {
                 // Promote children to parent level
@@ -88,10 +84,10 @@ export const removeItemIdFromTree = (
 
         acc.push(item);
         return acc;
-    }, [] as TreeNode[]);
+    }, [] as TreeGoal[]);
 };
 
-export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): TabContent[] => {
+export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeGoal["id"]): TabContent[] => {
     return tabs.map((tab) => ({
         ...tab,
         goalIds: tab.goalIds.filter((goalId) => (goalId !== id))
@@ -99,18 +95,18 @@ export const removeItemIdFromTabs = (tabs: TabContent[], id: TreeItem["id"]): Ta
 };
 
 const removeAllReferenceFromHierarchy = (
-    tree: TreeNode[],
-    goalId: TreeItem["id"],
-    instanceId?: TreeItem["instanceId"],
-): TreeNode[] => {
+    tree: TreeGoal[],
+    goalId: TreeGoal["id"],
+    instanceId?: InstanceId,
+): TreeGoal[] => {
     return tree
         .filter(node => {
             if (instanceId !== undefined) {
                 // keep nodes that are not this specific instance
-                return !(node.goalId === goalId && node.instanceId === instanceId);
+                return !(node.id === goalId && node.instanceId === instanceId);
             } else {
                 // keep nodes that do not match the goalId
-                return node.goalId !== goalId;
+                return node.id !== goalId;
             }
         })
         .map(node => ({
@@ -121,7 +117,7 @@ const removeAllReferenceFromHierarchy = (
         }));
 };
 
-const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): number => {
+const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): number => {
     const ids = treeIds[goalId]?.filter((id) => id !== null);  // filter out undefined & null
     if (!ids || ids.length === 0) return 0;
     return Math.max(
@@ -130,31 +126,48 @@ const generateMaxSuffix = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"
 };
 
 
-const generateInstanceId = (treeIds: Record<TreeItem["id"], TreeItem["instanceId"][]>, goalId: TreeItem["id"]): TreeItem["instanceId"] => {
+const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): InstanceId => {
     // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
-    return `${goalId}-${maxSuffix}`
+    return createInstanceId(goalId, maxSuffix)
 };
 
+const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({
+    ...goal,
+    // Upgrade IDs from saved models before they enter application state.
+    instanceId: normalizeInstanceId(goal.instanceId),
+    ...(goal.children === undefined
+        ? {}
+        : {children: normalizeTreeInstanceIds(goal.children)}),
+}));
+
+const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((tab) => ({
+    ...tab,
+    rows: normalizeTreeInstanceIds(tab.rows),
+}));
+
 //
-export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeItem[] = []) => {
-    const {goals, tabs} = createGoalsAndTabsFromTabContent(tabData);
+export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeGoal[] = []) => {
+    const normalizedTabData = normalizeTabInstanceIds(tabData);
+    const normalizedTreeData = normalizeTreeInstanceIds(treeData);
+    const {goals, tabs} = createGoalsAndTabsFromTabContent(normalizedTabData);
 
     // console.log("createInitialState", tabContent, goals, tabs);
     return {
         tabs,
         goals,
-        tree: createTreeFromTreeData(treeData),
-        treeIds: createTreeIdsFromTreeData(goals, treeData),
+        tree: normalizedTreeData,
+        treeIds: createTreeIdsFromTreeData(goals, normalizedTreeData),
+        showLineBetweenNonFunctionalGoals: true,
     };
 };
 
-export const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: TreeNode["instanceId"]): TreeNode | undefined => {
+export const findTreeGoalByInstanceId = (nodes: TreeGoal[], instanceId: InstanceId): TreeGoal | undefined => {
     for (const node of nodes) {
         if (node.instanceId === instanceId) {
             return node;
         }
-        const matchingNode = findTreeNodeByInstanceId(node.children ?? [], instanceId);
+        const matchingNode = findTreeGoalByInstanceId(node.children ?? [], instanceId);
         if (matchingNode) {
             return matchingNode;
         }
@@ -162,48 +175,112 @@ export const findTreeNodeByInstanceId = (nodes: TreeNode[], instanceId: TreeNode
     return undefined;
 };
 
+export const findTreeGoalById = (nodes: TreeGoal[], id: TreeGoal["id"]): TreeGoal | undefined => {
+    for (const node of nodes) {
+        if (node.id === id) return node;
+        const matchingNode = findTreeGoalById(node.children ?? [], id);
+        if (matchingNode) return matchingNode;
+    }
+    return undefined;
+};
+
+// Note: in the state here, "tabs" and "tree" content contain goalId's which are used to index into
+// "goals" to get the Goal. This is a little confusing with "tree" especially because the tree structure
+// has a full copy of the Goal but in practice it is only used to hold the structure of the goalId's.
+// In short, don't edit the Goal's in the tree -- they're not used.
+
 export const treeDataSlice = createSlice({
     name: "treeData",
     initialState: {
-        tree: [] as TreeNode[],
+        tree: [] as TreeGoal[],
         tabs: {} as Map<Label, TabContent>,
-        goals: {} as Record<TreeItem["id"], TreeItem>,
-        treeIds: {} as Record<TreeItem["id"], TreeItem["instanceId"][]>
+        goals: {} as Record<TreeGoal["id"], TreeGoal>,
+        treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
+        showLineBetweenNonFunctionalGoals: true
     },
     reducers: {
-        // setTreeData: (state, action: PayloadAction<TreeItem[]>) => {
-        //     state.treeData = action.payload;
-        // },
-        // setTabData: (state, action: PayloadAction<TabContent[]>) => {
-        //     state.tabData = action.payload;
-        // },
-        addGoal(state, action: PayloadAction<TreeItem>) {
+        addGoal(state, action: PayloadAction<TreeGoal>) {
             state.goals[action.payload.id] = action.payload;
             state.tabs.get(action.payload.type)?.goalIds.push(action.payload.id);
         },
-        addGoalToTab: (state, action: PayloadAction<TreeItem>) => {
+        addGoalToTab: (state, action: PayloadAction<TreeGoal>) => {
             state.tabs.get(action.payload.type)?.goalIds.push(action.payload.id);
             state.goals[action.payload.id] = action.payload;
         },
-        setTreeData: (state, action: PayloadAction<TreeItem[]>) => {
-            state.tree = createTreeFromTreeData(action.payload);
+        setTreeData: (state, action: PayloadAction<TreeGoal[]>) => {
+            state.tree = action.payload;
         },
-        addGoalToTree: (state, action: PayloadAction<TreeItem>) => {
-            const node = newTreeNode(state.treeIds, {goalId: action.payload.id});
+        setChildrenOfNodeId: (state, action: PayloadAction<{id: TreeGoal["id"], children: TreeGoal[]}>) => {
+            const goal = state.goals[action.payload.id];
+
+            goal.children = action.payload.children;
+        },
+        moveTreeItem: (state, action: PayloadAction<{
+            id: TreeGoal["id"],
+            parentId: TreeGoal["id"] | null,
+            insertionIndex?: number
+        }>) => {
+            const item = findTreeGoalById(state.tree, action.payload.id);
+            const parent = action.payload.parentId === null
+                ? null
+                : findTreeGoalById(state.tree, action.payload.parentId);
+            if (!item || (action.payload.parentId !== null && (
+                !parent || findTreeGoalById([item], action.payload.parentId)
+            ))) return;
+
+            state.tree = removeItemIdFromTree(state.tree, item.id, item.instanceId);
+            const children = action.payload.parentId === null
+                ? state.tree
+                : findTreeGoalById(state.tree, action.payload.parentId)?.children;
+            if (!children) return;
+
+            const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
+            children.splice(insertionIndex, 0, item);
+        },
+        addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
+            // Create a TreeGoal node with generated instanceId
+            const instanceId = generateInstanceId(state.treeIds, action.payload.id);
+            if (state.treeIds[action.payload.id]) {
+                state.treeIds[action.payload.id].push(instanceId);
+            } else {
+                state.treeIds[action.payload.id] = [instanceId];
+            }
+            const node: TreeGoal = {
+                ...action.payload,
+                instanceId,
+                children: [],
+            };
             state.tree.push(node);
-            state.treeIds[action.payload.id] = [];
+        },
+        addGoalsToTree: (state, action: PayloadAction<{
+            goalIds: TreeGoal["id"][],
+            parentId: TreeGoal["id"] | null,
+            insertionIndex?: number
+        }>) => {
+            let children = state.tree;
+            if (action.payload.parentId !== null) {
+                const parent = findTreeGoalById(state.tree, action.payload.parentId);
+                if (!parent) return;
+                parent.children ??= [];
+                children = parent.children;
+            }
+
+            const newItems = action.payload.goalIds
+                .filter((id) => state.goals[id] && (state.treeIds[id]?.length ?? 0) === 0)
+                .map((id) => createTreeGoalNode(state.treeIds, state.goals[id]));
+            const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
+            children.splice(insertionIndex, 0, ...newItems);
         },
         // remove goal(s) and its children from canvas
         removeGoalIdFromTree: (state, action: PayloadAction<{
-            id: TreeItem["id"],
-            instanceId: TreeItem["instanceId"]
+            id: TreeGoal["id"],
+            instanceId: InstanceId
             removeChildren: boolean
         }>) => {
             state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.instanceId, action.payload.removeChildren);
-            // state.treeIds = createTreeIdsFromTreeNode(state.tree);
         },
         // delete it will also delete the reference in the tree
-        deleteGoalFromGoalList: (state, action: PayloadAction<TreeItem>) => {
+        deleteGoalFromGoalList: (state, action: PayloadAction<TreeGoal>) => {
             const tabContent = state.tabs.get(action.payload.type);
             if (tabContent) {
                 tabContent.goalIds = tabContent.goalIds.filter((id) => id !== action.payload.id);
@@ -214,14 +291,14 @@ export const treeDataSlice = createSlice({
             delete state.treeIds[action.payload.id];
         },
         // delete it will not affect the orginal and other reference
-        deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<TreeItem>) => {
+        deleteGoalReferenceFromHierarchy: (state, action: PayloadAction<TreeGoal>) => {
             // only itself
             state.tree = removeAllReferenceFromHierarchy(state.tree, action.payload.id, action.payload.instanceId);
             state.treeIds[action.payload.id] = state.treeIds[action.payload.id].filter(node => node !== action.payload.instanceId);
         },
 
         updateTextForGoalId: (state, action: PayloadAction<{
-            id: TreeItem["id"],
+            id: TreeGoal["id"],
             text: string
         }>) => {
             state.goals[action.payload.id] = {
@@ -230,10 +307,11 @@ export const treeDataSlice = createSlice({
             };
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
-            instanceId: InstanceId,
+            instanceId: string,
             text: string
         }>) => {
-            const {instanceId, text} = action.payload;
+            const instanceId = validateInstanceId(action.payload.instanceId);
+            const {text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             state.goals[goalId] = {
                 ...state.goals[goalId],
@@ -241,19 +319,36 @@ export const treeDataSlice = createSlice({
             };
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
-            instanceId: InstanceId,
+            instanceId: string,
             color: string
         }>) => {
-            const {instanceId, color} = action.payload;
+            const instanceId = validateInstanceId(action.payload.instanceId);
+            const {color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
-            const node = findTreeNodeByInstanceId(state.tree, instanceId);
-            if (node?.goalId === goalId) {
+            const node = findTreeGoalByInstanceId(state.tree, instanceId);
+            if (node?.id === goalId) {
                 node.color = color;
+            }
+        },
+        setVisibilityForLinesBetweenNonFunctionalGoals: (state, action: PayloadAction<boolean>) => {
+            state.showLineBetweenNonFunctionalGoals = action.payload;
+        },
+        updatePositionForInstanceId: (state, action: PayloadAction<{
+            instanceId: InstanceId,
+            x: number,
+            y: number
+        }>) => {
+            const node = findTreeGoalByInstanceId(state.tree, action.payload.instanceId);
+            // Equality guard: writing unchanged values would still dirty the Immer draft,
+            // producing a new state.tree ref and retriggering renderGraph indefinitely.
+            if (node && (node.x !== action.payload.x || node.y !== action.payload.y)) {
+                node.x = action.payload.x;
+                node.y = action.payload.y;
             }
         },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
-            treeData: TreeItem[]
+            treeData: TreeGoal[]
         } | undefined>) => {
             const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData)
                 : createInitialState(initialTabs, []);
@@ -263,17 +358,21 @@ export const treeDataSlice = createSlice({
     extraReducers: (builder) => {
         // XXX after every action, update copy in localstorage
         builder
-            .addMatcher(() => true, (state) => {
+            .addMatcher(() => true, () => {
                 // onChange.?(state)
             })
     },
     selectors: {
         selectTabData: (state) => createTabDataFromTabs(state.goals, state.tabs),
-        selectTreeData: (state) => createTreeDataFromTreeNode(state.goals, state.tree),
+        selectTreeData: (state) => state.tree,
         selectGoalsForLabel: (state, label: Label) => state.tabs.get(label)?.goalIds.map((goalId) => state.goals[goalId]) ?? []
     }
 });
 
-export const {addGoal, addGoalToTab, setTreeData, addGoalToTree, deleteGoalReferenceFromHierarchy, deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId, updateColorForInstanceId} = treeDataSlice.actions;
+export const {
+    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree,
+    deleteGoalReferenceFromHierarchy,
+    deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
+    updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+} = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;
-
