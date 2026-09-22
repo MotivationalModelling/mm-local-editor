@@ -21,6 +21,8 @@ export const GraphUsageInfo = () => {
             <br />
             <strong>Model Panel:</strong>
             <br />
+            • Drag the canvas to move around
+            <br />
             • Select and drag a goal to adjust its position on the graph
             <br />
             • Drag elements from the right toolbar onto the graph to add a goal

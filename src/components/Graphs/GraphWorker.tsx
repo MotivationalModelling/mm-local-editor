@@ -9,6 +9,7 @@ import {
     Graph,
     InternalEvent,
     KeyHandler,
+    PanningHandler,
     RubberBandHandler,
     UndoManager,
 } from "@maxgraph/core";
@@ -192,7 +193,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     //   }
     // };
 
-    const prevShowGraphSectionRef = useRef(false);
     // Using useRef instead of useState because this value is only used to detect
     // changes (comparing previous vs current count) and does not affect UI rendering.
     // Updating a ref doesn't trigger re-renders, which is more efficient for this use case.
@@ -248,6 +248,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         //graph.setConnectable(true);
         graph.setCellsEditable(true);
         graph.setPanning(true);
+        const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
+        if (panningHandler) {
+            // Pan with the primary mouse button only when the pointer is over
+            // empty canvas space, leaving goal dragging and resizing unchanged.
+            panningHandler.useLeftButtonForPanning = true;
+        }
         graph.setCellsResizable(true);
         graph.setCellsMovable(true); // Allow cells to be moved
         graph.setCellsSelectable(true); // Allow cells to be selected
@@ -312,10 +318,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             evt.consume();
         };
         const changeHandler = (_sender: string, evt: EventObject) => {
+                const changes = evt.getProperty("edit").changes;
+                const hasNonStyleChanges = changes.some(
+                    (change: {constructor: {name: string}}) => change.constructor.name != "StyleChange"
+                );
                 graph.getDataModel().beginUpdate();
                 evt.consume();
                 try {
-                    const changes = evt.getProperty("edit").changes;
                     for (let i = 0; i < changes.length; i++) {
                         const change = changes[i];
                         if (change.constructor.name == "GeometryChange") {
@@ -403,7 +412,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     }
                 } finally {
                     graph.getDataModel().endUpdate();
-                    graph.refresh();
+                    // Style changes are already redrawn by maxGraph and must retain the hidden label while editing.
+                    if (hasNonStyleChanges) {
+                        graph.refresh();
+                    }
                 }
             };
         graph.addListener(InternalEvent.CLICK, goalLinkClickHandler);
@@ -582,7 +594,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob
         );
         rootGoal = rootGoalWrapper.value;
-        layoutFunctions(graph, rootGoal);
+        layoutFunctions(graph);
         restoreSavedPositions(graph, cluster.ClusterGoals);
 
         // render non-functional goals

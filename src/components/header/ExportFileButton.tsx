@@ -10,8 +10,11 @@ import {useFileContext} from "../context/FileProvider";
 import {useGraph} from "../context/GraphContext";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 import {getGoalLinkForCell} from "../Graphs/GraphHelpers";
+import {buildExportableSVG} from "../utils/ExportGraph";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+
+const PNG_EXPORT_SCALE = 3;
 
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
@@ -47,13 +50,6 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         return "Export is ready.";
     };
 
-    const recentreView = (graph: Graph) => {
-        if (graph) {
-            graph.fit();
-            graph.center();
-        }
-    };
-
     const findSVGElementInGraph = (graph: Graph) => {
         // Check if the model is ready before proceeding
         if (!isModelReadyForExport()) {
@@ -69,8 +65,6 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         if (!graph) {
             return null;
         }
-
-        recentreView(graph);
 
         // Clear all selection for no green bounding box
         graph.clearSelection();
@@ -93,7 +87,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
 
         // Add real SVG anchors to a copy so exported links remain clickable
         // without changing the live maxGraph DOM.
-        const svgForExport = svgElement.cloneNode(true) as SVGSVGElement;
+        const {clone: svgForExport} = buildExportableSVG(graph, svgElement);
         const sourceElements = Array.from(svgElement.querySelectorAll("*"));
         const clonedElements = Array.from(svgForExport.querySelectorAll("*"));
 
@@ -163,32 +157,44 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
             return;
         }
 
-        // Append a white background rect to the SVG
-        // Use D3 to select the SVG and append a white background rect
-        const svg = d3.select(svgElement);
-        svg.insert("rect", ":first-child")
-            .attr("width", "100%")
-            .attr("height", "100%")
+        // Rasterise a bounded copy so no node falls outside the exported area
+        const {clone, x, y, width, height} = buildExportableSVG(graph, svgElement);
+
+        // Give the copy (not the live canvas) an opaque background. The rect needs
+        // explicit coordinates: percentages would resolve against the viewBox size
+        // but still start at 0, missing anything at a negative coordinate.
+        d3.select(clone)
+            .insert("rect", ":first-child")
+            .attr("x", x)
+            .attr("y", y)
+            .attr("width", width)
+            .attr("height", height)
             .attr("fill", "white");
 
         // Serialize the SVG element to a string
         const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svgElement);
+        const svgString = serializer.serializeToString(clone);
 
         // Create a canvas element
         const canvas = document.createElement('canvas');
-        // Set canvas dimensions to match the SVG size
-        canvas.width = svgElement.clientWidth;
-        canvas.height = svgElement.clientHeight;
+        // Size the canvas from the graph bounds rather than the on-screen element,
+        // and render at a higher pixel density for a sharper PNG export
+        canvas.width = Math.round(width * PNG_EXPORT_SCALE);
+        canvas.height = Math.round(height * PNG_EXPORT_SCALE);
 
         const context = canvas.getContext('2d');
         if (!context) {
             console.error('Failed to get canvas context.');
             return;
         }
+        // Canvg is told to ignore the SVG's own dimensions, so it draws the viewBox
+        // 1:1 - the context scale is what actually applies PNG_EXPORT_SCALE
+        context.scale(PNG_EXPORT_SCALE, PNG_EXPORT_SCALE);
 
         // Use Canvg to render SVG onto the canvas
-        const v = Canvg.fromString(context, svgString);
+        const v = Canvg.fromString(context, svgString, {
+            ignoreDimensions: true
+        });
 
         // Render SVG onto the canvas
         await v.render();

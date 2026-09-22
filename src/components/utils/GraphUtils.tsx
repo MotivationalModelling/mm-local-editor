@@ -1,4 +1,4 @@
-import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
+import {ClusterGoal, createInstanceId, GoalBase, TreeGoal, InstanceId, INSTANCE_ID_SEPARATOR} from '../types';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
 
@@ -14,8 +14,8 @@ export const getSymbolConfigByShape = (shape: string): SymbolConfig | undefined 
 
 /**
  * Extracts ID strings from a cell:
- * - Supports multiple comma-separated IDs like: "Nonfunctional-[5-1,1762312908316-1]"
- * - Returns an array of strings, e.g. ["5-1", "1762312908316-1"]
+ * - Supports multiple comma-separated IDs like: "Nonfunctional-[5:1,1762312908316:1]"
+ * - Returns an array of strings, e.g. ["5:1", "1762312908316:1"]
  */
 export function getCellNumericIds(cell: Cell): string[] {
     const cellId = cell.getId();
@@ -88,30 +88,25 @@ export function fixEditorPosition(graph: Graph) {
     observer.observe(container, {childList: true, subtree: true});
 }
 
-// Functional-8-1
+// Functional-8:1
 export function formatFunGoalRefId(goal: ClusterGoal) {
-    return `${goal.GoalType}-${goal.instanceId}` as InstanceId;
+    return `${goal.GoalType}-${goal.instanceId}`;
 }
 
 export const parseFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId} => {
-    // Example: Functional-2-1 -> id = "2-1"
-    const parts = id.split("-");
-    if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
-        throw new Error(`invalid id: got "${id}"`);
-    }
+    // A graph cell keeps its type outside the canonical instance ID, e.g. Functional-2:1.
+    try {
+        const instanceId = validateInstanceId(id);
+        const {goalId} = parseInstanceId(instanceId);
 
-    const goalId = Number(parts[0].trim());
-    if (isNaN(goalId)) {
-        throw new Error(`goal id must be a number, got "${parts[0]}"`);
+        return {goalId, instanceId};
+    } catch {
+        throw new Error(`invalid InstanceId: got "${id}"`);
     }
-
-    // instanceId should include both goal and instance part
-    const instanceId = `${parts[0].trim()}-${parts[1].trim()}` as InstanceId;
-    return {goalId, instanceId};
 };
 
 export const parseNonFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId}[] => {
-    // Eg, Nonfunctional-[2-1,1762225479581-1] -> [2-1,1762225479581-1]
+    // Eg, Nonfunctional-[2:1,1762225479581:1] -> [2:1,1762225479581:1]
     const match = id.match(/^\[(.+)]$/);
     if (!match) {
         throw new Error(`invalid nonfunctional id: got "${id}"`);
@@ -125,7 +120,7 @@ export const parseNonFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], inst
     return pairs;
 };
 
-// Convert the cell id in MaxGraph 'Functional-8-1'
+// Convert the cell id in MaxGraph 'Functional-8:1'
 export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instanceId: InstanceId}[] => {
     if (!refId) {
         throw new Error("cell id is missing");
@@ -157,11 +152,9 @@ export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instance
 };
 
 
-// Treeid stored in the state '8-1'
+// Treeid stored in the state '8:1'
 export function getRefIdFromInstanceId(instanceId: InstanceId) {
-    const parts = instanceId.split("-");
-    const suffixStr = parts.pop();
-    return Number(suffixStr);
+    return parseInstanceId(instanceId).refId;
 }
 
 /*
@@ -185,27 +178,36 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
+// New state uses the configured separator; the legacy pattern is accepted only while stored/imported models are normalised.
+const INSTANCE_ID_RE = new RegExp(`^(-?\\d+)${INSTANCE_ID_SEPARATOR}(\\d+)$`);
+const LEGACY_INSTANCE_ID_RE = /^(-?\d+)-(\d+)$/;
+
 export const validateInstanceId = (id: string): InstanceId => {
-    const bits = id.split("-").map(s => s.trim());
-    if (bits.length !== 2) {
+    if (!INSTANCE_ID_RE.test(id)) {
         throw new Error(`badly formatted instanceId "${id}"`);
-    }
-    const [goalId, refId] = bits.map(Number);
-    if (isNaN(goalId) || isNaN(refId)) {
-        throw new Error(`instanceId must contain two numbers, got "${id}"`);
     }
     return id as InstanceId;
 };
 
 export const parseInstanceId = (instanceId: InstanceId) => {
-    const bits = instanceId.split("-").map(s => s.trim());
-    if (bits.length !== 2) {
+    const match = INSTANCE_ID_RE.exec(instanceId);
+    if (!match) {
         throw new Error(`badly formatted instanceId "${instanceId}"`);
     }
 
-    const [goalId, refId] = bits.map(Number);
+    return {
+        goalId: Number(match[1]),
+        refId: Number(match[2]),
+    };
+};
 
-    return {goalId, refId};
+export const normalizeInstanceId = (instanceId: string): InstanceId => {
+    const match = INSTANCE_ID_RE.exec(instanceId) ?? LEGACY_INSTANCE_ID_RE.exec(instanceId);
+    if (!match) {
+        throw new Error(`badly formatted instanceId "${instanceId}"`);
+    }
+
+    return createInstanceId(Number(match[1]), Number(match[2]));
 };
 
 // Check and retrieve if the non-functional goal has pre-defined color by instanceId

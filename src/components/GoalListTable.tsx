@@ -13,7 +13,7 @@ import {
     updateTextForGoalId
 } from "./context/treeDataSlice.ts";
 import {useFileContext} from "./context/FileProvider.tsx";
-import {BsFillTrash3Fill, BsLink45Deg} from "react-icons/bs";
+import {BsFillTrash3Fill, BsGripVertical, BsLink45Deg} from "react-icons/bs";
 
 const goalDescriptionForLabel = (label: Label): string => {
     const goalNames: Partial<Record<Label, string>> = {
@@ -25,15 +25,15 @@ const goalDescriptionForLabel = (label: Label): string => {
 interface Props {
 	label: Label
 	goals: TreeGoal[]
-    setDraggedItem: (item: TreeGoal | null) => void;
 	groupSelected: TreeGoal[]
 	setGroupSelected: (groupSelected: TreeGoal[]) => void
 	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
 	onLinkClick: (goal: TreeGoal) => void
+    handleDragStart: (event: React.DragEvent<HTMLElement>, row: TreeGoal) => void
     inputRef: RefObject<HTMLInputElement>
 }
 
-const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSelected, setGroupSelected, handleSynTableTree, onLinkClick, inputRef}) => {
+const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, handleDragStart, onLinkClick, inputRef}) => {
 	const treeData = useFileContext();
 	const {dispatch, treeIds} = treeData;
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
@@ -123,12 +123,6 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 		setGroupSelected(filteredGroupSelected);
 	};
 
-
-	const handleDragStart = (row: TreeGoal) => {
-		console.log("drag start");
-		setDraggedItem(row);
-	};
-
 	const handleCheckboxToggle = (row: TreeGoal) => {
 		// Ignore the item if the content is empty
 		if (isEmptyGoal(row)) {
@@ -209,9 +203,13 @@ const GoalListTable: React.FC<Props> = ({label, goals, setDraggedItem, groupSele
 					</td>
 					<td>
 						<InputGroup>
-                            <Form.Control onDragStart={() => handleDragStart(row)}
-                                          draggable={isGoalDraggable(row)} // Only draggable if not empty
-                                          type="text"
+                            <InputGroup.Text className="goal-list-drag-handle"
+                                             draggable={isGoalDraggable(row)}
+                                             aria-label={`Drag ${row.content || label} goal`}
+                                             onDragStart={(event) => handleDragStart(event, row)}>
+                                <BsGripVertical/>
+                            </InputGroup.Text>
+                            <Form.Control type="text"
                                           value={editingGoalId === row.id ? editedText : row.content} // Show edited text when editing
                                           onChange={(e) => {
                                               if (editingGoalId === row.id) {
