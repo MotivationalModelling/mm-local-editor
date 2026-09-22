@@ -64,5 +64,9 @@
     "typescript": "^5.2.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.11"
+  },
+  "allowScripts": {
+    "cypress@15.18.1": true,
+    "fsevents@2.3.3": true
   }
 }
