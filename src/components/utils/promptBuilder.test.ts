@@ -15,13 +15,26 @@ describe("buildUserStoryPrompt", () => {
       stories: [
         {
           story: "Post comment",
-          roles: ["Student"],
+          functionalGoalInstanceId: "2-1",
+          concerns: ["Privacy"],
+          goalReferences: [
+            {goalId: 2, instanceId: "2-1", type: "Do", content: "Post comment"},
+            {goalId: 3, instanceId: "3-1", type: "Who", content: "Student"},
+            {goalId: 8, instanceId: "8-1", type: "Who", content: "Tutor"},
+            {goalId: 4, instanceId: "4-1", type: "Be", content: "Accessible"},
+            {goalId: 5, instanceId: "5-1", type: "Feel", content: "Connected"},
+            {goalId: 6, instanceId: "6-1", type: "Concern", content: "Privacy"},
+          ],
+          roles: ["Student", "Tutor"],
           subTasks: [],
           qualityGoals: ["Accessible"],
           emotionalGoals: ["Connected"],
         },
         {
           story: "Review engagement",
+          functionalGoalInstanceId: "7-1",
+          concerns: [],
+          goalReferences: [{goalId: 7, instanceId: "7-1", type: "Do", content: "Review engagement"}],
           roles: ["Teaching team"],
           subTasks: [],
           qualityGoals: ["Organized"],
@@ -35,36 +48,32 @@ describe("buildUserStoryPrompt", () => {
       "A university platform where students discuss course material with their teaching team."
     );
 
-    expect(prompt.startsWith("You are generating Agile user stories from a motivational model.")).toBe(true);
-    expect(prompt).toContain("Generate exactly one user story for each provided functional goal.");
-    expect(prompt).toContain(
-      "<project_background>\nA university platform where students discuss course material with their teaching team.\n</project_background>"
-    );
-    expect(prompt).toContain(
-      "Infer the smallest, most direct user outcome that follows immediately from the functional goal in the project background."
-    );
-    expect(prompt).toContain("Do not add secondary, downstream, or speculative benefits.");
-    expect(prompt).toContain(
-      "Functional goal 1:\n  Goal: Post comment\n  Roles:\n    - Student\n  Quality goals:\n    - Accessible\n  Emotional goals:\n    - Connected"
-    );
-    expect(prompt).toContain(
-      "Functional goal 2:\n  Goal: Review engagement\n  Roles:\n    - Teaching team\n  Quality goals:\n    - Organized\n  Emotional goals:\n    - Supported"
-    );
-    expect(
-      prompt.endsWith(
-        "Return only the generated user stories.\nReturn one user story per line, in the same order as the functional goals.\nEach output line must contain exactly one sentence in the REQUIRED OUTPUT FORMAT.\nDo not append another sentence or any additional content after the immediate user value.\nDo not include explanations, reasoning, headings, bullet points, or additional commentary."
-      )
-    ).toBe(true);
-    expect(prompt).toContain(
-      "As a <role>, I want to <functional goal> so that <immediate user value>."
-    );
-    expect(prompt).not.toContain("I want to feel");
-    expect(prompt.toLowerCase()).not.toContain("sub-task");
-    expect(prompt.toLowerCase()).not.toContain("subtask");
-    expect(prompt).not.toContain("EXAMPLE INPUT");
+    expect(prompt.startsWith("You are generating Agile user stories for a software project from a Motivational Model.")).toBe(true);
+    expect(prompt).toContain("Generate exactly one user story for each functional goal.");
+    expect(prompt).toContain("Use every role exactly as written in the provided Roles List.");
+    expect(prompt).toContain("If multiple roles are provided, include all of them in the same user story.");
+    expect(prompt).toContain("Generate the smallest and most direct user value that follows from performing the functional goal.");
+    expect(prompt).toContain('Copy `functionalGoalInstanceId` and `relatedGoalInstanceIds` exactly from the input');
+    expect(prompt).toContain("System:\nA university platform where students discuss course material with their teaching team.");
+    expect(prompt).not.toContain(model.epic);
+    expect(prompt).not.toContain("Select the most appropriate role");
+    expect(prompt).not.toContain("Goal references");
+    expect(prompt).not.toContain("subTasks");
+    expect(prompt.endsWith("Return only the JSON object without Markdown fences or additional text.")).toBe(true);
+
+    const input = JSON.parse(prompt.split("Functional goals:\n")[1].split("\n\n\nReturn only")[0]);
+    expect(input).toEqual(model.stories.map((story) => ({
+      functionalGoalInstanceId: story.functionalGoalInstanceId,
+      "Functional goal": story.story,
+      "Roles List": story.roles,
+      "Quality goals": story.qualityGoals,
+      "Emotional goals": story.emotionalGoals,
+      Concerns: story.concerns,
+      relatedGoalInstanceIds: story.goalReferences.map((goal) => goal.instanceId),
+    })));
   });
 
-  it("renders unresolved per-story context as blank fields", () => {
+  it("renders unresolved per-story context as empty arrays", () => {
     const model: ExtractedModel = {
       epic: "Platform",
       roles: [],
@@ -75,6 +84,9 @@ describe("buildUserStoryPrompt", () => {
       stories: [
         {
           story: "Leaf action",
+          functionalGoalInstanceId: "2-1",
+          concerns: [],
+          goalReferences: [{goalId: 2, instanceId: "2-1", type: "Do", content: "Leaf action"}],
           roles: [],
           subTasks: [],
           qualityGoals: [],
@@ -85,9 +97,16 @@ describe("buildUserStoryPrompt", () => {
 
     const prompt = buildUserStoryPrompt(model, "A project background.");
 
-    expect(prompt).toContain(
-      "Functional goal 1:\n  Goal: Leaf action\n  Roles:\n  Quality goals:\n  Emotional goals:\n"
-    );
+    const input = JSON.parse(prompt.split("Functional goals:\n")[1].split("\n\n\nReturn only")[0]);
+    expect(input).toEqual([{
+      functionalGoalInstanceId: "2-1",
+      "Functional goal": "Leaf action",
+      "Roles List": [],
+      "Quality goals": [],
+      "Emotional goals": [],
+      Concerns: [],
+      relatedGoalInstanceIds: ["2-1"],
+    }]);
   });
 
   it("requires a non-empty project background", () => {

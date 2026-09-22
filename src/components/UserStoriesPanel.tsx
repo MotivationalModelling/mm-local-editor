@@ -3,23 +3,27 @@ import Alert from "react-bootstrap/Alert";
 import Badge from "react-bootstrap/Badge";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
+import Dropdown from "react-bootstrap/Dropdown";
 import Form from "react-bootstrap/Form";
 import Table from "react-bootstrap/Table";
-import {BsCheckCircle, BsPencilSquare, BsXCircle} from "react-icons/bs";
+import {BsArrowClockwise, BsCheckCircle, BsClipboard, BsDownload, BsPencilSquare, BsThreeDotsVertical, BsTrash3} from "react-icons/bs";
 import ProjectBackgroundModal from "./ProjectBackgroundModal";
 import {useFileContext} from "./context/FileProvider";
-import {parseStoriesFromText, useUserStories, UserStory} from "./context/UserStoriesContext";
+import {useUserStories, UserStory} from "./context/UserStoriesContext";
 import {checkConsistencyPrinciples} from "./utils/consistencyChecker";
 import {extractModelForPrompt} from "./utils/modelExtractor";
-import {generateUserStories} from "./utils/llmService";
-import {buildUserStoryPrompt} from "./utils/promptBuilder";
+import {generateValidatedUserStories} from "./utils/userStoryGeneration";
+import {splitUserStorySentence} from "./utils/userStorySentence";
+import type {UserStoryEdits} from "./userStoryTypes";
+import InlineStoryPhrase from "./InlineStoryPhrase";
+import GenerateUserStoriesButton from "./header/GenerateUserStoriesButton";
+import "./UserStoriesPanel.css";
 
-const buildStorySentence = (s: UserStory): string => {
-  return `As a ${s.role}, I want to ${s.action} so that ${s.immediateUserValue}.`;
-};
+const EMPTY_EDITS: UserStoryEdits = {role: "", action: "", immediateUserValue: ""};
+
 
 export const getStoryText = (story: UserStory): string => {
-  return story.editedText.trim().length > 0 ? story.editedText : buildStorySentence(story);
+  return story.editedText.trim().length > 0 ? story.editedText : story.sentence;
 };
 
 const exportStoriesAsTxt = (stories: UserStory[]): void => {
@@ -50,7 +54,7 @@ const UserStoriesPanel = () => {
   const {treeData} = useFileContext();
   const {state: usState, dispatch: usDispatch} = useUserStories();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draftText, setDraftText] = useState<string>("");
+  const [draft, setDraft] = useState<UserStoryEdits>(EMPTY_EDITS);
   const [clipboardError, setClipboardError] = useState<string | null>(null);
   const [showBackgroundModal, setShowBackgroundModal] = useState(false);
   const [projectBackground, setProjectBackground] = useState("");
@@ -69,18 +73,19 @@ const UserStoriesPanel = () => {
 
   const handleStartEdit = (s: UserStory) => {
     setEditingId(s.id);
-    setDraftText(getStoryText(s));
+    setDraft({role: s.role, action: s.action, immediateUserValue: s.immediateUserValue});
   };
 
   const handleSaveEdit = (id: string) => {
-    usDispatch({type: "EDIT", payload: {id, text: draftText}});
+    if (Object.values(draft).some((value) => !value.trim())) return;
+    usDispatch({type: "EDIT", payload: {id, edits: draft}});
     setEditingId(null);
-    setDraftText("");
+    setDraft(EMPTY_EDITS);
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setDraftText("");
+    setDraft(EMPTY_EDITS);
   };
 
   const handleCopyApproved = async () => {
@@ -98,10 +103,8 @@ const UserStoriesPanel = () => {
     usDispatch({type: "CLEAR"});
     usDispatch({type: "SET_LOADING"});
     try {
-      const prompt = buildUserStoryPrompt(extractedModel, background);
-      const raw = await generateUserStories(prompt);
-      const stories = parseStoriesFromText(raw);
-      usDispatch({type: "SET_SUCCESS", payload: {rawOutput: raw, stories}});
+      const result = await generateValidatedUserStories(extractedModel, background);
+      usDispatch({type: "SET_SUCCESS", payload: result});
     } catch (err) {
       usDispatch({type: "SET_ERROR", payload: err instanceof Error ? err.message : "Unknown error"});
     }
@@ -142,7 +145,7 @@ const UserStoriesPanel = () => {
                       <tr key={r.id}>
                         <td>{r.id}</td>
                         <td>{r.description}</td>
-                        <td className={r.passed ? "text-success" : "text-danger"}>
+                        <td className={`text-center align-middle ${r.passed ? "text-success" : "text-danger"}`}>
                           {r.passed ? "✓" : "✗"}
                         </td>
                       </tr>
@@ -157,59 +160,180 @@ const UserStoriesPanel = () => {
             </Card.Body>
           </Card>
         </div>
+
         <div className="col-12">
-          <div className="d-flex align-items-center justify-content-between mb-2">
-            <strong>User stories</strong>
+          <div className="user-stories-toolbar">
+            <div className="user-stories-toolbar-heading">
+            <div className="d-flex align-items-center flex-nowrap gap-1">
+              <strong className="fs-4">User stories</strong>
+              <Dropdown>
+                <Dropdown.Toggle
+                  id="user-stories-actions"
+                  variant="light"
+                  className="user-stories-menu-toggle"
+                  aria-label="User stories actions"
+                  title="User stories actions"
+                >
+                  <BsThreeDotsVertical aria-hidden="true"/>
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="user-stories-menu">
+                  <Dropdown.Header>Approved stories</Dropdown.Header>
+                  <Dropdown.Item
+                    as="button"
+                    onClick={() => exportStoriesAsTxt(approvedStories)}
+                    disabled={approvedStories.length === 0 || isLoading}
+                  >
+                    <BsDownload aria-hidden="true"/>
+                    <span>Export as .txt</span>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    as="button"
+                    onClick={handleCopyApproved}
+                    disabled={approvedStories.length === 0 || isLoading}
+                  >
+                    <BsClipboard aria-hidden="true"/>
+                    <span>Copy to clipboard</span>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </div>
+            <div className="d-flex align-items-center gap-2">
             {usState.status !== "idle" && (
-              <Badge bg="secondary">
-                Approved: {approvedCount} / {totalCount}
-              </Badge>
+              <span
+                className={`user-stories-approved${approvedCount > 0 ? " user-stories-approved--active" : ""}`}
+                role="status"
+              >
+                <BsCheckCircle aria-hidden="true"/>
+                <span>Approved: {approvedCount} / {totalCount}</span>
+              </span>
             )}
+              {usState.selectedStoryId && (
+                <Button size="sm" variant="outline-secondary" onClick={() => usDispatch({type: "SELECT", payload: null})}>
+                  Clear selection
+                </Button>
+              )}
+            </div>
+            </div>
+            <div className="user-stories-toolbar-actions">
+              {totalCount === 0 ? <GenerateUserStoriesButton/> : (
+                <Button
+                  variant="outline-warning"
+                  className="user-stories-generation"
+                  onClick={() => setShowBackgroundModal(true)}
+                  disabled={isLoading}
+                >
+                  <BsArrowClockwise aria-hidden="true"/>
+                  Regenerate
+                </Button>
+              )}
+            </div>
           </div>
           {usState.stories.map((s) => {
             const isRejected = s.status === "rejected";
             const isApproved = s.status === "approved";
             const showEdit = editingId === s.id;
+            const isSelected = usState.selectedStoryId === s.id;
 
-            const textToShow = showEdit ? draftText : getStoryText(s);
+            const textToShow = getStoryText(s);
+            const sentenceParts = splitUserStorySentence(textToShow);
 
             return (
               <Card
                 key={s.id}
-                className={`mb-3 ${isRejected ? "opacity-50" : ""}`}
+                className={`mb-3 user-story-card ${isRejected ? "opacity-50" : ""} ${isSelected ? "user-story-card--selected" : ""}`}
                 style={isApproved ? {borderLeft: "4px solid green"} : undefined}
+                onClick={() => {
+                  if (!isLoading) usDispatch({type: "SELECT", payload: s.id});
+                }}
               >
-                <Card.Header>
-                  <Badge bg="primary" className="me-2">
-                    {s.role}
-                  </Badge>
-                  <span>{s.action}</span>
+                <Card.Header className="d-flex align-items-center gap-2 user-story-card-header">
+                  <div className="d-flex align-items-center flex-wrap gap-2 user-story-card-heading">
+                    <Form.Check
+                      type="radio"
+                      name="selected-user-story"
+                      id={`select-story-${s.id}`}
+                      aria-label={`Select user story: ${s.action}`}
+                      checked={isSelected}
+                      disabled={isLoading}
+                      onChange={() => usDispatch({type: "SELECT", payload: s.id})}
+                    />
+                    <Badge bg="primary" className="me-2">
+                      {s.role}
+                    </Badge>
+                    <span>{s.action}</span>
+                  </div>
+                  <div className="user-story-card-actions">
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      className="user-story-action user-story-edit"
+                      onClick={() => handleStartEdit(s)}
+                      disabled={isLoading || showEdit}
+                    >
+                      <BsPencilSquare aria-hidden="true" />
+                      Edit
+                    </Button>
+                  </div>
                 </Card.Header>
                 <Card.Body>
-                  {showEdit ? (
-                    <>
-                      <Form.Control
-                        as="textarea"
-                        rows={4}
-                        value={draftText}
-                        onChange={(e) => setDraftText(e.target.value)}
-                      />
-                      <div className="mt-2 d-flex gap-2">
-                        <Button size="sm" variant="success" onClick={() => handleSaveEdit(s.id)}>
-                          Save
-                        </Button>
-                        <Button size="sm" variant="outline-secondary" onClick={handleCancelEdit}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {isRejected ? <p><s>{textToShow}</s></p> : <p>{textToShow}</p>}
-                    </>
+                  <p className={`user-story-sentence${isRejected && !showEdit ? " user-story-sentence--rejected" : ""}`}>
+                    {sentenceParts ? (
+                      <>
+                        <span className="user-story-phrase--fixed" contentEditable={false}>{sentenceParts.prefix}</span>
+                        <InlineStoryPhrase
+                          value={showEdit ? draft.role : sentenceParts.role}
+                          label="Role"
+                          editing={showEdit && !isLoading}
+                          autoFocus
+                          onChange={(role) => setDraft((previous) => ({...previous, role}))}
+                          onCancel={handleCancelEdit}
+                        />
+                        <span className="user-story-phrase--fixed" contentEditable={false}>{sentenceParts.actionPrefix}</span>
+                        <InlineStoryPhrase
+                          value={showEdit ? draft.action : sentenceParts.action}
+                          label="Action"
+                          editing={showEdit && !isLoading}
+                          onChange={(action) => setDraft((previous) => ({...previous, action}))}
+                          onCancel={handleCancelEdit}
+                        />
+                        <span className="user-story-phrase--fixed" contentEditable={false}>{sentenceParts.valuePrefix}</span>
+                        <InlineStoryPhrase
+                          value={showEdit ? draft.immediateUserValue : sentenceParts.immediateUserValue}
+                          label="Immediate user value"
+                          editing={showEdit && !isLoading}
+                          onChange={(immediateUserValue) => setDraft((previous) => ({...previous, immediateUserValue}))}
+                          onCancel={handleCancelEdit}
+                        />
+                        <span className="user-story-phrase--fixed" contentEditable={false}>{sentenceParts.suffix}</span>
+                      </>
+                    ) : textToShow}
+                  </p>
+                  {showEdit && (
+                    <div className="mt-2 d-flex gap-2">
+                      <Button size="sm" variant="success" onClick={() => handleSaveEdit(s.id)}
+                              disabled={isLoading || Object.values(draft).some((value) => !value.trim())}>
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline-secondary" onClick={handleCancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
                   )}
                 </Card.Body>
-                <Card.Footer className="d-flex gap-2">
+                <Card.Footer className="d-flex justify-content-end gap-2">
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (showEdit) handleCancelEdit();
+                      usDispatch({type: "DELETE", payload: s.id});
+                    }}
+                    disabled={isLoading}
+                  >
+                    <BsTrash3 className="me-1" aria-hidden="true" />
+                    Delete
+                  </Button>
                   <Button
                     variant="outline-success"
                     size="sm"
@@ -219,57 +343,12 @@ const UserStoriesPanel = () => {
                     <BsCheckCircle className="me-1" />
                     Approve
                   </Button>
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    onClick={() => handleStartEdit(s)}
-                    disabled={isLoading}
-                  >
-                    <BsPencilSquare className="me-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => usDispatch({type: "REJECT", payload: s.id})}
-                    disabled={isLoading}
-                  >
-                    <BsXCircle className="me-1" />
-                    Reject
-                  </Button>
                 </Card.Footer>
               </Card>
             );
           })}
         </div>
       </div>
-
-      {usState.status !== "idle" && (
-        <div className="d-flex align-items-center gap-3 mt-3">
-          <Badge bg="secondary">Approved: {approvedCount} / {totalCount}</Badge>
-          <Button
-            variant="success"
-            onClick={() => exportStoriesAsTxt(approvedStories)}
-            disabled={approvedStories.length === 0 || isLoading}
-          >
-            Export approved stories as .txt
-          </Button>
-          <Button
-            variant="outline-secondary"
-            onClick={handleCopyApproved}
-            disabled={approvedStories.length === 0 || isLoading}
-          >
-            Copy all approved to clipboard
-          </Button>
-          <Button
-            variant="outline-warning"
-            onClick={() => setShowBackgroundModal(true)}
-            disabled={isLoading}
-          >
-            Regenerate
-          </Button>
-        </div>
-      )}
       <ProjectBackgroundModal
         show={showBackgroundModal}
         projectBackground={projectBackground}

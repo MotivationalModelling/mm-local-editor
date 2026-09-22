@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Resizable} from "re-resizable";
 import Nav from "react-bootstrap/Nav";
 import Tab from "react-bootstrap/Tab";
@@ -9,6 +9,7 @@ import GoalList from "./GoalList";
 import Tree from "./Tree";
 import {useFileContext} from "./context/FileProvider";
 import UserStoriesPanel from "./UserStoriesPanel";
+import {useUserStories} from "./context/UserStoriesContext";
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
@@ -29,6 +30,13 @@ const SectionPanel: React.FC<SectionPanelProps> = ({activeTab, onTabChange}) => 
   const [isDragging, setIsDragging] = useState(false);
   const columnsRef = useRef<HTMLDivElement>(null);
   const {dispatch, tree} = useFileContext();
+  const {state: userStoriesState} = useUserStories();
+  const highlightedInstanceIds = useMemo(() => {
+    const selectedStory = activeTab === "stories"
+      ? userStoriesState.stories.find((story) => story.id === userStoriesState.selectedStoryId)
+      : undefined;
+    return new Set(selectedStory?.relatedGoals.map((goal) => goal.instanceId) ?? []);
+  }, [activeTab, userStoriesState.stories, userStoriesState.selectedStoryId]);
   const [groupSelected, setGroupSelected] = useState<TreeGoal[]>([]);
   const [existingItemIds, setExistingItemIds] = useState<number[]>([]);
   const [existingGoalReferenceInstanceId, setExistingGoalReferenceInstanceId] = useState<{goalId: TreeGoal["id"]; instanceId: InstanceId}[]>([]);
@@ -141,6 +149,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({activeTab, onTabChange}) => 
             <h2 id="hierarchy-heading" className="section-panel__heading">Hierarchy</h2>
             <div className="section-panel__tree">
               <Tree
+                highlightedInstanceIds={highlightedInstanceIds}
                 existingGoalReferenceInstanceId={existingGoalReferenceInstanceId}
                 setExistingGoalReferenceInstanceId={setExistingGoalReferenceInstanceId}
                 onGoalsDropped={(existingGoalIds) => {
@@ -168,7 +177,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({activeTab, onTabChange}) => 
             unmountOnExit={false}
           >
             <Nav className="section-panel__tabs" aria-label="Project views">
-              <Nav.Item><Nav.Link eventKey="goal">Goal</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="goal">Goals</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="model">Model</Nav.Link></Nav.Item>
               <Nav.Item><Nav.Link eventKey="stories">User stories</Nav.Link></Nav.Item>
             </Nav>

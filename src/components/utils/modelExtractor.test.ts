@@ -83,7 +83,7 @@ describe("extractModelForPrompt", () => {
       ]),
     ];
 
-    expect(extractModelForPrompt(treeData).stories).toEqual([
+    expect(extractModelForPrompt(treeData).stories).toMatchObject([
       {
         story: "Inherited leaf",
         roles: ["Group role"],
@@ -119,4 +119,24 @@ describe("extractModelForPrompt", () => {
       emotionalGoals: [],
     });
   });
+  it("preserves all goal instance IDs and resolves concerns without mixing branches", () => {
+    const treeData = [goal(1, "Platform", "Do", [
+      goal(2, "Student", "Who"),
+      goal(3, "Accessible", "Be"),
+      goal(4, "Confident", "Feel"),
+      goal(5, "Privacy", "Concern"),
+      goal(6, "Post comment", "Do"),
+      goal(7, "Post comment", "Do", [
+        {...goal(2, "Student", "Who"), instanceId: "2-2" as const},
+        goal(8, "Local concern", "Concern"),
+      ]),
+    ])];
+    const [first, second] = extractModelForPrompt(treeData).stories;
+    expect(first.functionalGoalInstanceId).toBe("6-1");
+    expect(first.goalReferences.map((ref) => ref.instanceId)).toEqual(["6-1", "2-1", "3-1", "4-1", "5-1"]);
+    expect(second.functionalGoalInstanceId).toBe("7-1");
+    expect(second.goalReferences.map((ref) => ref.instanceId)).toEqual(["7-1", "2-2", "3-1", "4-1", "8-1"]);
+    expect(second.concerns).toEqual(["Local concern"]);
+  });
+
 });

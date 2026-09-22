@@ -1,7 +1,13 @@
-import {TreeGoal} from "../types.ts";
+import {InstanceId, TreeGoal} from "../types.ts";
+import type {UserStoryGoalReference} from "../userStoryTypes";
+
+export type StoryGoalReference = UserStoryGoalReference & {content: string};
 
 export type StoryBlock = {
   story: string;
+  functionalGoalInstanceId: InstanceId;
+  goalReferences: StoryGoalReference[];
+  concerns: string[];
   roles: string[];
   subTasks: string[];
   qualityGoals: string[];
@@ -58,31 +64,26 @@ export function extractModelForPrompt(treeData: TreeGoal[]): ExtractedModel {
     });
   }
 
-  type StoryContext = Pick<StoryBlock, "roles" | "qualityGoals" | "emotionalGoals">;
+  type StoryContext = Record<"Who" | "Be" | "Feel" | "Concern", StoryGoalReference[]>;
+  const emptyContext = (): StoryContext => ({Who: [], Be: [], Feel: [], Concern: []});
+  const referenceFor = (node: TreeGoal): StoryGoalReference => ({
+    goalId: node.id,
+    instanceId: node.instanceId,
+    type: node.type,
+    content: normalize(node.content),
+  });
+  const contents = (refs: StoryGoalReference[]): string[] => [...new Set(refs.map((ref) => ref.content))];
 
-  const emptyContext = (): StoryContext => ({roles: [], qualityGoals: [], emotionalGoals: []});
-
-  const directValues = (node: TreeGoal, type: "Who" | "Be" | "Feel"): string[] => {
-    const values: string[] = [];
-    for (const child of node.children ?? []) {
-      if (child.type === type) addUnique(values, child.content);
-    }
-    return values;
-  };
-
-  // Each category is resolved independently. Values attached directly to the
-  // current Do node take precedence; a missing category inherits the nearest
-  // value from its parent Do node, continuing up to the epic.
+  // Resolve each category independently, retaining the exact instances from
+  // the nearest Do ancestor when no local values are attached to this goal.
   const collectLeafStories = (node: TreeGoal, inherited: StoryContext, isEpic = false): void => {
-    const directRoles = directValues(node, "Who");
-    const directQualityGoals = directValues(node, "Be");
-    const directEmotionalGoals = directValues(node, "Feel");
-    const context: StoryContext = {
-      roles: directRoles.length > 0 ? directRoles : inherited.roles,
-      qualityGoals: directQualityGoals.length > 0 ? directQualityGoals : inherited.qualityGoals,
-      emotionalGoals:
-        directEmotionalGoals.length > 0 ? directEmotionalGoals : inherited.emotionalGoals,
-    };
+    const context = emptyContext();
+    for (const type of ["Who", "Be", "Feel", "Concern"] as const) {
+      const direct = (node.children ?? [])
+        .filter((child) => child.type === type && normalize(child.content))
+        .map(referenceFor);
+      context[type] = direct.length > 0 ? direct : inherited[type];
+    }
     const doChildren = (node.children ?? []).filter((child) => child.type === "Do");
 
     if (!isEpic && doChildren.length === 0) {
@@ -90,10 +91,13 @@ export function extractModelForPrompt(treeData: TreeGoal[]): ExtractedModel {
       if (story) {
         stories.push({
           story,
-          roles: [...context.roles],
+          functionalGoalInstanceId: node.instanceId,
+          goalReferences: [referenceFor(node), ...context.Who, ...context.Be, ...context.Feel, ...context.Concern],
+          concerns: contents(context.Concern),
+          roles: contents(context.Who),
           subTasks: [],
-          qualityGoals: [...context.qualityGoals],
-          emotionalGoals: [...context.emotionalGoals],
+          qualityGoals: contents(context.Be),
+          emotionalGoals: contents(context.Feel),
         });
       }
       return;

@@ -6,7 +6,6 @@ import Row from "react-bootstrap/Row";
 import ExportFileButton from "./ExportFileButton";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
-import GenerateUserStoriesButton from "./GenerateUserStoriesButton.tsx";
 import HomeButton from "./HomeButton.tsx";
 
 type ProjectEditHeaderProps = {
@@ -27,7 +26,6 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
                     </Col>
                     <Col className="d-flex justify-content-end align-items-center">
                         <div className="d-flex gap-2 align-items-center">
-                            <GenerateUserStoriesButton/>
                             <ExportFileButton showGraphSection={showGraphSection}/>
                             <HomeButton/>
                         </div>

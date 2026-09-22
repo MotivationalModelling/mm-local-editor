@@ -17,6 +17,7 @@ import {isTextEmpty} from "./utils/GoalHint.tsx";
 
 interface TreeRowProps {
     item: ItemInstance<TreeGoal>
+    isHighlighted?: boolean
     editingItemId: InstanceId | null
     setEditingItemId: (itemId: InstanceId | null) => void
     indentationWidth: number
@@ -25,7 +26,7 @@ interface TreeRowProps {
 
 const ICON_SIZE = 16;
 
-const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId, indentationWidth, onDeleteItem}) => {
+const TreeRow: React.FC<TreeRowProps> = ({item, isHighlighted = false, editingItemId, setEditingItemId, indentationWidth, onDeleteItem}) => {
     const treeItem = item.getItemData();
     const isEditing = editingItemId === treeItem.instanceId;
     const hasChildren = item.getChildren().length > 0;
@@ -66,7 +67,8 @@ const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId,
     return (
         <div {...item.getProps()}
              ref={item.registerElement}
-             className={`tree-row ${item.isUnorderedDragTarget() ? "tree-row--drop-target" : ""}`}
+             className={`tree-row ${item.isUnorderedDragTarget() ? "tree-row--drop-target" : ""} ${isHighlighted ? "tree-row--story-highlight" : ""}`}
+             data-instance-id={treeItem.instanceId}
              style={{paddingLeft: `${item.getItemMeta().level * indentationWidth}px`}}>
             <button {...item.getDragHandleProps()}
                     type="button"

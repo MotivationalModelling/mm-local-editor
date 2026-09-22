@@ -1,41 +1,44 @@
 import React, {createContext, PropsWithChildren, useContext, useReducer} from "react";
 
-export type UserStory = {
-  id: string;
-  role: string;
-  action: string;
-  immediateUserValue: string;
-  subTasks: string[];
-  status: "pending" | "approved" | "rejected" | "edited";
-  editedText: string;
-};
+import type {UserStory, UserStoryEdits} from "../userStoryTypes";
+import {applyUserStoryEdits} from "../utils/userStorySentence";
+export type {UserStory, UserStoryGoalReference} from "../userStoryTypes";
+export {parseStoriesFromText} from "../utils/userStoryParser";
 
 type UserStoriesState = {
   stories: UserStory[];
+  selectedStoryId: string | null;
   rawOutput: string;
   status: "idle" | "loading" | "success" | "error";
   error: string | null;
 };
 
 type UserStoriesAction =
+  | {type: "SELECT"; payload: string | null}
   | {type: "SET_LOADING"}
   | {type: "SET_SUCCESS"; payload: {rawOutput: string; stories: UserStory[]}}
   | {type: "SET_ERROR"; payload: string}
   | {type: "APPROVE"; payload: string}
   | {type: "REJECT"; payload: string}
-  | {type: "EDIT"; payload: {id: string; text: string}}
+  | {type: "DELETE"; payload: string}
+  | {type: "EDIT"; payload: {id: string; edits: UserStoryEdits}}
   | {type: "CLEAR"};
 
 const initialState: UserStoriesState = {
   stories: [],
+  selectedStoryId: null,
   rawOutput: "",
   status: "idle",
   error: null,
 };
 
 const reducer = (state: UserStoriesState, action: UserStoriesAction): UserStoriesState => {
+  if (action.type === "SELECT") {
+    if (action.payload !== null && !state.stories.some((story) => story.id === action.payload)) return state;
+    return {...state, selectedStoryId: action.payload};
+  }
   if (action.type === "SET_LOADING") {
-    return {...state, status: "loading", error: null};
+    return {...state, status: "loading", error: null, selectedStoryId: null};
   }
   if (action.type === "SET_SUCCESS") {
     return {
@@ -43,6 +46,7 @@ const reducer = (state: UserStoriesState, action: UserStoriesAction): UserStorie
       status: "success",
       rawOutput: action.payload.rawOutput,
       stories: action.payload.stories,
+      selectedStoryId: null,
       error: null,
     };
   }
@@ -55,6 +59,13 @@ const reducer = (state: UserStoriesState, action: UserStoriesAction): UserStorie
       stories: state.stories.map((s) => (s.id === action.payload ? {...s, status: "approved"} : s)),
     };
   }
+  if (action.type === "DELETE") {
+    return {
+      ...state,
+      stories: state.stories.filter((story) => story.id !== action.payload),
+      selectedStoryId: state.selectedStoryId === action.payload ? null : state.selectedStoryId,
+    };
+  }
   if (action.type === "REJECT") {
     return {
       ...state,
@@ -65,7 +76,7 @@ const reducer = (state: UserStoriesState, action: UserStoriesAction): UserStorie
     return {
       ...state,
       stories: state.stories.map((s) =>
-        s.id === action.payload.id ? {...s, editedText: action.payload.text, status: "edited"} : s
+        s.id === action.payload.id ? applyUserStoryEdits(s, action.payload.edits) : s
       ),
     };
   }
@@ -89,42 +100,6 @@ export const useUserStories = (): UserStoriesContextValue => {
   }
   return ctx;
 };
-
-export function parseStoriesFromText(raw: string): UserStory[] {
-  const blocks = raw
-    .split(/\n(?=As a\s+)/g)
-    .map((b) => b.trim())
-    .filter((b) => b.length > 0 && b.startsWith("As a "));
-
-  return blocks.map((block) => {
-    const storyText = block.replace(/\s+/g, " ").trim();
-
-    const role = (() => {
-      const m = storyText.match(/^As a\s+(.*?),\s*I want/);
-      return (m?.[1] ?? "").trim();
-    })();
-
-    const action = (() => {
-      const m = storyText.match(/I want to\s+(.*?)\s+so that/i);
-      return (m?.[1] ?? "").trim();
-    })();
-
-    const immediateUserValue = (() => {
-      const m = storyText.match(/so that\s+(.*?)\./i);
-      return (m?.[1] ?? "").trim();
-    })();
-
-    return {
-      id: crypto.randomUUID(),
-      role,
-      action,
-      immediateUserValue,
-      subTasks: [],
-      status: "pending",
-      editedText: "",
-    };
-  });
-}
 
 export const UserStoriesProvider: React.FC<PropsWithChildren> = ({children}) => {
   const [state, dispatch] = useReducer(reducer, initialState);

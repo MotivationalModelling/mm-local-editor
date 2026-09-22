@@ -9,6 +9,7 @@ import {useTree} from "@headless-tree/react";
 import {dragAndDropFeature, ItemInstance, syncDataLoaderFeature} from "@headless-tree/core";
 
 export const INDENTATION_WIDTH = 24;
+const NO_HIGHLIGHTED_INSTANCES: ReadonlySet<InstanceId> = new Set();
 
 export type SortableTreeGoal = TreeGoal & {
     collapsed?: boolean;
@@ -35,12 +36,14 @@ const getAllGoalInstances = (item: TreeGoal): GoalReference[] => {
 TreeRow.displayName = "TreeRow";
 
 interface TreeProps {
+    highlightedInstanceIds?: ReadonlySet<InstanceId>
     existingGoalReferenceInstanceId: GoalReference[]
     setExistingGoalReferenceInstanceId: (existingGoalReferenceInstanceId: GoalReference[]) => void
     onGoalsDropped: (existingGoalIds: TreeGoal["id"][]) => void
 }
 
 const Tree: React.FC<TreeProps> = ({
+                                       highlightedInstanceIds = NO_HIGHLIGHTED_INSTANCES,
                                        existingGoalReferenceInstanceId,
                                        setExistingGoalReferenceInstanceId,
                                        onGoalsDropped,
@@ -101,6 +104,17 @@ const Tree: React.FC<TreeProps> = ({
         tree.scheduleRebuildTree();
     }, [tree, treeData]);
 
+    useEffect(() => {
+        if (highlightedInstanceIds.size === 0) return;
+        const revealMatches = (node: TreeGoal): boolean => {
+            const childMatches = (node.children ?? []).map(revealMatches).some(Boolean);
+            const item = tree.getItemInstance(String(node.id));
+            if (childMatches && !item.isExpanded()) item.expand();
+            return childMatches || highlightedInstanceIds.has(node.instanceId);
+        };
+        treeData.forEach(revealMatches);
+    }, [tree, treeData, highlightedInstanceIds]);
+
     const deleteItem = () => {
       if (deletingItemRef.current) {
         dispatch(deleteGoalReferenceFromHierarchy(deletingItemRef.current));
@@ -143,6 +157,7 @@ const Tree: React.FC<TreeProps> = ({
             {tree.getItems().map((item) => (
                 <TreeRow key={item.getId()}
                          item={item}
+                         isHighlighted={highlightedInstanceIds.has(item.getItemData().instanceId)}
                          editingItemId={editingItemId}
                          setEditingItemId={setEditingItemId}
                          indentationWidth={INDENTATION_WIDTH}

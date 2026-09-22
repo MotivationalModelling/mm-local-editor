@@ -1,13 +1,13 @@
 import {useState} from "react";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
+import {BsStars} from "react-icons/bs";
 
 import ProjectBackgroundModal from "../ProjectBackgroundModal";
 import {useFileContext} from "../context/FileProvider";
-import {parseStoriesFromText, useUserStories} from "../context/UserStoriesContext";
-import {generateUserStories} from "../utils/llmService";
+import {useUserStories} from "../context/UserStoriesContext";
+import {generateValidatedUserStories} from "../utils/userStoryGeneration";
 import {extractModelForPrompt} from "../utils/modelExtractor";
-import {buildUserStoryPrompt} from "../utils/promptBuilder";
 
 const GenerateUserStoriesButton = () => {
     const {treeData} = useFileContext();
@@ -20,11 +20,9 @@ const GenerateUserStoriesButton = () => {
         setShowBackgroundModal(false);
         try {
             const extracted = extractModelForPrompt(treeData);
-            const prompt = buildUserStoryPrompt(extracted, background);
             dispatch({type: "SET_LOADING"});
-            const raw = await generateUserStories(prompt);
-            const stories = parseStoriesFromText(raw);
-            dispatch({type: "SET_SUCCESS", payload: {rawOutput: raw, stories}});
+            const result = await generateValidatedUserStories(extracted, background);
+            dispatch({type: "SET_SUCCESS", payload: result});
         } catch (error) {
             dispatch({
                 type: "SET_ERROR",
@@ -36,17 +34,21 @@ const GenerateUserStoriesButton = () => {
     return (
         <>
             <Button
-                variant="outline-primary"
+                variant="outline-warning"
+                className="user-stories-generation"
                 disabled={isGenerating}
                 onClick={() => setShowBackgroundModal(true)}
             >
                 {isGenerating ? (
                     <>
-                        <Spinner animation="border" size="sm" className="me-1"/>
+                        <Spinner animation="border" size="sm"/>
                         Generating...
                     </>
                 ) : (
-                    "✨ Generate User Stories"
+                    <>
+                        <BsStars aria-hidden="true"/>
+                        Generate User Stories
+                    </>
                 )}
             </Button>
             <ProjectBackgroundModal

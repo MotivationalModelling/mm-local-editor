@@ -41,6 +41,18 @@
     border-color: rgba(13, 110, 253, 0.55);
 }
 
+.tree-row--story-highlight,
+.tree-row--story-highlight:hover,
+.tree-row--story-highlight:focus-within {
+    background-color: #fff3cd;
+    border-color: #e6c65b;
+    box-shadow: inset 4px 0 #e6c65b;
+}
+
+.tree-row--story-highlight .tree-row__input {
+    background-color: #fff9e6;
+}
+
 .tree-row__button {
     align-items: center;
     background: transparent;

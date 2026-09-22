@@ -1,14 +1,9 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 
-export type UserStory = {
-  id: string;
-  role: string;
-  action: string;
-  immediateUserValue: string;
-  subTasks: string[];
-  status: "pending" | "approved" | "rejected" | "edited";
-  editedText: string;
-};
+import type {UserStory, UserStoryEdits} from "../userStoryTypes";
+import {applyUserStoryEdits} from "../utils/userStorySentence";
+export type {UserStory} from "../userStoryTypes";
+export {parseStoriesFromText} from "../utils/userStoryParser";
 
 type UserStoriesState = {
   stories: UserStory[];
@@ -23,33 +18,6 @@ const initialState: UserStoriesState = {
   status: "idle",
   error: null,
 };
-
-export function parseStoriesFromText(raw: string): UserStory[] {
-  const blocks = raw
-    .split(/\n(?=As a\s+)/g)
-    .map((b) => b.trim())
-    .filter((b) => b.length > 0 && b.startsWith("As a "));
-
-  return blocks.map((block) => {
-    const storyText = block.replace(/\s+/g, " ").trim();
-
-    const match = storyText.match(/^As a\s+(.*?),\s*I want to\s+(.*?)\s+so that\s+(.*?)\./);
-
-    const role = (match?.[1] ?? "").trim();
-    const action = (match?.[2] ?? "").trim();
-    const immediateUserValue = (match?.[3] ?? "").trim();
-
-    return {
-      id: crypto.randomUUID(),
-      role,
-      action,
-      immediateUserValue,
-      subTasks: [],
-      status: "pending",
-      editedText: "",
-    };
-  });
-}
 
 export const userStoriesSlice = createSlice({
   name: "userStories",
@@ -81,11 +49,10 @@ export const userStoriesSlice = createSlice({
         story.status = "rejected";
       }
     },
-    editStory: (state, action: PayloadAction<{id: string; text: string}>) => {
+    editStory: (state, action: PayloadAction<{id: string; edits: UserStoryEdits}>) => {
       const story = state.stories.find((s) => s.id === action.payload.id);
       if (story) {
-        story.editedText = action.payload.text;
-        story.status = "edited";
+        Object.assign(story, applyUserStoryEdits(story, action.payload.edits));
       }
     },
     clearStories: () => initialState,
