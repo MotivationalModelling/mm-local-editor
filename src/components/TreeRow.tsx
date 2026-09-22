@@ -5,6 +5,7 @@ import {
     BsChevronRight,
     BsFillTrash3Fill,
     BsGripVertical,
+    BsLink45Deg,
     BsXCircle,
 } from "react-icons/bs";
 import {ItemInstance} from "@headless-tree/core";
@@ -20,12 +21,13 @@ interface TreeRowProps {
     editingItemId: InstanceId | null
     setEditingItemId: (itemId: InstanceId | null) => void
     indentationWidth: number
+    onLinkClick: (goal: TreeGoal) => void
     onDeleteItem: (item: TreeGoal) => void
 }
 
 const ICON_SIZE = 16;
 
-const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId, indentationWidth, onDeleteItem}) => {
+const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId, indentationWidth, onLinkClick, onDeleteItem}) => {
     const treeItem = item.getItemData();
     const isEditing = editingItemId === treeItem.instanceId;
     const hasChildren = item.getChildren().length > 0;
@@ -109,6 +111,19 @@ const TreeRow: React.FC<TreeRowProps> = ({item, editingItemId, setEditingItemId,
                           onBlur={finishEditing}
                           onChange={(event) => setEditedText(event.target.value)}
                           isInvalid={isTextEmpty(editedText)}/>
+            {!isEditing && (
+                <button type="button"
+                        className="tree-row__button tree-row__action"
+                        title="Related link"
+                        aria-label={`Related link for ${goal.content || goal.type}`}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onLinkClick(goal);
+                        }}>
+                    <BsLink45Deg size={ICON_SIZE}/>
+                </button>
+            )}
             <button type="button"
                     className="tree-row__button tree-row__action"
                     aria-label={isEditing ? `Cancel editing ${goal.content}` : `Delete ${goal.content}`}

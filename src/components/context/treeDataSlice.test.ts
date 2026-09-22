@@ -107,7 +107,7 @@ describe('treeDataSlice', () => {
         expect(state.goals[goal.id].url).toEqual(url);
         expect(state.tree[0].url).toEqual(url);
 
-        state = treeDataSlice.reducer(state, updateUrlForGoalId({id: goal.id}));
+        state = treeDataSlice.reducer(state, updateUrlForGoalId({id: goal.id, url: undefined}));
 
         expect(state.goals[goal.id].url).toBeUndefined();
         expect(state.tree[0].url).toBeUndefined();
@@ -189,7 +189,7 @@ describe('treeDataSlice', () => {
         expect(state.treeIds[-5]).toEqual(["-5:1"]);
     });
     it('should add goals at the Headless Tree drop target', () => {
-        const goal = newTreeGoal({id: 2, type: "Do", content: "Child"});
+        const goal = newTreeGoal({id: 2, type: "Do", content: "Child", url: "https://example.com/child"});
         const parent = newTreeGoal({id: 1, type: "Do", children: []});
         const state = treeDataSlice.reducer(
             {...initialState, goals: {...initialState.goals, [goal.id]: goal}, tree: [parent]},
@@ -197,6 +197,7 @@ describe('treeDataSlice', () => {
         );
 
         expect(state.tree[0].children?.map((item) => item.id)).toEqual([goal.id]);
+        expect(state.tree[0].children?.[0].url).toBe(goal.url);
     });
     it('should move a nested goal using its goal id', () => {
         const child = newTreeGoal({id: 2, type: "Do", children: []});
