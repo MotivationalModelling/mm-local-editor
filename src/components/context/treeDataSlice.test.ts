@@ -20,7 +20,8 @@ import {
     selectGoalsForLabel,
     treeDataSlice,
     updateTextForGoalId,
-    updateTextForInstanceId
+    updateTextForInstanceId,
+    updateUrlForGoalId
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
@@ -94,6 +95,22 @@ describe('treeDataSlice', () => {
         const state2 = treeDataSlice.reducer(initialState, updateTextForGoalId({id: goal.id, text}));
 
         expect(state2.goals[goal.id].content).toEqual(text);
+    });
+    it('should update and remove the URL for a goal and its tree references', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
+        const url = "https://example.com";
+
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        state = treeDataSlice.reducer(state, updateUrlForGoalId({id: goal.id, url}));
+
+        expect(state.goals[goal.id].url).toEqual(url);
+        expect(state.tree[0].url).toEqual(url);
+
+        state = treeDataSlice.reducer(state, updateUrlForGoalId({id: goal.id, url: undefined}));
+
+        expect(state.goals[goal.id].url).toBeUndefined();
+        expect(state.tree[0].url).toBeUndefined();
     });
     it('should update text of goal by instanceId (canvas double-click edit)', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});
@@ -172,7 +189,7 @@ describe('treeDataSlice', () => {
         expect(state.treeIds[-5]).toEqual(["-5:1"]);
     });
     it('should add goals at the Headless Tree drop target', () => {
-        const goal = newTreeGoal({id: 2, type: "Do", content: "Child"});
+        const goal = newTreeGoal({id: 2, type: "Do", content: "Child", url: "https://example.com/child"});
         const parent = newTreeGoal({id: 1, type: "Do", children: []});
         const state = treeDataSlice.reducer(
             {...initialState, goals: {...initialState.goals, [goal.id]: goal}, tree: [parent]},
@@ -180,6 +197,7 @@ describe('treeDataSlice', () => {
         );
 
         expect(state.tree[0].children?.map((item) => item.id)).toEqual([goal.id]);
+        expect(state.tree[0].children?.[0].url).toBe(goal.url);
     });
     it('should move a nested goal using its goal id', () => {
         const child = newTreeGoal({id: 2, type: "Do", children: []});
