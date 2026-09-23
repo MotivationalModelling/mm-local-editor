@@ -1,0 +1,10 @@
+.zoom-buttons {
+    container-type: inline-size;
+}
+
+/* Resolve the button layout before the collapse animation measures its height. */
+@container (width < 90px) {
+    .zoom-buttons > .btn-group {
+        flex-direction: column;
+    }
+}
