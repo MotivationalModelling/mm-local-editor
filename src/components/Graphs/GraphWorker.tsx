@@ -27,7 +27,7 @@ import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject, InstanceId} from "../types.ts";
-import GraphSidebar from "./GraphSidebar";
+import GraphSidebar, {type CanvasMode} from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
@@ -49,6 +49,17 @@ const DELETE_KEYBINDING2 = 46;
 const recentreView = (graphInstance: Graph) => {
     graphInstance.fit();
     graphInstance.center();
+};
+
+const applyCanvasMode = (graph: Graph, canvasMode: CanvasMode) => {
+    const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
+    const rubberBandHandler = graph.getPlugin<RubberBandHandler>(RubberBandHandler.pluginId);
+
+    if (panningHandler) {
+        panningHandler.useLeftButtonForPanning = canvasMode === "pan";
+    }
+    rubberBandHandler?.setEnabled(canvasMode === "select");
+    graph.container.classList.toggle("canvas-select-mode", canvasMode === "select");
 };
 
 interface CellHistory {
@@ -79,6 +90,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+    const [canvasMode, setCanvasMode] = useState<CanvasMode>("pan");
 
     const [removeChildren, setRemoveChildren] = useState(false);
     const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
@@ -225,12 +237,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         //graph.setConnectable(true);
         graph.setCellsEditable(true);
         graph.setPanning(true);
-        const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
-        if (panningHandler) {
-            // Pan with the primary mouse button only when the pointer is over
-            // empty canvas space, leaving goal dragging and resizing unchanged.
-            panningHandler.useLeftButtonForPanning = true;
-        }
+        graph.autoExtend = false;
+        applyCanvasMode(graph, "pan");
         graph.setCellsResizable(true);
         graph.setCellsMovable(true); // Allow cells to be moved
         graph.setCellsSelectable(true); // Allow cells to be selected
@@ -601,6 +609,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         }
     }, [graphListener, setGraph]);
 
+    useEffect(() => {
+        if (graph) {
+            applyCanvasMode(graph, canvasMode);
+        }
+    }, [canvasMode, graph]);
+
     // Separate useEffect to render / update the graph.
     useEffect(() => {
         if (graph) {
@@ -699,13 +713,18 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     />
                 }
             />
-            <Container>
-                <Row className="row">
-                    <Col md={10}>
+            <Container className="h-100">
+                <Row className="graph-worker-row">
+                    <Col className="h-100" md={10}>
                         <div id={GRAPH_DIV_ID} data-cy="graph-canvas" ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
-                    <Col md={2}>
-                        <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} />
+                    <Col className="h-100 overflow-auto" md={2}>
+                        <GraphSidebar
+                            graph={graph}
+                            recentreView={() => graph && recentreView(graph)}
+                            canvasMode={canvasMode}
+                            onCanvasModeChange={setCanvasMode}
+                        />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
