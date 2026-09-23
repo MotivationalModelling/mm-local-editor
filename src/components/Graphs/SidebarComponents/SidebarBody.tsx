@@ -23,28 +23,30 @@ const SidebarBody = ({graph, recentreView, canvasMode, onCanvasModeChange, class
 
     return (
         <div className={`border border-black p-1 rounded ${className}`}>
-            <ButtonGroup className="w-100 mb-1" size="sm" aria-label="Canvas interaction mode">
-                <Button
-                    className="flex-fill"
-                    variant={canvasMode === "select" ? "primary" : "light"}
-                    aria-label="Select goals"
-                    title="Select goals"
-                    aria-pressed={canvasMode === "select"}
-                    onClick={() => onCanvasModeChange("select")}
-                >
-                    <BsBoundingBoxCircles/>
-                </Button>
-                <Button
-                    className="flex-fill"
-                    variant={canvasMode === "pan" ? "primary" : "light"}
-                    aria-label="Pan canvas"
-                    title="Pan canvas"
-                    aria-pressed={canvasMode === "pan"}
-                    onClick={() => onCanvasModeChange("pan")}
-                >
-                    <BsHandIndex/>
-                </Button>
-            </ButtonGroup>
+            <CollapsibleSidebarCard isOpen title="Selection">
+                <ButtonGroup className="w-100" size="sm" aria-label="Canvas interaction mode">
+                    <Button
+                        className="flex-fill"
+                        variant={canvasMode === "select" ? "primary" : "light"}
+                        aria-label="Select goals"
+                        title="Select goals"
+                        aria-pressed={canvasMode === "select"}
+                        onClick={() => onCanvasModeChange("select")}
+                    >
+                        <BsBoundingBoxCircles/>
+                    </Button>
+                    <Button
+                        className="flex-fill"
+                        variant={canvasMode === "pan" ? "primary" : "light"}
+                        aria-label="Pan canvas"
+                        title="Pan canvas"
+                        aria-pressed={canvasMode === "pan"}
+                        onClick={() => onCanvasModeChange("pan")}
+                    >
+                        <BsHandIndex/>
+                    </Button>
+                </ButtonGroup>
+            </CollapsibleSidebarCard>
             <CollapsibleSidebarCard isOpen title="Zoom">
                 <ZoomButtons recentreView={recentreView}/>
             </CollapsibleSidebarCard>
