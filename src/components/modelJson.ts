@@ -6,8 +6,8 @@ const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 const LabelSchema = z.enum(labels);
 
 const InstanceIdSchema = z.custom<InstanceId>(
-    (value) => typeof value === "string" && /^\d+-\d+$/.test(value),
-    "instanceId must contain two numbers separated by a hyphen"
+    (value) => typeof value === "string" && /^-?\d+[:-]\d+$/.test(value),
+    "instanceId must contain two numbers separated by a colon or hyphen"
 );
 
 const TreeGoalSchema: z.ZodType<TreeGoal> = z.lazy(() => z.object({
@@ -93,7 +93,7 @@ export const ModelJsonSchema = z.object({
             }
 
             // instance id has to match id
-            const instanceGoalId = Number(goal.instanceId.split("-")[0]);
+            const instanceGoalId = Number(goal.instanceId.split(/[:-]/)[0]);
             if (instanceGoalId !== goal.id) {
                 context.addIssue({
                     code: z.ZodIssueCode.custom,

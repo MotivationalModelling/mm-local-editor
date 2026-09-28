@@ -5,7 +5,9 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 
 import SaveFileButton from "./SaveFileButton";
-import ExportFileButton from "./ExportFileButton";
+import Button from "react-bootstrap/Button";
+import {BsPeople} from "react-icons/bs";
+import ShareModal from "../ShareModal";
 import {isChrome, isEdge, isOpera} from "react-device-detect";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
@@ -18,12 +20,9 @@ type ProjectEditHeaderProps = {
 	showGraphSection: boolean;
 };
 
-const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
-	showGoalSection,
-	setShowGoalSection,
-	showGraphSection,
-  }) => {
+const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({showGraphSection}) => {
 	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+	const [showShareModal, setShowShareModal] = useState(false);
   
 	useEffect(() => {
 		if (isChrome || isEdge || isOpera) {
@@ -42,13 +41,20 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
                     <Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center">
                         <ButtonGroup>
                             {/* Pass showGraphSection to ExportFileButton to control enablement */}
-                            <ExportFileButton showGraphSection={showGraphSection}/>
-                            {isBrowserSupported && <SaveFileButton/>}
+							{isBrowserSupported && <SaveFileButton/>}
+							<Button variant="outline-primary" onClick={() => setShowShareModal(true)}>
+								<BsPeople className="me-1"/>Share
+							</Button>
                         </ButtonGroup>
                         <HomeButton/>
                     </Col>
                 </Row>
             </Container>
+			<ShareModal
+				show={showShareModal}
+				showGraphSection={showGraphSection}
+				onHide={() => setShowShareModal(false)}
+			/>
         </header>
 	);
 };

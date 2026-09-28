@@ -31,6 +31,8 @@
     "file-saver": "^2.0.5",
     "idb-keyval": "^6.2.1",
     "jsdom": "^26.0.0",
+    "pako": "^3.0.2",
+    "qrcode.react": "^4.2.0",
     "re-resizable": "^6.9.11",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",
