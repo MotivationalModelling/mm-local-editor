@@ -2,15 +2,12 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 
 import ErrorModal, {ErrorModalProps} from "./ErrorModal";
-import {useFileContext} from "./context/FileProvider";
-import {reset} from "./context/treeDataSlice";
 import {convertTabContentToInitialTab} from "./utils/modelImport";
 import {decodeSharedModelHash} from "./utils/shareModel";
-import {useFeedbackContext} from "./context/FeedbackContext";
+import {useProjectContext} from "./context/ProjectContext";
 
 const SharedModelLoader = () => {
-    const {dispatch} = useFileContext();
-    const {resetFeedbacks} = useFeedbackContext();
+    const {createProject} = useProjectContext();
     const navigate = useNavigate();
     const [errorModal, setErrorModal] = useState<ErrorModalProps>({
         show: false,
@@ -26,12 +23,13 @@ const SharedModelLoader = () => {
             try {
                 const model = decodeSharedModelHash(window.location.hash);
                 if (!model) return;
-                dispatch(reset({
+                window.history.replaceState(null, "", window.location.pathname + window.location.search);
+                createProject(undefined, {
                     tabData: convertTabContentToInitialTab(model.tabData, model.treeData),
                     treeData: model.treeData,
-                }));
-                resetFeedbacks(model.feedbacks, model.overallFeedback);
-                window.history.replaceState(null, "", window.location.pathname + window.location.search);
+                    feedbacks: model.feedbacks ?? [],
+                    overallFeedback: model.overallFeedback,
+                });
                 navigate("/projectEdit", {replace: true});
             } catch (error) {
                 window.history.replaceState(null, "", window.location.pathname + window.location.search);
@@ -47,7 +45,7 @@ const SharedModelLoader = () => {
         loadSharedModel();
         window.addEventListener("hashchange", loadSharedModel);
         return () => window.removeEventListener("hashchange", loadSharedModel);
-    }, [dispatch, navigate]);
+    }, [createProject, navigate]);
 
     return <ErrorModal {...errorModal}/>;
 };

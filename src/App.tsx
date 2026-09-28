@@ -4,6 +4,7 @@ import Papers from "./components/Papers";
 import ProjectEdit from "./components/ProjectEdit";
 import Layout from "./components/Layout";
 import SharedModelLoader from "./components/SharedModelLoader";
+import Home from "./components/Home";
 
 const App = () => {
 	return (
@@ -12,6 +13,7 @@ const App = () => {
 			<Layout>
 				<Routes>
 					<Route path="/" element={<Welcome />} />
+                    <Route path="/projects" element={<Home/>}/>
 					<Route path="/papers" element={<Papers />} />
 					<Route path="/projectEdit" element={<ProjectEdit />} />
 				</Routes>

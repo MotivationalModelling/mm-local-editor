@@ -4,6 +4,7 @@
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
 import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
+import {ProjectProvider} from "./ProjectProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
@@ -18,7 +19,7 @@ import {
 
 // FileProvider provides data than UI
 const wrapper = ({children}: React.PropsWithChildren) => (
-    <FileProvider>{children}</FileProvider>
+    <ProjectProvider><FileProvider>{children}</FileProvider></ProjectProvider>
 );
 const {result} = renderHook(() => useFileContext(), {wrapper});
 const {dispatch} = result.current;
@@ -214,7 +215,7 @@ describe('corrupted localStorage recovery', () => {
     });
 
     const renderProvider = () => render(
-        <FileProvider><div data-testid="editor"/></FileProvider>
+        <ProjectProvider><FileProvider><div data-testid="editor"/></FileProvider></ProjectProvider>
     );
 
     it('shows the recovery modal instead of the editor when the tree references missing goals', () => {

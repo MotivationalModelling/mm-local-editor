@@ -6,12 +6,12 @@ import {defaultFeedbacks, defaultOverallFeedback} from "../data/defaultFeedback"
 import ErrorModal, {ErrorModalProps} from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
-import {useFileContext} from "./context/FileProvider";
-import {reset} from "./context/treeDataSlice.ts";
 import {ModelJsonError, parseModelJson} from "./modelJson.ts";
 import {extractJsonFromPng, extractJsonFromSvg} from "./utils/imageMetadata";
 import {convertTabContentToInitialTab} from "./utils/modelImport";
-import {useFeedbackContext} from "./context/FeedbackContext";
+import {useProjectContext} from "./context/ProjectContext";
+import {uniqueProjectName} from "./utils/projects";
+import "./WelcomeButtons.css";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const MODEL_FILE_ALERT = "Please select a JSON, PNG, or SVG file.";
@@ -40,8 +40,8 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 
 	const navigate = useNavigate();
 
-	const {dispatch} = useFileContext();
-	const {resetFeedbacks} = useFeedbackContext();
+    const {projects, createProject} = useProjectContext();
+    const [pendingModel, setPendingModel] = useState<ReturnType<typeof parseModelJson> | null>(null);
 
 	const showFileError = (title: string, message: string) => {
 		setJsonFile(null);
@@ -75,16 +75,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 			const convertedJsonData = parseModelJson(
 				isJson ? await file.text() : JSON.stringify(embeddedData)
 			);
-			const initialTabs = convertTabContentToInitialTab(
-				convertedJsonData.tabData,
-				convertedJsonData.treeData
-			);
-
-			dispatch(reset({
-				tabData: initialTabs,
-				treeData: convertedJsonData.treeData,
-			}));
-			resetFeedbacks(convertedJsonData.feedbacks, convertedJsonData.overallFeedback);
+            setPendingModel(convertedJsonData);
 			setJsonFile(file);
 			setErrorModal(defaultModalState);
 		} catch (error) {
@@ -100,11 +91,10 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 
 	// Handle Create Model button click - load default data
 	const handleCreateModel = () => {
-		resetFeedbacks(defaultFeedbacks, defaultOverallFeedback);
-		dispatch(reset({
-			treeData: defaultTreeData,
-			tabData: createDefaultTabData()
-		}));
+        createProject(undefined, {
+            treeData: defaultTreeData, tabData: createDefaultTabData(),
+            feedbacks: defaultFeedbacks, overallFeedback: defaultOverallFeedback,
+        });
 	};
 
 	const handleJSONFileDrop = async (event: React.DragEvent<HTMLDivElement>) => {
@@ -147,11 +137,12 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 
 	const handleJSONFileRemove = () => {
 		setJsonFile(null);
+        setPendingModel(null);
 		setIsJsonDragOver(false);
 	};
 
 	return (
-		<div className="d-flex justify-content-center mt-3">
+		<div className={isDragging ? "d-flex justify-content-center mt-3" : "d-flex justify-content-center align-items-center flex-wrap gap-3 mt-3"}>
 			{/* Error Modal while user upload wrong types or invalid files */}
 			<ErrorModal {...errorModal} />
 
@@ -199,7 +190,17 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 							variant="primary"
 							size="lg"
 							disabled={!jsonFile ? true : false}
-							onClick={() => navigate("/projectEdit")}
+							onClick={() => {
+                                if (!pendingModel) return;
+                                const base = jsonFile?.name.replace(/\.[^.]+$/, "") || "Untitled";
+                                createProject(uniqueProjectName(base, projects.map((project) => project.name)), {
+                                    tabData: convertTabContentToInitialTab(pendingModel.tabData, pendingModel.treeData),
+                                    treeData: pendingModel.treeData,
+                                    feedbacks: pendingModel.feedbacks ?? [],
+                                    overallFeedback: pendingModel.overallFeedback,
+                                });
+                                navigate("/projectEdit");
+                            }}
 						>
 							Upload
 						</Button>
@@ -207,13 +208,10 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 				</>
 			) : (
 				<>
-					{/* Link section is bigger than Button section, click outside Button could trigger navigation,
-             hard code a static height for temporary, need a better solution
-          */}
 					<Button 
 						variant="primary" 
 						size="lg"
-						className="me-5"
+						className="welcome-action"
 						onClick={() => {
 							handleCreateModel();
 							navigate("/projectEdit");
@@ -225,10 +223,12 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 						variant="primary"
 						size="lg"
 						onClick={() => setIsDragging(true)}
-						className="align-self-start ms-5"
+						className="welcome-action"
 					>
 						Open Model
 					</Button>
+                    <Button variant="outline-primary" size="lg" className="welcome-action"
+                        onClick={() => navigate("/projects")}>Projects</Button>
 				</>
 			)}
 		</div>

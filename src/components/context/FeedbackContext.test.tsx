@@ -6,10 +6,14 @@ import type {PropsWithChildren} from "react";
 import {beforeEach, describe, expect, it} from "vitest";
 import {FeedbackProvider, useFeedbackContext} from "./FeedbackContext";
 import {ProfileProvider} from "./ProfileContext";
+import {ProjectProvider} from "./ProjectProvider";
+import {useProjectContext} from "./ProjectContext";
 
 const wrapper = ({children}: PropsWithChildren) => (
     <ProfileProvider>
+        <ProjectProvider>
             <FeedbackProvider>{children}</FeedbackProvider>
+        </ProjectProvider>
     </ProfileProvider>
 );
 
@@ -53,6 +57,50 @@ describe("FeedbackProvider", () => {
         const {result} = renderHook(() => useFeedbackContext(), {wrapper});
 
         expect(result.current.overallFeedback).toBeUndefined();
+    });
+
+    it("saves and clears the overall feedback", () => {
+        const {result} = renderHook(
+            () => ({
+                feedback: useFeedbackContext(),
+                projects: useProjectContext()
+            }),
+            {wrapper}
+        );
+
+        act(() => {
+            result.current.projects.createProject("Feedback test");
+        });
+
+        act(() => {
+            result.current.feedback.setOverallFeedback(
+                "The model needs one more actor."
+            );
+        });
+
+        expect(result.current.feedback.overallFeedback).toMatchObject({
+            author: "Current User",
+            content: "The model needs one more actor."
+        });
+
+        // Persisted into the project stored in localStorage.
+        const stored = JSON.parse(
+            localStorage.getItem("ammber/projects") ?? "[]"
+        );
+        expect(stored[0].overallFeedback.content).toBe(
+            "The model needs one more actor."
+        );
+
+        act(() => {
+            result.current.feedback.setOverallFeedback("   ");
+        });
+
+        expect(result.current.feedback.overallFeedback).toBeUndefined();
+
+        const cleared = JSON.parse(
+            localStorage.getItem("ammber/projects") ?? "[]"
+        );
+        expect(cleared[0].overallFeedback).toBeUndefined();
     });
 
     it("trims overall feedback content", () => {

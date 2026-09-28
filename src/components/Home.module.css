@@ -1,0 +1,29 @@
+.page { min-height: 100vh; background: #f7f9fd; color: #202833; }
+.topBar { border-bottom: 1px solid #dce3ef; background: #fff; }
+.topBarInner { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: 100%; max-width: 1500px; margin: 0 auto; padding: 20px clamp(20px,4vw,64px); }
+.brandLink { color: #202833; font-size: 30px; font-weight: 750; text-decoration: none; }
+.topBarActions { display: flex; align-items: center; gap: 12px; }
+.searchBox { display: flex; align-items: center; gap: 8px; width: min(320px,36vw); padding: 9px 12px; border: 1px solid #cdd7e8; border-radius: 6px; background: #fff; color: #697789; }
+.searchBox input { width: 100%; border: 0; outline: 0; background: transparent; }
+.main { max-width: 1500px; margin: auto; padding: clamp(32px,5vw,72px) clamp(20px,4vw,64px); }
+.sectionHeader { margin-bottom: 32px; }
+.titleRow { display: flex; align-items: baseline; flex-wrap: wrap; gap: 16px; }
+.count { display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #e6eefb; color: #24508e; font-size: 13px; font-weight: 650; }
+.eyebrow { color: #24508e; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.heading { margin: 5px 0 0; color: #202833; font-size: clamp(48px,5vw,72px); font-weight: 650; line-height: 1.1; text-shadow: none; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 20px; }
+.newCard,.card { min-height: 260px; border: 1px solid #dce3ef; border-radius: 10px; background: #fff; overflow: hidden; }
+.newCard { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: #0d6efd; border-style: dashed; font-weight: 650; }
+.newCard:hover,.card:hover { border-color: #9eb9e4; box-shadow: 0 8px 24px #193b6a18; }
+.card { position: relative; }
+.cardMenu { position: absolute; top: 12px; right: 12px; z-index: 2; }
+.thumb { display: flex; align-items: center; justify-content: center; width: 100%; height: 180px; padding: 12px; border: 0; overflow: hidden; background: #e8eef9; }
+.thumb img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; background: #fff; border: 1px solid #dce3ef; border-radius: 4px; }
+.cardBody { padding: 17px; }
+.name { display: block; max-width: 100%; padding: 0; border: 0; background: transparent; color: #202833; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.name:hover { color: #0d6efd; }
+.meta { margin-top: 6px; color: #667487; font-size: 13px; }
+.emptyState { padding: 65px 0; border-top: 1px solid #dce3ef; }
+.emptyState h2 { font-size: 28px; }
+.emptyState p { color: #667487; }
+@media(max-width:650px) { .topBarInner { align-items: stretch; flex-direction: column; } .searchBox { width: 100%; } .topBarActions { flex-wrap: wrap; } }

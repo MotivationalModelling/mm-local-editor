@@ -106,9 +106,88 @@ const ExportFileButton = ({showGraphSection, includeNodeFeedback}: { showGraphSe
         }
 
         // Serialize a bounded copy so no node falls outside the exported area
-        const {clone} = buildExportableSVG(graph, svgElement);
+        const {clone, x, y, width, height} = buildExportableSVG(graph, svgElement);
         const serializer = new XMLSerializer();
-        const svgString = embedJsonInSvg(serializer.serializeToString(clone), {tabData, treeData, feedbacks, overallFeedback});
+        const shownFeedbacks = includeNodeFeedback ? feedbacks.slice(0, MAX_EXPORTED_GOAL_FEEDBACK) : [];
+        const groups = groupFeedbackByNode(shownFeedbacks, (nodeId) => {
+            const cell = graph.getDataModel().getCell(nodeId);
+            const value = cell?.getValue();
+            return typeof value === "string" ? value : undefined;
+        });
+        const measureContext = document.createElement("canvas").getContext("2d");
+        const panelLayout = measureContext && (overallFeedback?.content.trim() || groups.length > 0)
+            ? calculateFeedbackPanelLayout(measureContext, groups, overallFeedback, includeNodeFeedback ? feedbacks.length : 0)
+            : null;
+        let exportSvg: SVGSVGElement = clone;
+        if (panelLayout) {
+            const dimensions = calculatePngExportDimensions(width, height, panelLayout);
+            const scale = 2;
+            const panelCanvas = document.createElement("canvas");
+            panelCanvas.width = Math.ceil(panelLayout.width * scale);
+            panelCanvas.height = Math.ceil(dimensions.height * scale);
+            const panelContext = panelCanvas.getContext("2d");
+            if (!panelContext) return;
+            panelContext.scale(scale, scale);
+            const authors = new Set([
+                ...(panelLayout.overall ? [panelLayout.overall.feedback.author] : []),
+                ...shownFeedbacks.map((feedback) => feedback.author),
+            ]);
+            const avatars = new Map<string, HTMLImageElement>();
+            await Promise.all([...authors].map(async (author) => {
+                const seed = author === authorName ? avatarSeed.trim() || author : author;
+                const avatar = await loadAvatarImage(seed);
+                if (avatar) avatars.set(author, avatar);
+            }));
+            drawFeedbackPanel(panelContext, panelLayout, 0, dimensions.height, avatars);
+
+            const namespace = "http://www.w3.org/2000/svg";
+            const make = (tag: string) => document.createElementNS(namespace, tag);
+            const wrapper = make("svg") as SVGSVGElement;
+            wrapper.setAttribute("width", String(dimensions.width));
+            wrapper.setAttribute("height", String(dimensions.height));
+            wrapper.setAttribute("viewBox", `0 0 ${dimensions.width} ${dimensions.height}`);
+            const background = make("rect");
+            background.setAttribute("width", String(dimensions.width));
+            background.setAttribute("height", String(dimensions.height));
+            background.setAttribute("fill", "white");
+            wrapper.append(background);
+            clone.setAttribute("x", "0");
+            clone.setAttribute("y", "0");
+            wrapper.append(clone);
+            const badges = getFeedbackNodeBadges(groups, (nodeId) => {
+                const cell = graph.getDataModel().getCell(nodeId);
+                const state = cell ? graph.getView().getState(cell) : null;
+                return state ? {x: state.x, y: state.y, width: state.width, height: state.height} : undefined;
+            }, (point) => ({x: point.x - x, y: point.y - y}));
+            badges.forEach((badge) => {
+                const circle = make("circle");
+                circle.setAttribute("cx", String(badge.x));
+                circle.setAttribute("cy", String(badge.y));
+                circle.setAttribute("r", "11");
+                circle.setAttribute("fill", "#6847c9");
+                circle.setAttribute("stroke", "white");
+                circle.setAttribute("stroke-width", "2.5");
+                wrapper.append(circle);
+                const number = make("text");
+                number.setAttribute("x", String(badge.x));
+                number.setAttribute("y", String(badge.y + 4));
+                number.setAttribute("text-anchor", "middle");
+                number.setAttribute("font-size", "11");
+                number.setAttribute("font-weight", "700");
+                number.setAttribute("fill", "white");
+                number.textContent = String(badge.number);
+                wrapper.append(number);
+            });
+            const panel = make("image");
+            panel.setAttribute("x", String(width + PNG_FEEDBACK_PANEL_GAP));
+            panel.setAttribute("y", "0");
+            panel.setAttribute("width", String(panelLayout.width));
+            panel.setAttribute("height", String(dimensions.height));
+            panel.setAttribute("href", panelCanvas.toDataURL("image/png"));
+            wrapper.append(panel);
+            exportSvg = wrapper;
+        }
+        const svgString = embedJsonInSvg(serializer.serializeToString(exportSvg), {tabData, treeData, feedbacks, overallFeedback});
         try {
             // If chromium browser
             if ('showSaveFilePicker' in self) {

@@ -6,6 +6,7 @@ import {useEffect, useRef} from "react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {FeedbackProvider, useFeedbackContext} from "../context/FeedbackContext";
 import {ProfileProvider} from "../context/ProfileContext";
+import {ProjectProvider} from "../context/ProjectProvider";
 import FeedbackPanel from "./FeedbackPanel";
 
 vi.mock("./FeedbackAuthor", () => ({default: () => null}));
@@ -60,10 +61,12 @@ const renderPanel = (options: {
 
     render(
         <ProfileProvider>
+            <ProjectProvider>
                 <FeedbackProvider>
                     <Harness seed={options.seed ?? []} selected={options.selected} />
                     <FeedbackPanel onClose={onClose} onSelectNode={onSelectNode} />
                 </FeedbackProvider>
+            </ProjectProvider>
         </ProfileProvider>
     );
 

@@ -2,6 +2,7 @@ import React, {createContext, useContext, useEffect, useRef, useState} from "rea
 import type {Feedback, FeedbackReply, FeedbackStatus, OverallFeedback} from "../types";
 import {FEEDBACK_MAX_LENGTH} from "../utils/feedbackLimits";
 import {useProfileContext} from "./ProfileContext";
+import {useProjectContext} from "./ProjectContext";
 
 const STORAGE_KEY = "ammber/feedback";
 
@@ -31,14 +32,23 @@ const readFeedback = (): FeedbackData => {
 
 export const FeedbackProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     const {authorName} = useProfileContext();
-    const [data, setData] = useState<FeedbackData>(readFeedback);
+    const {currentProject, saveProjectData} = useProjectContext();
+    const [data, setData] = useState<FeedbackData>(() => currentProject
+        ? {feedbacks: currentProject.feedbacks ?? [], overallFeedback: currentProject.overallFeedback}
+        : readFeedback());
+    const mounted = useRef(false);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     const [selectedNodeLabel, setSelectedNodeLabel] = useState<string | null>(null);
     const previousAuthor = useRef(authorName);
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }, [data]);
+        if (!mounted.current) {
+            mounted.current = true;
+            return;
+        }
+        if (currentProject) saveProjectData(currentProject.id, data);
+        else localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }, [data, currentProject?.id, saveProjectData]);
 
     useEffect(() => {
         if (previousAuthor.current === authorName) return;
