@@ -6,9 +6,11 @@ import {useFileContext} from "./context/FileProvider";
 import {reset} from "./context/treeDataSlice";
 import {convertTabContentToInitialTab} from "./utils/modelImport";
 import {decodeSharedModelHash} from "./utils/shareModel";
+import {useFeedbackContext} from "./context/FeedbackContext";
 
 const SharedModelLoader = () => {
     const {dispatch} = useFileContext();
+    const {resetFeedbacks} = useFeedbackContext();
     const navigate = useNavigate();
     const [errorModal, setErrorModal] = useState<ErrorModalProps>({
         show: false,
@@ -28,6 +30,7 @@ const SharedModelLoader = () => {
                     tabData: convertTabContentToInitialTab(model.tabData, model.treeData),
                     treeData: model.treeData,
                 }));
+                resetFeedbacks(model.feedbacks, model.overallFeedback);
                 window.history.replaceState(null, "", window.location.pathname + window.location.search);
                 navigate("/projectEdit", {replace: true});
             } catch (error) {

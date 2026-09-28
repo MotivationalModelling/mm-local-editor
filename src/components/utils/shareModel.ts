@@ -15,6 +15,8 @@ const SharePayloadSchema = z.object({
         icon: z.string(),
         rows: z.array(z.number().int()),
     })),
+    feedbacks: z.unknown().optional(),
+    overallFeedback: z.unknown().optional(),
 });
 
 const bytesToBase64Url = (bytes: Uint8Array): string => {
@@ -39,8 +41,8 @@ const toShareTree = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({
     children: toShareTree(goal.children ?? []),
 }));
 
-export const encodeSharedModel = ({tabData, treeData}: JSONData): string => {
-    const model = {tabData, treeData};
+export const encodeSharedModel = ({tabData, treeData, feedbacks, overallFeedback}: JSONData): string => {
+    const model = {tabData, treeData, feedbacks, overallFeedback};
     const modelText = JSON.stringify(model);
     let hash = 2166136261;
     for (let i = 0; i < modelText.length; i++) {
@@ -53,7 +55,8 @@ export const encodeSharedModel = ({tabData, treeData}: JSONData): string => {
         name: "AMMBER Model",
         treeData: toShareTree(treeData),
         tabData: tabData.map((tab) => ({label: tab.label, icon: tab.icon, rows: tab.goalIds})),
-        feedbacks: [],
+        feedbacks,
+        overallFeedback,
     };
     return bytesToBase64Url(deflate(new TextEncoder().encode(JSON.stringify(payload)), {
         raw: true,
@@ -85,6 +88,8 @@ export const decodeSharedModelHash = (hash: string): JSONData | null => {
                 goalIds: rows,
             })),
             treeData: payload.treeData,
+            feedbacks: payload.feedbacks,
+            overallFeedback: payload.overallFeedback,
         }));
     } catch {
         throw new Error("The shared model link could not be decoded.");

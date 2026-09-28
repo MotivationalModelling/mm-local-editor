@@ -6,6 +6,7 @@ import {QRCodeSVG} from "qrcode.react";
 import "./ShareModal.css";
 
 import {useFileContext} from "./context/FileProvider";
+import {useFeedbackContext} from "./context/FeedbackContext";
 import ExportFileButton from "./header/ExportFileButton";
 import {createShareUrl, getShareUrlByteLength, MAX_QR_URL_BYTES} from "./utils/shareModel";
 
@@ -17,8 +18,10 @@ type ShareModalProps = {
 
 const ShareModal = ({show, showGraphSection, onHide}: ShareModalProps) => {
     const {tabData, treeData} = useFileContext();
+    const {feedbacks, overallFeedback} = useFeedbackContext();
     const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
-    const shareUrl = useMemo(() => createShareUrl({tabData, treeData}), [tabData, treeData]);
+    const [includeNodeFeedback, setIncludeNodeFeedback] = useState(true);
+    const shareUrl = useMemo(() => createShareUrl({tabData, treeData, feedbacks, overallFeedback}), [tabData, treeData, feedbacks, overallFeedback]);
     const tooLarge = getShareUrlByteLength(shareUrl) > MAX_QR_URL_BYTES;
     const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -75,8 +78,12 @@ const ShareModal = ({show, showGraphSection, onHide}: ShareModalProps) => {
                 )}
             </Modal.Body>
             <Modal.Footer className="justify-content-between">
-                <span>Export the model as an image</span>
-                <ExportFileButton showGraphSection={showGraphSection}/>
+                <div>
+                    <div>Export the model as an image</div>
+                    <Form.Check type="switch" label="Include goal feedback in PNG" checked={includeNodeFeedback && feedbacks.length > 0}
+                                disabled={feedbacks.length === 0} onChange={(event) => setIncludeNodeFeedback(event.target.checked)}/>
+                </div>
+                <ExportFileButton showGraphSection={showGraphSection} includeNodeFeedback={includeNodeFeedback}/>
             </Modal.Footer>
         </Modal>
     );

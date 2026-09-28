@@ -1,5 +1,5 @@
 import {z} from "zod";
-import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
+import type {Feedback, InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
@@ -27,9 +27,21 @@ const TabContentSchema: z.ZodType<TabContent> = z.object({
     goalIds: z.array(z.number().int()),
 });
 
+const FeedbackReplySchema = z.object({
+    id: z.string(), author: z.string(), content: z.string(), createdAt: z.string(),
+});
+const FeedbackSchema: z.ZodType<Feedback> = z.object({
+    id: z.string(), nodeId: z.string(), nodeLabel: z.string().optional(),
+    author: z.string(), content: z.string(), createdAt: z.string(),
+    status: z.enum(["open", "resolved"]), replyCount: z.number().int().optional(),
+    replies: z.array(FeedbackReplySchema).optional(),
+});
+
 export const ModelJsonSchema = z.object({
     tabData: z.array(TabContentSchema),
     treeData: z.array(TreeGoalSchema),
+    feedbacks: z.array(FeedbackSchema).optional(),
+    overallFeedback: z.object({author: z.string(), content: z.string(), updatedAt: z.string()}).optional(),
 }).superRefine(({tabData, treeData}, context) => {
     const tabsByLabel = new Map<Label, TabContent>();
     const labelByGoalId = new Map<number, Label>();
@@ -152,5 +164,11 @@ export const parseModelJson = (fileContent: string): JSONData => {
         );
     }
 
-    return result.data;
+    return {
+        ...result.data,
+        feedbacks: result.data.feedbacks?.map((feedback) => ({
+            ...feedback,
+            nodeId: feedback.nodeId.replace(/^(Functional|Quality|Stakeholder|Negative|Emotional)-(-?\d+)-(\d+)$/, "$1-$2:$3"),
+        })),
+    };
 };

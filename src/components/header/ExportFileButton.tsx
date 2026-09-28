@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {Graph} from "@maxgraph/core";
 import {Canvg} from 'canvg';
+import generateAvatar from "animal-avatar-generator";
 import * as d3 from 'd3';
 import Dropdown from "react-bootstrap/Dropdown";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
@@ -13,14 +14,33 @@ import {buildExportableSVG} from "../utils/ExportGraph";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import {embedJsonInPng, embedJsonInSvg} from "../utils/imageMetadata";
+import {useFeedbackContext} from "../context/FeedbackContext";
+import {useProfileContext} from "../context/ProfileContext";
+import {
+    MAX_EXPORTED_GOAL_FEEDBACK, PNG_FEEDBACK_PANEL_GAP, calculateFeedbackPanelLayout, calculatePngExportDimensions,
+    drawFeedbackNodeBadges, drawFeedbackPanel, getFeedbackNodeBadges, groupFeedbackByNode,
+} from "../utils/pngFeedbackAnnotations";
 
 const PNG_EXPORT_SCALE = 3;
 
+const loadAvatarImage = async (seed: string): Promise<HTMLImageElement | null> => {
+    const image = new Image();
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateAvatar(seed.trim() || "?", {size: 72}))}`;
+    try {
+        await image.decode();
+        return image;
+    } catch {
+        return null;
+    }
+};
+
 // Add showGraphSection prop to control Export button enablement
 // This ensures Export is only available when user is in "Render Model" interface
-const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => {
+const ExportFileButton = ({showGraphSection, includeNodeFeedback}: { showGraphSection: boolean; includeNodeFeedback: boolean }) => {
     const {graph} = useGraph(); // Use the context to get the graph instance
     const {cluster, tabData, treeData} = useFileContext(); // Get goals and cluster from file context
+    const {feedbacks, overallFeedback} = useFeedbackContext();
+    const {authorName, avatarSeed} = useProfileContext();
     const [errorModal, setErrorModal] = useState<ErrorModalProps>({
         show: false,
         title: "",
@@ -88,7 +108,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         // Serialize a bounded copy so no node falls outside the exported area
         const {clone} = buildExportableSVG(graph, svgElement);
         const serializer = new XMLSerializer();
-        const svgString = embedJsonInSvg(serializer.serializeToString(clone), {tabData, treeData});
+        const svgString = embedJsonInSvg(serializer.serializeToString(clone), {tabData, treeData, feedbacks, overallFeedback});
         try {
             // If chromium browser
             if ('showSaveFilePicker' in self) {
@@ -178,11 +198,55 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         // Render SVG onto the canvas
         await v.render();
 
+        const shownFeedbacks = includeNodeFeedback ? feedbacks.slice(0, MAX_EXPORTED_GOAL_FEEDBACK) : [];
+        const groups = groupFeedbackByNode(shownFeedbacks, (nodeId) => {
+            const cell = graph.getDataModel().getCell(nodeId);
+            const value = cell?.getValue();
+            return typeof value === "string" ? value : undefined;
+        });
+        const panelLayout = overallFeedback?.content.trim() || groups.length > 0
+            ? calculateFeedbackPanelLayout(context, groups, overallFeedback, includeNodeFeedback ? feedbacks.length : 0)
+            : null;
+        const dimensions = calculatePngExportDimensions(width, height, panelLayout);
+        let exportCanvas = canvas;
+
+        if (panelLayout) {
+            const authors = new Set([
+                ...(panelLayout.overall ? [panelLayout.overall.feedback.author] : []),
+                ...shownFeedbacks.map((feedback) => feedback.author),
+            ]);
+            const avatars = new Map<string, HTMLImageElement>();
+            await Promise.all([...authors].map(async (author) => {
+                const seed = author === authorName ? avatarSeed.trim() || author : author;
+                const image = await loadAvatarImage(seed);
+                if (image) avatars.set(author, image);
+            }));
+
+            const finalCanvas = document.createElement("canvas");
+            finalCanvas.width = Math.round(dimensions.width * PNG_EXPORT_SCALE);
+            finalCanvas.height = Math.round(dimensions.height * PNG_EXPORT_SCALE);
+            const finalContext = finalCanvas.getContext("2d");
+            if (!finalContext) return;
+            finalContext.scale(PNG_EXPORT_SCALE, PNG_EXPORT_SCALE);
+            finalContext.fillStyle = "white";
+            finalContext.fillRect(0, 0, dimensions.width, dimensions.height);
+            finalContext.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, width, height);
+
+            const badges = getFeedbackNodeBadges(groups, (nodeId) => {
+                const cell = graph.getDataModel().getCell(nodeId);
+                const state = cell ? graph.getView().getState(cell) : null;
+                return state ? {x: state.x, y: state.y, width: state.width, height: state.height} : undefined;
+            }, (point) => ({x: point.x - x, y: point.y - y}));
+            drawFeedbackNodeBadges(finalContext, badges, "white");
+            drawFeedbackPanel(finalContext, panelLayout, width + PNG_FEEDBACK_PANEL_GAP, dimensions.height, avatars);
+            exportCanvas = finalCanvas;
+        }
+
         // Convert the canvas content to a Blob (PNG format)
-        canvas.toBlob(async (blob) => {
+        exportCanvas.toBlob(async (blob) => {
             if (blob) {
                 try {
-                    const imageWithModel = await embedJsonInPng(blob, {tabData, treeData});
+                    const imageWithModel = await embedJsonInPng(blob, {tabData, treeData, feedbacks, overallFeedback});
                     if ('showSaveFilePicker' in self) {
                         const options: SaveFilePickerOptions = {
                             id: 'exportImage',

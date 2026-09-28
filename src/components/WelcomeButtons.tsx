@@ -2,6 +2,7 @@ import React, {ChangeEvent, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import {useNavigate} from "react-router-dom";
 import {createDefaultTabData, defaultTreeData} from "../data/initialTabs";
+import {defaultFeedbacks, defaultOverallFeedback} from "../data/defaultFeedback";
 import ErrorModal, {ErrorModalProps} from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
@@ -10,6 +11,7 @@ import {reset} from "./context/treeDataSlice.ts";
 import {ModelJsonError, parseModelJson} from "./modelJson.ts";
 import {extractJsonFromPng, extractJsonFromSvg} from "./utils/imageMetadata";
 import {convertTabContentToInitialTab} from "./utils/modelImport";
+import {useFeedbackContext} from "./context/FeedbackContext";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const MODEL_FILE_ALERT = "Please select a JSON, PNG, or SVG file.";
@@ -39,6 +41,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 	const navigate = useNavigate();
 
 	const {dispatch} = useFileContext();
+	const {resetFeedbacks} = useFeedbackContext();
 
 	const showFileError = (title: string, message: string) => {
 		setJsonFile(null);
@@ -81,6 +84,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 				tabData: initialTabs,
 				treeData: convertedJsonData.treeData,
 			}));
+			resetFeedbacks(convertedJsonData.feedbacks, convertedJsonData.overallFeedback);
 			setJsonFile(file);
 			setErrorModal(defaultModalState);
 		} catch (error) {
@@ -96,6 +100,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 
 	// Handle Create Model button click - load default data
 	const handleCreateModel = () => {
+		resetFeedbacks(defaultFeedbacks, defaultOverallFeedback);
 		dispatch(reset({
 			treeData: defaultTreeData,
 			tabData: createDefaultTabData()
