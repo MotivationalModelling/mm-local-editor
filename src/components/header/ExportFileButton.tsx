@@ -12,6 +12,7 @@ import {returnFocusToGraph} from "../utils/GraphUtils";
 import {buildExportableSVG} from "../utils/ExportGraph";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import {embedJsonInPng, embedJsonInSvg} from "../utils/imageMetadata";
 
 const PNG_EXPORT_SCALE = 3;
 
@@ -19,7 +20,7 @@ const PNG_EXPORT_SCALE = 3;
 // This ensures Export is only available when user is in "Render Model" interface
 const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => {
     const {graph} = useGraph(); // Use the context to get the graph instance
-    const {cluster} = useFileContext(); // Get goals and cluster from file context
+    const {cluster, tabData, treeData} = useFileContext(); // Get goals and cluster from file context
     const [errorModal, setErrorModal] = useState<ErrorModalProps>({
         show: false,
         title: "",
@@ -87,7 +88,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         // Serialize a bounded copy so no node falls outside the exported area
         const {clone} = buildExportableSVG(graph, svgElement);
         const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(clone);
+        const svgString = embedJsonInSvg(serializer.serializeToString(clone), {tabData, treeData});
         try {
             // If chromium browser
             if ('showSaveFilePicker' in self) {
@@ -181,6 +182,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         canvas.toBlob(async (blob) => {
             if (blob) {
                 try {
+                    const imageWithModel = await embedJsonInPng(blob, {tabData, treeData});
                     if ('showSaveFilePicker' in self) {
                         const options: SaveFilePickerOptions = {
                             id: 'exportImage',
@@ -193,11 +195,11 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
                         };
                         const handle = await self.showSaveFilePicker(options);
                         const writable = await handle.createWritable();
-                        await writable.write(blob);
+                        await writable.write(imageWithModel);
                         await writable.close();
                     } else {
                         // Fallback for non-Chromium browsers
-                        const url = URL.createObjectURL(blob);
+                        const url = URL.createObjectURL(imageWithModel);
                         const link = document.createElement('a');
                         link.href = url;
                         link.download = 'graph.png';
