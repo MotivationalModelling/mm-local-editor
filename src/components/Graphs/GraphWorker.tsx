@@ -511,6 +511,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const renderGraph = useCallback(() => {
         if (!graph) return;
+        const selectedIds = graph.getSelectionCells().map((cell) => cell.getId());
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
         let rootGoal: Cell | null = null;
@@ -570,6 +571,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         restoreSavedPositions(graph, cluster.ClusterGoals);
 
         graph.getDataModel().endUpdate();
+        graph.setSelectionCells(selectedIds
+            .map((id) => id ? graph.getDataModel().getCell(id) : undefined)
+            .filter((cell): cell is Cell => !!cell));
         isRenderingRef.current = false;
     }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
 
