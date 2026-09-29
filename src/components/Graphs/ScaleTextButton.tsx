@@ -97,7 +97,8 @@ const ScaleTextButton = () => {
     };
 
     return (
-        <FormControl type="number" size="sm"
+        <FormControl type="number"
+                     size="sm"
                      title="Applies to selected elements or the whole model when nothing is selected."
                      aria-label="Font size"
                      value={fontSize}
