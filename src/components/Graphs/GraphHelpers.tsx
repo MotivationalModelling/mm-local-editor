@@ -15,7 +15,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, parseGoalRefId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -603,15 +603,14 @@ export const renderLegend = (graph: Graph): Cell => {
 
 /**
  * Overrides layout-computed positions with any coordinates previously saved
- * by the user. Must be called after layoutFunctions and before
- * associateNonFunctions so that non-functional symbols are placed relative
- * to the restored positions.
+ * by the user. Call before and after associateNonFunctions to restore
+ * functional goals first, then their non-functional symbols.
  */
 export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
     const positionMap = new Map<string, { x: number; y: number }>();
     const collect = (goal: ClusterGoal) => {
-        if (goal.GoalType === "Functional" && goal.x !== undefined && goal.y !== undefined) {
-            positionMap.set(generateCellId("Functional", goal.instanceId), { x: goal.x, y: goal.y });
+        if (goal.x !== undefined && goal.y !== undefined) {
+            positionMap.set(goal.instanceId, {x: goal.x, y: goal.y});
         }
         goal.SubGoals.forEach(collect);
     };
@@ -619,12 +618,13 @@ export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
 
     if (positionMap.size === 0) return;
 
-    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+    graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
         const id = cell.getId();
-        const pos = id ? positionMap.get(id) : undefined;
+        if (!id || !/^(Functional|Nonfunctional)-/.test(id)) return;
+        const pos = parseGoalRefId(id).map(({instanceId}) => positionMap.get(instanceId)).find(Boolean);
         if (pos) {
             const geo = cell.getGeometry();
-            if (geo) {
+            if (geo && (geo.x !== pos.x || geo.y !== pos.y)) {
                 graph.getDataModel().setGeometry(cell, new Geometry(pos.x, pos.y, geo.width, geo.height));
             }
         }

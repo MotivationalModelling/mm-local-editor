@@ -31,7 +31,7 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {getCellNumericIds} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -328,11 +328,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             // Only persist user-initiated drags; skip events fired during renderGraph.
-                            if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
+                            if (!isRenderingRef.current && cellID && /^(Functional|Nonfunctional)-/.test(cellID)) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
-                                    const instanceId = validateInstanceId(cellID.replace("Functional-", ""));
-                                    dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
+                                    parseGoalRefId(cellID).forEach(({instanceId}) => {
+                                        dispatch(updatePositionForInstanceId({instanceId, x: geo.x, y: geo.y}));
+                                    });
                                 }
                             }
                         }
@@ -510,6 +511,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const renderGraph = useCallback(() => {
         if (!graph) return;
+        const selectedIds = graph.getSelectionCells().map((cell) => cell.getId());
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
         let rootGoal: Cell | null = null;
@@ -565,8 +567,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob,
             showLineBetweenNonFunctionalGoals
         );
+        // Restore manually moved symbols after they have been created.
+        restoreSavedPositions(graph, cluster.ClusterGoals);
 
         graph.getDataModel().endUpdate();
+        graph.setSelectionCells(selectedIds
+            .map((id) => id ? graph.getDataModel().getCell(id) : undefined)
+            .filter((cell): cell is Cell => !!cell));
         isRenderingRef.current = false;
     }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
 
