@@ -91,8 +91,9 @@ const ScaleTextButton = () => {
         }
 
         setFontSize(String(newFontSize));
-        if (newFontSize < MIN_FONT_SIZE || newFontSize > MAX_FONT_SIZE) return;
-        applyFontSize(newFontSize);
+        if (MIN_FONT_SIZE <= newFontSize && newFontSize <= MAX_FONT_SIZE) {
+            applyFontSize(newFontSize);
+        }
     };
 
     return (
