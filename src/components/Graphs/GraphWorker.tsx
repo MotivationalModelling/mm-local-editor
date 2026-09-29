@@ -9,7 +9,6 @@ import {
     Graph,
     InternalEvent,
     KeyHandler,
-    PanningHandler,
     RubberBandHandler,
     UndoManager,
 } from "@maxgraph/core";
@@ -27,7 +26,7 @@ import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject, InstanceId} from "../types.ts";
-import GraphSidebar, {type CanvasMode} from "./GraphSidebar";
+import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
@@ -49,17 +48,6 @@ const DELETE_KEYBINDING2 = 46;
 const recentreView = (graphInstance: Graph) => {
     graphInstance.fit();
     graphInstance.center();
-};
-
-const applyCanvasMode = (graph: Graph, canvasMode: CanvasMode) => {
-    const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
-    const rubberBandHandler = graph.getPlugin<RubberBandHandler>(RubberBandHandler.pluginId);
-
-    if (panningHandler) {
-        panningHandler.useLeftButtonForPanning = canvasMode === "pan";
-    }
-    rubberBandHandler?.setEnabled(canvasMode === "select");
-    graph.container.classList.toggle("canvas-select-mode", canvasMode === "select");
 };
 
 interface CellHistory {
@@ -90,7 +78,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
 
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
-    const [canvasMode, setCanvasMode] = useState<CanvasMode>("pan");
 
     const [removeChildren, setRemoveChildren] = useState(false);
     const [deletingCells, setDeletingCells] = useState<Cell[] | null>(null);
@@ -238,7 +225,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         graph.setCellsEditable(true);
         graph.setPanning(true);
         graph.autoExtend = false;
-        applyCanvasMode(graph, "pan");
         graph.setCellsResizable(true);
         graph.setCellsMovable(true); // Allow cells to be moved
         graph.setCellsSelectable(true); // Allow cells to be selected
@@ -609,12 +595,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         }
     }, [graphListener, setGraph]);
 
-    useEffect(() => {
-        if (graph) {
-            applyCanvasMode(graph, canvasMode);
-        }
-    }, [canvasMode, graph]);
-
     // Separate useEffect to render / update the graph.
     useEffect(() => {
         if (graph) {
@@ -722,8 +702,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                         <GraphSidebar
                             graph={graph}
                             recentreView={() => graph && recentreView(graph)}
-                            canvasMode={canvasMode}
-                            onCanvasModeChange={setCanvasMode}
                         />
                     </Col>
                 </Row>
