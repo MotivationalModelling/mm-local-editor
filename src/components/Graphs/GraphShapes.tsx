@@ -141,7 +141,7 @@ class HeartShape extends ActorShape {
   }
 }
 
-// Negative shape
+// Concern shape: warning triangle with an exclamation mark
 class NegativeShape extends ActorShape {
   constructor(
     bounds: Rectangle,
@@ -160,6 +160,33 @@ class NegativeShape extends ActorShape {
     return true;
   }
 
+  paintVertexShape(
+    c: AbstractCanvas2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number
+  ): void {
+    c.translate(x, y);
+    c.begin();
+    this.redrawPath(c, x, y, w, h);
+    c.fillAndStroke();
+
+    // Keep the warning mark subtle so the goal label drawn over it remains legible.
+    c.setFillColor("#b3b3b3");
+    c.begin();
+    c.moveTo(0.45 * w, 0.3 * h);
+    c.lineTo(0.55 * w, 0.3 * h);
+    c.lineTo(0.53 * w, 0.68 * h);
+    c.lineTo(0.47 * w, 0.68 * h);
+    c.close();
+    c.fill();
+
+    c.begin();
+    c.ellipse(0.46 * w, 0.76 * h, 0.08 * w, 0.1 * h);
+    c.fill();
+  }
+
   redrawPath(
     c: AbstractCanvas2D,
     x: number,
@@ -167,38 +194,9 @@ class NegativeShape extends ActorShape {
     w: number,
     h: number
   ): void {
-    const width = w / 2;
-    c.moveTo(width, 0);
-    c.curveTo(
-      0.98 * width,
-      0.02 * h,
-      0.9 * width,
-      0.07 * width,
-      0.7 * width,
-      0.13 * h
-    );
-    c.curveTo(0.4 * width, 0.25 * h, 0, 0.45 * h, 0, 0.65 * h);
-    c.curveTo(0, 0.95 * h, 0.35 * width, h, 0.45 * width, h);
-    c.curveTo(0.65 * width, h, 0.85 * width, 0.98 * h, width, 0.9 * h);
-
-    c.curveTo(
-      w - (0.85 * w) / 2,
-      0.98 * h,
-      w - 0.65 * width,
-      h,
-      w - 0.45 * width,
-      h
-    );
-    c.curveTo(w - 0.35 * width, h, w, 0.95 * h, w, 0.65 * h);
-    c.curveTo(
-      w,
-      0.45 * h,
-      w - 0.4 * width,
-      0.25 * h,
-      w - 0.7 * width,
-      0.13 * h
-    );
-    c.curveTo(w - 0.85 * width, 0.07 * h, w - 0.98 * width, 0.02 * h, width, 0);
+    c.moveTo(w / 2, 0);
+    c.lineTo(w, h);
+    c.lineTo(0, h);
     c.close();
   }
 }
