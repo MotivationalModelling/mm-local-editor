@@ -237,6 +237,22 @@ export const treeDataSlice = createSlice({
             const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
             children.splice(insertionIndex, 0, item);
         },
+        connectNewFunctionalGoal: (state, action: PayloadAction<{
+            childInstanceId: InstanceId,
+            parentInstanceId: InstanceId,
+        }>) => {
+            const {childInstanceId, parentInstanceId} = action.payload;
+            // Only attach an unparented functional instance created by the sidebar.
+            const index = state.tree.findIndex((goal) => goal.instanceId === childInstanceId);
+            if (index < 0) return;
+            const child = state.tree[index];
+            const parent = findTreeGoalByInstanceId(state.tree, parentInstanceId);
+            if (child.type !== "Do" || parent?.type !== "Do" ||
+                findTreeGoalByInstanceId([child], parentInstanceId)) return;
+
+            state.tree.splice(index, 1);
+            (parent.children ??= []).push(child);
+        },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
             // Create a TreeGoal node with generated instanceId
             const instanceId = generateInstanceId(state.treeIds, action.payload.id);
@@ -276,8 +292,18 @@ export const treeDataSlice = createSlice({
             id: TreeGoal["id"],
             instanceId: InstanceId
             removeChildren: boolean
+            deleteIfUnused?: boolean
         }>) => {
             state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.instanceId, action.payload.removeChildren);
+            const {id, deleteIfUnused} = action.payload;
+            const goal = state.goals[id];
+            if (!deleteIfUnused || !goal) return;
+            state.treeIds[id] = state.treeIds[id].filter((instanceId) => findTreeGoalByInstanceId(state.tree, instanceId));
+            if (state.treeIds[id].length > 0) return;
+            const tab = state.tabs.get(goal.type);
+            if (tab) tab.goalIds = tab.goalIds.filter((goalId) => goalId !== id);
+            delete state.goals[id];
+            delete state.treeIds[id];
         },
         // delete it will also delete the reference in the tree
         deleteGoalFromGoalList: (state, action: PayloadAction<TreeGoal>) => {
@@ -370,7 +396,7 @@ export const treeDataSlice = createSlice({
 });
 
 export const {
-    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree,
+    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree, connectNewFunctionalGoal,
     deleteGoalReferenceFromHierarchy,
     deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
     updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId

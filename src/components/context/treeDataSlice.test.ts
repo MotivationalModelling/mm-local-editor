@@ -15,6 +15,7 @@ import {
     deleteGoalReferenceFromHierarchy,
     findTreeGoalByInstanceId,
     moveTreeItem,
+    removeGoalIdFromTree,
     removeItemIdFromTree,
     reset,
     selectGoalsForLabel,
@@ -226,6 +227,40 @@ describe('treeDataSlice', () => {
         // only remove the reference
         expect(Object.keys(state1.treeIds)).toContain(String(goal.id));
         expect(Object.values(state2.treeIds)).not.toContain(instanceId);
+    });
+
+    it('cleans up an unused toolbar goal but preserves a goal with another instance', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "New goal"});
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        const [first, second] = state.treeIds[goal.id];
+
+        state = treeDataSlice.reducer(state, removeGoalIdFromTree({
+            id: goal.id, instanceId: first, removeChildren: false, deleteIfUnused: true,
+        }));
+        expect(state.treeIds[goal.id]).toEqual([second]);
+        expect(state.goals[goal.id]).toBeDefined();
+        expect(state.tabs.get("Do")?.goalIds).toContain(goal.id);
+
+        state = treeDataSlice.reducer(state, removeGoalIdFromTree({
+            id: goal.id, instanceId: second, removeChildren: false, deleteIfUnused: true,
+        }));
+        expect(state.tree).toHaveLength(0);
+        expect(state.treeIds[goal.id]).toBeUndefined();
+        expect(state.goals[goal.id]).toBeUndefined();
+        expect(state.tabs.get("Do")?.goalIds).not.toContain(goal.id);
+    });
+    it('preserves an existing goal in the list when removing its last canvas reference', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "Existing goal"});
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        state = treeDataSlice.reducer(state, removeGoalIdFromTree({
+            id: goal.id, instanceId: state.treeIds[goal.id][0], removeChildren: false,
+        }));
+        expect(state.tree).toHaveLength(0);
+        expect(state.goals[goal.id]).toBeDefined();
+        expect(state.tabs.get("Do")?.goalIds).toContain(goal.id);
     });
 
     it('should have tree as type TreeGoal[]', () => {
