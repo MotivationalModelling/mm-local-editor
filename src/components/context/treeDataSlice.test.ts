@@ -24,7 +24,7 @@ import {
 } from "./treeDataSlice";
 import {enableMapSet} from "immer";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeGoal, TreeGoal, InstanceId} from "../types.ts";
+import {newTreeGoal, TreeGoal, InstanceId} from "../utils/types.ts";
 
 describe('treeDataSlice', () => {
     // turns on Map/Set support

@@ -4,7 +4,7 @@ import {
     Cell,
     Geometry,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
+import {ClusterGoal, GlobObject, InstanceId} from "../utils/types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {

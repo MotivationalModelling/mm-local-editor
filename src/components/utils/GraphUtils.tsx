@@ -1,4 +1,4 @@
-import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
+import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from './types';
 import {normalizeInstanceId, parseInstanceId} from './instanceId';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
@@ -179,6 +179,7 @@ export function generateCellId<T extends keyof IdsForType>(type: T, ids: IdsForT
     }
 }
 
+// Check and retrieve if the non-functional goal has pre-defined color by instanceId
 export const getNonFunctionalGoalColor = (
     clusterGoals: ClusterGoal[],
     nonFunctionGoals: {instanceId: InstanceId; content: string;}[],

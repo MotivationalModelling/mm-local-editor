@@ -5,7 +5,7 @@ import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-libr
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
 import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeGoal, TreeGoal} from "../types.ts";
+import {newTreeGoal, TreeGoal} from "../utils/types.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,

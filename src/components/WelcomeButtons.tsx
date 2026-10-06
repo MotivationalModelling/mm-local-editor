@@ -7,8 +7,8 @@ import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import {useFileContext} from "./context/FileProvider";
 import {reset} from "./context/treeDataSlice.ts";
-import {TabContent, TreeGoal} from "./types.ts";
-import {ModelJsonError, parseModelJson} from "./modelJson.ts";
+import {TabContent, TreeGoal} from "./utils/types.ts";
+import {ModelJsonError, parseModelJson} from "./utils/modelJson.ts";
 
 const EMPTY_FILE_ALERT = "Please select a file";
 const JSON_FILE_ALERT = "Please select a JSON file.";

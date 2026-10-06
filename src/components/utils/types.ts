@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {createInstanceId, InstanceIdSchema, type InstanceId} from "./utils/instanceId";
+import {createInstanceId, InstanceIdSchema, type InstanceId} from "./instanceId";
 
 // ============================================
 // Core types (defined first to avoid circular refs)

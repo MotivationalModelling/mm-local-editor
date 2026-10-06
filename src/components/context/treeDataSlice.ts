@@ -3,7 +3,7 @@ import {
     createTabDataFromTabs,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts"
 import {createInstanceId, normalizeInstanceId, parseInstanceId} from "../utils/instanceId.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
 
