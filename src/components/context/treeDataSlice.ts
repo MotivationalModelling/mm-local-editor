@@ -237,6 +237,22 @@ export const treeDataSlice = createSlice({
             const insertionIndex = Math.min(action.payload.insertionIndex ?? children.length, children.length);
             children.splice(insertionIndex, 0, item);
         },
+        connectNewFunctionalGoal: (state, action: PayloadAction<{
+            childInstanceId: InstanceId,
+            parentInstanceId: InstanceId,
+        }>) => {
+            const {childInstanceId, parentInstanceId} = action.payload;
+            // Only attach an unparented functional instance created by the sidebar.
+            const index = state.tree.findIndex((goal) => goal.instanceId === childInstanceId);
+            if (index < 0) return;
+            const child = state.tree[index];
+            const parent = findTreeGoalByInstanceId(state.tree, parentInstanceId);
+            if (child.type !== "Do" || parent?.type !== "Do" ||
+                findTreeGoalByInstanceId([child], parentInstanceId)) return;
+
+            state.tree.splice(index, 1);
+            (parent.children ??= []).push(child);
+        },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
             // Create a TreeGoal node with generated instanceId
             const instanceId = generateInstanceId(state.treeIds, action.payload.id);
@@ -370,7 +386,7 @@ export const treeDataSlice = createSlice({
 });
 
 export const {
-    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree,
+    addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree, connectNewFunctionalGoal,
     deleteGoalReferenceFromHierarchy,
     deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
     updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
