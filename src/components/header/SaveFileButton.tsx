@@ -4,7 +4,7 @@ import Button from "react-bootstrap/Button";
 import {useFileContext} from "../context/FileProvider";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
-import {createModelJson} from "../modelJson";
+import {createModelFileContent} from "../modelJson";
 import {useGraph} from "../context/GraphContext";
 import {captureNonFunctionalLayout} from "../Graphs/GraphGeometryUtils";
 
@@ -35,15 +35,11 @@ const SaveFileButton = () => {
                 flushSync(() => graph.stopEditing(false));
             }
             const snapshot = currentModel.current;
-            if (!Object.values(snapshot.goals).some(goal => goal.content.trim() !== "")) {
-                showSaveError("No goals have been added. Please add at least one goal before saving.");
-                return;
-            }
             // Capture current model data and validate it before opening a file.
             const layout = graph ? captureNonFunctionalLayout(graph) : snapshot.nonFunctionalLayout;
-            const json = JSON.stringify(createModelJson(snapshot.tabData, snapshot.treeData, snapshot.goals, layout));
+            const json = createModelFileContent(snapshot.tabData, snapshot.treeData, snapshot.goals, layout);
             const handle = await window.showSaveFilePicker({
-                suggestedName: "Model.json",
+                suggestedName: "model.json",
                 types: [{description: "JSON Files", accept: {"application/json": [".json"]}}],
             });
             const writable = await handle.createWritable();
@@ -70,7 +66,9 @@ const SaveFileButton = () => {
 
     return (
         <>
-            <Button variant="outline-primary" onClick={handleSave}>Save</Button>
+            <Button variant="outline-primary" onClick={handleSave}>
+                Save
+            </Button>
             <ErrorModal {...errorModal}/>
         </>
     );

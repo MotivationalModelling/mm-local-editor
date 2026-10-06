@@ -22,7 +22,8 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
-import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions} from './GraphHelpers';
+import {associateNonFunctions, layoutFunctions, renderGoals, restoreSavedPositions} from './GraphHelpers';
+import {isGoalNameEmpty} from "../utils/GoalUtils";
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
@@ -33,7 +34,8 @@ import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
-import {convertEditingValueToList, isListLabelCell, makeHtmlListLabel, readListEditorValue} from "./GraphLabelUtils";
+import {convertEditingValueToList, isListLabelCell, normaliseListLabelItems, readListEditorValue} from "./GraphLabelUtils";
+import {makeHtmlListLabel} from "./GraphListLabel";
 import {isNonFunctionCell} from "./GraphCellUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
@@ -61,6 +63,8 @@ const configureListLabels = (graph: Graph) => {
 
         if (label && isListLabelCell(cell)) {
             return makeHtmlListLabel(convertEditingValueToList(label));
+        } else if (label && isNonFunctionCell(cell)) {
+            return normaliseListLabelItems(convertEditingValueToList(label)).join(",\n");
         } else {
             return label;
         }
@@ -72,7 +76,7 @@ const configureListLabels = (graph: Graph) => {
         const getCurrentValue = cellEditor.getCurrentValue.bind(cellEditor);
         const startEditing = cellEditor.startEditing.bind(cellEditor);
 
-        // Match the list presentation while editing without changing the stored comma-separated value.
+        // Match list presentation; serialize punctuation safely when committing.
         cellEditor.getInitialValue = (state, trigger) => {
             if (isListLabelCell(state.cell)) {
                 return makeHtmlListLabel(convertEditingValueToList(graph.getEditingValue(state.cell, trigger)));
@@ -404,16 +408,20 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             const numericCellIds = getCellNumericIds(cell);
-                            const newGoalValues = convertEditingValueToList(change.value);
+                            const newGoalValues = isNonFunctionCell(cell)
+                                ? convertEditingValueToList(change.value)
+                                : [change.value];
 
                             // Check if the number of items matches
                             const nUpdated = numericCellIds.length;
-                            if (nUpdated !== newGoalValues.length) {
+                            const hasEmptyGoal = newGoalValues.some(isGoalNameEmpty);
+                            if (nUpdated !== newGoalValues.length || hasEmptyGoal) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
                                     show: true,
                                     title: "Input Error",
-                                    message: `Please provide ${nUpdated} ${(nUpdated === 1) ? "item" : "items"} separated by commas`,
+                                    message: hasEmptyGoal ? "Goal name cannot be empty."
+                                        : `Please provide ${nUpdated} ${(nUpdated === 1) ? "item" : "items"} separated by commas. Put double quotes around an item containing a comma.`,
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {

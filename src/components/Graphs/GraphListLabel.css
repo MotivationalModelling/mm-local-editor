@@ -1,0 +1,10 @@
+.graph-list-label,
+.graph-list-label-items {
+    box-sizing: border-box;
+}
+
+.graph-list-label-items {
+    overflow-wrap: anywhere;
+    padding-left: 1.2em;
+    white-space: normal;
+}

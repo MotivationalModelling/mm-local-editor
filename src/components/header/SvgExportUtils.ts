@@ -1,11 +1,12 @@
 import type {Graph} from "@maxgraph/core";
 import {buildExportableSVG} from "../utils/ExportGraph";
-import {convertEditingValueToList, isListLabelCell, normalizeListLabelItems} from "../Graphs/GraphLabelUtils";
+import {convertEditingValueToList, isListLabelCell, normaliseListLabelItems} from "../Graphs/GraphLabelUtils";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 // Browser glyph rectangles on the same baseline can differ by a fraction of a pixel.
 const LINE_POSITION_TOLERANCE = 1;
 const BULLET_OFFSET_RATIO = 0.8;
+const LIST_BULLET = "•";
 
 export type ListLabelExportSource = {
     foreignObject: SVGForeignObjectElement;
@@ -24,7 +25,7 @@ export const getListLabelExportSources = (graph: Graph): ListLabelExportSource[]
         const foreignObject = graph.getView().getState(cell)?.text?.node
             ?.querySelector<SVGForeignObjectElement>("foreignObject");
         if (!foreignObject) return [];
-        const items = normalizeListLabelItems(convertEditingValueToList(graph.convertValueToString(cell)));
+        const items = normaliseListLabelItems(convertEditingValueToList(graph.convertValueToString(cell)));
         return [{foreignObject, items}];
     })
 );
@@ -110,48 +111,76 @@ const createSvgText = (document: Document, text: string, x: number, y: number, s
 
 // Pair original nodes with their copies while cloning. Export never relies on
 // independently queried DOM lists having matching indices or mutates the canvas.
+export const cloneNodeWithMap = (original: Node, copies: Map<Node, Node>): Node => {
+    const copy = original.cloneNode(false);
+    copies.set(original, copy);
+    original.childNodes.forEach(child => copy.appendChild(cloneNodeWithMap(child, copies)));
+    return copy;
+};
+
 const cloneSvgWithNodeMap = (svg: SVGSVGElement) => {
     const copies = new Map<Node, Node>();
-    const cloneNode = (original: Node): Node => {
-        const copy = original.cloneNode(false);
-        copies.set(original, copy);
-        original.childNodes.forEach(child => copy.appendChild(cloneNode(child)));
-        return copy;
-    };
-    return {svg: cloneNode(svg) as SVGSVGElement, copies};
+    return {svg: cloneNodeWithMap(svg, copies) as SVGSVGElement, copies};
+};
+
+// DOM nodes supply measurements only; text and item count come from the model.
+const getListItemMeasurements = ({foreignObject, items}: ListLabelExportSource) => {
+    const list = foreignObject.querySelector("ul");
+    if (list?.children.length !== items.length) {
+        throw new Error("The displayed list does not match the model. Finish editing and try exporting again.");
+    }
+    return items.map((text, index) => {
+        const element = list.children[index];
+        return {
+            lines: measureRenderedTextLines(element, text),
+            style: element.ownerDocument.defaultView!.getComputedStyle(element),
+        };
+    });
+};
+
+export const createSvgTextAtScreenPosition = (
+    svg: SVGSVGElement, matrix: DOMMatrix, text: string, x: number, y: number, style: CSSStyleDeclaration,
+) => {
+    // Undo graph zoom and translation for browser-measured screen coordinates.
+    const point = svg.createSVGPoint();
+    point.x = x;
+    point.y = y;
+    const local = point.matrixTransform(matrix);
+    return createSvgText(svg.ownerDocument, text, local.x, local.y, style);
 };
 
 const convertListLabelToSvg = (svg: SVGSVGElement, source: ListLabelExportSource): SVGGElement => {
-    const {foreignObject, items} = source;
-    const elements = Array.from(foreignObject.querySelectorAll("li"));
-    if (elements.length !== items.length) {
-        throw new Error("The displayed list does not match the model. Finish editing and try exporting again.");
-    }
+    const {foreignObject} = source;
     const parent = foreignObject.parentElement as SVGGraphicsElement | null;
     const matrix = parent?.getScreenCTM()?.inverse();
     if (!matrix) throw new Error("Cannot measure the label position for PNG export.");
     const group = svg.ownerDocument.createElementNS(SVG_NAMESPACE, "g");
-    const appendText = (text: string, x: number, y: number, style: CSSStyleDeclaration) => {
-        // Range gives screen coordinates; the SVG text must use its parent's
-        // coordinates, undoing graph zoom and translation with the inverse CTM.
-        const point = svg.createSVGPoint();
-        point.x = x;
-        point.y = y;
-        const local = point.matrixTransform(matrix);
-        group.appendChild(createSvgText(svg.ownerDocument, text, local.x, local.y, style));
-    };
-
-    items.forEach((text, index) => {
-        const element = elements[index];
-        const style = svg.ownerDocument.defaultView!.getComputedStyle(element);
-        measureRenderedTextLines(element, text).forEach((line, lineIndex) => {
+    getListItemMeasurements(source).forEach(({lines, style}) => {
+        lines.forEach((line, lineIndex) => {
             if (lineIndex === 0) {
-                appendText("•", line.x - line.height * BULLET_OFFSET_RATIO, line.y, style);
+                group.appendChild(createSvgTextAtScreenPosition(svg, matrix, LIST_BULLET,
+                    line.x - line.height * BULLET_OFFSET_RATIO, line.y, style));
             }
-            appendText(line.text, line.x, line.y, style);
+            group.appendChild(createSvgTextAtScreenPosition(svg, matrix, line.text, line.x, line.y, style));
         });
     });
     return group;
+};
+
+// An exported SVG has no access to the application's Bootstrap/theme styles.
+// Freeze the current appearance on the copy, never on the live graph.
+export const prepareGraphForSvg = (graph: Graph, svgElement: SVGSVGElement) => {
+    const {svg, copies} = cloneSvgWithNodeMap(svgElement);
+    svgElement.querySelectorAll<HTMLElement>(".graph-list-label, .graph-list-label-items, .graph-list-label-items > li").forEach(element => {
+        const copy = copies.get(element) as HTMLElement;
+        const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+        for (const property of ["display", "align-items", "box-sizing", "height", "width", "margin",
+            "padding-left", "text-align", "white-space", "overflow-wrap", "list-style-type",
+            "color", "font-family", "font-size", "font-weight", "font-style", "line-height"]) {
+            copy.style.setProperty(property, style.getPropertyValue(property));
+        }
+    });
+    return buildExportableSVG(graph, svg);
 };
 
 // Canvg cannot render our HTML list labels. Replace those labels with native

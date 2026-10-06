@@ -118,6 +118,14 @@ const verifyEditedModelRoundTrip = (input: string, finishEditingFirst = true, re
 };
 
 describe('Model JSON save and reopen', () => {
+  it('retains commas and quotes inside a goal after saving directly from an active editor', () => {
+    const punctuation = 'Careful, "responsible"';
+    const model = {...exampleModel, treeData: exampleModel.treeData.map(goal =>
+      goal.id === 2 ? {...goal, content: punctuation} : goal)};
+    verifyEditedModelRoundTrip(JSON.stringify(model), false);
+    cy.contains('#graphContainer li', punctuation).should('be.visible');
+    cy.get('#graphContainer li').should('have.length', 3);
+  });
   it('preserves edited text after saving and reopening current IDs', () => {
     verifyEditedModelRoundTrip(JSON.stringify(exampleModel));
   });

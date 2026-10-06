@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {createModelJson, ModelJsonError, parseModelJson} from "./modelJson";
+import {createModelFileContent, createModelJson, ModelJsonError, parseModelJson} from "./modelJson";
 import type {TabContent, TreeGoal} from "./types";
 
 const tabs: TabContent[] = [
@@ -19,6 +19,21 @@ const createTree = (): TreeGoal[] => [{
 const openTree = (treeData: unknown) => parseModelJson(JSON.stringify({tabData: tabs, treeData}));
 
 describe("model JSON round trip", () => {
+    it("prepares file contents without graph or file-picker dependencies", () => {
+        const tree = createTree();
+        const goals = {1: tree[0], 2: {...tree[0].children![0], content: 'Careful, "responsible"'}};
+        const layout = {"Nonfunctional-[2:1,2:2]": {x: 10, y: 20, width: 100, height: 80}};
+        const saved = parseModelJson(createModelFileContent(tabs, tree, goals, layout));
+        expect(saved.treeData[0].children?.map(goal => goal.content)).toEqual([goals[2].content, goals[2].content]);
+        expect(saved.nonFunctionalLayout).toEqual(layout);
+    });
+
+    it("rejects empty models before preparing file contents", () => {
+        expect(() => createModelFileContent([], [], {})).toThrow("No goals have been added");
+        const tree = createTree();
+        expect(() => createModelFileContent(tabs, tree, {1: {...tree[0], content: " \n "}}))
+            .toThrow("No goals have been added");
+    });
     it("round-trips optional layout while accepting old files without it", () => {
         const tree = createTree();
         const goals = {1: tree[0], 2: tree[0].children![0]};

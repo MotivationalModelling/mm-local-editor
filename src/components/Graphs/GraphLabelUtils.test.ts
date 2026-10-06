@@ -1,17 +1,26 @@
+// @vitest-environment jsdom
 import {describe, expect, it} from "vitest";
-import {convertEditingValueToList, convertListToEditingValue, getListLabelArea, LIST_LABEL_AREAS, makeHtmlListLabel, normalizeListLabelItems} from "./GraphLabelUtils";
+import {convertEditingValueToList, convertListToEditingValue, getListLabelArea, LIST_LABEL_AREAS, normaliseListLabelItems} from "./GraphLabelUtils";
+import {makeHtmlListLabel} from "./GraphListLabel";
 
 describe("makeHtmlListLabel", () => {
     it("formats each item as a list item", () => {
         const result = makeHtmlListLabel(["A", "B", "C"]);
 
-        expect(result).toBe('<div style="align-items:center;box-sizing:border-box;display:flex;height:100%;width:100%"><ul style="box-sizing:border-box;display:block;margin:0;overflow-wrap:anywhere;padding-left:1.2em;text-align:left;white-space:normal;width:100%"><li>A</li><li>B</li><li>C</li></ul></div>');
+        const label = document.createElement("div");
+        label.innerHTML = result;
+        expect(Array.from(label.querySelectorAll("li"), item => item.textContent)).toEqual(["A", "B", "C"]);
+        expect(label.querySelector("ul")?.classList.contains("graph-list-label-items")).toBe(true);
+        expect(label.querySelector("[style]")).toBeNull();
     });
 
     it("trims items, ignores empty values, and escapes HTML", () => {
         const result = makeHtmlListLabel([" Research < Development ", "", 'Safe & "Responsible"']);
 
-        expect(result).toBe('<div style="align-items:center;box-sizing:border-box;display:flex;height:100%;width:100%"><ul style="box-sizing:border-box;display:block;margin:0;overflow-wrap:anywhere;padding-left:1.2em;text-align:left;white-space:normal;width:100%"><li>Research &lt; Development</li><li>Safe &amp; &quot;Responsible&quot;</li></ul></div>');
+        const label = document.createElement("div");
+        label.innerHTML = result;
+        expect(Array.from(label.querySelectorAll("li"), item => item.textContent))
+            .toEqual(["Research < Development", 'Safe & "Responsible"']);
     });
 
     it("returns an empty label when there are no items", () => {
@@ -19,7 +28,11 @@ describe("makeHtmlListLabel", () => {
     });
 
     it("escapes every HTML delimiter without URL-encoding Unicode or newlines", () => {
-        expect(makeHtmlListLabel([`<>&\"' 中文😀\nnext`])).toContain("&lt;&gt;&amp;&quot;&#39; 中文😀\nnext");
+        const text = `<>&\"' 中文😀\nnext`;
+        const label = document.createElement("div");
+        label.innerHTML = makeHtmlListLabel([text]);
+        expect(label.querySelector("li")?.textContent).toBe(text);
+        expect(label.querySelector("li")?.children).toHaveLength(0);
     });
 
     it("preserves empty entries and whitespace when converting the stored format", () => {
@@ -30,8 +43,23 @@ describe("makeHtmlListLabel", () => {
 
     it("normalizes HTML line endings for display without changing model input", () => {
         const items = ["A\r\nB\rC\0D"];
-        expect(normalizeListLabelItems(items)).toEqual(["A\nB\nC\uFFFDD"]);
+        expect(normaliseListLabelItems(items)).toEqual(["A\nB\nC\uFFFDD"]);
         expect(items).toEqual(["A\r\nB\rC\0D"]);
+    });
+});
+
+describe("label field encoding", () => {
+    it.each([
+        ["Careful, responsible", "Second"],
+        ['Say "hello"', '"quoted", with comma'],
+        ["", "First, second", ""],
+        ["中文，标点", "emoji 😀", "line\nbreak"],
+    ])("round-trips punctuation and empty items: %j", (...items) => {
+        expect(convertEditingValueToList(convertListToEditingValue(items))).toEqual(items);
+    });
+
+    it("reads quoted fields alongside legacy newline-separated fields", () => {
+        expect(convertEditingValueToList('First,\n"Second, third",\nLast')).toEqual(["First", "Second, third", "\nLast"]);
     });
 });
 

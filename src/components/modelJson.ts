@@ -1,6 +1,7 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
 import {normalizeInstanceId, parseInstanceId} from "./utils/InstanceId";
+import {isGoalEmpty} from "./utils/GoalUtils";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
@@ -170,6 +171,19 @@ export const createModelJson = (
     // Apply the same validation/normalization on save and open. An invalid
     // snapshot must fail before the file picker can overwrite an existing file.
     return validateModelJson({tabData, treeData: snapshotTreeForSave(treeData, goals), nonFunctionalLayout});
+};
+
+// Prepare validated file contents independently of graph and file-picker APIs.
+export const createModelFileContent = (
+    tabData: TabContent[],
+    treeData: TreeGoal[],
+    goals: Readonly<Record<number, TreeGoal>>,
+    nonFunctionalLayout?: NonFunctionalLayout,
+): string => {
+    if (Object.values(goals).every(isGoalEmpty)) {
+        throw new ModelJsonError("No goals have been added. Please add at least one goal before saving.");
+    }
+    return JSON.stringify(createModelJson(tabData, treeData, goals, nonFunctionalLayout));
 };
 
 const formatSchemaError = (error: z.ZodError): string => {

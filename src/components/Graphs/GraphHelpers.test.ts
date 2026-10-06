@@ -1,8 +1,22 @@
-import {describe, it, expect} from "vitest";
-import {makeLabelForGoalType} from "../utils/GraphUtils";
-import {SymbolKey} from "../utils/GraphConstants.tsx";
+import {describe, it, expect, vi} from "vitest";
+import {doesGoalTypeUseSeparateLines, makeLabelForGoalType} from "../utils/GraphUtils";
+import type {SymbolKey} from "../utils/GraphConstants.tsx";
+import {convertEditingValueToList} from "./GraphLabelUtils";
+
+// Label formatting does not depend on palette images or shape configuration.
+vi.mock("../utils/GraphConstants", () => ({SYMBOL_CONFIGS: {}}));
 
 describe("makeLabelForGoalType", () => {
+    it.each(["STAKEHOLDER", "NEGATIVE", "QUALITY", "EMOTIONAL"] as const)(
+        "preserves punctuation when formatting %s", type => {
+            const items = ['Careful, "responsible"', "Second"];
+            expect(doesGoalTypeUseSeparateLines(type)).toBe(true);
+            expect(convertEditingValueToList(makeLabelForGoalType(items, type)).map(item => item.trim())).toEqual(items);
+        },
+    );
+    it.each(["FUNCTIONAL", undefined] as const)("does not use one item per line for %s", type => {
+        expect(doesGoalTypeUseSeparateLines(type)).toBe(false);
+    });
     it.each(["STAKEHOLDER", "NEGATIVE", "QUALITY", "EMOTIONAL"])(
         "uses ',\\n' separator when type is %s",
         (type) => {

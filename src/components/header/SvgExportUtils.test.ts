@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import {afterEach, describe, expect, it, vi} from "vitest";
-import {prepareGraphForPng, prepareSvgForPng} from "./SvgExportUtils";
+import {cloneNodeWithMap, createSvgTextAtScreenPosition, prepareGraphForPng, prepareGraphForSvg, prepareSvgForPng} from "./SvgExportUtils";
 import type {Graph} from "@maxgraph/core";
 import type {ListLabelExportSource} from "./SvgExportUtils";
 
@@ -72,6 +72,43 @@ afterEach(() => {
 });
 
 describe("prepareSvgForPng", () => {
+    it("maps every cloned node without changing originals", () => {
+        const original = document.createElement("div");
+        original.innerHTML = "<ul><li>A &amp; B</li></ul>";
+        const copies = new Map<Node, Node>();
+        const copy = cloneNodeWithMap(original, copies);
+        expect(copy.isEqualNode(original)).toBe(true);
+        expect(copies.get(original)).toBe(copy);
+        expect(copies.get(original.querySelector("li")!.firstChild!)?.textContent).toBe("A & B");
+        expect(copies.size).toBe(4);
+    });
+
+    it("creates independently testable screen-positioned SVG text", () => {
+        const {svg, source} = createTestSvg(["A"]);
+        const element = source.foreignObject.querySelector("li")!;
+        const text = createSvgTextAtScreenPosition(svg,
+            {scale: 2, translateX: 60, translateY: 20} as unknown as DOMMatrix,
+            "A & B", 100, 40, getComputedStyle(element));
+        expect(text.textContent).toBe("A & B");
+        expect(text.getAttribute("x")).toBe("20");
+        expect(text.getAttribute("y")).toBe("10");
+    });
+
+    it("freezes stylesheet-based layout only on the exported SVG", () => {
+        const {svg, source} = createTestSvg(["A"]);
+        const list = source.foreignObject.querySelector("ul")!;
+        list.className = "graph-list-label-items";
+        const style = document.createElement("style");
+        style.textContent = ".graph-list-label-items {padding-left: 20px; text-align: left;}";
+        document.body.appendChild(style);
+        const graph = {
+            getGraphBounds: () => ({x: 0, y: 0, width: 400, height: 300}),
+            getView: () => ({getScale: () => 1}),
+        } as unknown as Graph;
+        const {clone} = prepareGraphForSvg(graph, svg);
+        expect(clone.querySelector("ul")!.style.paddingLeft).toBe("20px");
+        expect(list.hasAttribute("style")).toBe(false);
+    });
     it("covers negative model coordinates with an opaque background without changing the live SVG", () => {
         const {svg} = createTestSvg([]);
         const graph = {

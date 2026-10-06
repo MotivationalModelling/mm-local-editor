@@ -1,8 +1,16 @@
 // @vitest-environment jsdom
 import {describe, expect, it} from "vitest";
-import {makeHtmlListLabel, readListEditorValue} from "./GraphLabelUtils";
+import {convertEditingValueToList, readListEditorValue} from "./GraphLabelUtils";
+import {makeHtmlListLabel} from "./GraphListLabel";
 
 describe("list editor serialization", () => {
+    it("preserves commas and quotes within a single edited item", () => {
+        const editor = document.createElement("div");
+        editor.innerHTML = makeHtmlListLabel(["Old", "Second"]);
+        editor.querySelector("li")!.textContent = 'Careful, "responsible"';
+        expect(convertEditingValueToList(readListEditorValue(editor)!))
+            .toEqual(['Careful, "responsible"', "Second"]);
+    });
     it("reads the latest unsaved input and retains missing entries for validation", () => {
         const editor = document.createElement("div");
         editor.innerHTML = makeHtmlListLabel(["Old", "Second"]);

@@ -23,6 +23,15 @@ afterEach(() => {
 });
 
 describe("SaveFileButton", () => {
+    it("does not open the picker for empty goals", async () => {
+        const picker = vi.fn();
+        Object.defineProperty(window, "showSaveFilePicker", {configurable: true, value: picker});
+        fileContext.current = {setJsonFileHandle: vi.fn(), treeData: [], tabData: [], goals: {1: {content: " \n "}}};
+        render(<SaveFileButton/>);
+        fireEvent.click(screen.getByRole("button", {name: "Save"}));
+        expect(await screen.findByText("No goals have been added. Please add at least one goal before saving.")).toBeTruthy();
+        expect(picker).not.toHaveBeenCalled();
+    });
     it("exports the current tab and tree data as JSON", async () => {
         const treeData = [{id: 1, content: "Old text", type: "Do", instanceId: "1:1", children: []}];
         const tabData = [
@@ -54,6 +63,7 @@ describe("SaveFileButton", () => {
             expect(write).toHaveBeenCalledWith(JSON.stringify({tabData, treeData: [{...treeData[0], content: "Updated text"}]}));
         });
         expect(close).toHaveBeenCalledOnce();
+        expect(window.showSaveFilePicker).toHaveBeenCalledWith(expect.objectContaining({suggestedName: "model.json"}));
         expect(setJsonFileHandle).toHaveBeenCalledWith(handle);
     });
 

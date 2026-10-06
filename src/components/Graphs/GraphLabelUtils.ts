@@ -1,24 +1,35 @@
 import type {Cell} from "@maxgraph/core";
 
-// HTML text encoding is different from URI encoding. Keep the mapping local
-// and use it directly so adding an entity never requires updating a regex.
-const encodeHtml = (value: string): string => {
-    const htmlEncodings: Record<string, string> = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-    };
-    return Array.from(value, character => htmlEncodings[character] ?? character).join("");
+// Quote punctuation-bearing fields; unquoted legacy lists remain supported.
+// Keep empty fields so edit validation can reject missing goal names.
+export const convertListToEditingValue = (items: string[], separator = ","): string => items
+    .map(item => /[",]/.test(item) ? `"${item.replace(/"/g, '""')}"` : item)
+    .join(separator);
+
+export const convertEditingValueToList = (value: string): string[] => {
+    const items: string[] = [];
+    let offset = 0;
+    while (offset <= value.length) {
+        // Only a quote at the beginning of a field starts a quoted value.
+        const field = /^\s*"((?:[^"]|"")*)"\s*(,|$)/.exec(value.slice(offset));
+        if (field) {
+            items.push(field[1].replace(/""/g, '"'));
+            offset += field[0].length;
+            if (!field[2]) break;
+        } else {
+            const comma = value.indexOf(",", offset);
+            if (comma === -1) {
+                items.push(value.slice(offset));
+                break;
+            }
+            items.push(value.slice(offset, comma));
+            offset = comma + 1;
+        }
+    }
+    return items;
 };
 
-// This is the existing stored label format, not CSV. Keep empty entries so the
-// edit validation can still detect missing goal names and changed item counts.
-export const convertEditingValueToList = (value: string): string[] => value.split(",");
-export const convertListToEditingValue = (items: string[]): string => items.join(",");
-
-export const normalizeListLabelItems = (items: string[]): string[] => (
+export const normaliseListLabelItems = (items: string[]): string[] => (
     // Match HTML parsing before measuring model text against rendered labels.
     // This affects presentation only; the stored editing value stays untouched.
     items.map(item => item.replace(/\r\n?/g, "\n").replace(/\0/g, "\uFFFD").trim())
@@ -54,12 +65,3 @@ export const getListLabelArea = (shape: string) => (
 export const isListLabelCell = (cell: Pick<Cell, "getStyle">): boolean => (
     getListLabelArea(cell.getStyle().shape ?? "") !== undefined
 );
-
-export function makeHtmlListLabel(items: string[]): string {
-    const listItems = normalizeListLabelItems(items)
-        .map(item => `<li>${encodeHtml(item)}</li>`)
-        .join("");
-
-    // The full-height wrapper centres the list within the shape-specific label area.
-    return listItems ? `<div style="align-items:center;box-sizing:border-box;display:flex;height:100%;width:100%"><ul style="box-sizing:border-box;display:block;margin:0;overflow-wrap:anywhere;padding-left:1.2em;text-align:left;white-space:normal;width:100%">${listItems}</ul></div>` : "";
-}

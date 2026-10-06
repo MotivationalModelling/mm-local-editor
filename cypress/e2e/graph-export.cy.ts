@@ -12,7 +12,7 @@ describe('Graph export tests', () => {
       if (extended) {
         const root = {id: 1, content: 'Root goal', type: 'Do', instanceId: '1:1', children: []};
         const goals = ['Be', 'Feel', 'Concern'].flatMap((type, group) =>
-          ['Independent & responsible', 'Learn <practice> "safely"', '中文 😀 reflection'].map((text, index) => ({
+          ['Independent & responsible', 'Learn <practice>, "safely"', '中文 😀 reflection'].map((text, index) => ({
             id: 2 + group * 3 + index, content: `${type} ${text}`, type,
             instanceId: `${2 + group * 3 + index}:1`, children: [],
           })));
@@ -150,6 +150,14 @@ describe('Graph export tests', () => {
         expect(svgText).to.include('foreignObject');
         const parsed = new DOMParser().parseFromString(svgText, 'image/svg+xml');
         expect(Array.from(parsed.querySelectorAll('li'), item => item.textContent)).to.deep.equal(visibleLabels);
+        // Standalone SVGs cannot depend on the app's Bootstrap stylesheet.
+        const list = parsed.querySelector('ul') as HTMLElement;
+        expect(list.style.margin).to.equal('0px');
+        expect(list.style.textAlign).to.equal('left');
+        expect(list.style.overflowWrap).to.equal('anywhere');
+        const wrapper = parsed.querySelector('.graph-list-label') as HTMLElement;
+        expect(wrapper.style.display).to.equal('flex');
+        expect(wrapper.style.alignItems).to.equal('center');
       });
       if (extended) {
         // Check the application state, not just maxGraph's displayed value.
@@ -159,7 +167,7 @@ describe('Graph export tests', () => {
           const concern = tabs.find((tab: {label: string}) => tab.label === 'Concern');
           expect(concern.rows.map((goal: {content: string}) => goal.content)).to.deep.equal([
             'Concern Independent & responsible updated',
-            'Concern Learn <practice> "safely"',
+            'Concern Learn <practice>, "safely"',
             'Concern 中文 😀 reflection',
           ]);
         });

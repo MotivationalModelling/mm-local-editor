@@ -743,9 +743,3 @@ export const associateNonFunctions = (
         }
     });
 };
-
-
-
-export function isGoalNameEmpty(value: string): boolean {
-    return !value || value.trim() === "";
-}

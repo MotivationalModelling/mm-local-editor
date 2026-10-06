@@ -8,10 +8,9 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {useFileContext} from "../context/FileProvider";
 import {useGraph} from "../context/GraphContext";
 import {returnFocusToGraph} from "../utils/GraphUtils";
-import {buildExportableSVG} from "../utils/ExportGraph";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
-import {prepareGraphForPng} from "./SvgExportUtils";
+import {prepareGraphForPng, prepareGraphForSvg} from "./SvgExportUtils";
 import type {ExportableSVG} from "../utils/ExportGraph";
 
 const PNG_EXPORT_SCALE = 3;
@@ -86,7 +85,7 @@ const ExportFileButton = ({showGraphSection}: { showGraphSection: boolean }) => 
         }
 
         // Serialize a bounded copy so no node falls outside the exported area
-        const {clone} = buildExportableSVG(graph, svgElement);
+        const {clone} = prepareGraphForSvg(graph, svgElement);
         const serializer = new XMLSerializer();
         const svgString = serializer.serializeToString(clone);
         try {
