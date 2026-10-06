@@ -63,8 +63,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
     const pendingParentConnection = useRef<{goalId: number; edge: Cell | null} | null>(null);
+    const toolbarGoalIds = useRef(new Set<number>());
     const skipNextRecentre = useRef(false);
     const onFunctionalGoalAdded = useCallback((goalId: number) => {
+        toolbarGoalIds.current.add(goalId);
         pendingParentConnection.current = {goalId, edge: null};
         skipNextRecentre.current = true;
         // Preserve the existing layout both when adding the goal and when attaching it.
@@ -183,6 +185,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 id: parsed.goalId,
                 instanceId: parsed.instanceId,
                 removeChildren: removeChildrenFlag,
+                deleteIfUnused: toolbarGoalIds.current.has(parsed.goalId),
             }));
         });
         setShowDeleteWarning(false);
@@ -446,7 +449,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         keyHandler.bindKey(DELETE_KEYBINDING, () => {
             if (graph.isEnabled()) {
 
-                const selectedCells = graph.getSelectionCells();
+                // The new goal's pending edge is selected to expose its draggable endpoint.
+                const selectedCells = graph.getSelectionCells().map((cell) => (
+                    cell === pendingParentConnection.current?.edge ? cell.target! : cell
+                ));
                 if (!selectedCells || selectedCells.length === 0) return;
 
                 setDeletingCells(selectedCells);

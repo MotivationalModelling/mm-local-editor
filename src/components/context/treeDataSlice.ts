@@ -292,8 +292,18 @@ export const treeDataSlice = createSlice({
             id: TreeGoal["id"],
             instanceId: InstanceId
             removeChildren: boolean
+            deleteIfUnused?: boolean
         }>) => {
             state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.instanceId, action.payload.removeChildren);
+            const {id, deleteIfUnused} = action.payload;
+            const goal = state.goals[id];
+            if (!deleteIfUnused || !goal) return;
+            state.treeIds[id] = state.treeIds[id].filter((instanceId) => findTreeGoalByInstanceId(state.tree, instanceId));
+            if (state.treeIds[id].length > 0) return;
+            const tab = state.tabs.get(goal.type);
+            if (tab) tab.goalIds = tab.goalIds.filter((goalId) => goalId !== id);
+            delete state.goals[id];
+            delete state.treeIds[id];
         },
         // delete it will also delete the reference in the tree
         deleteGoalFromGoalList: (state, action: PayloadAction<TreeGoal>) => {
