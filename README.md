@@ -11,7 +11,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### 1. Prerequisites
 
-You will need to have [Node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed on the computer before you can start the React installation process. It is recommended that you choose a version higher than [v20.20.0](https://nodejs.org/en/download/package-manager) or v18.18.0.
+You will need to have [Node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed on the computer before you can start the React installation process. Node.js 24 is recommended to match CI.
 
 ### 1.1 [Optional]
 It is  recommended that you install [node version manager (NVM)](https://github.com/nvm-sh/nvm) as a tool for installing Nodejs, npm, and for managing Node versions on your device. For detailed instructions, visit:
@@ -105,6 +105,23 @@ If you followed the instructions above correctly, you should be able to open the
 https://localhost:5173/mm-local-editor/
 ```
 Feel free to have a play with it to try out its functionalities!
+
+## Testing
+
+Run all Vitest unit and component tests once with:
+
+```
+npm run test:unit
+```
+
+To run the Cypress end-to-end tests locally, start the app in one terminal with `npm run dev`, then run this command in another terminal:
+
+```
+npm run test:e2e
+```
+
+The CI workflow runs the Vitest suite, a production build, and all Cypress specs on every branch push and on pull requests targeting `develop`. When a Cypress test fails, its screenshots and videos are retained as workflow artifacts for seven days.
+
 ## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

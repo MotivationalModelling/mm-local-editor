@@ -1,7 +1,7 @@
 {
   "name": "mm-local-editor",
   "private": true,
-  "version": "2025.2",
+  "version": "2026.1",
   "type": "module",
   "homepage": "https://motivationalmodelling.github.io/mm-local-editor",
   "scripts": {
@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist -f",
-    "test": "vitest"
+    "test": "vitest",
+    "test:unit": "vitest run",
+    "test:e2e": "cypress run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -62,5 +64,9 @@
     "typescript": "^5.2.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.11"
+  },
+  "allowScripts": {
+    "cypress@15.18.1": true,
+    "fsevents@2.3.3": true
   }
 }
