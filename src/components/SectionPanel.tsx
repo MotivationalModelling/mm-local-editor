@@ -10,6 +10,8 @@ import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
 import {TreeGoal, InstanceId} from "./types.ts";
+import FeedbackPanel from "./Feedback/FeedbackPanel";
+import {useGraph} from "./context/GraphContext";
 
 const defaultStyle = {
   display: "flex",
@@ -42,14 +44,19 @@ const DEFAULT_HEIGHT = "800px";
 type SectionPanelProps = {
   showGoalSection: boolean;
   showGraphSection: boolean;
+  showFeedbackSection: boolean;
+  onCloseFeedback: () => void;
   paddingX: number;
 };
 
 const SectionPanel: React.FC<SectionPanelProps> = ({
   showGoalSection,
   showGraphSection,
+  showFeedbackSection,
+  onCloseFeedback,
   paddingX,
 }) => {
+  const {graph} = useGraph();
   const [sectionOneWidth, setSectionOneWidth] = useState(0);
   const [sectionThreeWidth, setSectionThreeWidth] = useState(0);
   const [parentWidth, setParentWidth] = useState(0);
@@ -164,28 +171,32 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
   useEffect(() => {
     if (parentRef.current) {
       const newParentWidth = parentRef.current.clientWidth - paddingX * 2;
-      setParentWidth(newParentWidth);
+      const feedbackWidth = showFeedbackSection ? Math.min(340, Math.max(280, window.innerWidth * 0.2)) : 0;
+      const availableWidth = newParentWidth - feedbackWidth;
+      setParentWidth(availableWidth);
 
       if (showGoalSection && showGraphSection) {
         setSectionOneWidth(
-          newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne
+          availableWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionOne
         );
         setSectionThreeWidth(
-          newParentWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
+          availableWidth * INITIAL_PROPORTIONS.sectionsCombine.sectionThree
         );
       } 
       else if (showGoalSection) {
-        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
+        setSectionOneWidth(availableWidth * INITIAL_PROPORTIONS.sectionOne);
       } 
       else if (showGraphSection) {
-        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
+        setSectionThreeWidth(availableWidth);
       } 
       else {
-        setSectionOneWidth(newParentWidth * INITIAL_PROPORTIONS.sectionOne);
-        setSectionThreeWidth(newParentWidth * INITIAL_PROPORTIONS.sectionThree);
+        setSectionOneWidth(availableWidth * INITIAL_PROPORTIONS.sectionOne);
+        setSectionThreeWidth(availableWidth * INITIAL_PROPORTIONS.sectionThree);
       }
     }
-  }, [paddingX, showGoalSection, showGraphSection]); 
+  }, [paddingX, showGoalSection, showGraphSection, showFeedbackSection]);
+
+  const graphOnly = showGraphSection && !showGoalSection;
 
   return (
     <div
@@ -244,6 +255,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           padding: "10px",
           backgroundColor: "rgba(35, 144, 231, 0.1)",
           overflow: "auto",
+          display: showGoalSection ? "block" : "none",
         }}
         ref={sectionTwoRef}
       >
@@ -262,17 +274,18 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
       {/* Graph Render Section */}
       <Resizable
         handleClasses={{left: "left-handler"}}
-        enable={{left: true}}
+        enable={{left: !graphOnly}}
+        className={graphOnly ? "feedback-graph-fill" : undefined}
         style={{
           ...defaultStyle,
           backgroundColor: "rgb(236, 244, 244)",
           display: showGraphSection ? "flex" : "none",
         }}
         size={{
-          width: sectionThreeWidth,
+          width: graphOnly ? "auto" : sectionThreeWidth,
           height: "100%",
         }}
-        maxWidth={DEFINED_PROPORTIONS.maxWidth}
+        maxWidth={graphOnly ? "100%" : DEFINED_PROPORTIONS.maxWidth}
         minWidth={DEFINED_PROPORTIONS.minWidth}
         minHeight={DEFAULT_HEIGHT}
         onResize={handleResizeSectionThree}
@@ -280,6 +293,16 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         {/* Third Panel Content */}
         <GraphWorker showGraphSection={showGraphSection}/>
       </Resizable>
+      {showFeedbackSection && (
+        <section className="feedback-panel-column" aria-label="Feedback panel">
+          <FeedbackPanel onClose={onCloseFeedback} onSelectNode={(nodeId) => {
+            const cell = graph?.getDataModel().getCell(nodeId);
+            if (!graph || !cell) return;
+            graph.setSelectionCell(cell);
+            graph.scrollCellToVisible(cell, true);
+          }}/>
+        </section>
+      )}
     </div>
   );
 };
