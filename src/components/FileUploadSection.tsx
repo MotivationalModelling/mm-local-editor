@@ -26,13 +26,11 @@ const FileUploadSection = ({
 			>
 				<IoCloseCircle style={{cursor: "pointer"}} size={20} />
 			</div>
-			<div onClick={onUpload} className="fs-5">
-				{file.type === "application/json" && (
-					<p>
-						Goal Model JSON file: <br />
-						<strong>{file.name}</strong>
-					</p>
-				)}
+		<div onClick={onUpload} className="fs-5">
+			<p>
+				Goal model file: <br />
+				<strong>{file.name}</strong>
+			</p>
 			</div>
 		</div>
 	);

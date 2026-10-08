@@ -9,17 +9,22 @@ import {GraphProvider} from "./context/GraphContext";
 const ProjectEdit: React.FC = () => {
     const [showGoalSection, setShowGoalSection] = useState(true);
     const [showGraphSection, setShowGraphSection] = useState(false);
+    const [showFeedbackSection, setShowFeedbackSection] = useState(false);
 
     return (
         <GraphProvider>
             <ProjectEditHeader showGoalSection={showGoalSection}
                                setShowGoalSection={setShowGoalSection}
-                               showGraphSection={showGraphSection}/>
+                               showGraphSection={showGraphSection}
+                               showFeedbackSection={showFeedbackSection}
+                               onToggleFeedback={() => setShowFeedbackSection((current) => !current)}/>
             <ProgressBar showGoalSection={showGoalSection}
                          setShowGoalSection={setShowGoalSection}
                          setShowGraphSection={setShowGraphSection}/>
             <SectionPanel showGoalSection={showGoalSection}
                           showGraphSection={showGraphSection}
+                          showFeedbackSection={showFeedbackSection}
+                          onCloseFeedback={() => setShowFeedbackSection(false)}
                           paddingX={15}/>
         </GraphProvider>
     );

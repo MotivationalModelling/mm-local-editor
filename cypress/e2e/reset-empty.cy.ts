@@ -11,6 +11,7 @@ describe('Reset to empty UI Tests', () => {
     cy.contains('Empty').click();
 
     cy.contains('AMMBER').should('be.visible');
+    cy.contains('Show goal list').click();
     cy.contains('Drag goals here to build the hierarchy').should('be.visible');
     cy.get('[data-cy="graph-canvas"]').should('be.visible');
   });
