@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
-import {createInstanceId} from "../types.ts";
+import {ClusterGoal, createInstanceId, GoalType} from "../types.ts";
 import {
+    getNonFunctionalGoalColor,
     normalizeInstanceId,
     parseFuncGoalRefId,
     parseGoalRefId,
@@ -8,6 +9,55 @@ import {
     parseNonFuncGoalRefId,
     validateInstanceId,
 } from "./GraphUtils.tsx";
+
+describe("getNonFunctionalGoalColor", () => {
+    const goal = (overrides: Partial<ClusterGoal> = {}): ClusterGoal => ({
+        GoalID: 1,
+        instanceId: "1:1",
+        GoalType: "Functional",
+        GoalContent: "Deliver groceries",
+        GoalNote: "",
+        SubGoals: [],
+        ...overrides
+    });
+    const reference = [{instanceId: createInstanceId(2, 1), content: "Reliable"}];
+
+    it("reads the color of a top-level goal", () => {
+        const goals = [goal({GoalID: 2, instanceId: "2:1", GoalColor: "#DB3545"})];
+
+        expect(getNonFunctionalGoalColor(goals, reference)).toBe("#DB3545");
+    });
+
+    it.each<GoalType>(["Quality", "Emotional", "Stakeholder", "Negative"])(
+        "reads the color of a deeply nested %s goal after an unrelated branch",
+        (goalType) => {
+            const goals = [goal(), goal({
+                GoalID: 3,
+                instanceId: "3:1",
+                SubGoals: [goal({
+                    GoalID: 4,
+                    instanceId: "4:1",
+                    SubGoals: [goal({GoalID: 2, instanceId: "2:1", GoalType: goalType, GoalColor: "#DB3545"})]
+                })]
+            })];
+
+            expect(getNonFunctionalGoalColor(goals, reference)).toBe("#DB3545");
+        }
+    );
+
+    it("uses the instance color when the same goal appears in multiple branches", () => {
+        const goals = [goal({GoalID: 2, instanceId: "2:2", GoalColor: "#198754"}), goal({
+            SubGoals: [goal({GoalID: 2, instanceId: "2:1", GoalColor: "#DB3545"})]
+        })];
+
+        expect(getNonFunctionalGoalColor(goals, reference)).toBe("#DB3545");
+    });
+
+    it("leaves the default color when the goal has no color or is missing", () => {
+        expect(getNonFunctionalGoalColor([goal({GoalID: 2, instanceId: "2:1"})], reference)).toBeUndefined();
+        expect(getNonFunctionalGoalColor([goal()], reference)).toBeUndefined();
+    });
+});
 
 describe('parseGoalRefId', () => {
     it('should raise an exception for an empty refId', () => {

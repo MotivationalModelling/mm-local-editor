@@ -222,7 +222,13 @@ export const getNonFunctionalGoalColor = (
 };
 
 const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: InstanceId): GoalBase | undefined => {
-    return clusterGoals.find((goal) => goal.instanceId === instanceId);
+    for (const goal of clusterGoals) {
+        if (goal.instanceId === instanceId) return goal;
+
+        const nestedGoal = findGoalbyInstanceId(goal.SubGoals, instanceId);
+        if (nestedGoal) return nestedGoal;
+    }
+    return undefined;
 };
 
 export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
