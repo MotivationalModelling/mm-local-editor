@@ -60,6 +60,11 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const divGraph = useRef<HTMLDivElement>(null);
     const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
     const {graph, setGraph} = useGraph();
+    const handleRecentreView = useCallback(() => {
+        if (graph) {
+            recentreView(graph);
+        }
+    }, [graph]);
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
     const pendingParentConnection = useRef<{goalId: number; edge: Cell | null} | null>(null);
@@ -781,7 +786,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                         <div id={GRAPH_DIV_ID} data-cy="graph-canvas" ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
                     <Col md={2}>
-                        <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} onFunctionalGoalAdded={onFunctionalGoalAdded} />
+                        <GraphSidebar graph={graph}
+                                      recentreView={handleRecentreView}
+                                      onFunctionalGoalAdded={onFunctionalGoalAdded} />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
