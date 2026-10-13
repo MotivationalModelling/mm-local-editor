@@ -165,6 +165,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             return; // abort deletion
         }
 
+        // Cancel a queued connection when its child is being deleted.
+        const pendingChild = pendingParentConnection.current?.edge?.target;
+        if (pendingChild && toRemoveSet.has(pendingChild)) {
+            pendingParentConnection.current = null;
+        }
+
         // 4) All valid → proceed to remove from graph (same recursive removal you used)
         const deletedCells: Cell[] = [];
         const removeCellRecursively = (cell: Cell) => {
