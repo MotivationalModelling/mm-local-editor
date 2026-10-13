@@ -29,10 +29,11 @@ import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject, InstanceId} from "../types.ts";
 import GraphSidebar from "./GraphSidebar";
+import {GoalGraph} from "./GoalGraph";
 import WarningMessage from "./WarningMessage";
 
 import {LINE_SIZE, VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {generateCellId, getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {generateCellId, getCellNumericIds, getGoalRefType} from "../utils/GraphUtils";
 import {connectNewFunctionalGoal, removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -78,7 +79,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         graph?.getChildVertices().forEach((cell) => {
             const id = cell.getId();
             const geometry = cell.getGeometry();
-            if (id?.startsWith("Functional-") && geometry) {
+            if (id && getGoalRefType(id) === "Functional" && geometry) {
                 dispatch(updatePositionForInstanceId({
                     instanceId: parseGoalRefId(id)[0].instanceId,
                     x: geometry.x,
@@ -246,18 +247,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     };
 
     const setGraphStyle = (graph: Graph) => {
-        const isCellDisconnectable = graph.isCellDisconnectable.bind(graph);
-        graph.isCellDisconnectable = (cell, terminal, source) => (
-            cell !== pendingParentConnection.current?.edge && isCellDisconnectable(cell, terminal, source)
-        );
-        const getEdgeValidationError = graph.getEdgeValidationError.bind(graph);
-        graph.getEdgeValidationError = (edge, source, target) => {
-            if (edge && edge === pendingParentConnection.current?.edge && source &&
-                (!source.getId()?.startsWith("Functional-") || source === target)) {
-                return "Connect the free end to another functional goal.";
-            }
-            return getEdgeValidationError(edge, source, target);
-        };
         // config: permit vertices to be connected by edges
         //graph.setConnectable(true);
         graph.setCellsEditable(true);
@@ -365,10 +354,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             // Only persist user-initiated drags; skip events fired during renderGraph.
-                            if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
+                            if (!isRenderingRef.current && cellID && getGoalRefType(cellID) === "Functional") {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
-                                    const instanceId = validateInstanceId(cellID.replace("Functional-", ""));
+                                    const instanceId = parseGoalRefId(cellID)[0].instanceId;
                                     dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
                                 }
                             }
@@ -664,7 +653,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             ];
 
             // Creates the graph with the custom plugins
-            const graphInstance = new Graph(graphContainer, undefined, plugins);
+            const graphInstance = new GoalGraph(graphContainer, plugins, () => pendingParentConnection.current?.edge ?? null);
 
             setGraphStyle(graphInstance);
             const removeChangeListener = graphListener(graphInstance);
