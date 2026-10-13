@@ -244,7 +244,9 @@ export const treeDataSlice = createSlice({
             const {childInstanceId, parentInstanceId} = action.payload;
             // Only attach an unparented functional instance created by the sidebar.
             const index = state.tree.findIndex((goal) => goal.instanceId === childInstanceId);
-            if (index < 0) return;
+            if (index < 0) {
+                throw new Error(`Unparented functional goal with instanceId "${childInstanceId}" was not found`);
+            }
             const child = state.tree[index];
             const parent = findTreeGoalByInstanceId(state.tree, parentInstanceId);
             if (child.type !== "Do" || parent?.type !== "Do" ||

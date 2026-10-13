@@ -9,6 +9,7 @@ import {
     addGoalsToTree,
     addGoalToTab,
     addGoalToTree,
+    connectNewFunctionalGoal,
     createInitialState,
     createTreeGoalNode,
     deleteGoalFromGoalList,
@@ -159,6 +160,24 @@ describe('treeDataSlice', () => {
         const state2 = treeDataSlice.reducer(state1, addGoalToTree(goal));
 
         expect(state2.treeIds[goal.id]).toEqual(["-5:1", "-5:2"]);
+    });
+    it('should report a missing unparented child when connecting a functional goal', () => {
+        expect(() => treeDataSlice.reducer(initialState, connectNewFunctionalGoal({
+            childInstanceId: "7:1",
+            parentInstanceId: "1:1",
+        }))).toThrow('Unparented functional goal with instanceId "7:1" was not found');
+    });
+    it('should connect a new functional goal to its parent instance', () => {
+        const child = newTreeGoal({id: 7, instanceId: "7:1", type: "Do"});
+        const parent = newTreeGoal({id: 1, instanceId: "1:1", type: "Do", children: []});
+        const state = treeDataSlice.reducer(
+            {...initialState, tree: [parent, child]},
+            connectNewFunctionalGoal({childInstanceId: child.instanceId, parentInstanceId: parent.instanceId}),
+        );
+
+        expect(state.tree).toHaveLength(1);
+        expect(state.tree[0].instanceId).toBe(parent.instanceId);
+        expect(state.tree[0].children).toEqual([child]);
     });
     it('should upgrade legacy instance IDs when creating state', () => {
         // This cast represents untyped JSON/local-storage data created by an older version.
