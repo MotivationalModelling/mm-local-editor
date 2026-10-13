@@ -72,7 +72,11 @@ const Tree: React.FC<TreeProps> = ({
         isItemFolder: (item: ItemInstance<TreeGoal>): boolean => (
             item.getId() === String(topTreeGoal.id) || !isNonFunctionalGoal(item.getItemData().type)
         ),
-        getItemName: (item: ItemInstance<TreeGoal>): string => item.getItemData().content,
+        // Read the name from goals; the top-level placeholder isn't a goal, so fall back to its own content.
+        getItemName: (item: ItemInstance<TreeGoal>): string => {
+            const itemData = item.getItemData();
+            return goals[itemData.id]?.content ?? itemData.content;
+        },
         features: [syncDataLoaderFeature, dragAndDropFeature],
         indent: INDENTATION_WIDTH,
         canReorder: true,

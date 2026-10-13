@@ -3,9 +3,14 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
+import FileProvider, {
+    convertTreeDataToClusters,
+    createTreeIdsFromTreeData,
+    LocalStorageType,
+    useFileContext
+} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeGoal, TreeGoal} from "../utils/types.ts";
+import {ClusterGoal, newTreeGoal, TreeGoal} from "../utils/types.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,
@@ -13,7 +18,9 @@ import {
     addGoalToTree,
     deleteGoalFromGoalList,
     reset,
+    setVisibilityForLinesBetweenNonFunctionalGoals,
     updateTextForGoalId,
+    updateTextForInstanceId,
 } from "./treeDataSlice.ts";
 
 // FileProvider provides data than UI
@@ -187,6 +194,78 @@ describe('#createTreeIdsFromTreeData', () => {
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
         expect(treeIds[g1.id]).toEqual(["1:0"]);
         expect(treeIds[g2.id]).toEqual(["2:0"]);
+    });
+});
+
+describe('#convertTreeDataToClusters', () => {
+    it('takes goal names from goals, not from the tree node copy', () => {
+        const node = newTreeGoal({id: 1, type: "Do", content: "old name"});
+        const goals = {1: {...node, content: "new name"}};
+
+        const cluster = convertTreeDataToClusters([node], goals);
+
+        expect(cluster.ClusterGoals[0].GoalContent).toEqual("new name");
+    });
+
+    it('takes names from goals for nested goals too', () => {
+        const child = newTreeGoal({id: 2, type: "Be", content: "old child"});
+        const parent = newTreeGoal({id: 1, type: "Do", content: "old parent", children: [child]});
+        const goals = {
+            1: {...parent, content: "new parent"},
+            2: {...child, content: "new child"},
+        };
+
+        const [clusterParent] = convertTreeDataToClusters([parent], goals).ClusterGoals;
+
+        expect(clusterParent.GoalContent).toEqual("new parent");
+        expect(clusterParent.SubGoals[0].GoalContent).toEqual("new child");
+    });
+});
+
+describe('goal names on the canvas', () => {
+    const renamedGoal = newTreeGoal({id: 7, type: "Do", content: "original"});
+
+    // Start each test with a fresh provider and empty storage.
+    beforeEach(() => {
+        cleanup();
+        localStorage.clear();
+    });
+
+    const renderWithGoalOnCanvas = () => {
+        const hook = renderHook(() => useFileContext(), {wrapper});
+        act(() => hook.result.current.dispatch(addGoal(renamedGoal)));
+        act(() => hook.result.current.dispatch(addGoalToTree(renamedGoal)));
+        return hook;
+    };
+
+    const canvasNameFor = (goals: ClusterGoal[], id: number) => (
+        goals.find((goal) => goal.GoalID === id)?.GoalContent
+    );
+
+    it('shows a name edited in the goal list', () => {
+        const {result} = renderWithGoalOnCanvas();
+
+        act(() => result.current.dispatch(updateTextForGoalId({id: renamedGoal.id, text: "from list"})));
+
+        expect(canvasNameFor(result.current.cluster.ClusterGoals, renamedGoal.id)).toEqual("from list");
+    });
+
+    it('keeps a name edited on the canvas', () => {
+        const {result} = renderWithGoalOnCanvas();
+        const instanceId = result.current.treeIds[renamedGoal.id][0];
+
+        act(() => result.current.dispatch(updateTextForInstanceId({instanceId, text: "from canvas"})));
+
+        expect(canvasNameFor(result.current.cluster.ClusterGoals, renamedGoal.id)).toEqual("from canvas");
+    });
+
+    it('keeps the same cluster when neither the tree nor the goals change', () => {
+        const {result} = renderWithGoalOnCanvas();
+        const clusterBefore = result.current.cluster;
+
+        act(() => result.current.dispatch(setVisibilityForLinesBetweenNonFunctionalGoals(false)));
+
+        expect(result.current.cluster).toBe(clusterBefore);
     });
 });
 
