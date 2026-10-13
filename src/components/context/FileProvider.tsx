@@ -1,4 +1,4 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useMemo, useReducer, useState} from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
@@ -123,13 +123,17 @@ const typeMapping: Record<Label, GoalType> = {
 };
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
+// Names come from goals, because the content copied onto tree nodes is never updated.
+export const convertTreeDataToClusters = (
+    treeData: TreeGoal[],
+    goals: Record<TreeGoal["id"], TreeGoal>,
+): Cluster => {
     const convertTreeGoalToClusterGoal = (item: TreeGoal): ClusterGoal => {
         return {
             GoalID: item.id,
             instanceId: item.instanceId,
             GoalType: typeMapping[item.type],
-            GoalContent: item.content,
+            GoalContent: goals[item.id]?.content ?? item.content,
             GoalNote: "",
             SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
             GoalColor: item.color,
@@ -209,6 +213,12 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
 
+    // Rebuild only when the tree or goals change; a new cluster redraws the whole canvas.
+    const cluster = useMemo(
+        () => convertTreeDataToClusters(state.tree, state.goals),
+        [state.tree, state.goals],
+    );
+
     useEffect(() => {
         console.log("Tree data:", state.tree);
         console.log("Tab data:", computedTabData);
@@ -253,7 +263,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             dispatch,
             treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),
+            cluster,
             xmlData,
             setXmlData,
             jsonFileHandle,

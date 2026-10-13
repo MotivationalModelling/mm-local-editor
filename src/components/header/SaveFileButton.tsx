@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import {useFileContext} from "../context/FileProvider";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
-import type {JSONData} from "../utils/modelJson.ts";
+import {createModelJson} from "../utils/modelJson.ts";
 
 const SaveFileButton = () => {
 	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();
@@ -70,11 +70,7 @@ const SaveFileButton = () => {
 		writable: FileSystemWritableFileStream
 	) => {
 		try {
-			const jsonData: JSONData = {
-				tabData: tabData,
-				treeData: treeData || [],
-			};
-			const json = JSON.stringify(jsonData);
+			const json = JSON.stringify(createModelJson(tabData, treeData, goals));
 			await writable.write(json);
 			await writable.close();
 			setJsonFileHandle(handle);

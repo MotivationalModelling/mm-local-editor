@@ -117,6 +117,25 @@ export const ModelJsonSchema = z.object({
 
 export type JSONData = z.infer<typeof ModelJsonSchema>;
 
+// Copy current names from goals onto tree nodes; a node's own copy isn't updated on rename.
+const withCurrentNames = (nodes: TreeGoal[], goals: Record<TreeGoal["id"], TreeGoal>): TreeGoal[] => (
+    nodes.map((node) => ({
+        ...node,
+        content: goals[node.id]?.content ?? node.content,
+        ...(node.children === undefined ? {} : {children: withCurrentNames(node.children, goals)}),
+    }))
+);
+
+// Build the saved file. Import reads goal names from treeData, so they must be current here.
+export const createModelJson = (
+    tabData: TabContent[],
+    treeData: TreeGoal[],
+    goals: Record<TreeGoal["id"], TreeGoal>,
+): JSONData => ({
+    tabData,
+    treeData: withCurrentNames(treeData, goals),
+});
+
 export class ModelJsonError extends Error {
     constructor(message: string) {
         super(message);
