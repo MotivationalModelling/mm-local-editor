@@ -1,3 +1,5 @@
+@import "./StoryHighlight.css";
+
 .tree {
     box-sizing: border-box;
     min-height: 100%;
@@ -44,13 +46,13 @@
 .tree-row--story-highlight,
 .tree-row--story-highlight:hover,
 .tree-row--story-highlight:focus-within {
-    background-color: #fff3cd;
-    border-color: #e6c65b;
-    box-shadow: inset 4px 0 #e6c65b;
+    background-color: var(--story-highlight-background);
+    border-color: var(--story-highlight-border);
+    box-shadow: inset 4px 0 var(--story-highlight-border);
 }
 
 .tree-row--story-highlight .tree-row__input {
-    background-color: #fff9e6;
+    background-color: var(--story-highlight-surface);
 }
 
 .tree-row__button {

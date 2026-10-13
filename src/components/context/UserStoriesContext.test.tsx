@@ -27,8 +27,8 @@ const first = {
 const second = {
   ...first,
   functionalGoalInstanceId: "8-1",
-  sentence: "As a Moderator, I want to read questions so that I can review the available learning material.",
-  relatedGoalInstanceIds: ["8-1", "9-1", "4-1", "5-1", "6-1"],
+  sentence: "As a Student, Teacher, and Moderator, I want to read questions so that I can review the available learning material.",
+  relatedGoalInstanceIds: ["8-1", "2-1", "3-1", "9-1", "4-1", "5-1", "6-1"],
 };
 const rawOutput = JSON.stringify({stories: [first, second]});
 afterEach(cleanup);
@@ -36,7 +36,7 @@ afterEach(cleanup);
 describe("parseStoriesFromText", () => {
   it("accepts IDs copied directly from the prompt input for every functional goal", () => {
     const prompt = buildUserStoryPrompt(model, "A platform for reviewing learning material.");
-    const input = JSON.parse(prompt.split("Functional goals:\n")[1].split("\n\n\nReturn only")[0]);
+    const input = JSON.parse(prompt.split("MODEL INPUT\n\n")[1]).targetFunctionalLeafGoals;
     const response = input.map((source: {functionalGoalInstanceId: string; relatedGoalInstanceIds: string[]}, index: number) => ({
       functionalGoalInstanceId: source.functionalGoalInstanceId,
       relatedGoalInstanceIds: source.relatedGoalInstanceIds,
@@ -70,8 +70,14 @@ describe("parseStoriesFromText", () => {
   it("matches reordered stories with identical actions by instance ID, not text or order", () => {
     const stories = parseStoriesFromText(JSON.stringify({stories: [second, first]}), model);
     expect(stories.map((story) => [story.functionalGoalInstanceId, story.role])).toEqual([
-      ["7-1", "Student and Teacher"], ["8-1", "Moderator"],
+      ["7-1", "Student and Teacher"], ["8-1", "Student, Teacher, and Moderator"],
     ]);
+  });
+
+  it("rejects a local role list that omits inherited stakeholders", () => {
+    const localOnly = {...second, sentence: "As a Moderator, I want to read questions so that I can review material."};
+    expect(() => parseStoriesFromText(JSON.stringify({stories: [first, localOnly]}), model))
+      .toThrow("all of its associated roles");
   });
 
   it("accepts fenced JSON and preserves punctuation inside the benefit", () => {

@@ -13,7 +13,8 @@ export type UserStory = {
   action: string;
   immediateUserValue: string;
   subTasks: string[];
-  functionalGoalInstanceId: InstanceId;
+  functionalGoalInstanceId: InstanceId | null;
+  epicInstanceId: InstanceId | null;
   relatedGoals: UserStoryGoalReference[];
   status: "pending" | "approved" | "rejected" | "edited";
   editedText: string;

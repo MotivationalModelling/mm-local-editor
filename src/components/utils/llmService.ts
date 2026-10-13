@@ -1,26 +1,18 @@
-import {GoogleGenAI} from "@google/genai";
-
 export async function generateUserStories(prompt: string): Promise<string> {
-  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY as string | undefined;
-  if (!apiKey || apiKey.trim() === "") {
-    throw new Error("VITE_GOOGLE_API_KEY is not set in .env");
-  }
-
-  const client = new GoogleGenAI({apiKey});
-  const response = await client.models.generateContent({
-    model: "gemini-flash-latest",
-    contents: prompt,
-    config: {
-      // SDK 2.22 does not yet expose store in GenerateContentConfig.
-      httpOptions: {
-        extraBody: {store: true},
-      },
-    },
+  const response = await fetch(`${import.meta.env.BASE_URL}api/user-stories`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({prompt}),
   });
-
-  const text = response.text;
-  if (!text) {
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("OpenAI API endpoint unavailable. Run npm run dev or npm run preview locally.");
+  }
+  const result = await response.json() as {text?: string; error?: string};
+  if (!response.ok) {
+    throw new Error(result.error || `OpenAI API request failed (${response.status})`);
+  }
+  if (typeof result.text !== "string" || !result.text.trim()) {
     throw new Error("API error: response missing content");
   }
-  return text;
+  return result.text;
 }

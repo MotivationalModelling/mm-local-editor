@@ -35,6 +35,6 @@ export function checkConsistencyPrinciples(model: ExtractedModel, stories: UserS
     {id: "CP2", description: "All roles used in stories exist in the model's roles list", passed: cp2},
     {id: "CP3", description: "Number of stories matches number of story blocks in extracted model", passed: cp3},
     {id: "CP4", description: "Every story's action maps to a functional goal in the model", passed: cp4},
-    {id: "CP5", description: "Every story has a non-empty immediate user value", passed: cp5},
+    {id: "CP5", description: "Every story has a non-empty business value", passed: cp5},
   ];
 }

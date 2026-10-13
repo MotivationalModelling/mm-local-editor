@@ -99,6 +99,50 @@ yarn dev
 ```
 to achieve the same outcome.
 
+### OpenAI user story generation
+
+Set the server-side API key in `.env`:
+
+```dotenv
+OPENAI_API_KEY=your_openai_api_key
+```
+
+Restart `npm run dev` after changing the key. User stories use the OpenAI Responses
+API with `gpt-6-astra` and medium reasoning. The local Vite server reads the key,
+collects the streamed response, and returns the completed text for validation.
+The key is never included in browser code. Do not prefix it with `VITE_`.
+
+This endpoint also works with `npm run preview` after building. Static hosting
+(including GitHub Pages) requires a separate backend implementing
+`POST /mm-local-editor/api/user-stories`; the built files alone cannot call this
+server-side endpoint.
+
+Each generation request includes the project background, the complete model
+hierarchy (without editor layout metadata), and a separate list of target
+functional leaves. The AI generates one story per target leaf and uses the full
+model to understand its purpose and derive a supported business value.
+Stakeholders (`Who`), quality goals (`Be`), and emotional goals (`Feel`) accumulate
+from the root through the leaf's ancestors, together with local attachments;
+local values do not override inherited ones. Sibling branches stay separate.
+Repeated labels appear once, while all distinct applicable instance IDs are
+retained for linking and validation. Concerns retain local values or fall back
+to the nearest functional ancestor with concerns. Quality and emotional goals
+are expressed in the story only when they meaningfully clarify it.
+
+### User story epics
+
+The first-level `Do` nodes under the central model node form the epics. Terminal
+`Do` nodes belong to the epic at the top of their branch, including deeply nested
+leaves. In a shallow model, a first-level `Do` that is itself terminal can also
+have its own story. Ownership comes from model instance IDs; AI output stays in
+the existing story JSON format.
+
+The User stories view supports folding epics, approval counts, and adding epics
+to the model. When adding a story, choose its epic and either an existing leaf or
+a new leaf based on the story's action. Model moves and renames update the groups;
+stories whose source was removed or is no longer a leaf stay visible under
+**Unlinked stories**.
+
 ### 3. Running the app 
 If you followed the instructions above correctly, you should be able to open the app from your browser at 
 ```

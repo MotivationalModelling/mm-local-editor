@@ -45,7 +45,7 @@ const ProjectBackgroundModal = ({
               placeholder="Describe the project, its users, and the problem it addresses."
             />
             <Form.Text className="text-muted">
-              The AI uses this context to infer a direct, relevant immediate user value.
+              The AI uses this context to infer a direct, relevant business value.
             </Form.Text>
           </Form.Group>
         </Modal.Body>

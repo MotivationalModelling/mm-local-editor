@@ -6,6 +6,7 @@
 import {beforeAll, beforeEach, describe, expect, it} from "vitest";
 import {
     addGoal,
+    addGoalUnderInstance,
     addGoalsToTree,
     addGoalToTab,
     addGoalToTree,
@@ -126,6 +127,30 @@ describe('treeDataSlice', () => {
         expect(state.tabs.get(goal.type)?.goalIds).toContain(goal.id);
         // check added to goals
         expect(state.goals).toHaveProperty(String(goal.id));
+    });
+    it('adds an epic or leaf to the exact parent instance and updates all model indexes together', () => {
+        const root = newTreeGoal({id: 1, instanceId: "1-1", type: "Do", content: "Platform"});
+        const first = newTreeGoal({id: 10, instanceId: "10-1", type: "Do", content: "Epic"});
+        const second = {...first, instanceId: "10-2" as const};
+        const leaf = newTreeGoal({id: 30, type: "Do", content: "New leaf"});
+        const state = treeDataSlice.reducer({
+            ...initialState,
+            goals: {...initialState.goals, 1: root, 10: first},
+            tree: [{...root, children: [first, second]}],
+            treeIds: {1: ["1-1"], 10: ["10-1", "10-2"]},
+        }, addGoalUnderInstance({goal: leaf, parentInstanceId: "10-2"}));
+        expect(state.tree[0].children?.[0].children ?? []).toEqual([]);
+        expect(state.tree[0].children?.[1].children?.[0]).toMatchObject({id: 30, instanceId: "30-1"});
+        expect(state.goals[30].content).toBe("New leaf");
+        expect(state.tabs.get("Do")?.goalIds).toContain(30);
+        expect(state.treeIds[30]).toEqual(["30-1"]);
+        expect(treeDataSlice.reducer(state, addGoalUnderInstance({goal: leaf, parentInstanceId: "10-2"}))).toBe(state);
+    });
+
+    it('does not register a new goal when its parent has disappeared', () => {
+        const leaf = newTreeGoal({id: 30, type: "Do", content: "New leaf"});
+        expect(treeDataSlice.reducer(initialState, addGoalUnderInstance({goal: leaf, parentInstanceId: "999-1"})))
+            .toBe(initialState);
     });
     it('should list the goals for a label', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});

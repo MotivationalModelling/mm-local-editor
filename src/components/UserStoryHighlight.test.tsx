@@ -31,7 +31,7 @@ vi.mock("./Graphs/GraphWorker", () => ({default: () => <div>Model canvas</div>})
 const model = extractModelForPrompt(treeData);
 const rawOutput = JSON.stringify({stories: model.stories.map((source) => ({
   functionalGoalInstanceId: source.functionalGoalInstanceId,
-  sentence: `As a ${source.roles[0]}, I want to read questions so that I can review the available material.`,
+  sentence: `As a ${source.roles.join(" and ")}, I want to read questions so that I can review the available material.`,
   relatedGoalInstanceIds: source.goalReferences.map((reference) => reference.instanceId),
 }))});
 const stories = parseStoriesFromText(rawOutput, model);
@@ -76,7 +76,7 @@ describe("selecting a user story", () => {
     expect(container.querySelector('[data-instance-id="1-1"]')?.classList.contains("tree-row--story-highlight")).toBe(false);
 
     fireEvent.click(radios[1]);
-    await waitFor(() => expect(highlightedIds(container)).toEqual(["3-1", "4-1", "5-1", "7-1", "8-1"]));
+    await waitFor(() => expect(highlightedIds(container)).toEqual(["2-1", "3-1", "4-1", "5-1", "7-1", "8-1"]));
     const selectedCard = container.querySelector(".user-story-card--selected") as HTMLElement;
     fireEvent.click(within(selectedCard).getByRole("button", {name: "Edit"}));
     expect(within(selectedCard).getAllByRole("textbox")).toHaveLength(3);
@@ -86,18 +86,18 @@ describe("selecting a user story", () => {
     expect(fixedPhrases.every((phrase) => phrase.getAttribute("contenteditable") === "false")).toBe(true);
     expect(within(selectedCard).getAllByRole("textbox").every((phrase) => phrase.tagName === "SPAN" && phrase.parentElement?.classList.contains("user-story-sentence"))).toBe(true);
     fireEvent.input(within(selectedCard).getByRole("textbox", {name: "Action"}), {target: {textContent: "read the updated questions"}});
-    fireEvent.input(within(selectedCard).getByRole("textbox", {name: "Immediate user value"}), {target: {textContent: "I can prepare for class"}});
+    fireEvent.input(within(selectedCard).getByRole("textbox", {name: "Business value"}), {target: {textContent: "I can prepare for class"}});
     fireEvent.click(within(selectedCard).getByRole("button", {name: "Save"}));
-    expect(highlightedIds(container)).toEqual(["3-1", "4-1", "5-1", "7-1", "8-1"]);
-    expect(selectedCard.querySelector(".user-story-sentence")?.textContent).toBe("As a Moderator, I want to read the updated questions so that I can prepare for class.");
+    expect(highlightedIds(container)).toEqual(["2-1", "3-1", "4-1", "5-1", "7-1", "8-1"]);
+    expect(selectedCard.querySelector(".user-story-sentence")?.textContent).toBe("As a Student and Moderator, I want to read the updated questions so that I can prepare for class.");
     expect(selectedCard.querySelectorAll(".user-story-phrase--editable")).toHaveLength(3);
 
     fireEvent.click(screen.getByRole("button", {name: "Swap hierarchy and project details"}));
-    expect(highlightedIds(container)).toEqual(["3-1", "4-1", "5-1", "7-1", "8-1"]);
+    expect(highlightedIds(container)).toEqual(["2-1", "3-1", "4-1", "5-1", "7-1", "8-1"]);
     fireEvent.click(screen.getByRole("tab", {name: "Goals"}));
     expect(highlightedIds(container)).toEqual([]);
     fireEvent.click(screen.getByRole("tab", {name: "User stories"}));
-    await waitFor(() => expect(highlightedIds(container)).toEqual(["3-1", "4-1", "5-1", "7-1", "8-1"]));
+    await waitFor(() => expect(highlightedIds(container)).toEqual(["2-1", "3-1", "4-1", "5-1", "7-1", "8-1"]));
     fireEvent.click(screen.getByRole("button", {name: "Clear selection"}));
     expect(highlightedIds(container)).toEqual([]);
 

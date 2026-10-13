@@ -10,6 +10,7 @@ const story: UserStory = {
   immediateUserValue: "I can check the updates",
   subTasks: [],
   functionalGoalInstanceId: "1-1",
+  epicInstanceId: "1-1",
   relatedGoals: [{goalId: 1, instanceId: "1-1", type: "Do"}, {goalId: 2, instanceId: "2-1", type: "Who"}],
   status: "pending",
   editedText: "",

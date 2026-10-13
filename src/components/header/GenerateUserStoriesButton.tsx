@@ -7,10 +7,10 @@ import ProjectBackgroundModal from "../ProjectBackgroundModal";
 import {useFileContext} from "../context/FileProvider";
 import {useUserStories} from "../context/UserStoriesContext";
 import {generateValidatedUserStories} from "../utils/userStoryGeneration";
-import {extractModelForPrompt} from "../utils/modelExtractor";
+import {extractModelForPrompt, resolveModelTree} from "../utils/modelExtractor";
 
 const GenerateUserStoriesButton = () => {
-    const {treeData} = useFileContext();
+    const {treeData, goals} = useFileContext();
     const {state, dispatch} = useUserStories();
     const [showBackgroundModal, setShowBackgroundModal] = useState(false);
     const [projectBackground, setProjectBackground] = useState("");
@@ -19,7 +19,7 @@ const GenerateUserStoriesButton = () => {
     const handleGenerate = async (background: string) => {
         setShowBackgroundModal(false);
         try {
-            const extracted = extractModelForPrompt(treeData);
+            const extracted = extractModelForPrompt(resolveModelTree(treeData, goals));
             dispatch({type: "SET_LOADING"});
             const result = await generateValidatedUserStories(extracted, background);
             dispatch({type: "SET_SUCCESS", payload: result});

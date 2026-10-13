@@ -14,6 +14,7 @@ type UserStoriesState = {
 };
 
 type UserStoriesAction =
+  | {type: "ADD"; payload: UserStory}
   | {type: "SELECT"; payload: string | null}
   | {type: "SET_LOADING"}
   | {type: "SET_SUCCESS"; payload: {rawOutput: string; stories: UserStory[]}}
@@ -33,6 +34,15 @@ const initialState: UserStoriesState = {
 };
 
 const reducer = (state: UserStoriesState, action: UserStoriesAction): UserStoriesState => {
+  if (action.type === "ADD") {
+    return {
+      ...state,
+      stories: [...state.stories, action.payload],
+      selectedStoryId: action.payload.id,
+      status: "success",
+      error: null,
+    };
+  }
   if (action.type === "SELECT") {
     if (action.payload !== null && !state.stories.some((story) => story.id === action.payload)) return state;
     return {...state, selectedStoryId: action.payload};

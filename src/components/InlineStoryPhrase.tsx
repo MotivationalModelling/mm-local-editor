@@ -5,11 +5,12 @@ type InlineStoryPhraseProps = {
   label: string;
   editing: boolean;
   autoFocus?: boolean;
+  placeholder?: string;
   onChange: (value: string) => void;
   onCancel: () => void;
 };
 
-const InlineStoryPhrase = ({value, label, editing, autoFocus = false, onChange, onCancel}: InlineStoryPhraseProps) => {
+const InlineStoryPhrase = ({value, label, editing, autoFocus = false, placeholder, onChange, onCancel}: InlineStoryPhraseProps) => {
   const elementRef = useRef<HTMLSpanElement>(null);
 
   // Let the browser manage the caret. Updating React children on every input
@@ -28,6 +29,7 @@ const InlineStoryPhrase = ({value, label, editing, autoFocus = false, onChange, 
     <span
       ref={elementRef}
       className="user-story-phrase--editable"
+      data-placeholder={placeholder}
       contentEditable={editing ? "plaintext-only" : false}
       role={editing ? "textbox" : undefined}
       aria-label={editing ? label : undefined}

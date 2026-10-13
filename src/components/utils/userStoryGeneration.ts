@@ -24,7 +24,7 @@ The previous response failed validation. Correct it using the original model inp
 The first validation error was: ${validationMessage}
 
 Check EVERY story, including those after the first error. Every sentence must follow:
-"As a <role>, I want to <action> so that <immediate user value>."
+"As a <role>, I want to <action> so that <business value>."
 "As an" is allowed where appropriate. Keep the literal "I want to" and follow it with a base-form action verb.
 Convert noun phrases into actions; do not simply insert "to" before a noun.
 Keep already valid stories unchanged. Preserve each goal's meaning, all exact role labels, and all IDs from the original input.

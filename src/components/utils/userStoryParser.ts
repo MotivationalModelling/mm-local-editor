@@ -84,6 +84,7 @@ export function parseStoriesFromText(raw: string, model: ExtractedModel): UserSt
       immediateUserValue,
       subTasks: [],
       functionalGoalInstanceId: source.functionalGoalInstanceId,
+      epicInstanceId: source.epicInstanceId,
       relatedGoals: relatedGoals.map(({goalId, instanceId, type}) => ({goalId, instanceId, type})),
       status: "pending",
       editedText: "",
