@@ -421,9 +421,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             const childInstanceId = parseGoalRefId(edge.target.getId()!)[0].instanceId;
             // Finish maxGraph's connection transaction before React rebuilds the graph.
             queueMicrotask(() => {
-                if (pendingParentConnection.current?.edge !== edge) return;
-                pendingParentConnection.current = null;
-                dispatch(connectNewFunctionalGoal({childInstanceId, parentInstanceId}));
+                if (pendingParentConnection.current?.edge === edge) {
+                    pendingParentConnection.current = null;
+                    dispatch(connectNewFunctionalGoal({childInstanceId, parentInstanceId}));
+                }
             });
         };
         graph.addListener(InternalEvent.CELL_CONNECTED, connectHandler);
@@ -639,7 +640,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         }
         graph.getDataModel().endUpdate();
         isRenderingRef.current = false;
-        if (pendingParentConnection.current?.edge) graph.setSelectionCell(pendingParentConnection.current.edge);
+        if (pendingParentConnection.current?.edge) {
+            graph.setSelectionCell(pendingParentConnection.current.edge);
+        }
     }, [graph, cluster, treeIds, showLineBetweenNonFunctionalGoals]);
 
     // First useEffect to set up graph. Only run on mount.

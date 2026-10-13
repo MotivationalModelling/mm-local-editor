@@ -249,11 +249,10 @@ export const treeDataSlice = createSlice({
             }
             const child = state.tree[index];
             const parent = findTreeGoalByInstanceId(state.tree, parentInstanceId);
-            if (child.type !== "Do" || parent?.type !== "Do" ||
-                findTreeGoalByInstanceId([child], parentInstanceId)) return;
-
-            state.tree.splice(index, 1);
-            (parent.children ??= []).push(child);
+            if (child.type === "Do" && parent?.type === "Do" && !findTreeGoalByInstanceId([child], parentInstanceId)) {
+                state.tree.splice(index, 1);
+                (parent.children ??= []).push(child);
+            }
         },
         addGoalToTree: (state, action: PayloadAction<TreeGoal>) => {
             // Create a TreeGoal node with generated instanceId
@@ -299,11 +298,17 @@ export const treeDataSlice = createSlice({
             state.tree = removeItemIdFromTree(state.tree, action.payload.id, action.payload.instanceId, action.payload.removeChildren);
             const {id, deleteIfUnused} = action.payload;
             const goal = state.goals[id];
-            if (!deleteIfUnused || !goal) return;
+            if (!deleteIfUnused || !goal) {
+                return;
+            }
             state.treeIds[id] = state.treeIds[id].filter((instanceId) => findTreeGoalByInstanceId(state.tree, instanceId));
-            if (state.treeIds[id].length > 0) return;
+            if (state.treeIds[id].length > 0) {
+                return;
+            }
             const tab = state.tabs.get(goal.type);
-            if (tab) tab.goalIds = tab.goalIds.filter((goalId) => goalId !== id);
+            if (tab) {
+                tab.goalIds = tab.goalIds.filter((goalId) => goalId !== id);
+            }
             delete state.goals[id];
             delete state.treeIds[id];
         },
