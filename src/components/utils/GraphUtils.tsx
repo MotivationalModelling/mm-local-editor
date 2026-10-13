@@ -120,6 +120,11 @@ export const parseNonFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], inst
     return pairs;
 };
 
+// Read only the type prefix; parseGoalRefId validates the complete goal reference.
+export const getGoalRefType = (refId: string | null | undefined): string | undefined => {
+    return refId?.match(/^([^-]*)-/)?.[1].trim();
+};
+
 // Convert the cell id in MaxGraph 'Functional-8:1'
 export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instanceId: InstanceId}[] => {
     if (!refId) {
@@ -130,8 +135,8 @@ export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instance
     if (n < 0) {
         throw new Error(`malformed cell id "${refId}"`);
     }
-    const [typePart, idPart] = [refId.slice(0, n), refId.slice(n + 1)];
-    const type = typePart.trim();
+    const idPart = refId.slice(n + 1);
+    const type = getGoalRefType(refId);
 
     switch (type) {
     case "Functional":

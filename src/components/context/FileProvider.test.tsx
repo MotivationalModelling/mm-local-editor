@@ -3,7 +3,7 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
+import FileProvider, {convertTreeDataToClusters, createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
@@ -187,6 +187,34 @@ describe('#createTreeIdsFromTreeData', () => {
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
         expect(treeIds[g1.id]).toEqual(["1:0"]);
         expect(treeIds[g2.id]).toEqual(["2:0"]);
+    });
+});
+
+describe('#convertTreeDataToClusters', () => {
+    it('uses the current goal name when a new tree entry still has an empty name', () => {
+        const treeGoal = newTreeGoal({id: 8, type: 'Do', content: '', x: 120, y: 240});
+        const goals = {8: {...treeGoal, content: 'Do4'}};
+
+        const {ClusterGoals} = convertTreeDataToClusters([treeGoal], goals);
+
+        expect(ClusterGoals[0]).toMatchObject({GoalContent: 'Do4', x: 120, y: 240});
+        expect(treeGoal.content).toBe('');
+    });
+
+    it('uses the current name for nested and repeated instances while preserving tree metadata', () => {
+        const child = newTreeGoal({id: 9, type: 'Do', content: 'Old name', color: '#123456'});
+        const parent = newTreeGoal({id: 8, type: 'Do', content: 'Parent', children: [child]});
+        const otherInstance = {...child, instanceId: '9:1' as const, x: 300, y: 400};
+        const goals = {8: parent, 9: {...child, content: 'Renamed', color: '#abcdef'}};
+
+        const {ClusterGoals} = convertTreeDataToClusters([parent, otherInstance], goals);
+
+        expect(ClusterGoals[0].SubGoals[0]).toMatchObject({
+            GoalContent: 'Renamed', instanceId: child.instanceId, GoalColor: '#123456',
+        });
+        expect(ClusterGoals[1]).toMatchObject({
+            GoalContent: 'Renamed', instanceId: '9:1', x: 300, y: 400,
+        });
     });
 });
 

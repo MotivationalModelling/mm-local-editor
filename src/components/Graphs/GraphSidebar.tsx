@@ -7,16 +7,17 @@ type recentreViewFunction = () => void;
 type GraphSidebarProps = {
   graph: Graph | null;
   recentreView: recentreViewFunction;
+  onFunctionalGoalAdded: (goalId: number) => void;
 };
 
-const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {
+const GraphSidebar = ({graph, recentreView, onFunctionalGoalAdded}: GraphSidebarProps) => {
     return (
         <div>
             <SidebarBody graph={graph}
                          recentreView={recentreView}
                          className="mt-1"/>
             {(graph) && (
-                <SidebarItems className="mt-1" graph={graph}/>
+                <SidebarItems className="mt-1" graph={graph} onFunctionalGoalAdded={onFunctionalGoalAdded}/>
             )}
         </div>
     );
