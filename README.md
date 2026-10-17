@@ -122,6 +122,10 @@ npm run test:e2e
 
 The CI workflow runs the Vitest suite, a production build, and all Cypress specs on every branch push and on pull requests targeting `develop`. When a Cypress test fails, its screenshots and videos are retained as workflow artifacts for seven days.
 
+## Documentation
+
+- [Authentication Evaluation](docs/authentication-evaluation.md) — analysis of whether authentication is needed (concluded: not required for the current static SPA architecture)
+
 ## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
