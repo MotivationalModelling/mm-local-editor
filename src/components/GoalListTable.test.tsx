@@ -9,7 +9,7 @@ import {newTreeGoal} from "./types.ts";
 
 afterEach(() => {
     cleanup();
-    localStorage.clear();
+    sessionStorage.clear();
 });
 
 describe("GoalListTable", () => {
@@ -23,12 +23,12 @@ describe("GoalListTable", () => {
             setData: vi.fn(),
             setDragImage: vi.fn(),
         };
-        localStorage.setItem(LocalStorageType.TAB, JSON.stringify([{
+        sessionStorage.setItem(LocalStorageType.TAB, JSON.stringify([{
             label: "Do",
             icon: "/img/Function.png",
             rows: goals
         }]));
-        localStorage.setItem(LocalStorageType.TREE, "[]");
+        sessionStorage.setItem(LocalStorageType.TREE, "[]");
 
         render(
             <FileProvider>

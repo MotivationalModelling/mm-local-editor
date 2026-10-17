@@ -190,7 +190,7 @@ describe('#createTreeIdsFromTreeData', () => {
     });
 });
 
-describe('corrupted localStorage recovery', () => {
+describe('corrupted sessionStorage recovery', () => {
     const corruptTree = JSON.stringify([
         {id: 999, instanceId: "999-1", type: "Do", content: "orphan", children: []},
     ]);
@@ -202,14 +202,14 @@ describe('corrupted localStorage recovery', () => {
     beforeAll(() => cleanup());
 
     beforeEach(() => {
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TREE, corruptTree);
-        localStorage.setItem(LocalStorageType.TAB, seededTabs);
+        sessionStorage.clear();
+        sessionStorage.setItem(LocalStorageType.TREE, corruptTree);
+        sessionStorage.setItem(LocalStorageType.TAB, seededTabs);
     });
 
     afterEach(() => {
         cleanup();
-        localStorage.clear();
+        sessionStorage.clear();
     });
 
     const renderProvider = () => render(
@@ -221,22 +221,22 @@ describe('corrupted localStorage recovery', () => {
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
         expect(screen.queryByTestId("editor")).toBeNull();
-        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(corruptTree);
+        expect(sessionStorage.getItem(LocalStorageType.TREE)).toBe(corruptTree);
     });
 
     it('shows the recovery modal when tabData is valid JSON of the wrong shape', () => {
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TAB, '{"broken": 1}');
+        sessionStorage.clear();
+        sessionStorage.setItem(LocalStorageType.TAB, '{"broken": 1}');
         renderProvider();
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
         expect(screen.queryByTestId("editor")).toBeNull();
-        expect(JSON.parse(localStorage.getItem(LocalStorageType.TAB)!)).toEqual({broken: 1});
+        expect(JSON.parse(sessionStorage.getItem(LocalStorageType.TAB)!)).toEqual({broken: 1});
     });
 
     it('shows the recovery modal when stored data is not parseable JSON', () => {
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TREE, '{not valid json');
+        sessionStorage.clear();
+        sessionStorage.setItem(LocalStorageType.TREE, '{not valid json');
         renderProvider();
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
@@ -245,13 +245,13 @@ describe('corrupted localStorage recovery', () => {
 
     it('abandon leaves unparseable data byte-for-byte intact for inspection', () => {
         const garbage = '{not valid json';
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TREE, garbage);
+        sessionStorage.clear();
+        sessionStorage.setItem(LocalStorageType.TREE, garbage);
         renderProvider();
 
         fireEvent.click(screen.getByText("Abandon"));
 
-        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(garbage);
+        expect(sessionStorage.getItem(LocalStorageType.TREE)).toBe(garbage);
     });
 
     it('abandon pauses the app and leaves storage untouched', () => {
@@ -261,20 +261,20 @@ describe('corrupted localStorage recovery', () => {
 
         expect(screen.queryByTestId("editor")).toBeNull();
         expect(screen.getByText(/left unchanged/)).toBeTruthy();
-        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(corruptTree);
-        expect(localStorage.getItem(LocalStorageType.TAB)).toBe(seededTabs);
+        expect(sessionStorage.getItem(LocalStorageType.TREE)).toBe(corruptTree);
+        expect(sessionStorage.getItem(LocalStorageType.TAB)).toBe(seededTabs);
     });
 
     it('revert to default replaces storage and renders the editor', () => {
         // Corrupt both keys: revert has to replace both, or the editor
         // stays blocked behind the modal and the queries below fail
-        localStorage.setItem(LocalStorageType.TAB, '{"broken": 1}');
+        sessionStorage.setItem(LocalStorageType.TAB, '{"broken": 1}');
         renderProvider();
 
         fireEvent.click(screen.getByText("Revert to default"));
 
         expect(screen.getByTestId("editor")).toBeTruthy();
-        expect(JSON.parse(localStorage.getItem(LocalStorageType.TREE)!)).toEqual([]);
-        expect(JSON.parse(localStorage.getItem(LocalStorageType.TAB)!)).toEqual(JSON.parse(seededTabs));
+        expect(JSON.parse(sessionStorage.getItem(LocalStorageType.TREE)!)).toEqual([]);
+        expect(JSON.parse(sessionStorage.getItem(LocalStorageType.TAB)!)).toEqual(JSON.parse(seededTabs));
     });
 });

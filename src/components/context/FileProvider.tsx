@@ -5,7 +5,7 @@ import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import {useLocalStorage} from "usehooks-ts";
+import {useSessionStorage} from "usehooks-ts";
 
 export type {JSONData} from "../modelJson.ts";
 
@@ -26,10 +26,13 @@ export type {JSONData} from "../modelJson.ts";
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
-export const LocalStorageType = {
+export const StorageKey = {
     TREE: "ammber/treeData",
     TAB: "ammber/tabData",
 };
+
+/** @deprecated Use StorageKey instead */
+export const LocalStorageType = StorageKey;
 
 // XXX this should be a Set
 export const createTreeIdsFromTreeData = (goals: Record<TreeGoal["id"], TreeGoal>, treeData: TreeGoal[]): Record<TreeGoal["id"], InstanceId[]> => {
@@ -165,14 +168,14 @@ const tryCreateInitialState = (tabData: string, treeData: string) => {
 };
 
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
-    // Load from localStorage
-    const [storedTreeData, setStoredTreeData] = useLocalStorage<string>(
-        LocalStorageType.TREE,
+    // Load from sessionStorage
+    const [storedTreeData, setStoredTreeData] = useSessionStorage<string>(
+        StorageKey.TREE,
         "[]",
         rawStringStorage
     );
-    const [tabData, setTabData] = useLocalStorage<string>(
-        LocalStorageType.TAB,
+    const [tabData, setTabData] = useSessionStorage<string>(
+        StorageKey.TAB,
         JSON.stringify(initialTabs),
         rawStringStorage
     );
@@ -187,7 +190,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         console.log("FileProvider state updated:", state);
     }, [state]);
 
-    // Listen to changes in state and write back to localStorage. While the
+    // Listen to changes in state and write back to sessionStorage. While the
     // corruption modal is up, the stored data must stay untouched so the
     // user can still choose to inspect it.
     useEffect(() => {
