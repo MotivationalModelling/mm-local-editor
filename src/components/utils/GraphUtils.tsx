@@ -152,6 +152,15 @@ export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instance
 };
 
 
+export const isGoalRefId = (refId: string | null | undefined): refId is string => {
+    try {
+        parseGoalRefId(refId ?? "");
+        return true;
+    } catch {
+        return false;
+    }
+};
+
 // Treeid stored in the state '8:1'
 export function getRefIdFromInstanceId(instanceId: InstanceId) {
     return parseInstanceId(instanceId).refId;

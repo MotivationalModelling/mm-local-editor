@@ -3,9 +3,10 @@ import {Graph} from "@maxgraph/core";
 import {ColorResult} from "react-color";
 
 import Button from "react-bootstrap/Button";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ColorPicker from "./ColorPicker.tsx";
 import {useFileContext} from "../../context/FileProvider.tsx";
-import {parseFuncGoalRefId, parseGoalRefId} from "../../utils/GraphUtils.tsx";
+import {parseGoalRefId} from "../../utils/GraphUtils.tsx";
 import {updateColorForInstanceId} from "../../context/treeDataSlice.ts";
 
 type ColorButtonsProps = {
@@ -38,32 +39,29 @@ const ColorButtons = ({graph}: ColorButtonsProps) => {
     // Note that the colours are copies from the bootstrap variants and won't track changes there
     return (
         <>
-            <div className="d-flex flex-wrap justify-content-center gap-1" role="group" aria-label="Priority colour">
+            <ButtonGroup size="sm" className="d-flex justify-content-center" aria-label="Priority colour">
                 <Button variant="danger"
-                        className="rounded-circle p-0"
-                        style={{width: 28, height: 28}}
+                        className="flex-grow-0"
                         title="High priority"
                         aria-label="High priority colour"
                         onClick={() => setColor("#DB3545")}>
                     H
                 </Button>
                 <Button variant="warning"
-                        className="rounded-circle p-0"
-                        style={{width: 28, height: 28}}
+                        className="flex-grow-0"
                         title="Medium priority"
                         aria-label="Medium priority colour"
                         onClick={() => setColor("#FFC107")}>
                     M
                 </Button>
                 <Button variant="success"
-                        className="rounded-circle p-0"
-                        style={{width: 28, height: 28}}
+                        className="flex-grow-0"
                         title="Low priority"
                         aria-label="Low priority colour"
                         onClick={() => setColor("#198754")}>
                     L
                 </Button>
-            </div>
+            </ButtonGroup>
             <ColorPicker selectedColor={selectedColor}
                          onColorChange={updateSelectedColor}
                          className="pt-1"/>

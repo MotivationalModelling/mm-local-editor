@@ -21,7 +21,7 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
-import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions} from './GraphHelpers';
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions, updateGoalColours} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
@@ -31,7 +31,7 @@ import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds} from "../utils/GraphUtils";
+import {getCellNumericIds, isGoalRefId} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -63,6 +63,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     treeIdsRef.current = treeIds;
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
+    const previousRenderRef = useRef<{graph: Graph; cluster: Cluster; showLines: boolean} | null>(null);
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -328,7 +329,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             // Only persist user-initiated drags; skip events fired during renderGraph.
-                            if (!isRenderingRef.current && cellID && /^(Functional|Nonfunctional)-/.test(cellID)) {
+                            if (!isRenderingRef.current && isGoalRefId(cellID)) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
                                     parseGoalRefId(cellID).forEach(({instanceId}) => {
@@ -611,15 +612,20 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // Separate useEffect to render / update the graph.
     useEffect(() => {
         if (graph) {
-            // If user has goals defined, draw the graph
-            if (cluster.ClusterGoals.length > 0) {
+            const previous = previousRenderRef.current;
+            // Recolour existing cells without rerunning layout
+            const coloursUpdated = previous?.graph === graph &&
+                previous.showLines === showLineBetweenNonFunctionalGoals &&
+                updateGoalColours(graph, previous.cluster.ClusterGoals, cluster.ClusterGoals);
+            if (!coloursUpdated && cluster.ClusterGoals.length > 0) {
                 renderGraph();
             }
-            else {
+            else if (!coloursUpdated) {
                 graph.getDataModel().clear();
             }
+            previousRenderRef.current = {graph, cluster, showLines: showLineBetweenNonFunctionalGoals};
         }
-    }, [cluster, graph, renderGraph]);
+    }, [cluster, graph, renderGraph, showLineBetweenNonFunctionalGoals]);
 
     // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {

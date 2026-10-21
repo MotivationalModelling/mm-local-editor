@@ -15,7 +15,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, parseGoalRefId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, isGoalRefId, parseGoalRefId} from "../utils/GraphUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -601,6 +601,34 @@ export const renderLegend = (graph: Graph): Cell => {
     return legend;
 };
 
+// Returns false when changes beyond colour require graph rebuild
+export const updateGoalColours = (graph: Graph, previous: ClusterGoal[], goals: ClusterGoal[]): boolean => {
+    const omitColour = (key: string, value: unknown) => key === "GoalColor" ? undefined : value;
+    if (JSON.stringify(previous, omitColour) !== JSON.stringify(goals, omitColour)) return false;
+
+    const goalsByInstance = new Map<InstanceId, ClusterGoal>();
+    const collect = (goal: ClusterGoal) => {
+        goalsByInstance.set(goal.instanceId, goal);
+        goal.SubGoals.forEach(collect);
+    };
+    goals.forEach(collect);
+
+    graph.batchUpdate(() => {
+        graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
+            const id = cell.getId();
+            if (!isGoalRefId(id)) return;
+            const goal = goalsByInstance.get(parseGoalRefId(id)[0].instanceId);
+            if (!goal) return;
+            const colour = goal.GoalColor || (goal.GoalType === "Negative"
+                ? "grey" : graph.getStylesheet().getDefaultVertexStyle().fillColor);
+            if (cell.getStyle().fillColor !== colour) {
+                graph.setCellStyles("fillColor", colour, [cell]);
+            }
+        });
+    });
+    return true;
+};
+
 /**
  * Overrides layout-computed positions with any coordinates previously saved
  * by the user. Call before and after associateNonFunctions to restore
@@ -620,7 +648,7 @@ export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
 
     graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
         const id = cell.getId();
-        if (!id || !/^(Functional|Nonfunctional)-/.test(id)) return;
+        if (!isGoalRefId(id)) return;
         const pos = parseGoalRefId(id).map(({instanceId}) => positionMap.get(instanceId)).find(Boolean);
         if (pos) {
             const geo = cell.getGeometry();
