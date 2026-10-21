@@ -47,7 +47,7 @@ describe("Toolbar collapse animations", () => {
         }
     });
 
-    it("uses the current toolbar width when Zoom reopens after resizing", () => {
+    it("keeps Zoom stacked without overshooting after the toolbar is resized", () => {
         for (const width of [80, 180]) {
             cy.contains(".card-subtitle", "Zoom").click();
             cy.contains(".card-subtitle", "Zoom").next().should("not.be.visible");
@@ -62,11 +62,8 @@ describe("Toolbar collapse animations", () => {
             cy.contains(".card-subtitle", "Zoom").next().find("button").then(($buttons) => {
                 const first = $buttons[0].getBoundingClientRect();
                 const last = $buttons[2].getBoundingClientRect();
-                if (width === 80) {
-                    expect(last.top).to.be.greaterThan(first.top);
-                } else {
-                    expect(last.top).to.equal(first.top);
-                }
+                expect(last.top).to.be.greaterThan(first.top);
+                expect(last.left).to.equal(first.left);
             });
         }
     });
