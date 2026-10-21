@@ -5,7 +5,7 @@ import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
-import {useLocalStorage} from "usehooks-ts";
+import {useSessionStorage} from "usehooks-ts";
 
 export type {JSONData} from "../modelJson.ts";
 
@@ -26,9 +26,50 @@ export type {JSONData} from "../modelJson.ts";
 
 export const DataType = {JSON: "AMMBER_JSON"};
 
-export const LocalStorageType = {
+// Live editing state is kept in sessionStorage so each browser tab has its
+// own independent model; tabs no longer overwrite each other's data (#342).
+export const StorageKey = {
     TREE: "ammber/treeData",
     TAB: "ammber/tabData",
+};
+
+// Deprecated alias kept so existing imports keep working.
+export const LocalStorageType = StorageKey;
+
+// sessionStorage is cleared when the tab/browser closes, which would lose the
+// user's in-progress model on reopen. To keep the previous "come back to your
+// work" behaviour we also mirror the latest state to a localStorage snapshot
+// and seed a fresh tab from it when its sessionStorage is empty. The snapshot
+// is only read at mount, never during live editing, so concurrent tabs still
+// cannot clobber each other.
+const SnapshotKey = {
+    TREE: "ammber/lastSession/treeData",
+    TAB: "ammber/lastSession/tabData",
+};
+
+const readSnapshot = (key: string): string | null => {
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+};
+
+const writeSnapshot = (key: string, value: string) => {
+    try {
+        window.localStorage.setItem(key, value);
+    } catch {
+        // ignore (private mode / quota) — sessionStorage stays the live store
+    }
+};
+
+const clearSnapshot = () => {
+    try {
+        window.localStorage.removeItem(SnapshotKey.TREE);
+        window.localStorage.removeItem(SnapshotKey.TAB);
+    } catch {
+        // ignore
+    }
 };
 
 // XXX this should be a Set
@@ -165,15 +206,20 @@ const tryCreateInitialState = (tabData: string, treeData: string) => {
 };
 
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
-    // Load from localStorage
-    const [storedTreeData, setStoredTreeData] = useLocalStorage<string>(
-        LocalStorageType.TREE,
-        "[]",
+    // Seed a fresh tab (empty sessionStorage) from the last-session snapshot so
+    // reopening the browser restores the user's work; fall back to defaults.
+    const [treeDefault] = useState(() => readSnapshot(SnapshotKey.TREE) ?? "[]");
+    const [tabDefault] = useState(() => readSnapshot(SnapshotKey.TAB) ?? JSON.stringify(initialTabs));
+
+    // Load live editing state from sessionStorage (per-tab).
+    const [storedTreeData, setStoredTreeData] = useSessionStorage<string>(
+        StorageKey.TREE,
+        treeDefault,
         rawStringStorage
     );
-    const [tabData, setTabData] = useLocalStorage<string>(
-        LocalStorageType.TAB,
-        JSON.stringify(initialTabs),
+    const [tabData, setTabData] = useSessionStorage<string>(
+        StorageKey.TAB,
+        tabDefault,
         rawStringStorage
     );
 
@@ -202,7 +248,13 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 
-        setTabData(JSON.stringify(tabsArray));
+        const tabJson = JSON.stringify(tabsArray);
+        setTabData(tabJson);
+
+        // Mirror the latest state to the localStorage snapshot so it survives a
+        // browser restart (sessionStorage does not).
+        writeSnapshot(SnapshotKey.TREE, JSON.stringify(state.tree));
+        writeSnapshot(SnapshotKey.TAB, tabJson);
     }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
@@ -217,6 +269,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const revertToDefault = () => {
         setTabData(JSON.stringify(initialTabs));
         setStoredTreeData("[]");
+        clearSnapshot();
     };
 
     if (corrupted) {

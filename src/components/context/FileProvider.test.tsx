@@ -3,7 +3,7 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
+import FileProvider, {createTreeIdsFromTreeData, StorageKey, useFileContext} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
@@ -190,7 +190,7 @@ describe('#createTreeIdsFromTreeData', () => {
     });
 });
 
-describe('corrupted localStorage recovery', () => {
+describe('corrupted sessionStorage recovery', () => {
     const corruptTree = JSON.stringify([
         {id: 999, instanceId: "999-1", type: "Do", content: "orphan", children: []},
     ]);
@@ -202,13 +202,17 @@ describe('corrupted localStorage recovery', () => {
     beforeAll(() => cleanup());
 
     beforeEach(() => {
+        sessionStorage.clear();
+        // Clear the localStorage snapshot too, so an empty live key is not
+        // seeded from a leftover snapshot.
         localStorage.clear();
-        localStorage.setItem(LocalStorageType.TREE, corruptTree);
-        localStorage.setItem(LocalStorageType.TAB, seededTabs);
+        sessionStorage.setItem(StorageKey.TREE, corruptTree);
+        sessionStorage.setItem(StorageKey.TAB, seededTabs);
     });
 
     afterEach(() => {
         cleanup();
+        sessionStorage.clear();
         localStorage.clear();
     });
 
@@ -221,22 +225,22 @@ describe('corrupted localStorage recovery', () => {
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
         expect(screen.queryByTestId("editor")).toBeNull();
-        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(corruptTree);
+        expect(sessionStorage.getItem(StorageKey.TREE)).toBe(corruptTree);
     });
 
     it('shows the recovery modal when tabData is valid JSON of the wrong shape', () => {
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TAB, '{"broken": 1}');
+        sessionStorage.clear();
+        sessionStorage.setItem(StorageKey.TAB, '{"broken": 1}');
         renderProvider();
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
         expect(screen.queryByTestId("editor")).toBeNull();
-        expect(JSON.parse(localStorage.getItem(LocalStorageType.TAB)!)).toEqual({broken: 1});
+        expect(JSON.parse(sessionStorage.getItem(StorageKey.TAB)!)).toEqual({broken: 1});
     });
 
     it('shows the recovery modal when stored data is not parseable JSON', () => {
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TREE, '{not valid json');
+        sessionStorage.clear();
+        sessionStorage.setItem(StorageKey.TREE, '{not valid json');
         renderProvider();
 
         expect(screen.getByText("Saved data is corrupted")).toBeTruthy();
@@ -245,13 +249,13 @@ describe('corrupted localStorage recovery', () => {
 
     it('abandon leaves unparseable data byte-for-byte intact for inspection', () => {
         const garbage = '{not valid json';
-        localStorage.clear();
-        localStorage.setItem(LocalStorageType.TREE, garbage);
+        sessionStorage.clear();
+        sessionStorage.setItem(StorageKey.TREE, garbage);
         renderProvider();
 
         fireEvent.click(screen.getByText("Abandon"));
 
-        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(garbage);
+        expect(sessionStorage.getItem(StorageKey.TREE)).toBe(garbage);
     });
 
     it('abandon pauses the app and leaves storage untouched', () => {
@@ -261,20 +265,72 @@ describe('corrupted localStorage recovery', () => {
 
         expect(screen.queryByTestId("editor")).toBeNull();
         expect(screen.getByText(/left unchanged/)).toBeTruthy();
-        expect(localStorage.getItem(LocalStorageType.TREE)).toBe(corruptTree);
-        expect(localStorage.getItem(LocalStorageType.TAB)).toBe(seededTabs);
+        expect(sessionStorage.getItem(StorageKey.TREE)).toBe(corruptTree);
+        expect(sessionStorage.getItem(StorageKey.TAB)).toBe(seededTabs);
     });
 
     it('revert to default replaces storage and renders the editor', () => {
         // Corrupt both keys: revert has to replace both, or the editor
         // stays blocked behind the modal and the queries below fail
-        localStorage.setItem(LocalStorageType.TAB, '{"broken": 1}');
+        sessionStorage.setItem(StorageKey.TAB, '{"broken": 1}');
         renderProvider();
 
         fireEvent.click(screen.getByText("Revert to default"));
 
         expect(screen.getByTestId("editor")).toBeTruthy();
-        expect(JSON.parse(localStorage.getItem(LocalStorageType.TREE)!)).toEqual([]);
-        expect(JSON.parse(localStorage.getItem(LocalStorageType.TAB)!)).toEqual(JSON.parse(seededTabs));
+        expect(JSON.parse(sessionStorage.getItem(StorageKey.TREE)!)).toEqual([]);
+        expect(JSON.parse(sessionStorage.getItem(StorageKey.TAB)!)).toEqual(JSON.parse(seededTabs));
+    });
+});
+
+describe('last-session restore across a browser reopen', () => {
+    // Clear the module-level provider so it does not write to storage while
+    // these tests simulate closing and reopening the app.
+    beforeAll(() => {
+        cleanup();
+        enableMapSet();
+    });
+
+    beforeEach(() => {
+        sessionStorage.clear();
+        localStorage.clear();
+    });
+
+    afterEach(() => {
+        cleanup();
+        sessionStorage.clear();
+        localStorage.clear();
+    });
+
+    const mountProvider = () => renderHook(() => useFileContext(), {
+        wrapper: ({children}: React.PropsWithChildren) => (
+            <FileProvider>{children}</FileProvider>
+        ),
+    });
+
+    it('writes a localStorage snapshot even though the live store is sessionStorage', () => {
+        const g = newTreeGoal({id: 42, type: "Do", content: "persist me"});
+
+        const {result: r} = mountProvider();
+        act(() => r.current.dispatch(addGoal(g)));
+
+        expect(sessionStorage.getItem(StorageKey.TAB)).toBeTruthy();
+        expect(localStorage.getItem("ammber/lastSession/tabData")).toBeTruthy();
+    });
+
+    it('restores the model from the snapshot after sessionStorage is cleared', () => {
+        const g = newTreeGoal({id: 42, type: "Do", content: "persist me"});
+
+        const first = mountProvider();
+        act(() => first.result.current.dispatch(addGoal(g)));
+        expect(first.result.current.tabs.get("Do")?.goalIds).toContain(g.id);
+
+        // Simulate closing the browser: sessionStorage is wiped, the
+        // localStorage snapshot survives.
+        cleanup();
+        sessionStorage.clear();
+
+        const second = mountProvider();
+        expect(second.result.current.tabs.get("Do")?.goalIds).toContain(g.id);
     });
 });

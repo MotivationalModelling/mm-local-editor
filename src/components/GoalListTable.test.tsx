@@ -3,12 +3,13 @@
 */
 import {cleanup, fireEvent, render, screen} from "@testing-library/react";
 import {afterEach, describe, expect, it, vi} from "vitest";
-import FileProvider, {LocalStorageType} from "./context/FileProvider.tsx";
+import FileProvider, {StorageKey} from "./context/FileProvider.tsx";
 import GoalList from "./GoalList.tsx";
 import {newTreeGoal} from "./types.ts";
 
 afterEach(() => {
     cleanup();
+    sessionStorage.clear();
     localStorage.clear();
 });
 
@@ -23,12 +24,12 @@ describe("GoalListTable", () => {
             setData: vi.fn(),
             setDragImage: vi.fn(),
         };
-        localStorage.setItem(LocalStorageType.TAB, JSON.stringify([{
+        sessionStorage.setItem(StorageKey.TAB, JSON.stringify([{
             label: "Do",
             icon: "/img/Function.png",
             rows: goals
         }]));
-        localStorage.setItem(LocalStorageType.TREE, "[]");
+        sessionStorage.setItem(StorageKey.TREE, "[]");
 
         render(
             <FileProvider>
