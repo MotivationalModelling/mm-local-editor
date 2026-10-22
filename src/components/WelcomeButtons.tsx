@@ -1,17 +1,20 @@
 import React, {ChangeEvent, useRef, useState} from "react";
 import Button from "react-bootstrap/Button";
 import {useNavigate} from "react-router-dom";
-import {InitialTab, createDefaultTabData, defaultTreeData} from "../data/initialTabs";
+import {createDefaultTabData, defaultTreeData} from "../data/initialTabs";
+import {defaultFeedbacks, defaultOverallFeedback} from "../data/defaultFeedback";
 import ErrorModal, {ErrorModalProps} from "./ErrorModal";
 import FileDrop from "./FileDrop";
 import FileUploadSection from "./FileUploadSection";
 import {useFileContext} from "./context/FileProvider";
 import {reset} from "./context/treeDataSlice.ts";
-import {TabContent, TreeGoal} from "./types.ts";
 import {ModelJsonError, parseModelJson} from "./modelJson.ts";
+import {extractJsonFromPng, extractJsonFromSvg} from "./utils/imageMetadata";
+import {convertTabContentToInitialTab} from "./utils/modelImport";
+import {useFeedbackContext} from "./context/FeedbackContext";
 
 const EMPTY_FILE_ALERT = "Please select a file";
-const JSON_FILE_ALERT = "Please select a JSON file.";
+const MODEL_FILE_ALERT = "Please select a JSON, PNG, or SVG file.";
 
 type WelcomeButtonsProps = {
 	isDragging: boolean;
@@ -28,27 +31,6 @@ const defaultModalState: ErrorModalProps = {
 // File handle preserve on page refresh
 // https://stackoverflow.com/questions/65928613/file-system-access-api-is-it-possible-to-store-the-filehandle-of-a-saved-or-loa
 
-// Helper to convert TabContent[] to InitialTab[] using all goals from treeData
-function convertTabContentToInitialTab(tabData: TabContent[], treeData: TreeGoal[]): InitialTab[] {
-	// Build a map of all goals by id
-	const allGoals: Record<number, TreeGoal> = {};
-	(treeData || []).forEach((goal: TreeGoal) => {
-		allGoals[goal.id] = goal;
-		const addChildren = (children: TreeGoal[]) => {
-			(children || []).forEach((child: TreeGoal) => {
-				allGoals[child.id] = child;
-				addChildren(child.children || []);
-			});
-		};
-		addChildren(goal.children || []);
-	});
-	return (tabData || []).map((tab: TabContent) => ({
-		label: tab.label,
-		icon: tab.icon,
-		rows: (tab.goalIds || []).map((id: number) => allGoals[id]).filter(Boolean),
-	}));
-}
-
 const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 	const [jsonFile, setJsonFile] = useState<File | null>(null);
 	const [isJsonDragOver, setIsJsonDragOver] = useState(false);
@@ -59,6 +41,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 	const navigate = useNavigate();
 
 	const {dispatch} = useFileContext();
+	const {resetFeedbacks} = useFeedbackContext();
 
 	const showFileError = (title: string, message: string) => {
 		setJsonFile(null);
@@ -72,13 +55,26 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 	};
 
 	const importJSONFile = async (file: File) => {
-		if (file.type !== "application/json" && !file.name.toLowerCase().endsWith(".json")) {
-			showFileError("Incorrect File Type", JSON_FILE_ALERT);
+		const name = file.name.toLowerCase();
+		const isJson = file.type === "application/json" || name.endsWith(".json");
+		const isPng = file.type === "image/png" || name.endsWith(".png");
+		const isSvg = file.type === "image/svg+xml" || name.endsWith(".svg");
+		if (!isJson && !isPng && !isSvg) {
+			showFileError("Incorrect File Type", MODEL_FILE_ALERT);
 			return;
 		}
 
 		try {
-			const convertedJsonData = parseModelJson(await file.text());
+			const embeddedData = isPng
+				? await extractJsonFromPng(file)
+				: isSvg ? await extractJsonFromSvg(file) : null;
+			if (!isJson && embeddedData === null) {
+				showFileError("No Model Data Found", "This image does not contain an AMMBER model. Export it from this editor first, or select a JSON file.");
+				return;
+			}
+			const convertedJsonData = parseModelJson(
+				isJson ? await file.text() : JSON.stringify(embeddedData)
+			);
 			const initialTabs = convertTabContentToInitialTab(
 				convertedJsonData.tabData,
 				convertedJsonData.treeData
@@ -88,10 +84,11 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 				tabData: initialTabs,
 				treeData: convertedJsonData.treeData,
 			}));
+			resetFeedbacks(convertedJsonData.feedbacks, convertedJsonData.overallFeedback);
 			setJsonFile(file);
 			setErrorModal(defaultModalState);
 		} catch (error) {
-			console.error("Error importing JSON model:", error);
+			console.error("Error importing model:", error);
 			showFileError(
 				"Invalid Model File",
 				error instanceof ModelJsonError
@@ -103,6 +100,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 
 	// Handle Create Model button click - load default data
 	const handleCreateModel = () => {
+		resetFeedbacks(defaultFeedbacks, defaultOverallFeedback);
 		dispatch(reset({
 			treeData: defaultTreeData,
 			tabData: createDefaultTabData()
@@ -160,7 +158,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 			{/* File Input */}
 			<input
 				type="file"
-				accept=".json"
+				accept=".json,.png,.svg,application/json,image/png,image/svg+xml"
 				multiple
 				onChange={handleFileChange}
 				style={{display: "none"}}
@@ -176,7 +174,7 @@ const WelcomeButtons = ({isDragging, setIsDragging}: WelcomeButtonsProps) => {
 							onDragLeave={handleFileDragLeave}
 							onDragOver={handleJSONFileDragOver}
 							isDragOver={isJsonDragOver}
-							fileType="JSON"
+							fileType="JSON, PNG, or SVG"
 						/>
 					) : (
 						<FileUploadSection

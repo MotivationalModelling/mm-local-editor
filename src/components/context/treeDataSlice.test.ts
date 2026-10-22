@@ -91,9 +91,38 @@ describe('treeDataSlice', () => {
         const state1 = treeDataSlice.reducer(initialState, addGoal(goal));
         expect(state1.goals[goal.id].content).not.toEqual(text);
 
-        const state2 = treeDataSlice.reducer(initialState, updateTextForGoalId({id: goal.id, text}));
+        const state2 = treeDataSlice.reducer(state1, updateTextForGoalId({id: goal.id, text}));
 
         expect(state2.goals[goal.id].content).toEqual(text);
+    });
+    it('keeps every hierarchy reference in sync when a goal is renamed', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "Before"});
+        const tabs = initialTabs.map((tab) => tab.label === "Do"
+            ? {...tab, rows: [...tab.rows, goal]} : tab);
+        const tree: TreeGoal[] = [{
+            ...goal, instanceId: "7:1", children: [{...goal, instanceId: "7:2", children: []}],
+        }];
+        const state = createInitialState(tabs, tree);
+        const fromList = treeDataSlice.reducer(state, updateTextForGoalId({id: 7, text: "From list"}));
+        expect(fromList.goals[7].content).toBe("From list");
+        expect(fromList.tree[0].content).toBe("From list");
+        expect(fromList.tree[0].children?.[0].content).toBe("From list");
+
+        const fromCanvas = treeDataSlice.reducer(fromList, updateTextForInstanceId({
+            instanceId: "7:2", text: "From canvas",
+        }));
+        expect(fromCanvas.goals[7].content).toBe("From canvas");
+        expect(fromCanvas.tree[0].content).toBe("From canvas");
+        expect(fromCanvas.tree[0].children?.[0].content).toBe("From canvas");
+    });
+    it('repairs stale hierarchy text when loading an older saved model', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "Edited in list"});
+        const tabs = initialTabs.map((tab) => tab.label === "Do"
+            ? {...tab, rows: [...tab.rows, goal]} : tab);
+        const staleTree: TreeGoal[] = [{...goal, content: "Old canvas label", instanceId: "7:1", children: []}];
+        const state = createInitialState(tabs, staleTree);
+        expect(state.tree[0].content).toBe("Edited in list");
+        expect(staleTree[0].content).toBe("Old canvas label");
     });
     it('should update text of goal by instanceId (canvas double-click edit)', () => {
         const goal = newTreeGoal({id: 7, type: "Do", content: "example"});

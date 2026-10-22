@@ -2,7 +2,45 @@ body {
 	height: 100vh;
 }
 
-header {
+.project-edit-header {
 	box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.5);
 	background-image: url("/img/profile-background.jpg");
+}
+
+.feedback-panel-column {
+    --ink: #212529;
+    --muted: #6c757d;
+    --line: #dee2e6;
+    --line-strong: #adb5bd;
+    --surface: #fff;
+    --canvas: #fff;
+    --goal-panel: rgb(236, 244, 244);
+    --accent: #0d6efd;
+    --accent-contrast: #fff;
+    --app-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --page-line-strong: #ced4da;
+    --backdrop: rgba(0, 0, 0, .5);
+    --eyebrow: #6c757d;
+    --faint: #6c757d;
+    --control-bg-subtle: #e9ecef;
+    --tools-bg: #f8f9fa;
+    --danger: #dc3545;
+    --plum: #0d6efd;
+    --plum-strong: #0a58ca;
+    --link: #0d6efd;
+    --link-strong: #0b5ed7;
+    --link-soft: #e7f1ff;
+    display: flex;
+    flex: 0 0 clamp(280px, 20vw, 340px);
+    width: clamp(280px, 20vw, 340px);
+    min-width: 0;
+    align-self: stretch;
+    overflow: hidden;
+    border-left: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.feedback-graph-fill {
+    flex: 1 1 auto;
+    min-width: 0;
 }
