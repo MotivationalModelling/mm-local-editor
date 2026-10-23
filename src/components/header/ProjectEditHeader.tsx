@@ -5,7 +5,9 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 
 import SaveFileButton from "./SaveFileButton";
-import ExportFileButton from "./ExportFileButton";
+import Button from "react-bootstrap/Button";
+import {BsChatSquareText, BsPeople} from "react-icons/bs";
+import ShareModal from "../ShareModal";
 import {isChrome, isEdge, isOpera} from "react-device-detect";
 import ResetGraphButton from "../Graphs/ResetGraphButton.tsx";
 
@@ -16,14 +18,13 @@ type ProjectEditHeaderProps = {
 	setShowGoalSection: (showGoalSection: boolean) => void;
 	// Add showGraphSection prop to control Export button enablement
 	showGraphSection: boolean;
+	showFeedbackSection: boolean;
+	onToggleFeedback: () => void;
 };
 
-const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
-	showGoalSection,
-	setShowGoalSection,
-	showGraphSection,
-  }) => {
+const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({showGraphSection, showFeedbackSection, onToggleFeedback}) => {
 	const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+	const [showShareModal, setShowShareModal] = useState(false);
   
 	useEffect(() => {
 		if (isChrome || isEdge || isOpera) {
@@ -32,7 +33,7 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
 	}, []);
   
 	return (
-		<header className="w-full sticky top-0 z-10 border-b bg-white shadow-sm">
+		<header className="project-edit-header w-full sticky top-0 z-10 border-b bg-white shadow-sm">
             <Container fluid>
                 <Row className="text-start align-content-start">
                     <Col xs="auto" className="d-flex align-items-center">
@@ -40,15 +41,25 @@ const ProjectEditHeader: React.FC<ProjectEditHeaderProps> = ({
                         <ResetGraphButton variant="outline-primary" className="ms-3"/>
                     </Col>
                     <Col className="d-flex flex-column flex-sm-row gap-2 justify-content-end align-items-center">
-                        <ButtonGroup>
+						<ButtonGroup>
                             {/* Pass showGraphSection to ExportFileButton to control enablement */}
-                            <ExportFileButton showGraphSection={showGraphSection}/>
-                            {isBrowserSupported && <SaveFileButton/>}
+							{isBrowserSupported && <SaveFileButton/>}
+							<Button variant={showFeedbackSection ? "primary" : "outline-primary"} aria-pressed={showFeedbackSection} onClick={onToggleFeedback}>
+								<BsChatSquareText className="me-1"/>Feedback
+							</Button>
+							<Button variant="outline-primary" onClick={() => setShowShareModal(true)}>
+								<BsPeople className="me-1"/>Share
+							</Button>
                         </ButtonGroup>
                         <HomeButton/>
                     </Col>
                 </Row>
             </Container>
+			<ShareModal
+				show={showShareModal}
+				showGraphSection={showGraphSection}
+				onHide={() => setShowShareModal(false)}
+			/>
         </header>
 	);
 };

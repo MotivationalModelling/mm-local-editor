@@ -1,0 +1,261 @@
+/* Editable author profile (top of feedback panel) */
+.feedback-author-profile {
+    display: flex;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+}
+
+/* Read view */
+.feedback-author-view {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+}
+
+.feedback-author-avatar {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ced4da;
+    border-radius: 50%;
+    background: var(--control-bg-subtle);
+    overflow: hidden;
+}
+
+.feedback-author-display-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.feedback-author-edit-button {
+    display: inline-flex;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--faint);
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 120ms ease, background 120ms ease;
+}
+
+.feedback-author-edit-button:hover {
+    color: var(--ink);
+    background: #e9ecef;
+}
+
+/* Edit view */
+.feedback-author-editor {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.feedback-author-avatar-pick {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.feedback-author-shuffle {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid #ced4da;
+    border-radius: 50%;
+    background: var(--canvas);
+    color: #495057;
+    font-size: 11px;
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease;
+}
+
+.feedback-author-shuffle:hover {
+    border-color: var(--plum);
+    background: #e9ecef;
+}
+
+.feedback-author-fields {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.feedback-author-field-label {
+    color: var(--eyebrow);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.feedback-author-name-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    outline: none;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12px;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.feedback-author-name-input:focus {
+    border-color: var(--plum);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--plum) 16%, transparent);
+}
+
+.feedback-author-name-input::placeholder {
+    color: #adb5bd;
+}
+
+.feedback-author-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
+.feedback-author-cancel,
+.feedback-author-save {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+
+.feedback-author-cancel {
+    border: 1px solid #dee2e6;
+    background: var(--canvas);
+    color: #495057;
+}
+
+.feedback-author-cancel:hover {
+    border-color: #adb5bd;
+    background: #e9ecef;
+}
+
+.feedback-author-save {
+    border: 1px solid var(--plum);
+    background: var(--plum);
+    color: var(--accent-contrast);
+}
+
+.feedback-author-save:hover:not(:disabled) {
+    background: var(--plum-strong);
+}
+
+.feedback-author-save:disabled {
+    border-color: #dee2e6;
+    background: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+/* Classic theme overrides: flat bootstrap look (see FeedbackPanel.css). */
+
+[data-theme='classic'] .feedback-author-profile {
+    border-bottom-color: var(--line);
+    background: var(--tools-bg);
+}
+
+[data-theme='classic'] .feedback-author-avatar {
+    border-color: var(--page-line-strong);
+}
+
+[data-theme='classic'] .feedback-author-edit-button {
+    border-radius: 4px;
+}
+
+[data-theme='classic'] .feedback-author-edit-button:hover {
+    background: var(--control-bg-subtle);
+}
+
+[data-theme='classic'] .feedback-author-shuffle {
+    border-color: var(--line-strong);
+}
+
+[data-theme='classic'] .feedback-author-shuffle:hover {
+    border-color: var(--accent);
+    background: var(--link-soft);
+}
+
+[data-theme='classic'] .feedback-author-name-input {
+    border-color: var(--page-line-strong);
+    border-radius: 4px;
+}
+
+[data-theme='classic'] .feedback-author-name-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+[data-theme='classic'] .feedback-author-name-input::placeholder {
+    color: var(--muted);
+}
+
+[data-theme='classic'] .feedback-author-cancel,
+[data-theme='classic'] .feedback-author-save {
+    border-radius: 4px;
+}
+
+[data-theme='classic'] .feedback-author-cancel {
+    border-color: var(--page-line-strong);
+    color: var(--ink);
+}
+
+[data-theme='classic'] .feedback-author-cancel:hover {
+    border-color: var(--line-strong);
+    background: var(--control-bg-subtle);
+}
+
+[data-theme='classic'] .feedback-author-save {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+[data-theme='classic'] .feedback-author-save:hover:not(:disabled) {
+    border-color: var(--link-strong);
+    background: var(--link-strong);
+}
+
+[data-theme='classic'] .feedback-author-save:disabled {
+    border-color: var(--line);
+    background: var(--control-bg-subtle);
+    color: var(--muted);
+}

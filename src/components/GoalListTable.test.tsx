@@ -4,6 +4,7 @@
 import {cleanup, fireEvent, render, screen} from "@testing-library/react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import FileProvider, {LocalStorageType} from "./context/FileProvider.tsx";
+import {ProjectProvider} from "./context/ProjectProvider";
 import GoalList from "./GoalList.tsx";
 import {newTreeGoal} from "./types.ts";
 
@@ -31,12 +32,12 @@ describe("GoalListTable", () => {
         localStorage.setItem(LocalStorageType.TREE, "[]");
 
         render(
-            <FileProvider>
+            <ProjectProvider><FileProvider>
                 <GoalList groupSelected={selectedGoals}
                           setGroupSelected={vi.fn()}
                           handleSynTableTree={vi.fn()}
                           handleDropGroupSelected={vi.fn()}/>
-            </FileProvider>
+            </FileProvider></ProjectProvider>
         );
         fireEvent.dragStart(screen.getByLabelText("Drag First goal goal"), {dataTransfer});
 
