@@ -3,7 +3,7 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
+import FileProvider, {convertTreeDataToClusters, createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {newTreeGoal, TreeGoal} from "../types.ts";
 import {enableMapSet} from "immer";
@@ -276,5 +276,19 @@ describe('corrupted localStorage recovery', () => {
         expect(screen.getByTestId("editor")).toBeTruthy();
         expect(JSON.parse(localStorage.getItem(LocalStorageType.TREE)!)).toEqual([]);
         expect(JSON.parse(localStorage.getItem(LocalStorageType.TAB)!)).toEqual(JSON.parse(seededTabs));
+    });
+});
+
+describe('#convertTreeDataToClusters', () => {
+    it('preserves goal URLs used by the graph renderer', () => {
+        const treeGoal = newTreeGoal({
+            type: "Do",
+            id: 10,
+            url: "https://example.com",
+        });
+
+        const cluster = convertTreeDataToClusters([treeGoal]);
+
+        expect(cluster.ClusterGoals[0].url).toBe(treeGoal.url);
     });
 });

@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from "react";
 import {InstanceId, isNonFunctionalGoal, newTreeGoal, TreeGoal} from "./types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
+import GoalLinkModal from "./GoalLinkModal";
 import "./Tree.css";
 import {addGoalsToTree, deleteGoalReferenceFromHierarchy, findTreeGoalById, moveTreeItem} from "./context/treeDataSlice.ts";
 import TreeRow from "./TreeRow.tsx";
@@ -46,6 +47,7 @@ const Tree: React.FC<TreeProps> = ({
                                        onGoalsDropped,
                                    }) => {
     const [editingItemId, setEditingItemId] = useState<InstanceId | null>(null);
+    const [linkGoal, setLinkGoal] = useState<TreeGoal | null>(null);
     const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const deletingItemRef = useRef<TreeGoal | null>(null);
     const {treeData, treeIds, goals, dispatch} = useFileContext();
@@ -142,12 +144,16 @@ const Tree: React.FC<TreeProps> = ({
                           message="You are going to delete a goal with children goals, are you sure?"
                           onHide={handleDeleteCancel}
                           onConfirm={deleteItem}/>
+            {linkGoal && (
+                <GoalLinkModal goal={linkGoal} onClose={() => setLinkGoal(null)}/>
+            )}
             {visibleItems.map((item) => (
                 <TreeRow key={item.getId()}
                          item={item}
                          editingItemId={editingItemId}
                          setEditingItemId={setEditingItemId}
                          indentationWidth={INDENTATION_WIDTH}
+                         onLinkClick={setLinkGoal}
                          onDeleteItem={handleDeleteItem}/>
             ))}
             {visibleItems.length === 0 && (

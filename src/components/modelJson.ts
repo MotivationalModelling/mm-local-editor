@@ -13,6 +13,7 @@ const InstanceIdSchema = z.custom<InstanceId>(
 const TreeGoalSchema: z.ZodType<TreeGoal> = z.lazy(() => z.object({
     id: z.number().int(),
     content: z.string(),
+    url: z.string().optional(),
     type: LabelSchema,
     instanceId: InstanceIdSchema,
     children: z.array(TreeGoalSchema).optional(),
