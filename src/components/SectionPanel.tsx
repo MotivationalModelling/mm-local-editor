@@ -9,7 +9,7 @@ import {useFileContext} from "./context/FileProvider";
 import GraphWorker from "./Graphs/GraphWorker";
 import {addGoalToTree, updateTextForGoalId} from "./context/treeDataSlice.ts";
 import {isEmptyGoal} from "./utils/GoalHint.tsx";
-import {TreeGoal, InstanceId} from "./types.ts";
+import {TreeGoal, InstanceId} from "./utils/types.ts";
 
 const defaultStyle = {
   display: "flex",
