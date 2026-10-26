@@ -22,7 +22,7 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
-import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions} from './GraphHelpers';
+import {associateNonFunctions, isGoalNameEmpty, layoutFunctions, renderGoals, restoreSavedPositions, updateGoalColours} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
@@ -33,7 +33,7 @@ import {GoalGraph} from "./GoalGraph";
 import WarningMessage from "./WarningMessage";
 
 import {LINE_SIZE, VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {generateCellId, getCellNumericIds, getGoalRefType} from "../utils/GraphUtils";
+import {generateCellId, getCellNumericIds, getGoalRefType, isGoalRefId} from "../utils/GraphUtils";
 import {connectNewFunctionalGoal, removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -68,6 +68,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     }, [graph]);
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
+    const previousRenderRef = useRef<{graph: Graph; cluster: Cluster; showLines: boolean} | null>(null);
     const pendingParentConnection = useRef<{goalId: number; edge: Cell | null} | null>(null);
     const toolbarGoalIds = useRef(new Set<number>());
     const skipNextRecentre = useRef(false);
@@ -360,11 +361,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             // Only persist user-initiated drags; skip events fired during renderGraph.
-                            if (!isRenderingRef.current && cellID && getGoalRefType(cellID) === "Functional") {
+                            if (!isRenderingRef.current && isGoalRefId(cellID)) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
-                                    const instanceId = parseGoalRefId(cellID)[0].instanceId;
-                                    dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
+                                    parseGoalRefId(cellID).forEach(({instanceId}) => {
+                                        dispatch(updatePositionForInstanceId({instanceId, x: geo.x, y: geo.y}));
+                                    });
                                 }
                             }
                         }
@@ -564,6 +566,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const renderGraph = useCallback(() => {
         if (!graph) return;
+        const selectedIds = graph.getSelectionCells().map((cell) => cell.getId());
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
         let rootGoal: Cell | null = null;
@@ -619,6 +622,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob,
             showLineBetweenNonFunctionalGoals
         );
+        // Restore manually moved symbols after they have been created.
+        restoreSavedPositions(graph, cluster.ClusterGoals);
 
         // Recreate only this pending edge after the normal full graph rebuild.
         const pending = pendingParentConnection.current;
@@ -639,6 +644,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             }
         }
         graph.getDataModel().endUpdate();
+        graph.setSelectionCells(selectedIds
+            .map((id) => id ? graph.getDataModel().getCell(id) : undefined)
+            .filter((cell): cell is Cell => !!cell));
         isRenderingRef.current = false;
         if (pendingParentConnection.current?.edge) {
             graph.setSelectionCell(pendingParentConnection.current.edge);
@@ -679,15 +687,20 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // Separate useEffect to render / update the graph.
     useEffect(() => {
         if (graph) {
-            // If user has goals defined, draw the graph
-            if (cluster.ClusterGoals.length > 0) {
+            const previous = previousRenderRef.current;
+            // Recolour existing cells without rerunning layout
+            const coloursUpdated = previous?.graph === graph &&
+                previous.showLines === showLineBetweenNonFunctionalGoals &&
+                updateGoalColours(graph, previous.cluster.ClusterGoals, cluster.ClusterGoals);
+            if (!coloursUpdated && cluster.ClusterGoals.length > 0) {
                 renderGraph();
             }
-            else {
+            else if (!coloursUpdated) {
                 graph.getDataModel().clear();
             }
+            previousRenderRef.current = {graph, cluster, showLines: showLineBetweenNonFunctionalGoals};
         }
-    }, [cluster, graph, renderGraph]);
+    }, [cluster, graph, renderGraph, showLineBetweenNonFunctionalGoals]);
 
     // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {
