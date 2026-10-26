@@ -1,4 +1,4 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useRef, useState} from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
@@ -6,6 +6,7 @@ import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
 import {useLocalStorage} from "usehooks-ts";
+import {useProjectContext} from "./ProjectContext";
 
 export type {JSONData} from "../modelJson.ts";
 
@@ -165,6 +166,7 @@ const tryCreateInitialState = (tabData: string, treeData: string) => {
 };
 
 const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
+    const {currentProject, saveProjectData} = useProjectContext();
     // Load from localStorage
     const [storedTreeData, setStoredTreeData] = useLocalStorage<string>(
         LocalStorageType.TREE,
@@ -177,10 +179,13 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         rawStringStorage
     );
 
-    const initialState = tryCreateInitialState(tabData, storedTreeData);
+    const initialState = currentProject
+        ? tryCreateInitialState(JSON.stringify(currentProject.tabData), JSON.stringify(currentProject.treeData))
+        : tryCreateInitialState(tabData, storedTreeData);
     const corrupted = initialState === null;
     const [abandoned, setAbandoned] = useState(false);
     const [state, dispatch] = useReducer(treeDataSlice.reducer, initialState ?? createInitialState());
+    const mounted = useRef(false);
     const [jsonFileHandle, setJsonFileHandle] = useState<FileSystemFileHandle | null>(null);
 
     useEffect(() => {
@@ -192,8 +197,10 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     // user can still choose to inspect it.
     useEffect(() => {
         if (corrupted) return;
-
-        setStoredTreeData(JSON.stringify(state.tree));
+        if (!mounted.current) {
+            mounted.current = true;
+            return;
+        }
 
         // Convert Map<Label, TabContent> to InitialTab[] for storage
         const tabsArray: typeof initialTabs = Array.from(state.tabs.entries()).map(([label, tabContent]) => ({
@@ -202,8 +209,13 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             rows: tabContent.goalIds.map(goalId => state.goals[goalId]).filter(Boolean),
         }));
 
-        setTabData(JSON.stringify(tabsArray));
-    }, [corrupted, state.tree, state.tabs, state.goals, setStoredTreeData, setTabData]);
+        if (currentProject) {
+            saveProjectData(currentProject.id, {treeData: state.tree, tabData: tabsArray});
+        } else {
+            setStoredTreeData(JSON.stringify(state.tree));
+            setTabData(JSON.stringify(tabsArray));
+        }
+    }, [corrupted, state.tree, state.tabs, state.goals, currentProject?.id, saveProjectData, setStoredTreeData, setTabData]);
 
     const [xmlData, setXmlData] = useState("");
 

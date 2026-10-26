@@ -10,7 +10,7 @@ const HomeButton = ({className}: HomeButtonProps) => {
 
     return (
         <Button variant="outline-primary"
-                onClick={() => navigate("/", {replace: true})}
+                onClick={() => navigate("/projects", {replace: true})}
                 className={className}>
             Home
         </Button>

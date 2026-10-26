@@ -26,6 +26,33 @@ export type Label = "Do" | "Be" | "Feel" | "Concern" | "Who";
 
 export type GoalType = "Functional" | "Quality" | "Stakeholder" | "Negative" | "Emotional"
 
+export type FeedbackStatus = "open" | "resolved";
+
+export interface FeedbackReply {
+    id: string;
+    author: string;
+    content: string;
+    createdAt: string;
+}
+
+export interface Feedback {
+    id: string;
+    nodeId: string;
+    nodeLabel?: string;
+    author: string;
+    content: string;
+    createdAt: string;
+    status: FeedbackStatus;
+    replyCount?: number;
+    replies?: FeedbackReply[];
+}
+
+export interface OverallFeedback {
+    author: string;
+    content: string;
+    updatedAt: string;
+}
+
 export interface GoalBase {
     GoalID: number
     instanceId: TreeGoal["instanceId"]
