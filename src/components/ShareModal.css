@@ -1,0 +1,3 @@
+.share-dialog {
+    max-width: min(440px, calc(100vw - 1rem));
+}

@@ -30,8 +30,8 @@ describe('Graph Font Size UI Tests', () => {
     cy.get('.mxCellEditor').type('{esc}');
     cy.get('.mxCellEditor').should('not.exist');
     cy.get('@initialFontSize').then((initialFontSize) => {
-      cy.get('#graphContainer text').contains('Feel')
-        .should('be.visible')
+      cy.get('#graphContainer text').filter((_, text) => text.textContent === 'Feel')
+        .should('have.length', 1)
         .and(($text) => {
           const updatedFontSize = parseFloat(getComputedStyle($text[0]).fontSize);
           expect(updatedFontSize).to.be.closeTo(Number(initialFontSize) * 25 / 16, 0.1);

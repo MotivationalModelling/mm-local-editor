@@ -3,10 +3,12 @@ import Welcome from "./components/Welcome";
 import Papers from "./components/Papers";
 import ProjectEdit from "./components/ProjectEdit";
 import Layout from "./components/Layout";
+import SharedModelLoader from "./components/SharedModelLoader";
 
 const App = () => {
 	return (
 		<BrowserRouter basename="/mm-local-editor/">
+			<SharedModelLoader/>
 			<Layout>
 				<Routes>
 					<Route path="/" element={<Welcome />} />

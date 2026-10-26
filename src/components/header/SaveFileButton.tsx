@@ -4,9 +4,11 @@ import {useFileContext} from "../context/FileProvider";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 import type {JSONData} from "../modelJson.ts";
+import {useFeedbackContext} from "../context/FeedbackContext";
 
 const SaveFileButton = () => {
 	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();
+	const {feedbacks, overallFeedback} = useFeedbackContext();
 
 	const [errorModal, setErrorModal] = useState<ErrorModalProps>({
 		show: false,
@@ -73,6 +75,8 @@ const SaveFileButton = () => {
 			const jsonData: JSONData = {
 				tabData: tabData,
 				treeData: treeData || [],
+				feedbacks,
+				overallFeedback,
 			};
 			const json = JSON.stringify(jsonData);
 			await writable.write(json);

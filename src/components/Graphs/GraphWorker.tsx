@@ -36,6 +36,7 @@ import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstance
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
+import {useFeedbackContext} from "../context/FeedbackContext";
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
@@ -59,6 +60,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const divGraph = useRef<HTMLDivElement>(null);
     const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
     const {graph, setGraph} = useGraph();
+    const {setSelectedNode} = useFeedbackContext();
+    const setSelectedNodeRef = useRef(setSelectedNode);
+    setSelectedNodeRef.current = setSelectedNode;
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
@@ -260,21 +264,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         nodeStyle.imageAspect = false;
         graph.getStylesheet().putDefaultVertexStyle(nodeStyle);
     };
-
-    // Ensure mouse interactions restore focus so keyboard shortcuts work, without breaking in-place editing
-    if (graph) {
-        graph.addListener(InternalEvent.CLICK, (_sender: string, evt: EventObject) => {
-            const cell = evt.getProperty('cell') as Cell | null;
-            if (!cell && !graph.isEditing()) {
-                returnFocusToGraph();
-            }
-        });
-        graph.getSelectionModel().addListener(InternalEvent.CHANGE, () => {
-            if (!graph.isEditing()) {
-                returnFocusToGraph();
-            }
-        });
-    }
 
     const graphListener = useCallback((graph: Graph): (() => void) => {
         const cellHistory: CellHistory = {};
@@ -590,6 +579,18 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             const removeChangeListener = graphListener(graphInstance);
             fixEditorPosition(graphInstance);
             supportFunctions(graphInstance);
+            graphInstance.addListener(InternalEvent.CLICK, (_sender: string, evt: EventObject) => {
+                const cell = evt.getProperty("cell") as Cell | null;
+                if (!cell && !graphInstance.isEditing()) returnFocusToGraph();
+            });
+            graphInstance.getSelectionModel().addListener(InternalEvent.CHANGE, () => {
+                if (!graphInstance.isEditing()) returnFocusToGraph();
+                const selected = graphInstance.getSelectionCells();
+                const cell = selected.length === 1 && selected[0].isVertex() ? selected[0] : null;
+                const id = cell?.getId() ?? null;
+                const value = cell?.getValue();
+                setSelectedNodeRef.current(id, typeof value === "string" && value.trim() ? value : id);
+            });
             registerCustomShapes();
             setGraph(graphInstance);
 

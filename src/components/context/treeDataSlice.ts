@@ -146,18 +146,35 @@ const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((
     rows: normalizeTreeInstanceIds(tab.rows),
 }));
 
+// Goal names live in the tab list. Tree nodes keep copies for rendering and
+// export, so bring older saved models with stale tree text back into sync.
+const syncTreeTextFromGoals = (nodes: TreeGoal[], goals: Record<TreeGoal["id"], TreeGoal>): TreeGoal[] =>
+    nodes.map((node) => ({
+        ...node,
+        content: goals[node.id]?.content ?? node.content,
+        ...(node.children === undefined ? {} : {children: syncTreeTextFromGoals(node.children, goals)}),
+    }));
+
+const updateTreeText = (nodes: TreeGoal[], id: TreeGoal["id"], text: string): void => {
+    nodes.forEach((node) => {
+        if (node.id === id && node.content !== text) node.content = text;
+        if (node.children) updateTreeText(node.children, id, text);
+    });
+};
+
 //
 export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeGoal[] = []) => {
     const normalizedTabData = normalizeTabInstanceIds(tabData);
     const normalizedTreeData = normalizeTreeInstanceIds(treeData);
     const {goals, tabs} = createGoalsAndTabsFromTabContent(normalizedTabData);
+    const syncedTreeData = syncTreeTextFromGoals(normalizedTreeData, goals);
 
     // console.log("createInitialState", tabContent, goals, tabs);
     return {
         tabs,
         goals,
-        tree: normalizedTreeData,
-        treeIds: createTreeIdsFromTreeData(goals, normalizedTreeData),
+        tree: syncedTreeData,
+        treeIds: createTreeIdsFromTreeData(goals, syncedTreeData),
         showLineBetweenNonFunctionalGoals: true,
     };
 };
@@ -301,10 +318,10 @@ export const treeDataSlice = createSlice({
             id: TreeGoal["id"],
             text: string
         }>) => {
-            state.goals[action.payload.id] = {
-                ...state.goals[action.payload.id],
-                content: action.payload.text
-            };
+            const goal = state.goals[action.payload.id];
+            if (!goal) return;
+            if (goal.content !== action.payload.text) goal.content = action.payload.text;
+            updateTreeText(state.tree, action.payload.id, action.payload.text);
         },
         updateTextForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
@@ -313,10 +330,10 @@ export const treeDataSlice = createSlice({
             const instanceId = validateInstanceId(action.payload.instanceId);
             const {text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
-            state.goals[goalId] = {
-                ...state.goals[goalId],
-                content: text
-            };
+            const goal = state.goals[goalId];
+            if (!goal) return;
+            if (goal.content !== text) goal.content = text;
+            updateTreeText(state.tree, goalId, text);
         },
         updateColorForInstanceId: (state, action: PayloadAction<{
             instanceId: string,

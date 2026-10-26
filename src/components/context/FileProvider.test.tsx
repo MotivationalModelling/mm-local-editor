@@ -92,14 +92,15 @@ describe('FileProvider', () => {
         // orignal
         expect(Object.keys(result.current.goals).length).toEqual(5);
     });
-    it('should update text of the goal', () => {
+    it('should update text of an existing goal', () => {
         const text = "Hello, world!";
+        const existingId = result.current.tabs.get("Do")!.goalIds[0];
 
-        expect(goal.content).not.toEqual(text);
+        expect(result.current.goals[existingId].content).not.toEqual(text);
 
-        act(() => dispatch(updateTextForGoalId({id: goal.id, text})));
+        act(() => dispatch(updateTextForGoalId({id: existingId, text})));
 
-        expect(result.current.goals[goal.id].content).toEqual(text);
+        expect(result.current.goals[existingId].content).toEqual(text);
     });
     it('should add a goal to correct tab', () => {
 
