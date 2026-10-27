@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {InstanceId, isNonFunctionalGoal, newTreeGoal, TreeGoal} from "./types.ts";
+import {InstanceId, isNonFunctionalGoal, newTreeGoal, TreeGoal} from "./utils/types.ts";
 import {useFileContext} from "./context/FileProvider";
 import ConfirmModal from "./ConfirmModal";
 import "./Tree.css";

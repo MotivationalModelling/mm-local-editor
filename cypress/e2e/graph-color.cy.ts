@@ -1,4 +1,4 @@
-import type {TreeGoal} from "../../src/components/types";
+import type {TreeGoal} from "../../src/components/utils/types";
 
 const renderNestedGoal = (name: string) => {
     cy.visit("/");

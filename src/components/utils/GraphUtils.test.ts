@@ -1,13 +1,11 @@
 import {describe, expect, it} from "vitest";
-import {ClusterGoal, createInstanceId, GoalType} from "../types.ts";
+import {ClusterGoal, GoalType} from "./types.ts";
+import {createInstanceId} from "./instanceId.ts";
 import {
     getNonFunctionalGoalColor,
-    normalizeInstanceId,
     parseFuncGoalRefId,
     parseGoalRefId,
-    parseInstanceId,
     parseNonFuncGoalRefId,
-    validateInstanceId,
 } from "./GraphUtils.tsx";
 
 describe("getNonFunctionalGoalColor", () => {
@@ -20,7 +18,7 @@ describe("getNonFunctionalGoalColor", () => {
         SubGoals: [],
         ...overrides
     });
-    const reference = [{instanceId: createInstanceId(2, 1), content: "Reliable"}];
+    const reference = [{instanceId: createInstanceId({goalId: 2, refId: 1}), content: "Reliable"}];
 
     it("reads the color of a top-level goal", () => {
         const goals = [goal({GoalID: 2, instanceId: "2:1", GoalColor: "#DB3545"})];
@@ -133,35 +131,5 @@ describe('parseNonFuncGoalRefId', () => {
     it('should handle multiple pairs', () => {
         const refId = '[1:2,3:4]';
         expect(parseNonFuncGoalRefId(refId)).toEqual([{goalId: 1, instanceId: "1:2"}, {goalId: 3, instanceId: "3:4"}]);
-    });
-});
-
-describe('instance IDs', () => {
-    it('should create an instance ID with the new separator', () => {
-        expect(createInstanceId(-5, 1)).toBe('-5:1');
-    });
-
-    it('should identify invalid goal ID components when creating an instance ID', () => {
-        expect(() => createInstanceId(1.5, 1)).toThrow('non-numeric goalId: "1.5"');
-    });
-
-    it('should identify invalid reference ID components when creating an instance ID', () => {
-        expect(() => createInstanceId(1, 1.5)).toThrow('non-numeric refId: "1.5"');
-    });
-
-    it('should reject a negative reference ID when creating an instance ID', () => {
-        expect(() => createInstanceId(1, -1)).toThrow('negative refId: "-1"');
-    });
-
-    it('should parse the new separator with a negative goal id', () => {
-        expect(parseInstanceId('-5:1')).toEqual({goalId: -5, refId: 1});
-    });
-
-    it('should normalise a legacy instance ID', () => {
-        expect(normalizeInstanceId('-5-1')).toBe('-5:1');
-    });
-
-    it('should reject the legacy separator in new application state', () => {
-        expect(() => validateInstanceId('-5-1')).toThrow('badly formatted instanceId "-5-1"');
     });
 });

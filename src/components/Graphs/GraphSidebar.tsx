@@ -5,9 +5,9 @@ import SidebarItems from "./SidebarComponents/SidebarItems.tsx";
 type recentreViewFunction = () => void;
 
 type GraphSidebarProps = {
-  graph: Graph | null;
-  recentreView: recentreViewFunction;
-  onFunctionalGoalAdded: (goalId: number) => void;
+    graph: Graph | null;
+    recentreView: recentreViewFunction;
+    onFunctionalGoalAdded: (goalId: number) => void;
 };
 
 const GraphSidebar = ({graph, recentreView, onFunctionalGoalAdded}: GraphSidebarProps) => {

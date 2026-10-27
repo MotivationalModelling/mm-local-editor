@@ -91,6 +91,37 @@ describe('Toolbar-created goal deletion', () => {
         });
     }
 
+    it('connects a toolbar-created goal in selection mode and retains the mode after rebuilding', () => {
+        cy.get('[aria-label="Select goals"]').click().should('have.attr', 'aria-pressed', 'true');
+        addFromToolbar('Function.png');
+        cy.get(freeHandle).should('have.length', 1);
+        cy.window().then((win) => {
+            const tree = JSON.parse(win.localStorage.getItem('ammber/treeData')!);
+            cy.wrap(tree[tree.length - 1].id).as('newGoalId');
+        });
+
+        connectTo('Do3');
+        cy.get(freeHandle).should('not.exist');
+        cy.get<number>('@newGoalId').then((id) => {
+            cy.window().should((win) => {
+                const tree = JSON.parse(win.localStorage.getItem('ammber/treeData')!);
+                type Goal = {id: number; content: string; children?: Goal[]};
+                const findGoal = (goals: Goal[]): Goal | undefined => {
+                    for (const goal of goals) {
+                        if (goal.content === 'Do3') return goal;
+                        const nested = findGoal(goal.children ?? []);
+                        if (nested) return nested;
+                    }
+                };
+                expect(findGoal(tree)?.children?.some((goal) => goal.id === id), 'connected child').to.equal(true);
+            });
+        });
+        cy.get('#graphContainer').should('have.class', 'canvas-select-mode');
+        cy.get('[aria-label="Select goals"]').should('have.attr', 'aria-pressed', 'true');
+        cy.get('[aria-label="Pan canvas"]').click().should('have.attr', 'aria-pressed', 'true');
+        cy.get('#graphContainer').should('not.have.class', 'canvas-select-mode');
+    });
+
     it('deletes the new goal when its pending connection is still selected', () => {
         addFromToolbar('Function.png');
         cy.get(freeHandle).should('have.length', 1);

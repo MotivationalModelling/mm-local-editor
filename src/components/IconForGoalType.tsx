@@ -1,6 +1,6 @@
 import {FC} from "react";
 
-import {Label} from "./types.ts";
+import {Label} from "./utils/types.ts";
 
 import BeIcon from "/img/Cloud.png";
 import DoIcon from "/img/Function.png";

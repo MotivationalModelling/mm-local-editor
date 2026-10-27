@@ -9,7 +9,6 @@ import {
     Graph,
     InternalEvent,
     KeyHandler,
-    PanningHandler,
     Point,
     RubberBandHandler,
     UndoManager,
@@ -27,7 +26,7 @@ import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster, GlobObject, InstanceId} from "../types.ts";
+import {Cluster, GlobObject, InstanceId} from "../utils/types.ts";
 import GraphSidebar from "./GraphSidebar";
 import {GoalGraph} from "./GoalGraph";
 import WarningMessage from "./WarningMessage";
@@ -258,12 +257,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         //graph.setConnectable(true);
         graph.setCellsEditable(true);
         graph.setPanning(true);
-        const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
-        if (panningHandler) {
-            // Pan with the primary mouse button only when the pointer is over
-            // empty canvas space, leaving goal dragging and resizing unchanged.
-            panningHandler.useLeftButtonForPanning = true;
-        }
+        graph.autoExtend = false;
         graph.setCellsResizable(true);
         graph.setCellsMovable(true); // Allow cells to be moved
         graph.setCellsSelectable(true); // Allow cells to be selected
@@ -788,15 +782,17 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     />
                 }
             />
-            <Container>
-                <Row className="row">
-                    <Col md={10}>
+            <Container className="h-100">
+                <Row className="graph-worker-row">
+                    <Col className="h-100" md={10}>
                         <div id={GRAPH_DIV_ID} data-cy="graph-canvas" ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
-                    <Col md={2}>
-                        <GraphSidebar graph={graph}
-                                      recentreView={handleRecentreView}
-                                      onFunctionalGoalAdded={onFunctionalGoalAdded} />
+                    <Col className="h-100 overflow-auto" md={2}>
+                        <GraphSidebar
+                            graph={graph}
+                            recentreView={handleRecentreView}
+                            onFunctionalGoalAdded={onFunctionalGoalAdded}
+                        />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (
