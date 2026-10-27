@@ -3,10 +3,10 @@ import {
     createTabDataFromTabs,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {createInstanceId, InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts"
+import {createInstanceId, normalizeInstanceId, parseInstanceId} from "../utils/instanceId.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {normalizeInstanceId, parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
-import type {NonFunctionalLayout} from "../modelJson";
+import type {NonFunctionalLayout} from "../utils/modelJson";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)
@@ -130,7 +130,7 @@ const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId
 const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): InstanceId => {
     // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
-    return createInstanceId(goalId, maxSuffix)
+    return createInstanceId({goalId, refId: maxSuffix})
 };
 
 const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({
@@ -317,7 +317,7 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             text: string
         }>) => {
-            const instanceId = validateInstanceId(action.payload.instanceId);
+            const instanceId = normalizeInstanceId(action.payload.instanceId);
             const {text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             state.goals[goalId] = {
@@ -329,7 +329,7 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             color: string
         }>) => {
-            const instanceId = validateInstanceId(action.payload.instanceId);
+            const instanceId = normalizeInstanceId(action.payload.instanceId);
             const {color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             const node = findTreeGoalByInstanceId(state.tree, instanceId);

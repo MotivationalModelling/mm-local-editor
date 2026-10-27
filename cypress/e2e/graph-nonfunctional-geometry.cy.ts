@@ -4,6 +4,7 @@ describe('Non-functional goal geometry', () => {
     cy.contains('Create Model').click();
     cy.contains('Arrange Hierarchy / Render Model').click();
     cy.get('[data-cy="graph-canvas"]').should('be.visible');
+    cy.contains('.card-subtitle', 'Zoom').closest('.card').find('button').eq(1).click();
   });
 
   it('preserves shape geometry when a concern label is edited', () => {

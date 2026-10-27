@@ -4,7 +4,7 @@ import Table from "react-bootstrap/Table";
 import Row from "react-bootstrap/Row";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
-import {Label, newTreeGoal, TreeGoal} from "./types.ts";
+import {Label, newTreeGoal, TreeGoal} from "./utils/types.ts";
 import {handleGoalBlur, handleGoalKeyPress, isEmptyGoal, isGoalDraggable, isTextEmpty} from "./utils/GoalHint.tsx";
 import {
     addGoalToTab,
@@ -28,10 +28,11 @@ interface Props {
 	groupSelected: TreeGoal[]
 	setGroupSelected: (groupSelected: TreeGoal[]) => void
 	handleSynTableTree: (treeItem: TreeGoal, editedText: string) => void
+    handleDragStart: (event: React.DragEvent<HTMLElement>, row: TreeGoal) => void
     inputRef: RefObject<HTMLInputElement>
 }
 
-const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, inputRef}) => {
+const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSelected, handleSynTableTree, handleDragStart, inputRef}) => {
 	const treeData = useFileContext();
 	const {dispatch, treeIds} = treeData;
 	const [editingGoalId, setEditingGoalId] = useState<number | null>(null);
@@ -119,12 +120,6 @@ const GoalListTable: React.FC<Props> = ({label, goals, groupSelected, setGroupSe
 		);
 
 		setGroupSelected(filteredGroupSelected);
-	};
-
-
-	const handleDragStart = (event: React.DragEvent<HTMLElement>, row: TreeGoal) => {
-		const draggedGoals = groupSelected.length > 1 ? groupSelected : [row];
-		event.dataTransfer.setData("text/plain", JSON.stringify(draggedGoals.map((item) => item.id)));
 	};
 
 	const handleCheckboxToggle = (row: TreeGoal) => {

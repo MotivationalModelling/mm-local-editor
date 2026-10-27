@@ -4,7 +4,7 @@ import Button from "react-bootstrap/Button";
 import {useFileContext} from "../context/FileProvider";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
-import {createModelFileContent} from "../modelJson";
+import {createModelFileContent} from "../utils/modelJson";
 import {useGraph} from "../context/GraphContext";
 import {captureNonFunctionalLayout} from "../Graphs/GraphGeometryUtils";
 

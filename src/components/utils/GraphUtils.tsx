@@ -1,9 +1,8 @@
-import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from '../types';
+import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from './types';
+import {normalizeInstanceId, parseInstanceId} from './instanceId';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
-import {parseInstanceId, validateInstanceId} from './InstanceId';
 import {convertListToEditingValue} from "../Graphs/GraphLabelUtils";
-export {normalizeInstanceId, parseInstanceId, validateInstanceId} from './InstanceId';
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -99,7 +98,7 @@ export function formatFunGoalRefId(goal: ClusterGoal) {
 export const parseFuncGoalRefId = (id: string): {goalId: TreeGoal["id"], instanceId: InstanceId} => {
     // A graph cell keeps its type outside the canonical instance ID, e.g. Functional-2:1.
     try {
-        const instanceId = validateInstanceId(id);
+        const instanceId = normalizeInstanceId(id);
         const {goalId} = parseInstanceId(instanceId);
 
         return {goalId, instanceId};
@@ -155,6 +154,15 @@ export const parseGoalRefId = (refId: string): {goalId: TreeGoal["id"], instance
 };
 
 
+export const isGoalRefId = (refId: string | null | undefined): refId is string => {
+    try {
+        parseGoalRefId(refId ?? "");
+        return true;
+    } catch {
+        return false;
+    }
+};
+
 // Treeid stored in the state '8:1'
 export function getRefIdFromInstanceId(instanceId: InstanceId) {
     return parseInstanceId(instanceId).refId;
@@ -193,7 +201,13 @@ export const getNonFunctionalGoalColor = (
 };
 
 const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: InstanceId): GoalBase | undefined => {
-    return clusterGoals.find((goal) => goal.instanceId === instanceId);
+    for (const goal of clusterGoals) {
+        if (goal.instanceId === instanceId) return goal;
+
+        const nestedGoal = findGoalbyInstanceId(goal.SubGoals, instanceId);
+        if (nestedGoal) return nestedGoal;
+    }
+    return undefined;
 };
 
 export const doesGoalTypeUseSeparateLines = (type: SymbolKey | undefined): boolean => (

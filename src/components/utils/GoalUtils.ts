@@ -1,4 +1,4 @@
-import type {TreeGoal} from "../types";
+import type {TreeGoal} from "./types";
 
 export const isGoalNameEmpty = (value: string): boolean => value.trim() === "";
 

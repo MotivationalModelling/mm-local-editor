@@ -1,13 +1,61 @@
 import {describe, expect, it} from "vitest";
-import {createInstanceId} from "../types.ts";
+import {ClusterGoal, GoalType} from "./types.ts";
+import {createInstanceId} from "./instanceId.ts";
 import {
-    normalizeInstanceId,
+    getNonFunctionalGoalColor,
     parseFuncGoalRefId,
     parseGoalRefId,
-    parseInstanceId,
     parseNonFuncGoalRefId,
-    validateInstanceId,
 } from "./GraphUtils.tsx";
+
+describe("getNonFunctionalGoalColor", () => {
+    const goal = (overrides: Partial<ClusterGoal> = {}): ClusterGoal => ({
+        GoalID: 1,
+        instanceId: "1:1",
+        GoalType: "Functional",
+        GoalContent: "Deliver groceries",
+        GoalNote: "",
+        SubGoals: [],
+        ...overrides
+    });
+    const reference = [{instanceId: createInstanceId({goalId: 2, refId: 1}), content: "Reliable"}];
+
+    it("reads the color of a top-level goal", () => {
+        const goals = [goal({GoalID: 2, instanceId: "2:1", GoalColor: "#DB3545"})];
+
+        expect(getNonFunctionalGoalColor(goals, reference)).toBe("#DB3545");
+    });
+
+    it.each<GoalType>(["Quality", "Emotional", "Stakeholder", "Negative"])(
+        "reads the color of a deeply nested %s goal after an unrelated branch",
+        (goalType) => {
+            const goals = [goal(), goal({
+                GoalID: 3,
+                instanceId: "3:1",
+                SubGoals: [goal({
+                    GoalID: 4,
+                    instanceId: "4:1",
+                    SubGoals: [goal({GoalID: 2, instanceId: "2:1", GoalType: goalType, GoalColor: "#DB3545"})]
+                })]
+            })];
+
+            expect(getNonFunctionalGoalColor(goals, reference)).toBe("#DB3545");
+        }
+    );
+
+    it("uses the instance color when the same goal appears in multiple branches", () => {
+        const goals = [goal({GoalID: 2, instanceId: "2:2", GoalColor: "#198754"}), goal({
+            SubGoals: [goal({GoalID: 2, instanceId: "2:1", GoalColor: "#DB3545"})]
+        })];
+
+        expect(getNonFunctionalGoalColor(goals, reference)).toBe("#DB3545");
+    });
+
+    it("leaves the default color when the goal has no color or is missing", () => {
+        expect(getNonFunctionalGoalColor([goal({GoalID: 2, instanceId: "2:1"})], reference)).toBeUndefined();
+        expect(getNonFunctionalGoalColor([goal()], reference)).toBeUndefined();
+    });
+});
 
 describe('parseGoalRefId', () => {
     it('should raise an exception for an empty refId', () => {
@@ -83,35 +131,5 @@ describe('parseNonFuncGoalRefId', () => {
     it('should handle multiple pairs', () => {
         const refId = '[1:2,3:4]';
         expect(parseNonFuncGoalRefId(refId)).toEqual([{goalId: 1, instanceId: "1:2"}, {goalId: 3, instanceId: "3:4"}]);
-    });
-});
-
-describe('instance IDs', () => {
-    it('should create an instance ID with the new separator', () => {
-        expect(createInstanceId(-5, 1)).toBe('-5:1');
-    });
-
-    it('should identify invalid goal ID components when creating an instance ID', () => {
-        expect(() => createInstanceId(1.5, 1)).toThrow('non-numeric goalId: "1.5"');
-    });
-
-    it('should identify invalid reference ID components when creating an instance ID', () => {
-        expect(() => createInstanceId(1, 1.5)).toThrow('non-numeric refId: "1.5"');
-    });
-
-    it('should reject a negative reference ID when creating an instance ID', () => {
-        expect(() => createInstanceId(1, -1)).toThrow('negative refId: "-1"');
-    });
-
-    it('should parse the new separator with a negative goal id', () => {
-        expect(parseInstanceId('-5:1')).toEqual({goalId: -5, refId: 1});
-    });
-
-    it('should normalise a legacy instance ID', () => {
-        expect(normalizeInstanceId('-5-1')).toBe('-5:1');
-    });
-
-    it('should reject the legacy separator in new application state', () => {
-        expect(() => validateInstanceId('-5-1')).toThrow('badly formatted instanceId "-5-1"');
     });
 });

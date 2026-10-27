@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {createModelFileContent, createModelJson, ModelJsonError, parseModelJson} from "./modelJson";
-import type {TabContent, TreeGoal} from "./types";
+import {createModelFileContent, createModelJson, ModelJsonError, parseModelJson} from "./utils/modelJson";
+import type {TabContent, TreeGoal} from "./utils/types";
 
 const tabs: TabContent[] = [
     {label: "Do", icon: "", goalIds: [1]},

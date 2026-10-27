@@ -12,7 +12,7 @@ import {ItemInstance} from "@headless-tree/core";
 import IconForGoalType from "./IconForGoalType.tsx";
 import {useFileContext} from "./context/FileProvider.tsx";
 import {updateTextForGoalId} from "./context/treeDataSlice.ts";
-import {InstanceId, TreeGoal} from "./types.ts";
+import {InstanceId, TreeGoal} from "./utils/types.ts";
 import {isTextEmpty} from "./utils/GoalHint.tsx";
 
 interface TreeRowProps {

@@ -4,7 +4,7 @@ import {
     Cell,
     Geometry,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
+import {ClusterGoal, GlobObject, InstanceId} from "../utils/types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
@@ -15,7 +15,7 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, isGoalRefId, parseGoalRefId} from "../utils/GraphUtils";
 import {getListLabelArea} from "./GraphLabelUtils";
 
 // ---------------------------------------------------------------------------
@@ -624,17 +624,44 @@ export const renderLegend = (graph: Graph): Cell => {
     return legend;
 };
 
+// Returns false when changes beyond colour require graph rebuild
+export const updateGoalColours = (graph: Graph, previous: ClusterGoal[], goals: ClusterGoal[]): boolean => {
+    const omitColour = (key: string, value: unknown) => key === "GoalColor" ? undefined : value;
+    if (JSON.stringify(previous, omitColour) !== JSON.stringify(goals, omitColour)) return false;
+
+    const goalsByInstance = new Map<InstanceId, ClusterGoal>();
+    const collect = (goal: ClusterGoal) => {
+        goalsByInstance.set(goal.instanceId, goal);
+        goal.SubGoals.forEach(collect);
+    };
+    goals.forEach(collect);
+
+    graph.batchUpdate(() => {
+        graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
+            const id = cell.getId();
+            if (!isGoalRefId(id)) return;
+            const goal = goalsByInstance.get(parseGoalRefId(id)[0].instanceId);
+            if (!goal) return;
+            const colour = goal.GoalColor || (goal.GoalType === "Negative"
+                ? "grey" : graph.getStylesheet().getDefaultVertexStyle().fillColor);
+            if (cell.getStyle().fillColor !== colour) {
+                graph.setCellStyles("fillColor", colour, [cell]);
+            }
+        });
+    });
+    return true;
+};
+
 /**
  * Overrides layout-computed positions with any coordinates previously saved
- * by the user. Must be called after layoutFunctions and before
- * associateNonFunctions so that non-functional symbols are placed relative
- * to the restored positions.
+ * by the user. Call before and after associateNonFunctions to restore
+ * functional goals first, then their non-functional symbols.
  */
 export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
     const positionMap = new Map<string, { x: number; y: number }>();
     const collect = (goal: ClusterGoal) => {
-        if (goal.GoalType === "Functional" && goal.x !== undefined && goal.y !== undefined) {
-            positionMap.set(generateCellId("Functional", goal.instanceId), { x: goal.x, y: goal.y });
+        if (goal.x !== undefined && goal.y !== undefined) {
+            positionMap.set(goal.instanceId, {x: goal.x, y: goal.y});
         }
         goal.SubGoals.forEach(collect);
     };
@@ -642,12 +669,13 @@ export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
 
     if (positionMap.size === 0) return;
 
-    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+    graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
         const id = cell.getId();
-        const pos = id ? positionMap.get(id) : undefined;
+        if (!isGoalRefId(id)) return;
+        const pos = parseGoalRefId(id).map(({instanceId}) => positionMap.get(instanceId)).find(Boolean);
         if (pos) {
             const geo = cell.getGeometry();
-            if (geo) {
+            if (geo && (geo.x !== pos.x || geo.y !== pos.y)) {
                 graph.getDataModel().setGeometry(cell, new Geometry(pos.x, pos.y, geo.width, geo.height));
             }
         }
@@ -657,13 +685,39 @@ export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
 /**
   * Automatically lays-out the functional hierarchy of the graph.
   */
-export const layoutFunctions = (graph: Graph, rootGoal: Cell | null) => {
-    const layout = new GoalModelLayout(
-        graph,
-        FUNCTIONAL_GOALS_SPACING.vertical,
-        FUNCTIONAL_GOALS_SPACING.horizonal
-    );
-    layout.execute(graph.getDefaultParent(), rootGoal as unknown as Cell);
+export const layoutFunctions = (graph: Graph) => {
+    const parent = graph.getDefaultParent();
+    const rootGoals = graph.getChildVertices(parent).filter((goal) => (
+        graph.getIncomingEdges(goal, null).length === 0
+    ));
+    rootGoals.reduce((nextRootX, rootGoal) => {
+        const layout = new GoalModelLayout(
+            graph,
+            FUNCTIONAL_GOALS_SPACING.vertical,
+            FUNCTIONAL_GOALS_SPACING.horizonal
+        );
+        layout.execute(parent, rootGoal);
+
+        const subtree = new Set<Cell>();
+        const collectSubtree = (goal: Cell) => {
+            if (subtree.has(goal)) return;
+            subtree.add(goal);
+            graph.getOutgoingEdges(goal, null).forEach((edge) => {
+                if (edge.target) collectSubtree(edge.target);
+            });
+        };
+        collectSubtree(rootGoal);
+
+        const goals = [...subtree];
+        const bounds = graph.getBoundingBoxFromGeometry(goals);
+        if (!bounds) return nextRootX;
+
+        const offsetX = nextRootX - bounds.x;
+        graph.batchUpdate(() => {
+            goals.forEach((goal) => graph.translateCell(goal, offsetX, 0));
+        });
+        return nextRootX + bounds.width + FUNCTIONAL_GOALS_SPACING.horizonal;
+    }, graph.gridSize);
 };
 
 /**

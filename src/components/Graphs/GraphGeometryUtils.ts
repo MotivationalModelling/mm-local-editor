@@ -1,7 +1,7 @@
 import type {Graph} from "@maxgraph/core";
 import {getListLabelArea} from "./GraphLabelUtils";
 import {hasCellId, isNonFunctionCell} from "./GraphCellUtils";
-import type {NonFunctionalLayout} from "../modelJson";
+import type {NonFunctionalLayout} from "../utils/modelJson";
 
 export const captureNonFunctionalLayout = (graph: Graph): NonFunctionalLayout => (
     Object.fromEntries(Array.from(captureNonFunctionalGeometry(graph), ([id, geometry]) => [
