@@ -9,6 +9,7 @@ import {
     Graph,
     InternalEvent,
     KeyHandler,
+    Point,
     RubberBandHandler,
     UndoManager,
 } from "@maxgraph/core";
@@ -27,11 +28,12 @@ import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
 import {Cluster, GlobObject, InstanceId} from "../utils/types.ts";
 import GraphSidebar from "./GraphSidebar";
+import {GoalGraph} from "./GoalGraph";
 import WarningMessage from "./WarningMessage";
 
-import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds, isGoalRefId} from "../utils/GraphUtils";
-import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
+import {LINE_SIZE, VERTEX_FONT} from "../utils/GraphConstants.tsx"
+import {generateCellId, getCellNumericIds, getGoalRefType, isGoalRefId} from "../utils/GraphUtils";
+import {connectNewFunctionalGoal, removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
@@ -58,11 +60,34 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     const divGraph = useRef<HTMLDivElement>(null);
     const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals} = useFileContext();
     const {graph, setGraph} = useGraph();
-    const treeIdsRef = useRef(treeIds);
-    treeIdsRef.current = treeIds;
+    const handleRecentreView = useCallback(() => {
+        if (graph) {
+            recentreView(graph);
+        }
+    }, [graph]);
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
     const previousRenderRef = useRef<{graph: Graph; cluster: Cluster; showLines: boolean} | null>(null);
+    const pendingParentConnection = useRef<{goalId: number; edge: Cell | null} | null>(null);
+    const toolbarGoalIds = useRef(new Set<number>());
+    const skipNextRecentre = useRef(false);
+    const onFunctionalGoalAdded = useCallback((goalId: number) => {
+        toolbarGoalIds.current.add(goalId);
+        pendingParentConnection.current = {goalId, edge: null};
+        skipNextRecentre.current = true;
+        // Preserve the existing layout both when adding the goal and when attaching it.
+        graph?.getChildVertices().forEach((cell) => {
+            const id = cell.getId();
+            const geometry = cell.getGeometry();
+            if (id && getGoalRefType(id) === "Functional" && geometry) {
+                dispatch(updatePositionForInstanceId({
+                    instanceId: parseGoalRefId(id)[0].instanceId,
+                    x: geometry.x,
+                    y: geometry.y,
+                }));
+            }
+        });
+    }, [graph, dispatch]);
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -140,6 +165,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             return; // abort deletion
         }
 
+        // Cancel a queued connection when its child is being deleted.
+        const pendingChild = pendingParentConnection.current?.edge?.target;
+        if (pendingChild && toRemoveSet.has(pendingChild)) {
+            pendingParentConnection.current = null;
+        }
+
         // 4) All valid → proceed to remove from graph (same recursive removal you used)
         const deletedCells: Cell[] = [];
         const removeCellRecursively = (cell: Cell) => {
@@ -166,6 +197,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 id: parsed.goalId,
                 instanceId: parsed.instanceId,
                 removeChildren: removeChildrenFlag,
+                deleteIfUnused: toolbarGoalIds.current.has(parsed.goalId),
             }));
         });
         setShowDeleteWarning(false);
@@ -376,7 +408,26 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                 }
             };
         graph.getDataModel().addListener(InternalEvent.CHANGE, changeHandler);
-        return () => graph.getDataModel().removeListener(changeHandler);
+        const connectHandler = (_sender: unknown, evt: EventObject) => {
+            const edge = evt.getProperty("edge") as Cell;
+            if (edge !== pendingParentConnection.current?.edge || !evt.getProperty("source") ||
+                !edge.source || !edge.target) return;
+
+            const parentInstanceId = parseGoalRefId(edge.source.getId()!)[0].instanceId;
+            const childInstanceId = parseGoalRefId(edge.target.getId()!)[0].instanceId;
+            // Finish maxGraph's connection transaction before React rebuilds the graph.
+            queueMicrotask(() => {
+                if (pendingParentConnection.current?.edge === edge) {
+                    pendingParentConnection.current = null;
+                    dispatch(connectNewFunctionalGoal({childInstanceId, parentInstanceId}));
+                }
+            });
+        };
+        graph.addListener(InternalEvent.CELL_CONNECTED, connectHandler);
+        return () => {
+            graph.getDataModel().removeListener(changeHandler);
+            graph.removeListener(connectHandler);
+        };
     }, [dispatch]);
 
     /**
@@ -395,7 +446,10 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         keyHandler.bindKey(DELETE_KEYBINDING, () => {
             if (graph.isEnabled()) {
 
-                const selectedCells = graph.getSelectionCells();
+                // The new goal's pending edge is selected to expose its draggable endpoint.
+                const selectedCells = graph.getSelectionCells().map((cell) => (
+                    cell === pendingParentConnection.current?.edge ? cell.target! : cell
+                ));
                 if (!selectedCells || selectedCells.length === 0) return;
 
                 setDeletingCells(selectedCells);
@@ -565,12 +619,33 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         // Restore manually moved symbols after they have been created.
         restoreSavedPositions(graph, cluster.ClusterGoals);
 
+        // Recreate only this pending edge after the normal full graph rebuild.
+        const pending = pendingParentConnection.current;
+        if (pending) {
+            const instanceId = treeIds[pending.goalId]?.[0];
+            const child = instanceId && graph.getDataModel().getCell(generateCellId("Functional", instanceId));
+            const geometry = child && child.getGeometry();
+            if (child && geometry) {
+                const edge = graph.insertEdge(null, null, "", null, child, {
+                    editable: false, movable: false, bendable: false,
+                    entryX: 0.5, entryY: 0.5,
+                });
+                edge.geometry!.setTerminalPoint(new Point(geometry.x + geometry.width / 2, geometry.y - LINE_SIZE), true);
+                pending.edge = edge;
+                graph.orderCells(true, [edge]);
+            } else {
+                pendingParentConnection.current = null;
+            }
+        }
         graph.getDataModel().endUpdate();
         graph.setSelectionCells(selectedIds
             .map((id) => id ? graph.getDataModel().getCell(id) : undefined)
             .filter((cell): cell is Cell => !!cell));
         isRenderingRef.current = false;
-    }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
+        if (pendingParentConnection.current?.edge) {
+            graph.setSelectionCell(pendingParentConnection.current.edge);
+        }
+    }, [graph, cluster, treeIds, showLineBetweenNonFunctionalGoals]);
 
     // First useEffect to set up graph. Only run on mount.
     useEffect(() => {
@@ -586,7 +661,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             ];
 
             // Creates the graph with the custom plugins
-            const graphInstance = new Graph(graphContainer, undefined, plugins);
+            const graphInstance = new GoalGraph(graphContainer, plugins, () => pendingParentConnection.current?.edge ?? null);
 
             setGraphStyle(graphInstance);
             const removeChangeListener = graphListener(graphInstance);
@@ -626,12 +701,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         const currentCount = cluster.ClusterGoals.length;
         const prevCount = prevClusterGoalsCountRef.current;
 
-        if (showGraphSection && currentCount > prevCount && graph) {
+        if (showGraphSection && currentCount > prevCount && graph && !skipNextRecentre.current) {
             requestAnimationFrame(() => {
                 recentreView(graph);
             });
         }
 
+        skipNextRecentre.current = false;
         prevClusterGoalsCountRef.current = currentCount;
     }, [cluster.ClusterGoals.length, showGraphSection, graph]);
 
@@ -714,7 +790,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     <Col className="h-100 overflow-auto" md={2}>
                         <GraphSidebar
                             graph={graph}
-                            recentreView={() => graph && recentreView(graph)}
+                            recentreView={handleRecentreView}
+                            onFunctionalGoalAdded={onFunctionalGoalAdded}
                         />
                     </Col>
                 </Row>
