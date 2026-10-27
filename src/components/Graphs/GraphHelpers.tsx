@@ -470,8 +470,6 @@ export const renderNonFunction = (
     if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
         style.verticalAlign = "top";
         style.verticalLabelPosition = "bottom";
-    } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-        style.fillColor = "grey";
     }
 
     // Set the pre-defined color instead of default
