@@ -1,8 +1,8 @@
 import {describe, expect, it} from "vitest";
-import {ClusterGoal, createInstanceId, GoalType} from "../types.ts";
+import {ClusterGoal, GoalType} from "./types.ts";
+import {createInstanceId} from "./instanceId.ts";
 import {
     getNonFunctionalGoalColor,
-    normalizeInstanceId,
     parseFuncGoalRefId,
     parseGoalRefId,
     parseNonFuncGoalRefId,
@@ -18,7 +18,7 @@ describe("getNonFunctionalGoalColor", () => {
         SubGoals: [],
         ...overrides
     });
-    const reference = [{instanceId: createInstanceId(2, 1), content: "Reliable"}];
+    const reference = [{instanceId: createInstanceId({goalId: 2, refId: 1}), content: "Reliable"}];
 
     it("reads the color of a top-level goal", () => {
         const goals = [goal({GoalID: 2, instanceId: "2:1", GoalColor: "#DB3545"})];
