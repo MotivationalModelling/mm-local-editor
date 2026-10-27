@@ -24,7 +24,12 @@
   cursor: grabbing;
 }
 
-.row {
-  height: auto;
-  min-height: 90%;
+#graphContainer.canvas-select-mode,
+#graphContainer.canvas-select-mode:active {
+  cursor: crosshair;
+}
+
+.graph-worker-row {
+  height: 100%;
+  min-height: 0;
 }

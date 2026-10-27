@@ -217,7 +217,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
           backgroundColor: "rgb(236, 244, 244)",
           display: showGoalSection ? "flex" : "none",
         }}
-        size={{width: sectionOneWidth, height: "100%"}}
+        size={{width: sectionOneWidth, height: DEFAULT_HEIGHT}}
         maxWidth={DEFINED_PROPORTIONS.maxWidth}
         minWidth={DEFINED_PROPORTIONS.minWidth}
         minHeight={DEFAULT_HEIGHT}
@@ -270,7 +270,7 @@ const SectionPanel: React.FC<SectionPanelProps> = ({
         }}
         size={{
           width: sectionThreeWidth,
-          height: "100%",
+          height: DEFAULT_HEIGHT,
         }}
         maxWidth={DEFINED_PROPORTIONS.maxWidth}
         minWidth={DEFINED_PROPORTIONS.minWidth}
