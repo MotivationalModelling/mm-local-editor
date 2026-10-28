@@ -5,15 +5,19 @@ import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-libr
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
 import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {newTreeGoal, TreeGoal} from "../utils/types.ts";
+import {ClusterGoal, newTreeGoal, TabContent, TreeGoal} from "../utils/types.ts";
+import {parseModelJson} from "../utils/modelJson.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,
     addGoalToTab,
     addGoalToTree,
+    addGoalsToTree,
     deleteGoalFromGoalList,
     reset,
+    setVisibilityForLinesBetweenNonFunctionalGoals,
     updateTextForGoalId,
+    updateTextForInstanceId,
 } from "./treeDataSlice.ts";
 
 // FileProvider provides data than UI
@@ -187,6 +191,79 @@ describe('#createTreeIdsFromTreeData', () => {
         expect(Object.keys(treeIds)).toEqual(["1", "2"]);
         expect(treeIds[g1.id]).toEqual(["1:0"]);
         expect(treeIds[g2.id]).toEqual(["2:0"]);
+    });
+});
+
+describe('renaming a goal on the tree', () => {
+    const renamedGoal = newTreeGoal({id: 7, type: "Do", content: "original"});
+    const childGoal = newTreeGoal({id: 8, type: "Be", content: "original child"});
+
+    // Start each test with a fresh provider and empty storage.
+    beforeEach(() => {
+        cleanup();
+        localStorage.clear();
+    });
+
+    const renderWithGoalOnCanvas = () => {
+        const hook = renderHook(() => useFileContext(), {wrapper});
+        act(() => hook.result.current.dispatch(addGoal(renamedGoal)));
+        act(() => hook.result.current.dispatch(addGoalToTree(renamedGoal)));
+        return hook;
+    };
+
+    const canvasNameFor = (goals: ClusterGoal[], id: number) => (
+        goals.find((goal) => goal.GoalID === id)?.GoalContent
+    );
+
+    // Same JSON that SaveFileButton writes, read back with the parser the import uses.
+    const saveAndReopen = ({tabData, treeData}: {tabData: TabContent[], treeData: TreeGoal[]}) => (
+        parseModelJson(JSON.stringify({tabData, treeData}))
+    );
+
+    it('shows a name edited in the goal list', () => {
+        const {result} = renderWithGoalOnCanvas();
+
+        act(() => result.current.dispatch(updateTextForGoalId({id: renamedGoal.id, text: "from list"})));
+
+        expect(result.current.treeData[0].content).toEqual("from list");
+        expect(canvasNameFor(result.current.cluster.ClusterGoals, renamedGoal.id)).toEqual("from list");
+    });
+
+    it('shows the new name of a nested goal', () => {
+        const {result} = renderWithGoalOnCanvas();
+        act(() => result.current.dispatch(addGoal(childGoal)));
+        act(() => result.current.dispatch(addGoalsToTree({goalIds: [childGoal.id], parentId: renamedGoal.id})));
+
+        act(() => result.current.dispatch(updateTextForGoalId({id: childGoal.id, text: "renamed child"})));
+
+        expect(result.current.treeData[0].children![0].content).toEqual("renamed child");
+    });
+
+    // The regression: the saved file only stores names in treeData, so a rename was lost on reopen
+    it('keeps a renamed goal through save and reopen', () => {
+        const {result} = renderWithGoalOnCanvas();
+
+        act(() => result.current.dispatch(updateTextForGoalId({id: renamedGoal.id, text: "saved name"})));
+
+        expect(saveAndReopen(result.current).treeData[0].content).toEqual("saved name");
+    });
+
+    it('keeps a name edited on the canvas', () => {
+        const {result} = renderWithGoalOnCanvas();
+        const instanceId = result.current.treeIds[renamedGoal.id][0];
+
+        act(() => result.current.dispatch(updateTextForInstanceId({instanceId, text: "from canvas"})));
+
+        expect(canvasNameFor(result.current.cluster.ClusterGoals, renamedGoal.id)).toEqual("from canvas");
+    });
+
+    it('keeps the same cluster when neither the tree nor the goals change', () => {
+        const {result} = renderWithGoalOnCanvas();
+        const clusterBefore = result.current.cluster;
+
+        act(() => result.current.dispatch(setVisibilityForLinesBetweenNonFunctionalGoals(false)));
+
+        expect(result.current.cluster).toBe(clusterBefore);
     });
 });
 

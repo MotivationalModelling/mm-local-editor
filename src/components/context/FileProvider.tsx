@@ -1,4 +1,4 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useMemo, useReducer, useState} from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
@@ -57,6 +57,16 @@ export const createTabDataFromTabs = (goals: Record<TreeGoal["id"], TreeGoal>, t
     // This ensures the tabData is properly derived from the Redux state
     return Array.from(tabs.values());
 };
+
+// Tree nodes hold a copy of each goal's content from when it was placed, and renames only
+// update goals, so take the current content from goals.
+export const createTreeDataFromTree = (tree: TreeGoal[], goals: Record<TreeGoal["id"], TreeGoal>): TreeGoal[] => (
+    tree.map((node) => ({
+        ...node,
+        content: goals[node.id]?.content ?? node.content,
+        ...(node.children === undefined ? {} : {children: createTreeDataFromTree(node.children, goals)}),
+    }))
+);
 
 export const useFileContext = () => {
     const fileContext = useContext(FileContext);
@@ -209,10 +219,16 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
 
+    // Regenerated whenever a goal changes, so the hierarchy, canvas and saved file show current names.
+    const treeData = useMemo(() => createTreeDataFromTree(state.tree, state.goals), [state.tree, state.goals]);
+
+    // A new cluster redraws the whole canvas, so only rebuild it when treeData changes.
+    const cluster = useMemo(() => convertTreeDataToClusters(treeData), [treeData]);
+
     useEffect(() => {
-        console.log("Tree data:", state.tree);
+        console.log("Tree data:", treeData);
         console.log("Tab data:", computedTabData);
-    }, [state.tree, computedTabData]);
+    }, [treeData, computedTabData]);
 
     const revertToDefault = () => {
         setTabData(JSON.stringify(initialTabs));
@@ -251,9 +267,9 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         <FileContext.Provider value={{
             ...state,
             dispatch,
-            treeData: state.tree,
+            treeData,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),
+            cluster,
             xmlData,
             setXmlData,
             jsonFileHandle,
