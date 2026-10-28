@@ -38,6 +38,44 @@ describe('Non-functional goal label editor', () => {
     cy.get('[data-cy="graph-canvas"]').should('be.visible');
   });
 
+  it('cancels a list draft and switches between list and ordinary editors without leaking content', () => {
+    cy.contains('#graphContainer li', concerns[0].content).dblclick({force: true});
+    cy.get('.mxCellEditor').should('have.length', 1);
+    cy.get('.mxCellEditor li').first().click().type('{end} discarded draft{esc}');
+    cy.get('.mxCellEditor').should('not.exist');
+    cy.contains('#graphContainer li', concerns[0].content).should('be.visible');
+
+    cy.contains('#graphContainer text', 'Root').dblclick({force: true});
+    cy.get('.mxCellEditor').should('have.length', 1).find('li').should('not.exist');
+    cy.get('.mxCellEditor').type('{selectall}Changed ordinary goal{enter}');
+    cy.contains('#graphContainer li', concerns[0].content).dblclick({force: true});
+    cy.get('.mxCellEditor li').should('have.length', concerns.length).first()
+      .should('have.text', concerns[0].content);
+    cy.get('.mxCellEditor').type('{esc}');
+    cy.window().should(window => {
+      const tabs = JSON.parse(window.localStorage.getItem('ammber/tabData')!);
+      expect(tabs.find((tab: {label: string}) => tab.label === 'Do').rows[0].content).to.equal('Changed ordinary goal');
+      expect(tabs.find((tab: {label: string}) => tab.label === 'Concern').rows.map((goal: {content: string}) => goal.content))
+        .to.deep.equal(concerns.map(goal => goal.content));
+    });
+  });
+
+  it('uses plain-text fallback when replacement content removes the editor list markup', () => {
+    cy.contains('#graphContainer li', concerns[0].content).dblclick({force: true});
+    cy.get('.mxCellEditor').invoke('text', '"First, quoted", Second, Third, Fourth');
+    cy.get('#graphContainer').click(5, 5, {force: true});
+    cy.get('.mxCellEditor').should('not.exist');
+    cy.get('#graphContainer li').should(items => {
+      expect(Array.from(items, item => item.textContent)).to.deep.equal(['First, quoted', 'Second', 'Third', 'Fourth']);
+    });
+    cy.window().should(window => {
+      const tabs = JSON.parse(window.localStorage.getItem('ammber/tabData')!);
+      // Presentation trims list items; the model retains spaces in unquoted input.
+      expect(tabs.find((tab: {label: string}) => tab.label === 'Concern').rows.map((goal: {content: string}) => goal.content))
+        .to.deep.equal(['First, quoted', ' Second', ' Third', ' Fourth']);
+    });
+  });
+
   it('keeps punctuation in a single Do goal', () => {
     cy.contains('#graphContainer text', 'Root').dblclick({force: true});
     cy.get('.mxCellEditor').should('be.visible').type('{selectall}Plan, build & test{enter}');

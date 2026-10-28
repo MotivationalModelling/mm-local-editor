@@ -33,8 +33,9 @@ import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, isGoalRefId} from "../utils/GraphUtils";
-import {convertEditingValueToList, isListLabelCell, normaliseListLabelItems, readListEditorValue} from "./GraphLabelUtils";
-import {makeHtmlListLabel} from "./GraphListLabel";
+import {convertEditingValueToList, isListLabelCell} from "./GraphLabelUtils";
+import {GoalGraph} from "./GoalGraph";
+import {GoalCellEditorHandler} from "./GoalCellEditorHandler";
 import {isNonFunctionCell} from "./GraphCellUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
@@ -50,57 +51,6 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
-
-// Preserve default graph labels while formatting supported shapes as lists.
-const configureListLabels = (graph: Graph) => {
-    const getLabel = graph.getLabel.bind(graph);
-    const isHtmlLabel = graph.isHtmlLabel.bind(graph);
-    const cellEditor = graph.getPlugin<CellEditorHandler>("CellEditorHandler");
-
-    graph.getLabel = (cell) => {
-        const label = getLabel(cell);
-
-        if (label && isListLabelCell(cell)) {
-            return makeHtmlListLabel(convertEditingValueToList(label));
-        } else if (label && isNonFunctionCell(cell)) {
-            return normaliseListLabelItems(convertEditingValueToList(label)).join(",\n");
-        } else {
-            return label;
-        }
-    };
-    graph.isHtmlLabel = (cell) => isListLabelCell(cell) || isHtmlLabel(cell);
-
-    if (cellEditor) {
-        const getInitialValue = cellEditor.getInitialValue.bind(cellEditor);
-        const getCurrentValue = cellEditor.getCurrentValue.bind(cellEditor);
-        const startEditing = cellEditor.startEditing.bind(cellEditor);
-
-        // Match list presentation; serialize punctuation safely when committing.
-        cellEditor.getInitialValue = (state, trigger) => {
-            if (isListLabelCell(state.cell)) {
-                return makeHtmlListLabel(convertEditingValueToList(graph.getEditingValue(state.cell, trigger)));
-            } else {
-                return getInitialValue(state, trigger);
-            }
-        };
-        cellEditor.getCurrentValue = (state) => {
-            if (isListLabelCell(state.cell) && cellEditor.textarea) {
-                return readListEditorValue(cellEditor.textarea) ?? getCurrentValue(state);
-            } else {
-                return getCurrentValue(state);
-            }
-        };
-        cellEditor.startEditing = (cell, trigger = null) => {
-            startEditing(cell, trigger);
-
-            if (isListLabelCell(cell) && cellEditor.textarea) {
-                // Keep the temporary editor inside the shape-specific label bounds.
-                cellEditor.textarea.style.boxSizing = "border-box";
-                cellEditor.textarea.style.overflow = "auto";
-            }
-        };
-    }
-};
 
 // Extracted outside component - no useCallback needed, better for testing
 const recentreView = (graphInstance: Graph) => {
@@ -667,14 +617,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             InternalEvent.disableContextMenu(graphContainer);
 
             const plugins = [
-                ...getDefaultPlugins(),
+                ...getDefaultPlugins().map(plugin =>
+                    plugin.pluginId === CellEditorHandler.pluginId ? GoalCellEditorHandler : plugin),
                 RubberBandHandler,
             ];
 
             // Creates the graph with the custom plugins
-            const graphInstance = new Graph(graphContainer, undefined, plugins);
-
-            configureListLabels(graphInstance);
+            const graphInstance = new GoalGraph(graphContainer, undefined, plugins);
             setGraphStyle(graphInstance);
             const removeChangeListener = graphListener(graphInstance);
             fixEditorPosition(graphInstance);

@@ -17,6 +17,8 @@ export default defineConfig({
   },
   publicDir: 'public',
   test: {
+    // maxGraph uses extensionless ESM imports; transform it for the real graph tests.
+    server: {deps: {inline: ['@maxgraph/core']}},
     // Modules like initialTabs.ts import icons as root-absolute paths ("/img/Cloud.png").
     // Only the dev server serves publicDir at "/", so under test those resolve against the
     // project root and miss, which failed the whole suite at import time. The extension
