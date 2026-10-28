@@ -3,19 +3,16 @@
 */
 import {act, cleanup, fireEvent, render, renderHook, screen} from '@testing-library/react';
 import {afterEach, beforeAll, beforeEach, describe, expect, it} from "vitest";
-import FileProvider, {
-    convertTreeDataToClusters,
-    createTreeIdsFromTreeData,
-    LocalStorageType,
-    useFileContext
-} from "./FileProvider";
+import FileProvider, {createTreeIdsFromTreeData, LocalStorageType, useFileContext} from "./FileProvider";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {ClusterGoal, newTreeGoal, TreeGoal} from "../utils/types.ts";
+import {ClusterGoal, newTreeGoal, TabContent, TreeGoal} from "../utils/types.ts";
+import {parseModelJson} from "../utils/modelJson.ts";
 import {enableMapSet} from "immer";
 import {
     addGoal,
     addGoalToTab,
     addGoalToTree,
+    addGoalsToTree,
     deleteGoalFromGoalList,
     reset,
     setVisibilityForLinesBetweenNonFunctionalGoals,
@@ -197,33 +194,9 @@ describe('#createTreeIdsFromTreeData', () => {
     });
 });
 
-describe('#convertTreeDataToClusters', () => {
-    it('takes goal names from goals, not from the tree node copy', () => {
-        const node = newTreeGoal({id: 1, type: "Do", content: "old name"});
-        const goals = {1: {...node, content: "new name"}};
-
-        const cluster = convertTreeDataToClusters([node], goals);
-
-        expect(cluster.ClusterGoals[0].GoalContent).toEqual("new name");
-    });
-
-    it('takes names from goals for nested goals too', () => {
-        const child = newTreeGoal({id: 2, type: "Be", content: "old child"});
-        const parent = newTreeGoal({id: 1, type: "Do", content: "old parent", children: [child]});
-        const goals = {
-            1: {...parent, content: "new parent"},
-            2: {...child, content: "new child"},
-        };
-
-        const [clusterParent] = convertTreeDataToClusters([parent], goals).ClusterGoals;
-
-        expect(clusterParent.GoalContent).toEqual("new parent");
-        expect(clusterParent.SubGoals[0].GoalContent).toEqual("new child");
-    });
-});
-
-describe('goal names on the canvas', () => {
+describe('renaming a goal on the tree', () => {
     const renamedGoal = newTreeGoal({id: 7, type: "Do", content: "original"});
+    const childGoal = newTreeGoal({id: 8, type: "Be", content: "original child"});
 
     // Start each test with a fresh provider and empty storage.
     beforeEach(() => {
@@ -242,12 +215,37 @@ describe('goal names on the canvas', () => {
         goals.find((goal) => goal.GoalID === id)?.GoalContent
     );
 
+    // Same JSON that SaveFileButton writes, read back with the parser the import uses.
+    const saveAndReopen = ({tabData, treeData}: {tabData: TabContent[], treeData: TreeGoal[]}) => (
+        parseModelJson(JSON.stringify({tabData, treeData}))
+    );
+
     it('shows a name edited in the goal list', () => {
         const {result} = renderWithGoalOnCanvas();
 
         act(() => result.current.dispatch(updateTextForGoalId({id: renamedGoal.id, text: "from list"})));
 
+        expect(result.current.treeData[0].content).toEqual("from list");
         expect(canvasNameFor(result.current.cluster.ClusterGoals, renamedGoal.id)).toEqual("from list");
+    });
+
+    it('shows the new name of a nested goal', () => {
+        const {result} = renderWithGoalOnCanvas();
+        act(() => result.current.dispatch(addGoal(childGoal)));
+        act(() => result.current.dispatch(addGoalsToTree({goalIds: [childGoal.id], parentId: renamedGoal.id})));
+
+        act(() => result.current.dispatch(updateTextForGoalId({id: childGoal.id, text: "renamed child"})));
+
+        expect(result.current.treeData[0].children![0].content).toEqual("renamed child");
+    });
+
+    // The regression: the saved file only stores names in treeData, so a rename was lost on reopen
+    it('keeps a renamed goal through save and reopen', () => {
+        const {result} = renderWithGoalOnCanvas();
+
+        act(() => result.current.dispatch(updateTextForGoalId({id: renamedGoal.id, text: "saved name"})));
+
+        expect(saveAndReopen(result.current).treeData[0].content).toEqual("saved name");
     });
 
     it('keeps a name edited on the canvas', () => {

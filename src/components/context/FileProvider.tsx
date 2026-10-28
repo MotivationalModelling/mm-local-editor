@@ -58,6 +58,16 @@ export const createTabDataFromTabs = (goals: Record<TreeGoal["id"], TreeGoal>, t
     return Array.from(tabs.values());
 };
 
+// Tree nodes hold a copy of each goal's content from when it was placed, and renames only
+// update goals, so take the current content from goals.
+export const createTreeDataFromTree = (tree: TreeGoal[], goals: Record<TreeGoal["id"], TreeGoal>): TreeGoal[] => (
+    tree.map((node) => ({
+        ...node,
+        content: goals[node.id]?.content ?? node.content,
+        ...(node.children === undefined ? {} : {children: createTreeDataFromTree(node.children, goals)}),
+    }))
+);
+
 export const useFileContext = () => {
     const fileContext = useContext(FileContext);
 
@@ -123,17 +133,13 @@ const typeMapping: Record<Label, GoalType> = {
 };
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-// Names come from goals, because the content copied onto tree nodes is never updated.
-export const convertTreeDataToClusters = (
-    treeData: TreeGoal[],
-    goals: Record<TreeGoal["id"], TreeGoal>,
-): Cluster => {
+export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
     const convertTreeGoalToClusterGoal = (item: TreeGoal): ClusterGoal => {
         return {
             GoalID: item.id,
             instanceId: item.instanceId,
             GoalType: typeMapping[item.type],
-            GoalContent: goals[item.id]?.content ?? item.content,
+            GoalContent: item.content,
             GoalNote: "",
             SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
             GoalColor: item.color,
@@ -213,16 +219,16 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
 
-    // Rebuild only when the tree or goals change; a new cluster redraws the whole canvas.
-    const cluster = useMemo(
-        () => convertTreeDataToClusters(state.tree, state.goals),
-        [state.tree, state.goals],
-    );
+    // Regenerated whenever a goal changes, so the hierarchy, canvas and saved file show current names.
+    const treeData = useMemo(() => createTreeDataFromTree(state.tree, state.goals), [state.tree, state.goals]);
+
+    // A new cluster redraws the whole canvas, so only rebuild it when treeData changes.
+    const cluster = useMemo(() => convertTreeDataToClusters(treeData), [treeData]);
 
     useEffect(() => {
-        console.log("Tree data:", state.tree);
+        console.log("Tree data:", treeData);
         console.log("Tab data:", computedTabData);
-    }, [state.tree, computedTabData]);
+    }, [treeData, computedTabData]);
 
     const revertToDefault = () => {
         setTabData(JSON.stringify(initialTabs));
@@ -261,7 +267,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
         <FileContext.Provider value={{
             ...state,
             dispatch,
-            treeData: state.tree,
+            treeData,
             tabData: computedTabData,
             cluster,
             xmlData,

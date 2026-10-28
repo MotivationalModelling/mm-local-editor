@@ -1,18 +1,19 @@
 import {describe, expect, it} from "vitest";
-import {createModelJson, ModelJsonError, parseModelJson} from "./modelJson.ts";
-import {InstanceId, TabContent, TreeGoal} from "./types.ts";
+import {ModelJsonError, parseModelJson} from "./modelJson.ts";
+import {InstanceId, TreeGoal} from "./types.ts";
 import {createInstanceId, INSTANCE_ID_SEPARATOR} from "./instanceId.ts";
 
 // Every label needs a tab, and each goal must be listed in the tab for its type
-const tabData: TabContent[] = [
-    {label: "Do", icon: "/img/Function.png", goalIds: [1, 6]},
-    {label: "Be", icon: "/img/Cloud.png", goalIds: [2]},
-    {label: "Feel", icon: "/img/Heart.png", goalIds: [3]},
-    {label: "Concern", icon: "/img/Risk.png", goalIds: [4]},
-    {label: "Who", icon: "/img/Stakeholder.png", goalIds: [5]},
-];
-
-const buildModel = (treeData: TreeGoal[]) => ({tabData, treeData});
+const buildModel = (treeData: TreeGoal[]) => ({
+    tabData: [
+        {label: "Do", icon: "/img/Function.png", goalIds: [1, 6]},
+        {label: "Be", icon: "/img/Cloud.png", goalIds: [2]},
+        {label: "Feel", icon: "/img/Heart.png", goalIds: [3]},
+        {label: "Concern", icon: "/img/Risk.png", goalIds: [4]},
+        {label: "Who", icon: "/img/Stakeholder.png", goalIds: [5]},
+    ],
+    treeData,
+});
 
 // instanceId is widened to string so the tests can feed in legacy and malformed
 // values that the InstanceId template type would otherwise reject
@@ -90,35 +91,5 @@ describe('parseModelJson instance IDs', () => {
     it('should treat the legacy and canonical spelling of one ID as duplicates', () => {
         expect(() => parse(buildModel([goal(1, "1:1"), goal(1, "1-1")])))
             .toThrow(/duplicate instanceId/);
-    });
-});
-
-describe('createModelJson', () => {
-    // Tree nodes keep the name a goal had when it was placed; goals holds the current one
-    const staleTree = [goal(1, "1:1", [{...goal(6, "6:1"), color: "red", x: 10, y: 20}])];
-    const renamedGoals = {
-        1: {...goal(1, "1:1"), content: "Plan holiday"},
-        6: {...goal(6, "6:1"), content: "Book a trip"},
-    };
-
-    it('should save the current goal names, keeping everything else on each node', () => {
-        const saved = createModelJson(tabData, staleTree, renamedGoals);
-
-        expect(saved.tabData).toEqual(tabData);
-        expect(saved.treeData).toEqual([{
-            ...staleTree[0],
-            content: "Plan holiday",
-            children: [{...staleTree[0].children![0], content: "Book a trip"}],
-        }]);
-    });
-
-    // The regression: import reads names from treeData, so a rename was lost on save and reopen
-    it('should keep a renamed goal through save and import', () => {
-        const saved = createModelJson(tabData, staleTree, renamedGoals);
-
-        const [imported] = parse(saved).treeData;
-
-        expect(imported.content).toBe("Plan holiday");
-        expect(imported.children![0].content).toBe("Book a trip");
     });
 });
