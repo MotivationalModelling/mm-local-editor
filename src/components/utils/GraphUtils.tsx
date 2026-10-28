@@ -2,6 +2,7 @@ import {ClusterGoal, GoalBase, TreeGoal, InstanceId} from './types';
 import {normalizeInstanceId, parseInstanceId} from './instanceId';
 import {SYMBOL_CONFIGS, SymbolKey, SymbolConfig} from './GraphConstants';
 import {Graph, Cell} from '@maxgraph/core';
+import {convertListToEditingValue} from "../Graphs/GraphLabelUtils";
 
 // Finds the symbol key (e.g. 'STAKEHOLDER') based on the type
 export function getSymbolKeyByType(type: string): SymbolKey | undefined {
@@ -209,8 +210,13 @@ const findGoalbyInstanceId = (clusterGoals: ClusterGoal[], instanceId: InstanceI
     return undefined;
 };
 
+export const doesGoalTypeUseSeparateLines = (type: SymbolKey | undefined): boolean => (
+    type === 'STAKEHOLDER' || type === 'NEGATIVE' || type === 'QUALITY' || type === 'EMOTIONAL'
+);
+
 export function makeLabelForGoalType (items: Array<string>, type: SymbolKey | undefined): string {
-    const sep = (type === 'STAKEHOLDER') ? ",\n" : ", ";
+    if (doesGoalTypeUseSeparateLines(type)) return convertListToEditingValue(items, ",\n");
+    const sep = ", ";
 
     return makeSquareLabel(items, sep);
 }

@@ -17,6 +17,21 @@ import {
 import {
   SYMBOL_CONFIGS,
 } from "../utils/GraphConstants";
+import { getListLabelArea } from "./GraphLabelUtils";
+
+// Convert normalized label bounds to the current shape dimensions.
+const getShapeLabelBounds = (rect: Rectangle, shape: string): Rectangle => {
+  const labelArea = getListLabelArea(shape);
+
+  if (!labelArea) return rect;
+
+  return new Rectangle(
+    rect.x + rect.width * labelArea.x,
+    rect.y + rect.height * labelArea.y,
+    rect.width * labelArea.width,
+    rect.height * labelArea.height
+  );
+};
 
 export const registerCustomShapes = (): void => {
   CellRenderer.registerShape(SYMBOL_CONFIGS.FUNCTIONAL.shape, ParallelogramShape);
@@ -105,6 +120,10 @@ class HeartShape extends ActorShape {
     return true;
   }
 
+  getLabelBounds(rect: Rectangle): Rectangle {
+    return getShapeLabelBounds(rect, SYMBOL_CONFIGS.EMOTIONAL.shape);
+  }
+
   redrawPath(
     c: AbstractCanvas2D,
     x: number,
@@ -158,6 +177,10 @@ class NegativeShape extends ActorShape {
 
   isRoundable(): boolean {
     return true;
+  }
+
+  getLabelBounds(rect: Rectangle): Rectangle {
+    return getShapeLabelBounds(rect, SYMBOL_CONFIGS.NEGATIVE.shape);
   }
 
   redrawPath(
@@ -357,6 +380,10 @@ class MMCloudShape extends ActorShape {
 
   isRoundable(): boolean {
     return true;
+  }
+
+  getLabelBounds(rect: Rectangle): Rectangle {
+    return getShapeLabelBounds(rect, SYMBOL_CONFIGS.QUALITY.shape);
   }
 
   redrawPath(

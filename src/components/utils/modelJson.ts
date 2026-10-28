@@ -1,6 +1,7 @@
 import {z} from "zod";
 import type {InstanceId, Label, TabContent, TreeGoal} from "./types.ts";
 import {ImportedInstanceIdSchema, parseInstanceId} from "./instanceId.ts";
+import {isGoalEmpty} from "./GoalUtils";
 
 const labels = ["Do", "Be", "Feel", "Concern", "Who"] as const;
 
@@ -23,9 +24,19 @@ const TabContentSchema: z.ZodType<TabContent> = z.object({
     goalIds: z.array(z.number().int()),
 });
 
+// Optional presentation data; legacy files continue to use automatic layout.
+const NonFunctionalLayoutSchema = z.record(z.object({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+}));
+export type NonFunctionalLayout = z.infer<typeof NonFunctionalLayoutSchema>;
+
 export const ModelJsonSchema = z.object({
     tabData: z.array(TabContentSchema),
     treeData: z.array(TreeGoalSchema),
+    nonFunctionalLayout: NonFunctionalLayoutSchema.optional(),
 }).superRefine(({tabData, treeData}, context) => {
     const tabsByLabel = new Map<Label, TabContent>();
     const labelByGoalId = new Map<number, Label>();
@@ -124,10 +135,63 @@ export class ModelJsonError extends Error {
     }
 }
 
+// The tree owns placement and instance IDs; goals owns the latest text/type.
+// Build an export-only snapshot so every occurrence of a goal gets its current
+// content without changing the live hierarchy or duplicating editor state.
+const snapshotTreeForSave = (
+    tree: readonly TreeGoal[],
+    goals: Readonly<Record<number, TreeGoal>>,
+): TreeGoal[] => tree.map(node => {
+    const goal = goals[node.id];
+    if (!goal) {
+        throw new ModelJsonError(`Cannot save: goal ${node.id} is missing from the model.`);
+    }
+    return {
+        ...node,
+        content: goal.content,
+        type: goal.type,
+        ...(node.children ? {children: snapshotTreeForSave(node.children, goals)} : {}),
+    };
+});
+
+export const createModelJson = (
+    tabData: TabContent[],
+    treeData: TreeGoal[],
+    goals: Readonly<Record<number, TreeGoal>>,
+    nonFunctionalLayout?: NonFunctionalLayout,
+): JSONData => {
+    // Apply the same validation/normalization on save and open. An invalid
+    // snapshot must fail before the file picker can overwrite an existing file.
+    return validateModelJson({tabData, treeData: snapshotTreeForSave(treeData, goals), nonFunctionalLayout});
+};
+
+// Prepare validated file contents independently of graph and file-picker APIs.
+export const createModelFileContent = (
+    tabData: TabContent[],
+    treeData: TreeGoal[],
+    goals: Readonly<Record<number, TreeGoal>>,
+    nonFunctionalLayout?: NonFunctionalLayout,
+): string => {
+    if (Object.values(goals).every(isGoalEmpty)) {
+        throw new ModelJsonError("No goals have been added. Please add at least one goal before saving.");
+    }
+    return JSON.stringify(createModelJson(tabData, treeData, goals, nonFunctionalLayout));
+};
+
 const formatSchemaError = (error: z.ZodError): string => {
     const issue = error.issues[0];
     const location = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
     return `${location}${issue.message}`;
+};
+
+const validateModelJson = (value: unknown): JSONData => {
+    const result = ModelJsonSchema.safeParse(value);
+    if (!result.success) {
+        throw new ModelJsonError(
+            `The JSON is not a valid AMMBER model. ${formatSchemaError(result.error)}`
+        );
+    }
+    return result.data;
 };
 
 export const parseModelJson = (fileContent: string): JSONData => {
@@ -142,12 +206,5 @@ export const parseModelJson = (fileContent: string): JSONData => {
         throw new ModelJsonError("The selected file does not contain valid JSON.");
     }
 
-    const result = ModelJsonSchema.safeParse(parsedData);
-    if (!result.success) {
-        throw new ModelJsonError(
-            `The JSON is not a valid AMMBER model. ${formatSchemaError(result.error)}`
-        );
-    }
-
-    return result.data;
+    return validateModelJson(parsedData);
 };

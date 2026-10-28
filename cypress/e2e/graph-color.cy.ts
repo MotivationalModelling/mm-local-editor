@@ -1,4 +1,4 @@
-import type {TreeGoal} from "../../src/components/types";
+import type {TreeGoal} from "../../src/components/utils/types";
 
 const renderNestedGoal = (name: string) => {
     cy.visit("/");
@@ -12,7 +12,7 @@ const renderNestedGoal = (name: string) => {
     });
     cy.reload();
     cy.contains("Arrange Hierarchy / Render Model").click();
-    cy.get("#graphContainer text").contains(new RegExp(`^${name}$`)).click({force: true});
+    cy.get("#graphContainer text, #graphContainer li").contains(new RegExp(`^${name}$`)).click({force: true});
     cy.contains("Colour").click();
 };
 
@@ -26,7 +26,18 @@ describe("Colors for nested goals", () => {
     ["Be", "Feel", "Who", "Concern"].forEach((name) => {
         it(`colors a nested ${name} goal and retains the color after refresh`, () => {
             renderNestedGoal(name);
-            cy.get('[aria-label="High priority colour"]').click();
+            cy.get('#graphContainer path').then(paths => {
+                const geometry = (elements: JQuery<HTMLElement>) => Array.from(elements)
+                    .filter(path => path.getAttribute('fill') !== 'none')
+                    .map(path => path.getAttribute('d'));
+                const before = geometry(paths);
+                cy.get('[aria-label="High priority colour"]').click();
+                // Rendering may replace DOM nodes, but colour must not change layout or selection.
+                cy.get('#graphContainer path').should(updatedPaths => {
+                    expect(geometry(updatedPaths)).to.deep.equal(before);
+                });
+                cy.get('#graphContainer rect[fill="#00ff00"]').should('have.length', 8);
+            });
             expectRenderedColor("#db3545");
 
             cy.reload();
