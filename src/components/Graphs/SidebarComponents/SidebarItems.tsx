@@ -26,9 +26,10 @@ const lineSymbol: SymbolConfig = {
 type SidebarItemsProps = {
     graph: Graph
     className?: string
+    onFunctionalGoalAdded: (goalId: number) => void
 }
 
-const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
+const SidebarItems = ({graph, className="", onFunctionalGoalAdded}: SidebarItemsProps) => {
     const divSidebar = useRef<HTMLDivElement>(null);
     const {dispatch} = useFileContext();
 
@@ -69,7 +70,7 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
         return prototype;
     };
 
-    const dragAndDrop = (prototype: Cell) => (graph: Graph, evt: MouseEvent, cell: Cell | null): void => {
+    const dragAndDrop = (prototype: Cell) => (graph: Graph, evt: MouseEvent): void => {
         graph.stopEditing(false);
         const goal = graph.cloneCell(prototype);
 
@@ -77,6 +78,12 @@ const SidebarItems = ({graph, className=""}: SidebarItemsProps) => {
             const treeItem = newTreeGoal({
                 type: getSymbolConfigByShape(String(goal.style.shape))?.label as Label
             });
+            if (treeItem.type === "Do") {
+                const point = graph.getPointForEvent(evt, false);
+                treeItem.x = point.x;
+                treeItem.y = point.y;
+                onFunctionalGoalAdded(treeItem.id);
+            }
             dispatch(addGoal(treeItem));
             dispatch(addGoalToTree(treeItem));
         }

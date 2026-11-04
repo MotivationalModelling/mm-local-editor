@@ -9,12 +9,14 @@ import {
     addGoalsToTree,
     addGoalToTab,
     addGoalToTree,
+    connectNewFunctionalGoal,
     createInitialState,
     createTreeGoalNode,
     deleteGoalFromGoalList,
     deleteGoalReferenceFromHierarchy,
     findTreeGoalByInstanceId,
     moveTreeItem,
+    removeGoalIdFromTree,
     removeItemIdFromTree,
     reset,
     selectGoalsForLabel,
@@ -159,6 +161,24 @@ describe('treeDataSlice', () => {
 
         expect(state2.treeIds[goal.id]).toEqual(["-5:1", "-5:2"]);
     });
+    it('should report a missing unparented child when connecting a functional goal', () => {
+        expect(() => treeDataSlice.reducer(initialState, connectNewFunctionalGoal({
+            childInstanceId: "7:1",
+            parentInstanceId: "1:1",
+        }))).toThrow('Unparented functional goal with instanceId "7:1" was not found');
+    });
+    it('should connect a new functional goal to its parent instance', () => {
+        const child = newTreeGoal({id: 7, instanceId: "7:1", type: "Do"});
+        const parent = newTreeGoal({id: 1, instanceId: "1:1", type: "Do", children: []});
+        const state = treeDataSlice.reducer(
+            {...initialState, tree: [parent, child]},
+            connectNewFunctionalGoal({childInstanceId: child.instanceId, parentInstanceId: parent.instanceId}),
+        );
+
+        expect(state.tree).toHaveLength(1);
+        expect(state.tree[0].instanceId).toBe(parent.instanceId);
+        expect(state.tree[0].children).toEqual([child]);
+    });
     it('should upgrade legacy instance IDs when creating state', () => {
         // This cast represents untyped JSON/local-storage data created by an older version.
         const legacyGoal = {...newTreeGoal({id: -5, type: "Who"}), instanceId: "-5-1"} as unknown as TreeGoal;
@@ -226,6 +246,40 @@ describe('treeDataSlice', () => {
         // only remove the reference
         expect(Object.keys(state1.treeIds)).toContain(String(goal.id));
         expect(Object.values(state2.treeIds)).not.toContain(instanceId);
+    });
+
+    it('cleans up an unused toolbar goal but preserves a goal with another instance', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "New goal"});
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        const [first, second] = state.treeIds[goal.id];
+
+        state = treeDataSlice.reducer(state, removeGoalIdFromTree({
+            id: goal.id, instanceId: first, removeChildren: false, deleteIfUnused: true,
+        }));
+        expect(state.treeIds[goal.id]).toEqual([second]);
+        expect(state.goals[goal.id]).toBeDefined();
+        expect(state.tabs.get("Do")?.goalIds).toContain(goal.id);
+
+        state = treeDataSlice.reducer(state, removeGoalIdFromTree({
+            id: goal.id, instanceId: second, removeChildren: false, deleteIfUnused: true,
+        }));
+        expect(state.tree).toHaveLength(0);
+        expect(state.treeIds[goal.id]).toBeUndefined();
+        expect(state.goals[goal.id]).toBeUndefined();
+        expect(state.tabs.get("Do")?.goalIds).not.toContain(goal.id);
+    });
+    it('preserves an existing goal in the list when removing its last canvas reference', () => {
+        const goal = newTreeGoal({id: 7, type: "Do", content: "Existing goal"});
+        let state = treeDataSlice.reducer(initialState, addGoal(goal));
+        state = treeDataSlice.reducer(state, addGoalToTree(goal));
+        state = treeDataSlice.reducer(state, removeGoalIdFromTree({
+            id: goal.id, instanceId: state.treeIds[goal.id][0], removeChildren: false,
+        }));
+        expect(state.tree).toHaveLength(0);
+        expect(state.goals[goal.id]).toBeDefined();
+        expect(state.tabs.get("Do")?.goalIds).toContain(goal.id);
     });
 
     it('should have tree as type TreeGoal[]', () => {
