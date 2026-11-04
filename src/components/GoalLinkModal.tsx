@@ -4,7 +4,7 @@ import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 import {useFileContext} from "./context/FileProvider";
 import {updateUrlForGoalId} from "./context/treeDataSlice.ts";
-import {TreeGoal} from "./types.ts";
+import {TreeGoal} from "./utils/types.ts";
 import {linkTitleForGoal} from "./linkTitleForGoal.ts";
 
 type GoalLinkModalProps = {

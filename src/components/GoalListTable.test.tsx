@@ -5,7 +5,7 @@ import {cleanup, fireEvent, render, screen} from "@testing-library/react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import FileProvider, {LocalStorageType} from "./context/FileProvider.tsx";
 import GoalList from "./GoalList.tsx";
-import {newTreeGoal} from "./types.ts";
+import {newTreeGoal} from "./utils/types.ts";
 
 afterEach(() => {
     cleanup();

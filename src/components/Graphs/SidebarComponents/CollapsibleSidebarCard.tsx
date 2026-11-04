@@ -20,10 +20,13 @@ export const CollapsibleSidebarCard = ({title, isOpen=false, children}: Props) =
                     {showCardContent ? <BsCaretDownFill/> : <BsCaretRightFill/>}
                     {title}
                 </Card.Subtitle>
-                <Collapse in={showCardContent}>
-                    <Card.Text className="border p-1">
-                        {children}
-                    </Card.Text>
+                <Collapse in={showCardContent} timeout={350}>
+                    {/* Keep padding and borders off the element whose height Collapse animates */}
+                    <div>
+                        <Card.Text as="div" className="border p-1">
+                            {children}
+                        </Card.Text>
+                    </div>
                 </Collapse>
             </Card.Body>
         </Card>

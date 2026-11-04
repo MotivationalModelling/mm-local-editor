@@ -4,7 +4,7 @@ import Tab from "react-bootstrap/Tab";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 import {useFileContext} from "./context/FileProvider";
-import {Label, newTreeGoal, TreeGoal} from "./types.ts";
+import {Label, newTreeGoal, TreeGoal} from "./utils/types.ts";
 
 import styles from "./TabButtons.module.css";
 import {BsPlusLg} from "react-icons/bs";

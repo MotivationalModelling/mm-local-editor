@@ -5,8 +5,8 @@ import SidebarItems from "./SidebarComponents/SidebarItems.tsx";
 type recentreViewFunction = () => void;
 
 type GraphSidebarProps = {
-  graph: Graph | null;
-  recentreView: recentreViewFunction;
+    graph: Graph | null;
+    recentreView: recentreViewFunction;
 };
 
 const GraphSidebar = ({graph, recentreView}: GraphSidebarProps) => {

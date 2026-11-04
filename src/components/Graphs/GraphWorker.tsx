@@ -9,7 +9,6 @@ import {
     Graph,
     InternalEvent,
     KeyHandler,
-    PanningHandler,
     RubberBandHandler,
     UndoManager,
 } from "@maxgraph/core";
@@ -27,18 +26,19 @@ import {
     isGoalNameEmpty,
     layoutFunctions,
     renderGoals,
-    restoreSavedPositions
+    restoreSavedPositions,
+    updateGoalColours
 } from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
 import {useGraph} from "../context/GraphContext";
-import {Cluster, GlobObject, InstanceId} from "../types.ts";
+import {Cluster, GlobObject, InstanceId} from "../utils/types.ts";
 import GraphSidebar from "./GraphSidebar";
 import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
-import {getCellNumericIds, validateInstanceId} from "../utils/GraphUtils";
+import {getCellNumericIds, isGoalRefId} from "../utils/GraphUtils";
 import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstanceId} from "../context/treeDataSlice.ts";
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
@@ -70,6 +70,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     treeIdsRef.current = treeIds;
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
+    const previousRenderRef = useRef<{graph: Graph; cluster: Cluster; showLines: boolean} | null>(null);
 
 
     const hasFunctionalGoal = (cluster: Cluster) => (
@@ -248,12 +249,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         //graph.setConnectable(true);
         graph.setCellsEditable(true);
         graph.setPanning(true);
-        const panningHandler = graph.getPlugin<PanningHandler>(PanningHandler.pluginId);
-        if (panningHandler) {
-            // Pan with the primary mouse button only when the pointer is over
-            // empty canvas space, leaving goal dragging and resizing unchanged.
-            panningHandler.useLeftButtonForPanning = true;
-        }
+        graph.autoExtend = false;
         graph.setCellsResizable(true);
         graph.setCellsMovable(true); // Allow cells to be moved
         graph.setCellsSelectable(true); // Allow cells to be selected
@@ -367,11 +363,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                             }
 
                             // Only persist user-initiated drags; skip events fired during renderGraph.
-                            if (!isRenderingRef.current && cellID?.startsWith("Functional-")) {
+                            if (!isRenderingRef.current && isGoalRefId(cellID)) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null) {
-                                    const instanceId = validateInstanceId(cellID.replace("Functional-", ""));
-                                    dispatch(updatePositionForInstanceId({ instanceId, x: geo.x, y: geo.y }));
+                                    parseGoalRefId(cellID).forEach(({instanceId}) => {
+                                        dispatch(updatePositionForInstanceId({instanceId, x: geo.x, y: geo.y}));
+                                    });
                                 }
                             }
                         }
@@ -553,6 +550,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const renderGraph = useCallback(() => {
         if (!graph) return;
+        const selectedIds = graph.getSelectionCells().map((cell) => cell.getId());
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
         let rootGoal: Cell | null = null;
@@ -608,9 +606,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             stakeholdersGlob,
             showLineBetweenNonFunctionalGoals
         );
+        // Restore manually moved symbols after they have been created.
+        restoreSavedPositions(graph, cluster.ClusterGoals);
 
         graph.getDataModel().endUpdate();
-
+        graph.setSelectionCells(selectedIds
+            .map((id) => id ? graph.getDataModel().getCell(id) : undefined)
+            .filter((cell): cell is Cell => !!cell));
         isRenderingRef.current = false;
     }, [graph, cluster, showLineBetweenNonFunctionalGoals]);
 
@@ -648,15 +650,20 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // Separate useEffect to render / update the graph.
     useEffect(() => {
         if (graph) {
-            // If user has goals defined, draw the graph
-            if (cluster.ClusterGoals.length > 0) {
+            const previous = previousRenderRef.current;
+            // Recolour existing cells without rerunning layout
+            const coloursUpdated = previous?.graph === graph &&
+                previous.showLines === showLineBetweenNonFunctionalGoals &&
+                updateGoalColours(graph, previous.cluster.ClusterGoals, cluster.ClusterGoals);
+            if (!coloursUpdated && cluster.ClusterGoals.length > 0) {
                 renderGraph();
             }
-            else {
+            else if (!coloursUpdated) {
                 graph.getDataModel().clear();
             }
+            previousRenderRef.current = {graph, cluster, showLines: showLineBetweenNonFunctionalGoals};
         }
-    }, [cluster, graph, renderGraph]);
+    }, [cluster, graph, renderGraph, showLineBetweenNonFunctionalGoals]);
 
     // Auto-center when goals in the canvas change (e.g. new goal added)
     useEffect(() => {
@@ -743,13 +750,16 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     />
                 }
             />
-            <Container>
-                <Row className="row">
-                    <Col md={10}>
+            <Container className="h-100">
+                <Row className="graph-worker-row">
+                    <Col className="h-100" md={10}>
                         <div id={GRAPH_DIV_ID} data-cy="graph-canvas" ref={divGraph} tabIndex={0} style={{outline: 'none'}} />
                     </Col>
-                    <Col md={2}>
-                        <GraphSidebar graph={graph} recentreView={() => graph && recentreView(graph)} />
+                    <Col className="h-100 overflow-auto" md={2}>
+                        <GraphSidebar
+                            graph={graph}
+                            recentreView={() => graph && recentreView(graph)}
+                        />
                     </Col>
                 </Row>
                 {(cluster.ClusterGoals.length > 0) && (!hasFunctionalGoalInCluster) && (

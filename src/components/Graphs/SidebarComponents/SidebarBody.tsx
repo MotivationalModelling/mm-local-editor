@@ -1,6 +1,7 @@
 import {Graph} from "@maxgraph/core";
 import ColorButtons from "./ColorButtons";
 import LineButtons from "./LineButtons";
+import SelectionMode from "./SelectionMode";
 import ZoomButtons from "./ZoomButtons";
 import ScaleTextButton from "../ScaleTextButton";
 import {CollapsibleSidebarCard} from "./CollapsibleSidebarCard";
@@ -16,6 +17,9 @@ const SidebarBody = ({graph, recentreView, className}: SidebarProps) => {
 
     return (
         <div className={`border border-black p-1 rounded ${className}`}>
+            <CollapsibleSidebarCard isOpen title="Selection">
+                <SelectionMode/>
+            </CollapsibleSidebarCard>
             <CollapsibleSidebarCard isOpen title="Zoom">
                 <ZoomButtons recentreView={recentreView}/>
             </CollapsibleSidebarCard>

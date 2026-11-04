@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import {useFileContext} from "../context/FileProvider";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
-import type {JSONData} from "../modelJson.ts";
+import type {JSONData} from "../utils/modelJson.ts";
 
 const SaveFileButton = () => {
 	const {setJsonFileHandle, treeData, tabData, goals} = useFileContext();

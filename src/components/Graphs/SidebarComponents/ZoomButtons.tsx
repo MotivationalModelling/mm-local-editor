@@ -2,35 +2,16 @@ import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Button from "react-bootstrap/Button";
 import {BsStopCircle, BsZoomIn, BsZoomOut} from "react-icons/bs";
 import {useGraph} from "../../context/GraphContext.tsx";
-import {useEffect, useRef, useState} from "react";
 
 type ZoomButtonsProps = {
-  recentreView: () => void
+    recentreView: () => void
 };
 
 const ZoomButtons = ({recentreView}: ZoomButtonsProps) => {
     const {graph} = useGraph();
-    const HORIZONTAL_THRESHOLD = 90; 
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [containerWidth, setContainerWidth] = useState(0);
-  
-    useEffect(() => {
-        if (containerRef.current) {
-            const resizeObserver = new ResizeObserver(() => {
-                setContainerWidth(containerRef.current!.offsetWidth);
-            });
-            resizeObserver.observe(containerRef.current);
-
-            return () => {
-                resizeObserver.disconnect();
-            };
-        }
-    }, []);
 
     return (
-        <ButtonGroup ref={containerRef} 
-                    className={`w-100 d-flex ${(containerWidth < HORIZONTAL_THRESHOLD) ? "flex-column" : "flex-row"}`} 
-                    size="sm">
+        <ButtonGroup vertical className="w-100" size="sm">
             <Button className="flex-fill"
                     variant="light"
                     size="sm"

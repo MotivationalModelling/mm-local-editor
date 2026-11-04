@@ -4,10 +4,10 @@ import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
+import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts";
 import {useLocalStorage} from "usehooks-ts";
 
-export type {JSONData} from "../modelJson.ts";
+export type {JSONData} from "../utils/modelJson.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //

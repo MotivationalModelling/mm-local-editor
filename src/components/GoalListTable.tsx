@@ -4,7 +4,7 @@ import Table from "react-bootstrap/Table";
 import Row from "react-bootstrap/Row";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
-import {Label, newTreeGoal, TreeGoal} from "./types.ts";
+import {Label, newTreeGoal, TreeGoal} from "./utils/types.ts";
 import {handleGoalBlur, handleGoalKeyPress, isEmptyGoal, isGoalDraggable, isTextEmpty} from "./utils/GoalHint.tsx";
 import {
     addGoalToTab,
