@@ -687,8 +687,9 @@ export const layoutFunctions = (graph: Graph) => {
 
         const goals = [...subtree];
         const bounds = graph.getBoundingBoxFromGeometry(goals);
-        if (!bounds) return nextRootX;
-
+        if (!bounds) {
+            return nextRootX;
+        }
         const offsetX = nextRootX - bounds.x;
         graph.batchUpdate(() => {
             goals.forEach((goal) => graph.translateCell(goal, offsetX, 0));
