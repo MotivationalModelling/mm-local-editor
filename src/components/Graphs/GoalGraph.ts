@@ -6,10 +6,12 @@ import {makeHtmlListLabel} from "./GraphListLabel";
 export class GoalGraph extends Graph {
     override getLabel = (cell: Cell): string | null => {
         const label = super.getLabel(cell);
-        if (label && isListLabelCell(cell)) {
-            return makeHtmlListLabel(convertEditingValueToList(label));
-        } else if (label && isNonFunctionCell(cell)) {
-            return normaliseListLabelItems(convertEditingValueToList(label)).join(",\n");
+        if (label) {
+            if (isListLabelCell(cell)) {
+                return makeHtmlListLabel(convertEditingValueToList(label));
+            } else if (isNonFunctionCell(cell)) {
+                return normaliseListLabelItems(convertEditingValueToList(label)).join(",\n");
+            }
         }
         return label;
     };

@@ -5,6 +5,15 @@
 
 .graph-list-label-items {
     overflow-wrap: anywhere;
-    padding-left: 1.2em;
+    padding-left: 0;
     white-space: normal;
+}
+
+.graph-list-label-items > li {
+    margin-left: 1.2em;
+}
+
+.graph-list-label-items > li:only-child {
+    margin-left: 0;
+    list-style-type: none;
 }

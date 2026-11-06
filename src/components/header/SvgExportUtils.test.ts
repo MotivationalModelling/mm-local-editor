@@ -150,7 +150,7 @@ describe("prepareSvgForPng", () => {
         expect(svg.querySelector("rect")).toBeNull();
     });
 
-    it("preserves the browser's wrapped line breaks", () => {
+    it("preserves wrapped lines without adding a bullet to a single item", () => {
         const {svg, source} = createTestSvg(["Long label"]);
         mockRangeGeometry((_node, startOffset, endOffset) => {
             const secondLine = startOffset >= 5;
@@ -166,7 +166,7 @@ describe("prepareSvgForPng", () => {
         const exportedText = Array.from(exportSvg.querySelectorAll("text"))
             .map(element => element.textContent);
 
-        expect(exportedText).toEqual(["•", "Long", "label"]);
+        expect(exportedText).toEqual(["Long", "label"]);
     });
 
     it("converts screen coordinates back through zoom and translation", () => {
@@ -174,7 +174,7 @@ describe("prepareSvgForPng", () => {
         mockSvgScreenTransform(svg, group, 2, 60, 20);
         mockRangeGeometry(() => ({left: 100, top: 40, width: 16, height: 32}));
         const output = prepareSvgForPng(svg, [source]);
-        const text = output.querySelectorAll("text")[1];
+        const text = output.querySelector("text")!;
         expect(text.getAttribute("x")).toBe("20");
         expect(text.getAttribute("y")).toBe("10");
     });
@@ -198,6 +198,6 @@ describe("prepareSvgForPng", () => {
         mockRangeGeometry(() => ({left: 100, top: 20, width: 80, height: 16}));
         const output = prepareSvgForPng(svg, [source]);
         expect(Array.from(output.querySelectorAll("text"), text => text.textContent))
-            .toEqual(["•", "A & 中文 😀"]);
+            .toEqual(["A & 中文 😀"]);
     });
 });

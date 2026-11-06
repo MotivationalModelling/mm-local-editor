@@ -157,7 +157,7 @@ const convertListLabelToSvg = (svg: SVGSVGElement, source: ListLabelExportSource
     const group = svg.ownerDocument.createElementNS(SVG_NAMESPACE, "g");
     getListItemMeasurements(source).forEach(({lines, style}) => {
         lines.forEach((line, lineIndex) => {
-            if (lineIndex === 0) {
+            if (source.items.length > 1 && lineIndex === 0) {
                 group.appendChild(createSvgTextAtScreenPosition(svg, matrix, LIST_BULLET,
                     line.x - line.height * BULLET_OFFSET_RATIO, line.y, style));
             }
