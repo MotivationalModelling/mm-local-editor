@@ -81,7 +81,7 @@ describe('Single-item goal labels', () => {
       cy.get('#clusterTab').click();
       cy.contains('.nav-link', new RegExp(`^${type}$`)).click();
       cy.get(`input[placeholder="Enter ${type}..."][value="${second}"]`)
-        .closest('tr').find('button').click();
+        .closest('tr').find('button').not('[title="Related link"]').click();
       cy.get('#graphTab').click();
       cy.get('#graphContainer li').should('have.length', 1)
         .and('have.text', edited).and('have.css', 'list-style-type', 'none')

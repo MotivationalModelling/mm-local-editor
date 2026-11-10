@@ -1,6 +1,7 @@
 import type {Graph} from "@maxgraph/core";
 import {buildExportableSVG} from "../utils/ExportGraph";
 import {convertEditingValueToList, isListLabelCell, normaliseListLabelItems} from "../Graphs/GraphLabelUtils";
+import {getGoalLinkForCell} from "../Graphs/GraphHelpers";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 // Browser glyph rectangles on the same baseline can differ by a fraction of a pixel.
@@ -179,6 +180,21 @@ export const prepareGraphForSvg = (graph: Graph, svgElement: SVGSVGElement) => {
             "color", "font-family", "font-size", "font-weight", "font-style", "line-height"]) {
             copy.style.setProperty(property, style.getPropertyValue(property));
         }
+    });
+    // Reuse the clone map so each model URL wraps its own label, even when
+    // earlier labels have already been wrapped in SVG anchors.
+    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+        const url = getGoalLinkForCell(cell);
+        const labelNode = graph.getView().getState(cell)?.text?.node;
+        const copy = labelNode ? copies.get(labelNode) : undefined;
+        if (!url || !copy?.parentNode) return;
+
+        const link = svg.ownerDocument.createElementNS(SVG_NAMESPACE, "a");
+        link.setAttribute("href", url);
+        link.setAttribute("target", "_blank");
+        link.setAttribute("rel", "noopener noreferrer");
+        copy.parentNode.insertBefore(link, copy);
+        link.appendChild(copy);
     });
     return buildExportableSVG(graph, svg);
 };

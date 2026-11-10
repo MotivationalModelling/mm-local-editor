@@ -135,6 +135,7 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
             GoalContent: item.content,
             GoalNote: "",
             SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
+            url: item.url,
             GoalColor: item.color,
             x: item.x,
             y: item.y,

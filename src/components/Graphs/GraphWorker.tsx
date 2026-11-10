@@ -21,8 +21,15 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import ErrorModal, {ErrorModalProps} from "../ErrorModal.tsx";
-import {associateNonFunctions, layoutFunctions, renderGoals, restoreSavedPositions, updateGoalColours} from './GraphHelpers';
 import {isGoalNameEmpty} from "../utils/GoalUtils";
+import {
+    associateNonFunctions,
+    getGoalLinkForCell,
+    layoutFunctions,
+    renderGoals,
+    restoreSavedPositions,
+    updateGoalColours
+} from './GraphHelpers';
 import {registerCustomShapes} from "./GraphShapes";
 import "./GraphWorker.css";
 import {useFileContext} from "../context/FileProvider.tsx";
@@ -278,6 +285,22 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const graphListener = useCallback((graph: Graph): (() => void) => {
         const cellHistory: CellHistory = {};
+        const goalLinkClickHandler = (_sender: string, evt: EventObject) => {
+            const cell = evt.getProperty("cell") as Cell ?? null;
+            if (!cell) return;
+
+            const url = getGoalLinkForCell(cell);
+            const mouseEvent = evt.getProperty("event") as MouseEvent | undefined;
+            const eventTarget = mouseEvent?.target as Node | null;
+            const labelNode = graph.getView().getState(cell)?.text?.node;
+
+            // Only the label acts as a link; the surrounding symbol keeps its
+            // existing selection, drag, resize and edit behaviour.
+            if (!url || !eventTarget || !labelNode?.contains(eventTarget)) return;
+
+            window.open(url, "_blank", "noopener,noreferrer");
+            evt.consume();
+        };
         const changeHandler = (_sender: string, evt: EventObject) => {
                 const changes = evt.getProperty("edit").changes;
                 const hasNonStyleChanges = changes.some(
@@ -390,8 +413,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     }
                 }
             };
+        graph.addListener(InternalEvent.CLICK, goalLinkClickHandler);
         graph.getDataModel().addListener(InternalEvent.CHANGE, changeHandler);
-        return () => graph.getDataModel().removeListener(changeHandler);
+        return () => {
+            graph.removeListener(goalLinkClickHandler);
+            graph.getDataModel().removeListener(changeHandler);
+        };
     }, [dispatch]);
 
     /**

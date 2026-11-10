@@ -54,6 +54,15 @@ describe('parseModelJson instance IDs', () => {
         expect(parsed.treeData[0].children?.[0].instanceId).toBe("6:2");
     });
 
+    it.each(["1:1", "1-1"])('preserves related links when importing %s instance IDs', (instanceId) => {
+        const child = {...goal(6, "6-2"), url: "https://example.com/child"};
+        const root = {...goal(1, instanceId, [child]), url: "https://example.com/root"};
+        const parsed = parse(buildModel([root]));
+
+        expect(parsed.treeData[0]).toMatchObject({instanceId: "1:1", url: root.url});
+        expect(parsed.treeData[0].children?.[0]).toMatchObject({instanceId: "6:2", url: child.url});
+    });
+
     it('should accept a negative goal ID in either format', () => {
         const model = (instanceId: string) => ({
             ...buildModel([goal(-5, instanceId)]),

@@ -104,6 +104,8 @@ describe("prepareSvgForPng", () => {
         const graph = {
             getGraphBounds: () => ({x: 0, y: 0, width: 400, height: 300}),
             getView: () => ({getScale: () => 1}),
+            getDefaultParent: () => null,
+            getChildVertices: () => [],
         } as unknown as Graph;
         const {clone} = prepareGraphForSvg(graph, svg);
         expect(clone.querySelector("ul")!.style.paddingLeft).toBe("20px");

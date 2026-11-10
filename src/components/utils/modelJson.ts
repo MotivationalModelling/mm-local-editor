@@ -10,6 +10,7 @@ const LabelSchema = z.enum(labels);
 const TreeGoalSchema: z.ZodType<TreeGoal, z.ZodTypeDef, unknown> = z.lazy(() => z.object({
     id: z.number().int(),
     content: z.string(),
+    url: z.string().optional(),
     type: LabelSchema,
     instanceId: ImportedInstanceIdSchema,
     children: z.array(TreeGoalSchema).optional(),
