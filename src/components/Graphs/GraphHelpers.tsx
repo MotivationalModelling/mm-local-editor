@@ -18,6 +18,7 @@ import {
 } from "../utils/GraphConstants.tsx";
 
 import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, isGoalRefId, parseGoalRefId} from "../utils/GraphUtils";
+import {getListLabelArea} from "./GraphLabelUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -473,6 +474,8 @@ export const renderNonFunction = (
         console.warn(`Unknown type "${type}" — no matching symbol config found.`);
     }
 
+    const labelArea = getListLabelArea(shape);
+
     // Clone style to avoid modifying the default
     let style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.shape = shape;
@@ -482,6 +485,14 @@ export const renderNonFunction = (
     style.labelPosition = "center";
     style.spacingTop = 0;
 
+    // Constrain list labels to their safe areas and wrap long content.
+    if (labelArea) {
+        Object.assign(style, {
+            overflow: "fill",
+            verticalAlign: "top",
+            whiteSpace: "wrap",
+        });
+    }
     // A non-functional symbol may combine several goals. Only a symbol for a
     // single goal has one clear link target.
     const goalUrl = (descriptions.length === 1) ? descriptions[0].url : undefined;
@@ -560,6 +571,17 @@ export const renderNonFunction = (
 
         nodeGeo.width = Math.max(maxLineWidth, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
         nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
+
+        // Grow the initial shape when wrapped content needs more vertical space.
+        if (labelArea) {
+            const labelWidth = nodeGeo.width * labelArea.width;
+            const wrappedPreferred = graph.getPreferredSizeForCell(node, labelWidth);
+
+            if (wrappedPreferred) {
+                const labelHeight = wrappedPreferred.height + VERTEX_FONT.size * 0.25;
+                nodeGeo.height = Math.max(nodeGeo.height, labelHeight / labelArea.height);
+            }
+        }
     }
 
     // Note for future: There must be some API that does this
@@ -808,9 +830,3 @@ export const associateNonFunctions = (
         }
     });
 };
-
-
-
-export function isGoalNameEmpty(value: string): boolean {
-    return !value || value.trim() === "";
-}
