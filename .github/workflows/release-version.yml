@@ -29,7 +29,7 @@ jobs:
         id: version
         run: |
           YEAR=$(date +'%Y')
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          LATEST_TAG=$(git describe --tags --abbrev=0 || echo "")
 
           if [ -z "$LATEST_TAG" ]; then
             NEXT_VERSION="${YEAR}.1"
@@ -45,10 +45,10 @@ jobs:
             fi
           fi
 
-          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "version=$NEXT_VERSION" >>$GITHUB_OUTPUT
 
           # Update package.json version
-          jq --arg v "$NEXT_VERSION" '.version=$v' package.json > package.tmp && mv package.tmp package.json
+          jq --arg v "$NEXT_VERSION" '.version=$v' package.json >package.tmp && mv package.tmp package.json
 
       - name: Commit package.json
         run: |
