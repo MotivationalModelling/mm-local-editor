@@ -1,4 +1,4 @@
-import {Label, newTreeGoal, TreeGoal} from "../components/types.ts";
+import {Label, newTreeGoal, TreeGoal} from "../components/utils/types.ts";
 
 import BeIcon from "/img/Cloud.png";
 import DoIcon from "/img/Function.png";

@@ -2,11 +2,11 @@ import {useState} from "react";
 import {Graph} from "@maxgraph/core";
 import {ColorResult} from "react-color";
 
-import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Button from "react-bootstrap/Button";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ColorPicker from "./ColorPicker.tsx";
 import {useFileContext} from "../../context/FileProvider.tsx";
-import {parseFuncGoalRefId, parseGoalRefId} from "../../utils/GraphUtils.tsx";
+import {parseGoalRefId} from "../../utils/GraphUtils.tsx";
 import {updateColorForInstanceId} from "../../context/treeDataSlice.ts";
 
 type ColorButtonsProps = {
@@ -39,18 +39,27 @@ const ColorButtons = ({graph}: ColorButtonsProps) => {
     // Note that the colours are copies from the bootstrap variants and won't track changes there
     return (
         <>
-            <ButtonGroup vertical className="w-100">
+            <ButtonGroup size="sm" className="d-flex justify-content-center" aria-label="Priority colour">
                 <Button variant="danger"
+                        className="flex-grow-0"
+                        title="High priority"
+                        aria-label="High priority colour"
                         onClick={() => setColor("#DB3545")}>
-                    High
+                    H
                 </Button>
                 <Button variant="warning"
+                        className="flex-grow-0"
+                        title="Medium priority"
+                        aria-label="Medium priority colour"
                         onClick={() => setColor("#FFC107")}>
-                    Medium
+                    M
                 </Button>
                 <Button variant="success"
+                        className="flex-grow-0"
+                        title="Low priority"
+                        aria-label="Low priority colour"
                         onClick={() => setColor("#198754")}>
-                    Low
+                    L
                 </Button>
             </ButtonGroup>
             <ColorPicker selectedColor={selectedColor}

@@ -3,9 +3,10 @@ import {
     createTabDataFromTabs,
     createTreeIdsFromTreeData,
 } from "./FileProvider.tsx";
-import {createInstanceId, InstanceId, Label, TabContent, TreeGoal} from "../types.ts"
+import {InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts"
+import {createInstanceId, normalizeInstanceId, parseInstanceId} from "../utils/instanceId.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import {normalizeInstanceId, parseInstanceId, validateInstanceId} from "../utils/GraphUtils.tsx";
+import type {NonFunctionalLayout} from "../utils/modelJson";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)
@@ -18,6 +19,7 @@ export const createTreeGoalNode = (
         content = "",
         type,
         color,
+        url,
     }: {
         id: TreeGoal["id"];
         instanceId?: TreeGoal["instanceId"];
@@ -25,6 +27,7 @@ export const createTreeGoalNode = (
         content?: string;
         type: TreeGoal["type"];
         color?: string;
+        url?: string;
     },
 ): TreeGoal => {
     // Update treeIds mapping
@@ -41,6 +44,7 @@ export const createTreeGoalNode = (
         content,
         type,
         color,
+        url,
     };
 };
 
@@ -117,6 +121,19 @@ const removeAllReferenceFromHierarchy = (
         }));
 };
 
+const updateUrlForGoalReferences = (
+    nodes: TreeGoal[],
+    goalId: TreeGoal["id"],
+    url: string | undefined,
+) => {
+    nodes.forEach((node) => {
+        if (node.id === goalId) {
+            node.url = url;
+        }
+        updateUrlForGoalReferences(node.children ?? [], goalId, url);
+    });
+};
+
 const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): number => {
     const ids = treeIds[goalId]?.filter((id) => id !== null);  // filter out undefined & null
     if (!ids || ids.length === 0) return 0;
@@ -129,7 +146,7 @@ const generateMaxSuffix = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId
 const generateInstanceId = (treeIds: Record<TreeGoal["id"], InstanceId[]>, goalId: TreeGoal["id"]): InstanceId => {
     // give it new instance id
     const maxSuffix = generateMaxSuffix(treeIds, goalId) + 1;
-    return createInstanceId(goalId, maxSuffix)
+    return createInstanceId({goalId, refId: maxSuffix})
 };
 
 const normalizeTreeInstanceIds = (tree: TreeGoal[]): TreeGoal[] => tree.map((goal) => ({
@@ -147,7 +164,11 @@ const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((
 }));
 
 //
-export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData: TreeGoal[] = []) => {
+export const createInitialState = (
+    tabData: InitialTab[] = initialTabs,
+    treeData: TreeGoal[] = [],
+    nonFunctionalLayout: NonFunctionalLayout = {},
+) => {
     const normalizedTabData = normalizeTabInstanceIds(tabData);
     const normalizedTreeData = normalizeTreeInstanceIds(treeData);
     const {goals, tabs} = createGoalsAndTabsFromTabContent(normalizedTabData);
@@ -157,6 +178,7 @@ export const createInitialState = (tabData: InitialTab[] = initialTabs, treeData
         tabs,
         goals,
         tree: normalizedTreeData,
+        nonFunctionalLayout,
         treeIds: createTreeIdsFromTreeData(goals, normalizedTreeData),
         showLineBetweenNonFunctionalGoals: true,
     };
@@ -196,7 +218,8 @@ export const treeDataSlice = createSlice({
         tabs: {} as Map<Label, TabContent>,
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
-        showLineBetweenNonFunctionalGoals: true
+        showLineBetweenNonFunctionalGoals: true,
+        nonFunctionalLayout: {} as NonFunctionalLayout
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
@@ -306,11 +329,25 @@ export const treeDataSlice = createSlice({
                 content: action.payload.text
             };
         },
+        updateUrlForGoalId: (state, action: PayloadAction<{
+            id: TreeGoal["id"],
+            url: string | undefined
+        }>) => {
+            const goal = state.goals[action.payload.id];
+            if (!goal) {
+                throw new Error(`Cannot update URL for missing goal ${action.payload.id}`);
+            }
+
+            goal.url = action.payload.url;
+
+            // Keep saved hierarchy references consistent with the goal list.
+            updateUrlForGoalReferences(state.tree, action.payload.id, action.payload.url);
+        },
         updateTextForInstanceId: (state, action: PayloadAction<{
             instanceId: string,
             text: string
         }>) => {
-            const instanceId = validateInstanceId(action.payload.instanceId);
+            const instanceId = normalizeInstanceId(action.payload.instanceId);
             const {text} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             state.goals[goalId] = {
@@ -322,7 +359,7 @@ export const treeDataSlice = createSlice({
             instanceId: string,
             color: string
         }>) => {
-            const instanceId = validateInstanceId(action.payload.instanceId);
+            const instanceId = normalizeInstanceId(action.payload.instanceId);
             const {color} = action.payload;
             const goalId = parseInstanceId(instanceId).goalId;
             const node = findTreeGoalByInstanceId(state.tree, instanceId);
@@ -348,9 +385,10 @@ export const treeDataSlice = createSlice({
         },
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
-            treeData: TreeGoal[]
+            treeData: TreeGoal[],
+            nonFunctionalLayout?: NonFunctionalLayout
         } | undefined>) => {
-            const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData)
+            const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData, action.payload.nonFunctionalLayout)
                 : createInitialState(initialTabs, []);
             Object.assign(state, initialState);
         }
@@ -373,6 +411,6 @@ export const {
     addGoal, addGoalToTab, setTreeData, setChildrenOfNodeId, moveTreeItem, addGoalToTree, addGoalsToTree,
     deleteGoalReferenceFromHierarchy,
     deleteGoalFromGoalList, updateTextForGoalId, reset, removeGoalIdFromTree, updateTextForInstanceId,
-    updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId
+    updateColorForInstanceId, setVisibilityForLinesBetweenNonFunctionalGoals, updatePositionForInstanceId, updateUrlForGoalId
 } = treeDataSlice.actions;
 export const {selectGoalsForLabel} = treeDataSlice.selectors;

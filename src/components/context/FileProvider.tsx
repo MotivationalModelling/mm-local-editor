@@ -1,13 +1,14 @@
-import React, {createContext, PropsWithChildren, useContext, useEffect, useReducer, useState} from "react";
+import React, {createContext, PropsWithChildren, useContext, useEffect, useMemo, useReducer, useState} from "react";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
-import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../types.ts";
+import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts";
 import {useLocalStorage} from "usehooks-ts";
+import type {NonFunctionalLayout} from "../utils/modelJson";
 
-export type {JSONData} from "../modelJson.ts";
+export type {JSONData} from "../utils/modelJson.ts";
 
 // This hook manages the goals that are in use in the motivational model.
 //
@@ -78,6 +79,7 @@ type SliceActions<T, Name extends string> = {
 type DispatchActions = SliceActions<typeof treeDataSlice.actions, "treeData">
 
 interface FileContextProps {
+    nonFunctionalLayout: NonFunctionalLayout
     jsonFileHandle: FileSystemFileHandle | null
     setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void
     tabData: TabContent[]
@@ -95,6 +97,7 @@ interface FileContextProps {
 
 // Create context for data tansfer and file handle
 const FileContext = createContext<FileContextProps>({
+    nonFunctionalLayout: {},
     jsonFileHandle: null,
     setJsonFileHandle: () => { },
     tabData: [],
@@ -132,6 +135,7 @@ export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
             GoalContent: item.content,
             GoalNote: "",
             SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
+            url: item.url,
             GoalColor: item.color,
             x: item.x,
             y: item.y,
@@ -208,6 +212,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const [xmlData, setXmlData] = useState("");
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
+    // Keep the graph input stable during provider renders that do not change the model tree.
+    const computedCluster = useMemo(() => convertTreeDataToClusters(state.tree), [state.tree]);
 
     useEffect(() => {
         console.log("Tree data:", state.tree);
@@ -253,7 +259,7 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
             dispatch,
             treeData: state.tree,
             tabData: computedTabData,
-            cluster: convertTreeDataToClusters(state.tree),
+            cluster: computedCluster,
             xmlData,
             setXmlData,
             jsonFileHandle,

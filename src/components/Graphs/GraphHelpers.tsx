@@ -2,9 +2,11 @@ import {
     Graph,
     Rectangle,
     Cell,
+    CellStyle,
     Geometry,
+    constants,
 } from "@maxgraph/core";
-import {ClusterGoal, GlobObject, InstanceId} from "../types.ts";
+import {ClusterGoal, GlobObject, InstanceId} from "../utils/types.ts";
 import {GoalModelLayout} from "./GoalModelLayout";
 
 import {
@@ -15,7 +17,8 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText} from "../utils/GraphUtils";
+import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, isGoalRefId, parseGoalRefId} from "../utils/GraphUtils";
+import {getListLabelArea} from "./GraphLabelUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -47,6 +50,29 @@ const FUNCTIONAL_NONFUNCTIONAL_OFFSET = {
 
 // random string, used to store unassociated non-functions in accumulators
 const ROOT_KEY = "0723y450nv3-2r8mchwouebfioasedfiadfg";
+
+const GOAL_LINK_COLOR = "#0d6efd";
+const goalLinks = new WeakMap<Cell, string>();
+
+// Keep link metadata outside the cell value so existing plain-text editing
+// continues to work without HTML labels.
+export const getGoalLinkForCell = (cell: Cell): string | undefined => goalLinks.get(cell);
+
+const applyGoalLink = (style: CellStyle, url?: string): CellStyle => {
+    if (!url) return style;
+
+    return {
+        ...style,
+        fontColor: GOAL_LINK_COLOR,
+        fontStyle: (style.fontStyle ?? 0) | constants.FONT.UNDERLINE,
+    };
+};
+
+const registerGoalLink = (cell: Cell, url?: string) => {
+    if (url) {
+        goalLinks.set(cell, url);
+    }
+};
 
 /**
  * Recursively renders the goal hierarchy.
@@ -108,13 +134,13 @@ export const renderGoals = (
 
             // accumulate non-functional descriptions into buckets
         } else if (type === SYMBOL_CONFIGS.EMOTIONAL.type) {
-            emotions.push({instanceId, content});
+            emotions.push({instanceId, content, url: goal.url});
         } else if (type === SYMBOL_CONFIGS.NEGATIVE.type) {
-            concerns.push({instanceId, content});
+            concerns.push({instanceId, content, url: goal.url});
         } else if (type === SYMBOL_CONFIGS.QUALITY.type) {
-            qualities.push({instanceId, content});
+            qualities.push({instanceId, content, url: goal.url});
         } else if (type === SYMBOL_CONFIGS.STAKEHOLDER.type) {
-            stakeholders.push({instanceId, content});
+            stakeholders.push({instanceId, content, url: goal.url});
         } else {
             console.log("Logging: goal of unknown type received: " + type);
         }
@@ -203,8 +229,9 @@ export const renderFunction = (
 
     // Get default style from the stylesheet and clone
     // If not cloned, will affect all nodes instead.
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    let style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.fillColor = goalColor;
+    style = applyGoalLink(style, goal.url);
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
@@ -227,6 +254,7 @@ export const renderFunction = (
         height,
         style
     );
+    registerGoalLink(node, goal.url);
     // console.log("goalId:", goal.GoalID, " nodeId:", node.getId(), " value:", node.value);
     if (source) {
         // Insert the edge with specific constraints
@@ -389,7 +417,7 @@ const getConfigByTypeAndDescriptions = (type: string, descriptions: Array<{ inst
 
 // Render a non-functional goal (like emotional, quality, etc.)
 export const renderNonFunction = (
-    descriptions: Array<{ instanceId: InstanceId; content: string; }>,
+    descriptions: Array<{ instanceId: InstanceId; content: string; url?: string; }>,
     graph: Graph,
     source: Cell | null = null,
     type: string = "None",
@@ -446,14 +474,29 @@ export const renderNonFunction = (
         console.warn(`Unknown type "${type}" — no matching symbol config found.`);
     }
 
+    const labelArea = getListLabelArea(shape);
+
     // Clone style to avoid modifying the default
-    const style = {...graph.getStylesheet().getDefaultVertexStyle()};
+    let style = {...graph.getStylesheet().getDefaultVertexStyle()};
     style.shape = shape;
     style.perimeter = "none"
     style.align = "center";
     style.verticalAlign = "middle";
     style.labelPosition = "center";
     style.spacingTop = 0;
+
+    // Constrain list labels to their safe areas and wrap long content.
+    if (labelArea) {
+        Object.assign(style, {
+            overflow: "fill",
+            verticalAlign: "top",
+            whiteSpace: "wrap",
+        });
+    }
+    // A non-functional symbol may combine several goals. Only a symbol for a
+    // single goal has one clear link target.
+    const goalUrl = (descriptions.length === 1) ? descriptions[0].url : undefined;
+    style = applyGoalLink(style, goalUrl);
 
     // Clone edge style
     const dotted: any = {
@@ -496,6 +539,7 @@ export const renderNonFunction = (
         height,
         style
     );
+    registerGoalLink(node, goalUrl);
     console.log("Nonfunctional-goal-node:", node);
     // Insert an invisible edge
     if (showLineBetweenNonFunctionalGoals) {
@@ -527,6 +571,17 @@ export const renderNonFunction = (
 
         nodeGeo.width = Math.max(maxLineWidth, preferred.width * SYMBOL_CONFIGS.FUNCTIONAL.scale.width, width);
         nodeGeo.height = Math.max(nodeGeo.height, preferred.height * SYMBOL_CONFIGS.FUNCTIONAL.scale.height, height);
+
+        // Grow the initial shape when wrapped content needs more vertical space.
+        if (labelArea) {
+            const labelWidth = nodeGeo.width * labelArea.width;
+            const wrappedPreferred = graph.getPreferredSizeForCell(node, labelWidth);
+
+            if (wrappedPreferred) {
+                const labelHeight = wrappedPreferred.height + VERTEX_FONT.size * 0.25;
+                nodeGeo.height = Math.max(nodeGeo.height, labelHeight / labelArea.height);
+            }
+        }
     }
 
     // Note for future: There must be some API that does this
@@ -601,17 +656,44 @@ export const renderLegend = (graph: Graph): Cell => {
     return legend;
 };
 
+// Returns false when changes beyond colour require graph rebuild
+export const updateGoalColours = (graph: Graph, previous: ClusterGoal[], goals: ClusterGoal[]): boolean => {
+    const omitColour = (key: string, value: unknown) => key === "GoalColor" ? undefined : value;
+    if (JSON.stringify(previous, omitColour) !== JSON.stringify(goals, omitColour)) return false;
+
+    const goalsByInstance = new Map<InstanceId, ClusterGoal>();
+    const collect = (goal: ClusterGoal) => {
+        goalsByInstance.set(goal.instanceId, goal);
+        goal.SubGoals.forEach(collect);
+    };
+    goals.forEach(collect);
+
+    graph.batchUpdate(() => {
+        graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
+            const id = cell.getId();
+            if (!isGoalRefId(id)) return;
+            const goal = goalsByInstance.get(parseGoalRefId(id)[0].instanceId);
+            if (!goal) return;
+            const colour = goal.GoalColor || (goal.GoalType === "Negative"
+                ? "grey" : graph.getStylesheet().getDefaultVertexStyle().fillColor);
+            if (cell.getStyle().fillColor !== colour) {
+                graph.setCellStyles("fillColor", colour, [cell]);
+            }
+        });
+    });
+    return true;
+};
+
 /**
  * Overrides layout-computed positions with any coordinates previously saved
- * by the user. Must be called after layoutFunctions and before
- * associateNonFunctions so that non-functional symbols are placed relative
- * to the restored positions.
+ * by the user. Call before and after associateNonFunctions to restore
+ * functional goals first, then their non-functional symbols.
  */
 export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
     const positionMap = new Map<string, { x: number; y: number }>();
     const collect = (goal: ClusterGoal) => {
-        if (goal.GoalType === "Functional" && goal.x !== undefined && goal.y !== undefined) {
-            positionMap.set(generateCellId("Functional", goal.instanceId), { x: goal.x, y: goal.y });
+        if (goal.x !== undefined && goal.y !== undefined) {
+            positionMap.set(goal.instanceId, {x: goal.x, y: goal.y});
         }
         goal.SubGoals.forEach(collect);
     };
@@ -619,12 +701,13 @@ export const restoreSavedPositions = (graph: Graph, goals: ClusterGoal[]) => {
 
     if (positionMap.size === 0) return;
 
-    graph.getChildVertices(graph.getDefaultParent()).forEach(cell => {
+    graph.getChildVertices(graph.getDefaultParent()).forEach((cell) => {
         const id = cell.getId();
-        const pos = id ? positionMap.get(id) : undefined;
+        if (!isGoalRefId(id)) return;
+        const pos = parseGoalRefId(id).map(({instanceId}) => positionMap.get(instanceId)).find(Boolean);
         if (pos) {
             const geo = cell.getGeometry();
-            if (geo) {
+            if (geo && (geo.x !== pos.x || geo.y !== pos.y)) {
                 graph.getDataModel().setGeometry(cell, new Geometry(pos.x, pos.y, geo.width, geo.height));
             }
         }
@@ -659,8 +742,9 @@ export const layoutFunctions = (graph: Graph) => {
 
         const goals = [...subtree];
         const bounds = graph.getBoundingBoxFromGeometry(goals);
-        if (!bounds) return nextRootX;
-
+        if (!bounds) {
+            return nextRootX;
+        }
         const offsetX = nextRootX - bounds.x;
         graph.batchUpdate(() => {
             goals.forEach((goal) => graph.translateCell(goal, offsetX, 0));
@@ -746,9 +830,3 @@ export const associateNonFunctions = (
         }
     });
 };
-
-
-
-export function isGoalNameEmpty(value: string): boolean {
-    return !value || value.trim() === "";
-}

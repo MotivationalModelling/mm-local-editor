@@ -1,5 +1,5 @@
 import React from "react";
-import {TreeGoal} from "./types.ts";
+import {TreeGoal} from "./utils/types.ts";
 
 const GoalDragImageItem: React.FC<{goal: TreeGoal}> = ({goal}) => (
     <div className="p-2 bg-white border rounded shadow-sm">
