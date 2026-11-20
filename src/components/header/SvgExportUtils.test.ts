@@ -2,9 +2,10 @@
  * @jest-environment jsdom
  */
 import {afterEach, describe, expect, it, vi} from "vitest";
-import {cloneNodeWithMap, createSvgTextAtScreenPosition, prepareGraphForPng, prepareGraphForSvg, prepareSvgForPng} from "./SvgExportUtils";
+import {createSvgTextAtScreenPosition, prepareGraphForPng, prepareGraphForSvg, prepareSvgForPng} from "./SvgExportUtils";
+import {cloneNodeWithMap} from "../utils/cloneNodeWithMap";
 import type {Graph} from "@maxgraph/core";
-import type {ListLabelExportSource} from "./SvgExportUtils";
+import type {HtmlLabelExportSource} from "./SvgExportUtils";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
@@ -62,7 +63,7 @@ const createTestSvg = (items: string[]) => {
 
     mockSvgScreenTransform(svg, group);
     // Keep model text separate from DOM text, as the production graph does.
-    const source: ListLabelExportSource = {foreignObject, items: [...items]};
+    const source: HtmlLabelExportSource = {foreignObject, items: [...items]};
     return {svg, group, source};
 };
 

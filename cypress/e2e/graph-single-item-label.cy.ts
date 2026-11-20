@@ -29,7 +29,10 @@ describe('Single-item goal labels', () => {
         .and('have.text', original).and('have.css', 'list-style-type', 'none')
         .and('have.css', 'margin-left', '0px').should(items => {
           const item = items[0];
-          expect(item.getBoundingClientRect().left).to.equal(item.parentElement!.getBoundingClientRect().left);
+          const textBounds = item.getBoundingClientRect();
+          const listBounds = item.parentElement!.getBoundingClientRect();
+          expect(textBounds.left + textBounds.width / 2)
+            .to.be.closeTo(listBounds.left + listBounds.width / 2, 0.5);
           // The cloud's narrower label area wraps this single goal across lines.
           if (type === 'Be') {
             // Compare layout height with font size before the graph's zoom transform.

@@ -1,7 +1,8 @@
 import type {Graph} from "@maxgraph/core";
 import {buildExportableSVG} from "../utils/ExportGraph";
-import {convertEditingValueToList, isListLabelCell, normaliseListLabelItems} from "../Graphs/GraphLabelUtils";
+import {convertEditingValueToList, isDoCell, isListLabelCell, normaliseLabelText, normaliseListLabelItems} from "../Graphs/GraphLabelUtils";
 import {getGoalLinkForCell} from "../Graphs/GraphHelpers";
+import {cloneNodeWithMap} from "../utils/cloneNodeWithMap";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 // Browser glyph rectangles on the same baseline can differ by a fraction of a pixel.
@@ -9,9 +10,10 @@ const LINE_POSITION_TOLERANCE = 1;
 const BULLET_OFFSET_RATIO = 0.8;
 const LIST_BULLET = "•";
 
-export type ListLabelExportSource = {
+export type HtmlLabelExportSource = {
     foreignObject: SVGForeignObjectElement;
     items: string[];
+    bulleted?: boolean;
 };
 
 type TextLine = {text: string; x: number; y: number; height: number};
@@ -20,14 +22,15 @@ type TextSegment = {node: Text; start: number; end: number};
 
 // The model supplies the text. Each cell's render state identifies its own DOM
 // label, which is used only to measure browser wrapping, fonts and coordinates.
-export const getListLabelExportSources = (graph: Graph): ListLabelExportSource[] => (
+export const getHtmlLabelExportSources = (graph: Graph): HtmlLabelExportSource[] => (
     graph.getChildVertices(graph.getDefaultParent()).flatMap(cell => {
-        if (!isListLabelCell(cell)) return [];
+        if (!isListLabelCell(cell) && !isDoCell(cell)) return [];
         const foreignObject = graph.getView().getState(cell)?.text?.node
             ?.querySelector<SVGForeignObjectElement>("foreignObject");
         if (!foreignObject) return [];
-        const items = normaliseListLabelItems(convertEditingValueToList(graph.convertValueToString(cell)));
-        return [{foreignObject, items}];
+        const text = graph.convertValueToString(cell);
+        const items = isDoCell(cell) ? [normaliseLabelText(text)] : normaliseListLabelItems(convertEditingValueToList(text));
+        return [{foreignObject, items, bulleted: isListLabelCell(cell)}];
     })
 );
 
@@ -110,28 +113,20 @@ const createSvgText = (document: Document, text: string, x: number, y: number, s
     return element;
 };
 
-// Pair original nodes with their copies while cloning. Export never relies on
-// independently queried DOM lists having matching indices or mutates the canvas.
-export const cloneNodeWithMap = (original: Node, copies: Map<Node, Node>): Node => {
-    const copy = original.cloneNode(false);
-    copies.set(original, copy);
-    original.childNodes.forEach(child => copy.appendChild(cloneNodeWithMap(child, copies)));
-    return copy;
-};
-
 const cloneSvgWithNodeMap = (svg: SVGSVGElement) => {
     const copies = new Map<Node, Node>();
     return {svg: cloneNodeWithMap(svg, copies) as SVGSVGElement, copies};
 };
 
 // DOM nodes supply measurements only; text and item count come from the model.
-const getListItemMeasurements = ({foreignObject, items}: ListLabelExportSource) => {
+const getLabelMeasurements = ({foreignObject, items}: HtmlLabelExportSource) => {
     const list = foreignObject.querySelector("ul");
-    if (list?.children.length !== items.length) {
+    const elements = list ? Array.from(list.children) : Array.from(foreignObject.querySelectorAll(".goal-label-text"));
+    if (elements.length !== items.length) {
         throw new Error("The displayed list does not match the model. Finish editing and try exporting again.");
     }
     return items.map((text, index) => {
-        const element = list.children[index];
+        const element = elements[index];
         return {
             lines: measureRenderedTextLines(element, text),
             style: element.ownerDocument.defaultView!.getComputedStyle(element),
@@ -150,15 +145,15 @@ export const createSvgTextAtScreenPosition = (
     return createSvgText(svg.ownerDocument, text, local.x, local.y, style);
 };
 
-const convertListLabelToSvg = (svg: SVGSVGElement, source: ListLabelExportSource): SVGGElement => {
+const convertHtmlLabelToSvg = (svg: SVGSVGElement, source: HtmlLabelExportSource): SVGGElement => {
     const {foreignObject} = source;
     const parent = foreignObject.parentElement as SVGGraphicsElement | null;
     const matrix = parent?.getScreenCTM()?.inverse();
     if (!matrix) throw new Error("Cannot measure the label position for PNG export.");
     const group = svg.ownerDocument.createElementNS(SVG_NAMESPACE, "g");
-    getListItemMeasurements(source).forEach(({lines, style}) => {
+    getLabelMeasurements(source).forEach(({lines, style}) => {
         lines.forEach((line, lineIndex) => {
-            if (source.items.length > 1 && lineIndex === 0) {
+            if (source.bulleted !== false && source.items.length > 1 && lineIndex === 0) {
                 group.appendChild(createSvgTextAtScreenPosition(svg, matrix, LIST_BULLET,
                     line.x - line.height * BULLET_OFFSET_RATIO, line.y, style));
             }
@@ -172,11 +167,11 @@ const convertListLabelToSvg = (svg: SVGSVGElement, source: ListLabelExportSource
 // Freeze the current appearance on the copy, never on the live graph.
 export const prepareGraphForSvg = (graph: Graph, svgElement: SVGSVGElement) => {
     const {svg, copies} = cloneSvgWithNodeMap(svgElement);
-    svgElement.querySelectorAll<HTMLElement>(".graph-list-label, .graph-list-label-items, .graph-list-label-items > li").forEach(element => {
+    svgElement.querySelectorAll<HTMLElement>(".graph-list-label, .graph-list-label-items, .graph-list-label-items > li, .graph-do-label, .goal-label-text").forEach(element => {
         const copy = copies.get(element) as HTMLElement;
         const style = element.ownerDocument.defaultView!.getComputedStyle(element);
-        for (const property of ["display", "align-items", "box-sizing", "height", "width", "margin",
-            "padding-left", "text-align", "white-space", "overflow-wrap", "list-style-type",
+        for (const property of ["display", "align-items", "justify-content", "box-sizing", "height", "width", "max-width", "min-width", "margin",
+            "padding-left", "padding-right", "text-align", "white-space", "overflow-wrap", "word-break", "list-style-type",
             "color", "font-family", "font-size", "font-weight", "font-style", "line-height"]) {
             copy.style.setProperty(property, style.getPropertyValue(property));
         }
@@ -201,12 +196,12 @@ export const prepareGraphForSvg = (graph: Graph, svgElement: SVGSVGElement) => {
 
 // Canvg cannot render our HTML list labels. Replace those labels with native
 // SVG text on an export-only copy, preserving the browser's line breaks.
-export const prepareSvgForPng = (svgElement: SVGSVGElement, sources: ListLabelExportSource[]) => {
+export const prepareSvgForPng = (svgElement: SVGSVGElement, sources: HtmlLabelExportSource[]) => {
     const {svg: exportSvg, copies} = cloneSvgWithNodeMap(svgElement);
     sources.forEach(source => {
         const copy = copies.get(source.foreignObject);
         if (!copy?.parentNode) throw new Error("The label is outside the exported SVG.");
-        copy.parentNode.replaceChild(convertListLabelToSvg(svgElement, source), copy);
+        copy.parentNode.replaceChild(convertHtmlLabelToSvg(svgElement, source), copy);
     });
 
     const background = exportSvg.ownerDocument.createElementNS(SVG_NAMESPACE, "rect");
@@ -220,7 +215,7 @@ export const prepareSvgForPng = (svgElement: SVGSVGElement, sources: ListLabelEx
 // Measure labels while they are attached to the live graph, then apply the
 // full-model bounds to the converted copy. Detached labels have no DOM layout.
 export const prepareGraphForPng = (graph: Graph, svgElement: SVGSVGElement) => {
-    const converted = prepareSvgForPng(svgElement, getListLabelExportSources(graph));
+    const converted = prepareSvgForPng(svgElement, getHtmlLabelExportSources(graph));
     const prepared = buildExportableSVG(graph, converted);
     // prepareSvgForPng owns this background. Explicit bounds cover negative
     // coordinates too; a percentage-sized rectangle would still start at zero.

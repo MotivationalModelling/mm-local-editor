@@ -6,7 +6,7 @@ import {
 import {InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts"
 import {createInstanceId, normalizeInstanceId, parseInstanceId} from "../utils/instanceId.ts"
 import {InitialTab, initialTabs} from "../../data/initialTabs.ts";
-import type {NonFunctionalLayout} from "../utils/modelJson";
+import type {GoalLayout} from "../utils/modelJson";
 
 
 // Create a new TreeGoal node for the tree (without content/type - those are in goals)
@@ -167,7 +167,8 @@ const normalizeTabInstanceIds = (tabs: InitialTab[]): InitialTab[] => tabs.map((
 export const createInitialState = (
     tabData: InitialTab[] = initialTabs,
     treeData: TreeGoal[] = [],
-    nonFunctionalLayout: NonFunctionalLayout = {},
+    nonFunctionalLayout: GoalLayout = {},
+    functionalLayout: GoalLayout = {},
 ) => {
     const normalizedTabData = normalizeTabInstanceIds(tabData);
     const normalizedTreeData = normalizeTreeInstanceIds(treeData);
@@ -179,6 +180,7 @@ export const createInitialState = (
         goals,
         tree: normalizedTreeData,
         nonFunctionalLayout,
+        functionalLayout,
         treeIds: createTreeIdsFromTreeData(goals, normalizedTreeData),
         showLineBetweenNonFunctionalGoals: true,
     };
@@ -219,7 +221,8 @@ export const treeDataSlice = createSlice({
         goals: {} as Record<TreeGoal["id"], TreeGoal>,
         treeIds: {} as Record<TreeGoal["id"], InstanceId[]>,
         showLineBetweenNonFunctionalGoals: true,
-        nonFunctionalLayout: {} as NonFunctionalLayout
+        nonFunctionalLayout: {} as GoalLayout,
+        functionalLayout: {} as GoalLayout,
     },
     reducers: {
         addGoal(state, action: PayloadAction<TreeGoal>) {
@@ -386,9 +389,10 @@ export const treeDataSlice = createSlice({
         reset: (state, action: PayloadAction<{
             tabData: InitialTab[],
             treeData: TreeGoal[],
-            nonFunctionalLayout?: NonFunctionalLayout
+            nonFunctionalLayout?: GoalLayout
+            functionalLayout?: GoalLayout
         } | undefined>) => {
-            const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData, action.payload.nonFunctionalLayout)
+            const initialState = (action.payload) ? createInitialState(action.payload.tabData, action.payload.treeData, action.payload.nonFunctionalLayout, action.payload.functionalLayout)
                 : createInitialState(initialTabs, []);
             Object.assign(state, initialState);
         }

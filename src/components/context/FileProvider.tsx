@@ -6,7 +6,7 @@ import {createInitialState, treeDataSlice} from "./treeDataSlice.ts";
 import {initialTabs} from "../../data/initialTabs.ts";
 import {Cluster, ClusterGoal, GoalType, InstanceId, Label, TabContent, TreeGoal} from "../utils/types.ts";
 import {useLocalStorage} from "usehooks-ts";
-import type {NonFunctionalLayout} from "../utils/modelJson";
+import type {GoalLayout} from "../utils/modelJson";
 
 export type {JSONData} from "../utils/modelJson.ts";
 
@@ -79,7 +79,8 @@ type SliceActions<T, Name extends string> = {
 type DispatchActions = SliceActions<typeof treeDataSlice.actions, "treeData">
 
 interface FileContextProps {
-    nonFunctionalLayout: NonFunctionalLayout
+    nonFunctionalLayout: GoalLayout
+    functionalLayout: GoalLayout
     jsonFileHandle: FileSystemFileHandle | null
     setJsonFileHandle: (jsonHandle: FileSystemFileHandle | null) => void
     tabData: TabContent[]
@@ -98,6 +99,7 @@ interface FileContextProps {
 // Create context for data tansfer and file handle
 const FileContext = createContext<FileContextProps>({
     nonFunctionalLayout: {},
+    functionalLayout: {},
     jsonFileHandle: null,
     setJsonFileHandle: () => { },
     tabData: [],
@@ -126,16 +128,18 @@ const typeMapping: Record<Label, GoalType> = {
 };
 
 // Convert the entire treeData into a cluster structure, to be sent to GraphWorker.
-export const convertTreeDataToClusters = (treeData: TreeGoal[]): Cluster => {
+export const convertTreeDataToClusters = (treeData: TreeGoal[], goals?: Readonly<Record<TreeGoal["id"], TreeGoal>>): Cluster => {
     const convertTreeGoalToClusterGoal = (item: TreeGoal): ClusterGoal => {
+        const goal = goals ? goals[item.id] : item;
+        if (!goal) throw new Error(`Cannot render: goal ${item.id} is missing from the model.`);
         return {
             GoalID: item.id,
             instanceId: item.instanceId,
-            GoalType: typeMapping[item.type],
-            GoalContent: item.content,
+            GoalType: typeMapping[goal.type],
+            GoalContent: goal.content,
             GoalNote: "",
             SubGoals: (item.children) ? item.children.map(convertTreeGoalToClusterGoal) : [],
-            url: item.url,
+            url: goal.url,
             GoalColor: item.color,
             x: item.x,
             y: item.y,
@@ -212,8 +216,8 @@ const FileProvider: React.FC<PropsWithChildren> = ({children}) => {
     const [xmlData, setXmlData] = useState("");
 
     const computedTabData = createTabDataFromTabs(state.goals, state.tabs);
-    // Keep the graph input stable during provider renders that do not change the model tree.
-    const computedCluster = useMemo(() => convertTreeDataToClusters(state.tree), [state.tree]);
+    // The tree owns hierarchy and placement; goals own the current text, type and URL.
+    const computedCluster = useMemo(() => convertTreeDataToClusters(state.tree, state.goals), [state.tree, state.goals]);
 
     useEffect(() => {
         console.log("Tree data:", state.tree);

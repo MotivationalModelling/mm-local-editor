@@ -1,5 +1,7 @@
 import type {Cell} from "@maxgraph/core";
 
+export const FONT_SIZE_LIMITS = {min: 8, max: 40} as const;
+
 // Quote punctuation-bearing fields; unquoted legacy lists remain supported.
 // Keep empty fields so edit validation can reject missing goal names.
 export const convertListToEditingValue = (items: string[], separator = ","): string => items
@@ -29,10 +31,12 @@ export const convertEditingValueToList = (value: string): string[] => {
     return items;
 };
 
+export const normaliseLabelText = (text: string): string => text.replace(/\r\n?/g, "\n").replace(/\0/g, "\uFFFD");
+
 export const normaliseListLabelItems = (items: string[]): string[] => (
     // Match HTML parsing before measuring model text against rendered labels.
     // This affects presentation only; the stored editing value stays untouched.
-    items.map(item => item.replace(/\r\n?/g, "\n").replace(/\0/g, "\uFFFD").trim())
+    items.map(item => normaliseLabelText(item).trim())
         .filter(item => item.length > 0)
 );
 
@@ -58,6 +62,16 @@ export const LIST_LABEL_AREAS = {
 
 export const getListLabelArea = (shape: string) => (
     LIST_LABEL_AREAS[shape as keyof typeof LIST_LABEL_AREAS]
+);
+
+// The slanted ends of a Do shape are not available for text.
+export const getInternalLabelArea = (shape: string) => shape === "parallelogramShape"
+    ? {x: 0.14, y: 0.06, width: 0.72, height: 0.88}
+    : getListLabelArea(shape);
+
+export const isDoCell = (cell: Pick<Cell, "getStyle">) => cell.getStyle().shape === "parallelogramShape";
+export const isWhoCell = (cell: Pick<Cell, "getStyle">) => (
+    cell.getStyle().shape === "personShape" || cell.getStyle().shape === "crowdShape"
 );
 
 // List labels are a subset of non-functional cells: stakeholder labels are

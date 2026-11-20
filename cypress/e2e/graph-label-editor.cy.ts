@@ -45,7 +45,7 @@ describe('Non-functional goal label editor', () => {
     cy.get('.mxCellEditor').should('not.exist');
     cy.contains('#graphContainer li', concerns[0].content).should('be.visible');
 
-    cy.contains('#graphContainer text', 'Root').dblclick({force: true});
+    cy.contains('#graphContainer .goal-label-text', 'Root').dblclick({force: true});
     cy.get('.mxCellEditor').should('have.length', 1).find('li').should('not.exist');
     cy.get('.mxCellEditor').type('{selectall}Changed ordinary goal{enter}');
     cy.contains('#graphContainer li', concerns[0].content).dblclick({force: true});
@@ -77,10 +77,10 @@ describe('Non-functional goal label editor', () => {
   });
 
   it('keeps punctuation in a single Do goal', () => {
-    cy.contains('#graphContainer text', 'Root').dblclick({force: true});
+    cy.contains('#graphContainer .goal-label-text', 'Root').dblclick({force: true});
     cy.get('.mxCellEditor').should('be.visible').type('{selectall}Plan, build & test{enter}');
     cy.get('.mxCellEditor').should('not.exist');
-    cy.get('#graphContainer text').should(elements => {
+    cy.get('#graphContainer .goal-label-text').should(elements => {
       expect(Array.from(elements, element => element.textContent).join(' ')).to.include('Plan, build & test');
     });
     cy.window().should(window => {

@@ -155,14 +155,11 @@ describe('Graph export tests', () => {
         expect(list.style.margin).to.equal('0px');
         expect(list.style.textAlign).to.equal('left');
         expect(list.style.overflowWrap).to.equal('anywhere');
-        expect(list.style.paddingLeft).to.equal('0px');
+        expect(parseFloat(list.style.paddingLeft)).to.be.greaterThan(0);
+        expect(list.style.paddingRight).to.equal(list.style.paddingLeft);
         parsed.querySelectorAll('li').forEach(item => {
           expect(item.style.listStyleType).to.equal(extended ? 'disc' : 'none');
-          if (extended) {
-            expect(parseFloat(item.style.marginLeft)).to.be.greaterThan(0);
-          } else {
-            expect(item.style.marginLeft).to.equal('0px');
-          }
+          expect(item.style.marginLeft).to.equal('0px');
         });
         const wrapper = parsed.querySelector('.graph-list-label') as HTMLElement;
         expect(wrapper.style.display).to.equal('flex');

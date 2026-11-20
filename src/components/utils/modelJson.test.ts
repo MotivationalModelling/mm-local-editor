@@ -1,10 +1,10 @@
 import {describe, expect, it} from "vitest";
-import {ModelJsonError, parseModelJson} from "./modelJson.ts";
-import {InstanceId, TreeGoal} from "./types.ts";
+import {createModelFileContent, ModelJsonError, parseModelJson} from "./modelJson.ts";
+import {InstanceId, TabContent, TreeGoal} from "./types.ts";
 import {createInstanceId, INSTANCE_ID_SEPARATOR} from "./instanceId.ts";
 
 // Every label needs a tab, and each goal must be listed in the tab for its type
-const buildModel = (treeData: TreeGoal[]) => ({
+const buildModel = (treeData: TreeGoal[]): {tabData: TabContent[]; treeData: TreeGoal[]} => ({
     tabData: [
         {label: "Do", icon: "/img/Function.png", goalIds: [1, 6]},
         {label: "Be", icon: "/img/Cloud.png", goalIds: [2]},
@@ -26,6 +26,28 @@ const goal = (id: number, instanceId: string, children?: TreeGoal[]): TreeGoal =
 });
 
 const parse = (model: unknown) => parseModelJson(JSON.stringify(model));
+
+describe('saved font and geometry', () => {
+    const layout = {x: -20, y: 50, width: 180, height: 120};
+
+    it('round-trips both layouts and keeps legacy files without font sizes readable', () => {
+        const root = goal(1, '1:1');
+        const model = buildModel([root]);
+        const functionalLayout = {'Functional-1:1': {...layout, fontSize: 40}};
+        const nonFunctionalLayout = {'Nonfunctional-[2:1]': {...layout, fontSize: 8}};
+        const content = createModelFileContent(model.tabData, model.treeData, {1: root}, nonFunctionalLayout, functionalLayout);
+        expect(parseModelJson(content)).toMatchObject({functionalLayout, nonFunctionalLayout});
+        expect(parse({...model, nonFunctionalLayout: {'Nonfunctional-[2:1]': layout}}).nonFunctionalLayout)
+            .toEqual({'Nonfunctional-[2:1]': layout});
+    });
+
+    for (const field of ['functionalLayout', 'nonFunctionalLayout']) {
+        it.each([7, 41])(`rejects an out-of-range font in ${field}: %s`, fontSize => {
+            expect(() => parse({...buildModel([goal(1, '1:1')]), [field]: {cell: {...layout, fontSize}}}))
+                .toThrow(ModelJsonError);
+        });
+    }
+});
 
 describe('parseModelJson instance IDs', () => {
     // The regression: the schema still required the old hyphen separator, so a

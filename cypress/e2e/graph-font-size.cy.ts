@@ -41,11 +41,11 @@ describe('Graph Font Size UI Tests', () => {
     });
   });
 
-  it('should preserve a functional goal shape when font size changes', () => {
-    cy.get('#graphContainer text').contains('Do3').then(($text) => {
+  it('should preserve a functional goal shape when the larger font still fits', () => {
+    cy.get('#graphContainer .goal-label-text').contains('Do3').then(($text) => {
       cy.wrap(parseFloat(getComputedStyle($text[0]).fontSize)).as('initialFunctionalFontSize');
     });
-    cy.get('#graphContainer text').contains('Do3').click({force: true});
+    cy.get('#graphContainer .goal-label-text').contains('Do3').click({force: true});
     cy.get('#graphContainer path').then(($paths) => {
       const shapePathData = Array.from($paths)
         .filter((path) => path.getAttribute('fill') !== 'none')
@@ -67,7 +67,7 @@ describe('Graph Font Size UI Tests', () => {
       });
     });
     cy.get('@initialFunctionalFontSize').then((initialFontSize) => {
-      cy.get('#graphContainer text').contains('Do3').should(($text) => {
+      cy.get('#graphContainer .goal-label-text').contains('Do3').should(($text) => {
         const updatedFontSize = parseFloat(getComputedStyle($text[0]).fontSize);
         expect(updatedFontSize).to.be.closeTo(Number(initialFontSize) * 17 / 16, 0.1);
       });
