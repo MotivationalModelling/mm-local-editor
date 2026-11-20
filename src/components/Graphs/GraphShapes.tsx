@@ -17,11 +17,11 @@ import {
 import {
   SYMBOL_CONFIGS,
 } from "../utils/GraphConstants";
-import { getListLabelArea } from "./GraphLabelUtils";
+import { getInternalLabelArea } from "./GraphLabelUtils";
 
 // Convert normalized label bounds to the current shape dimensions.
 const getShapeLabelBounds = (rect: Rectangle, shape: string): Rectangle => {
-  const labelArea = getListLabelArea(shape);
+  const labelArea = getInternalLabelArea(shape);
 
   if (!labelArea) return rect;
 
@@ -46,6 +46,10 @@ export const registerCustomShapes = (): void => {
 // Define shpaes for goals
 // Parallelogram shape
 class ParallelogramShape extends ActorShape {
+  getLabelBounds(rect: Rectangle): Rectangle {
+    return getShapeLabelBounds(rect, SYMBOL_CONFIGS.FUNCTIONAL.shape);
+  }
+
   constructor(
     bounds: Rectangle,
     fill: string,

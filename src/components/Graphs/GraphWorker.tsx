@@ -1,17 +1,19 @@
 import {
     Cell,
     CellEditorHandler,
-    CellStyle,
     Client,
     DragSource,
     error,
     EventObject,
+    GeometryChange,
     getDefaultPlugins,
     Graph,
     InternalEvent,
     KeyHandler,
     RubberBandHandler,
     UndoManager,
+    UndoableEdit,
+    ValueChange,
 } from "@maxgraph/core";
 import '@maxgraph/core/css/common.css';
 
@@ -40,7 +42,7 @@ import WarningMessage from "./WarningMessage";
 
 import {VERTEX_FONT} from "../utils/GraphConstants.tsx"
 import {getCellNumericIds, isGoalRefId} from "../utils/GraphUtils";
-import {convertEditingValueToList, isListLabelCell} from "./GraphLabelUtils";
+import {convertEditingValueToList, isDoCell} from "./GraphLabelUtils";
 import {GoalGraph} from "./GoalGraph";
 import {GoalCellEditorHandler} from "./GoalCellEditorHandler";
 import {isNonFunctionCell} from "./GraphCellUtils";
@@ -48,8 +50,9 @@ import {removeGoalIdFromTree, updateTextForInstanceId, updatePositionForInstance
 import ConfirmModal from "../ConfirmModal.tsx";
 import {parseGoalRefId} from "../utils/GraphUtils";
 import {fixEditorPosition, returnFocusToGraph} from "../utils/GraphUtils.tsx";
-import {applyNonFunctionalLayout, captureNonFunctionalGeometry, restoreNonFunctionalGeometry} from "./GraphGeometryUtils";
-import type {NonFunctionalLayout} from "../utils/modelJson";
+import {applyGoalLayout, captureGoalGeometry, hasSameGoalHierarchy, restoreGoalGeometry} from "./GraphGeometryUtils";
+import {getGeometryToFitLabel} from "./GraphFontFit";
+import type {GoalLayout} from "../utils/modelJson";
 
 //Graph id & Side bar id
 const GRAPH_DIV_ID = "graphContainer";
@@ -58,27 +61,30 @@ const GRAPH_DIV_ID = "graphContainer";
 //   of the delete function
 const DELETE_KEYBINDING = 8;
 const DELETE_KEYBINDING2 = 46;
+const UNDO_KEYBINDING = 90;
+
+class GoalKeyHandler extends KeyHandler {
+    override isControlDown(event: KeyboardEvent): boolean {
+        return Client.IS_MAC ? event.metaKey : super.isControlDown(event);
+    }
+}
 
 // Extracted outside component - no useCallback needed, better for testing
 const recentreView = (graphInstance: Graph) => {
     graphInstance.fit();
     graphInstance.center();
 };
-
-interface CellHistory {
-    [cellID: string]: [width: number | undefined, height: number | undefined];
-}
-
 const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection = false}) => {
     const divGraph = useRef<HTMLDivElement>(null);
-    const {cluster, dispatch, treeIds, showLineBetweenNonFunctionalGoals, nonFunctionalLayout} = useFileContext();
-    const appliedLayoutRef = useRef<NonFunctionalLayout | null>(null);
+    const {cluster, dispatch, treeData, treeIds, showLineBetweenNonFunctionalGoals, nonFunctionalLayout, functionalLayout} = useFileContext();
+    const appliedLayoutRef = useRef<{functional: GoalLayout; nonFunctional: GoalLayout} | null>(null);
+    const renderedTreeRef = useRef(treeData);
     const {graph, setGraph} = useGraph();
     const treeIdsRef = useRef(treeIds);
     treeIdsRef.current = treeIds;
     // Guards against dispatching stale positions while renderGraph is rebuilding cells.
     const isRenderingRef = useRef(false);
-    const editedNonFunctionalCellIdsRef = useRef(new Set<string>());
+    const editedCellIdsRef = useRef(new Set<string>());
     const previousRenderRef = useRef<{graph: Graph; cluster: Cluster; showLines: boolean} | null>(null);
 
 
@@ -202,36 +208,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     // changes (comparing previous vs current count) and does not affect UI rendering.
     // Updating a ref doesn't trigger re-renders, which is more efficient for this use case.
     const prevClusterGoalsCountRef = useRef(cluster.ClusterGoals.length);
-
-    const adjustFontSize = (
-        theOldStyle: CellStyle,
-        oldWidth: number,
-        oldHeight: number,
-        newWidth: number,
-        newHeight: number
-    ) => {
-        const oldFontSize = theOldStyle.fontSize;
-        let newFontSize;
-        let oldRatio;
-
-        if (oldFontSize) {
-            if (oldWidth / oldHeight > 1.4) {
-                oldRatio = oldFontSize / oldHeight;
-            } else {
-                oldRatio = oldFontSize / oldWidth;
-            }
-
-            if (newWidth / newHeight > 1.4) {
-                newFontSize = oldRatio * newHeight;
-            } else {
-                newFontSize = oldRatio * newWidth;
-            }
-        } else {
-            return oldFontSize;
-        }
-        return newFontSize;
-    };
-
     const setGraphStyle = (graph: Graph) => {
         // config: permit vertices to be connected by edges
         //graph.setConnectable(true);
@@ -284,7 +260,6 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
     }
 
     const graphListener = useCallback((graph: Graph): (() => void) => {
-        const cellHistory: CellHistory = {};
         const goalLinkClickHandler = (_sender: string, evt: EventObject) => {
             const cell = evt.getProperty("cell") as Cell ?? null;
             if (!cell) return;
@@ -302,59 +277,19 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             evt.consume();
         };
         const changeHandler = (_sender: string, evt: EventObject) => {
-                const changes = evt.getProperty("edit").changes;
-                const hasNonStyleChanges = changes.some(
-                    (change: {constructor: {name: string}}) => change.constructor.name != "StyleChange"
-                );
+                const {changes} = evt.getProperty("edit") as UndoableEdit;
                 graph.getDataModel().beginUpdate();
                 evt.consume();
                 try {
-                    for (let i = 0; i < changes.length; i++) {
-                        const change = changes[i];
-                        if (change.constructor.name == "GeometryChange") {
-                            const cell: Cell = changes[i].cell;
+                    for (const change of changes) {
+                        if (change instanceof GeometryChange) {
+                            const cell = change.cell;
                             const cellID = cell.getId();
-                            const oldStyle = cell.getStyle();
-                            const newWidth = cell.getGeometry()?.height;
-                            const newHeight = cell.getGeometry()?.width;
-
-                            if (cellID != null && cellHistory[cellID] == undefined) {
-                                cellHistory[cellID] = [newWidth, newHeight];
-                            } else {
-                                if (cellID != null) {
-                                    const oldWidth = cellHistory[cellID][0];
-                                    const oldHeight = cellHistory[cellID][1];
-                                    // Keep list-label font sizes stable when their shapes are resized.
-                                    if (oldWidth && oldHeight && newWidth && newHeight && !isListLabelCell(cell)) {
-                                        let newFontSize =
-                                            adjustFontSize(
-                                                oldStyle,
-                                                oldWidth,
-                                                oldHeight,
-                                                newWidth,
-                                                newHeight
-                                            ) || 1;
-
-                                        const minFontsize = 10;
-                                        const maxFontsize = 30;
-                                        newFontSize = Math.max(minFontsize, newFontSize);
-                                        newFontSize = Math.min(maxFontsize, newFontSize);
-
-                                        const finalStyle: CellStyle = oldStyle;
-                                        finalStyle.fontSize = newFontSize;
-
-                                        graph.getDataModel().setStyle(cell, finalStyle);
-                                    }
-                                }
-                            }
-                            if (cellID) {
-                                cellHistory[cellID] = [newWidth, newHeight];
-                            }
-
                             // Only persist user-initiated drags; skip events fired during renderGraph.
                             if (!isRenderingRef.current && isGoalRefId(cellID)) {
                                 const geo = cell.getGeometry();
                                 if (geo !== null && change.previous &&
+                                    geo.width === change.previous.width && geo.height === change.previous.height &&
                                     (geo.x !== change.previous.x || geo.y !== change.previous.y)) {
                                     parseGoalRefId(cellID).forEach(({instanceId}) => {
                                         dispatch(updatePositionForInstanceId({instanceId, x: geo.x, y: geo.y}));
@@ -362,11 +297,12 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                 }
                             }
                         }
-                        else if (change.constructor.name == "ValueChange") {
-                            const cell: Cell = change.cell;
-                            // goal id
+                        else if (change instanceof ValueChange) {
+                            const {cell, value} = change;
+                            const cellID = cell.getId();
+                            if (!isGoalRefId(cellID) || typeof value !== "string") continue;
 
-                            if (isGoalNameEmpty(change.value)) {
+                            if (isGoalNameEmpty(value)) {
                                 graph.getDataModel().setValue(cell, change.previous);
                                 setErrorModal({
                                     show: true,
@@ -379,8 +315,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
                             const numericCellIds = getCellNumericIds(cell);
                             const newGoalValues = isNonFunctionCell(cell)
-                                ? convertEditingValueToList(change.value)
-                                : [change.value];
+                                ? convertEditingValueToList(value)
+                                : [value];
 
                             // Check if the number of items matches
                             const nUpdated = numericCellIds.length;
@@ -395,10 +331,9 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                                     onHide: () => setErrorModal(prev => ({...prev, show: false}))
                                 });
                             } else {
-                                if (isNonFunctionCell(cell)) {
-                                    // The predicate has already matched a non-empty ID prefix.
-                                    editedNonFunctionalCellIdsRef.current.add(cell.getId()!);
-                                }
+                                // The graph value has already changed, so its next
+                                // layout snapshot alone cannot detect this edit.
+                                editedCellIdsRef.current.add(cellID);
                                 numericCellIds.forEach((instanceId, i) => {
                                     dispatch(updateTextForInstanceId({instanceId, text: newGoalValues[i]}));
                                 });
@@ -407,10 +342,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
                     }
                 } finally {
                     graph.getDataModel().endUpdate();
-                    // Style changes are already redrawn by maxGraph and must retain the hidden label while editing.
-                    if (hasNonStyleChanges) {
-                        graph.refresh();
-                    }
+                    // maxGraph updates the view for model changes. A full refresh
+                    // would recreate the label that the active editor has hidden.
                 }
             };
         graph.addListener(InternalEvent.CLICK, goalLinkClickHandler);
@@ -433,7 +366,7 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const supportFunctions = (graph: Graph) => {
         // delete: add key-handler that listens for 'delete' key
-        const keyHandler = new KeyHandler(graph);
+        const keyHandler = new GoalKeyHandler(graph);
         keyHandler.bindKey(DELETE_KEYBINDING, () => {
             if (graph.isEnabled()) {
 
@@ -479,32 +412,15 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         graph.getDataModel().addListener(InternalEvent.UNDO, listener);
         graph.getView().addListener(InternalEvent.UNDO, listener);
 
-        // undo: add key-handler that listens for 'command'+'z' to execute undo
-        const undoKeyHandler = new KeyHandler(graph);
-        undoKeyHandler.getFunction = (evt: KeyboardEvent) => {
-            // if mac command key pressed ...
-            if (Client.IS_MAC && evt.metaKey) {
-                // ... and z pressed
-                if (evt.code === "KeyZ") {
-                    // ... and provided that we have some history to undo
-                    //   DO NOT DELETE : removing this guard can crash the web browser
-                    if (undoManager.indexOfNextAdd > 1) {
-                        // ... then we can execute undo
-                        undoManager.undo();
-                    }
-                }
-                // if windows control key pressed ...
-            } else if (Client.IS_WIN && evt.ctrlKey) {
-                if (evt.code === "KeyZ") {
-                    // ... and provided that we have some history to undo
-                    //   DO NOT DELETE : removing this guard can crash the web browser
-                    if (undoManager.indexOfNextAdd > 1) {
-                        // ... then we can execute undo
-                        undoManager.undo();
-                    }
-                }
-            }
-            return null;
+        keyHandler.bindControlKey(UNDO_KEYBINDING, () => {
+            // Keep the initial graph creation outside the user's undo range.
+            if (undoManager.indexOfNextAdd > 1) undoManager.undo();
+        });
+
+        return () => {
+            keyHandler.onDestroy();
+            graph.getDataModel().removeListener(listener);
+            graph.getView().removeListener(listener);
         };
     };
 
@@ -548,8 +464,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
 
     const renderGraph = useCallback(() => {
         if (!graph) return;
-        const nonFunctionalGeometry = captureNonFunctionalGeometry(graph);
-        const editedNonFunctionalCellIds = new Set(editedNonFunctionalCellIdsRef.current);
+        const goalGeometry = captureGoalGeometry(graph);
+        const editedCellIds = new Set(editedCellIdsRef.current);
         const selectedIds = graph.getSelectionCells().map((cell) => cell.getId());
         // Declare necessary variables
         // Use rootGoalWrapper to be able to update its value
@@ -610,30 +526,46 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
         restoreSavedPositions(graph, cluster.ClusterGoals);
         // A newly opened model owns its saved layout, not snapshots from the
         // previous model. Apply once so later manual resizing is not undone.
-        if (appliedLayoutRef.current !== nonFunctionalLayout) {
-            applyNonFunctionalLayout(graph, nonFunctionalLayout);
-            appliedLayoutRef.current = nonFunctionalLayout;
+        let changedLabelCells: Cell[] = [];
+        const isNewLayout = appliedLayoutRef.current?.functional !== functionalLayout
+            || appliedLayoutRef.current?.nonFunctional !== nonFunctionalLayout;
+        if (isNewLayout) {
+            applyGoalLayout(graph, nonFunctionalLayout);
+            applyGoalLayout(graph, functionalLayout);
+            appliedLayoutRef.current = {functional: functionalLayout, nonFunctional: nonFunctionalLayout};
         } else {
-            // Subsequent redraws must preserve the imported layout plus any
-            // manual adjustments made since opening it, not replay old values.
-            if (Object.keys(nonFunctionalLayout).length > 0) {
-                applyNonFunctionalLayout(graph, Object.fromEntries(nonFunctionalGeometry));
-            }
-            restoreNonFunctionalGeometry(
+            changedLabelCells = restoreGoalGeometry(
                 graph,
-                nonFunctionalGeometry,
-                editedNonFunctionalCellIds,
-                VERTEX_FONT.size * 0.25
+                goalGeometry,
+                editedCellIds,
+                {
+                    hierarchyUnchanged: hasSameGoalHierarchy(renderedTreeRef.current, treeData),
+                    hasSavedLayout: Object.keys(nonFunctionalLayout).length > 0 || Object.keys(functionalLayout).length > 0,
+                }
             );
         }
 
         graph.getDataModel().endUpdate();
-        editedNonFunctionalCellIdsRef.current.clear();
+        // Measure the latest labels only after restored geometry/font render.
+        const newDoCells = graph.getChildVertices(graph.getDefaultParent()).filter(cell =>
+            isDoCell(cell) && (isNewLayout || !goalGeometry.has(cell.getId()!)));
+        const cellsToFit = new Set([...changedLabelCells, ...newDoCells]);
+        const resizedLabels = Array.from(cellsToFit, cell => ({
+            cell,
+            geometry: getGeometryToFitLabel(graph, cell, graph.getCellStyle(cell).fontSize ?? VERTEX_FONT.size),
+        }));
+        graph.batchUpdate(() => {
+            resizedLabels.forEach(({cell, geometry}) => {
+                if (geometry) graph.getDataModel().setGeometry(cell, geometry);
+            });
+        });
+        editedCellIdsRef.current.clear();
+        renderedTreeRef.current = treeData;
         graph.setSelectionCells(selectedIds
             .map((id) => id ? graph.getDataModel().getCell(id) : undefined)
             .filter((cell): cell is Cell => !!cell));
         isRenderingRef.current = false;
-    }, [graph, cluster, showLineBetweenNonFunctionalGoals, nonFunctionalLayout]);
+    }, [graph, cluster, treeData, showLineBetweenNonFunctionalGoals, nonFunctionalLayout, functionalLayout]);
 
     // First useEffect to set up graph. Only run on mount.
     useEffect(() => {
@@ -654,12 +586,13 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             setGraphStyle(graphInstance);
             const removeChangeListener = graphListener(graphInstance);
             fixEditorPosition(graphInstance);
-            supportFunctions(graphInstance);
+            const removeKeyboardHandlers = supportFunctions(graphInstance);
             registerCustomShapes();
             setGraph(graphInstance);
 
             return () => {
                 removeChangeListener();
+                removeKeyboardHandlers();
                 graphInstance.destroy();
                 setGraph(null);
             };
@@ -672,7 +605,8 @@ const GraphWorker: React.FC<{ showGraphSection?: boolean }> = ({showGraphSection
             const previous = previousRenderRef.current;
             // Recolour existing cells without rerunning layout
             const coloursUpdated = previous?.graph === graph &&
-                appliedLayoutRef.current === nonFunctionalLayout &&
+                appliedLayoutRef.current?.nonFunctional === nonFunctionalLayout &&
+                appliedLayoutRef.current?.functional === functionalLayout &&
                 previous.showLines === showLineBetweenNonFunctionalGoals &&
                 updateGoalColours(graph, previous.cluster.ClusterGoals, cluster.ClusterGoals);
             if (!coloursUpdated && cluster.ClusterGoals.length > 0) {

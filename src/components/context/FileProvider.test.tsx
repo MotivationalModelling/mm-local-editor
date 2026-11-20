@@ -280,6 +280,17 @@ describe('corrupted localStorage recovery', () => {
 });
 
 describe('#convertTreeDataToClusters', () => {
+    it('uses current goal text, type and URL while keeping tree placement', () => {
+        const original = newTreeGoal({id: 10, type: "Do", content: "Old text"});
+        const treeGoal = {...original, x: 100, y: 200, color: "red"};
+        const current = {...original, type: "Be" as const, content: 'Careful, "prepared"', url: "https://example.com/current"};
+        const cluster = convertTreeDataToClusters([treeGoal], {10: current});
+        expect(cluster.ClusterGoals[0]).toMatchObject({
+            GoalContent: current.content, GoalType: "Quality", url: current.url, x: 100, y: 200, GoalColor: "red",
+        });
+        expect(treeGoal.content).toBe("Old text");
+    });
+
     it('preserves goal URLs used by the graph renderer', () => {
         const treeGoal = newTreeGoal({
             type: "Do",

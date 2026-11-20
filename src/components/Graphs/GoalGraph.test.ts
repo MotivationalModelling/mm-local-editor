@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import {Cell, CellEditorHandler, CellState, InternalMouseEvent} from "@maxgraph/core";
+import {Cell, CellEditorHandler, CellState, Client, EventObject, InternalEvent, InternalMouseEvent, Rectangle, UndoManager} from "@maxgraph/core";
 import {GoalGraph} from "./GoalGraph";
 import {GoalCellEditorHandler} from "./GoalCellEditorHandler";
 import {convertEditingValueToList, convertListToEditingValue} from "./GraphLabelUtils";
@@ -16,10 +16,14 @@ const renderLinkedGoal = (graph: GoalGraph, id: number) => {
 };
 
 describe("goal label extensions", () => {
+    const originalNoForeignObject = Client.NO_FO;
     let graph: GoalGraph;
     let container: HTMLDivElement;
 
     beforeEach(() => {
+        // jsdom cannot detect foreignObject support, but can build its DOM.
+        // Exercise the SVG label path used by the supported browsers.
+        Client.NO_FO = false;
         container = document.createElement("div");
         document.body.appendChild(container);
         graph = new GoalGraph(container, undefined, [GoalCellEditorHandler]);
@@ -28,6 +32,7 @@ describe("goal label extensions", () => {
     afterEach(() => {
         graph.destroy();
         container.remove();
+        Client.NO_FO = originalNoForeignObject;
     });
 
     it("registers the editor under the standard plugin ID", () => {
@@ -59,11 +64,27 @@ describe("goal label extensions", () => {
         expect(links.map(link => link.getAttribute("href")))
             .toEqual(["https://example.com/goal-1", "https://example.com/goal-2"]);
         links.forEach((link, index) => {
-            expect(link.textContent).toContain(`Goal${index + 1}`);
+            expect(link.textContent).toContain(`Goal ${index + 1}`);
             expect(link.getAttribute("target")).toBe("_blank");
             expect(link.getAttribute("rel")).toBe("noopener noreferrer");
         });
         expect(svg.outerHTML).toBe(original);
+    });
+
+    it("undoes and redoes a Who resize and its font together", () => {
+        const cell = graph.insertVertex(graph.getDefaultParent(), "Nonfunctional-[1:1]", "Team", 0, 0, 100, 200,
+            {shape: "personShape", fontSize: 24});
+        const undo = new UndoManager();
+        graph.getDataModel().addListener(InternalEvent.UNDO, (_sender: unknown, event: EventObject) => undo.undoableEditHappened(event.getProperty("edit")));
+        graph.resizeCells([cell], [new Rectangle(0, 0, 80, 160)], false);
+        expect(cell.getStyle().fontSize).toBe(19);
+        expect(cell.getGeometry()!.width).toBe(80);
+        undo.undo();
+        expect(cell.getStyle().fontSize).toBe(24);
+        expect(cell.getGeometry()!.width).toBe(100);
+        undo.redo();
+        expect(cell.getStyle().fontSize).toBe(19);
+        expect(cell.getGeometry()!.width).toBe(80);
     });
 
     it.each(["cloudShape", "heartShape", "negativeShape"])("formats %s as a list without losing punctuation", shape => {

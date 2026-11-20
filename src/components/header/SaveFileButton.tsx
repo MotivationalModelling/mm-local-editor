@@ -6,15 +6,15 @@ import ErrorModal, {ErrorModalProps} from "../ErrorModal";
 import {returnFocusToGraph} from "../utils/GraphUtils";
 import {createModelFileContent} from "../utils/modelJson";
 import {useGraph} from "../context/GraphContext";
-import {captureNonFunctionalLayout} from "../Graphs/GraphGeometryUtils";
+import {captureGoalLayouts} from "../Graphs/GraphGeometryUtils";
 
 const SaveFileButton = () => {
-    const {setJsonFileHandle, treeData, tabData, goals, nonFunctionalLayout} = useFileContext();
+    const {setJsonFileHandle, treeData, tabData, goals, nonFunctionalLayout, functionalLayout} = useFileContext();
     const {graph} = useGraph();
-    const currentModel = useRef({treeData, tabData, goals, nonFunctionalLayout});
+    const currentModel = useRef({treeData, tabData, goals, nonFunctionalLayout, functionalLayout});
     useLayoutEffect(() => {
-        currentModel.current = {treeData, tabData, goals, nonFunctionalLayout};
-    }, [treeData, tabData, goals, nonFunctionalLayout]);
+        currentModel.current = {treeData, tabData, goals, nonFunctionalLayout, functionalLayout};
+    }, [treeData, tabData, goals, nonFunctionalLayout, functionalLayout]);
     const [errorModal, setErrorModal] = useState<ErrorModalProps>({
         show: false,
         title: "Cannot Save Model",
@@ -36,8 +36,8 @@ const SaveFileButton = () => {
             }
             const snapshot = currentModel.current;
             // Capture current model data and validate it before opening a file.
-            const layout = graph ? captureNonFunctionalLayout(graph) : snapshot.nonFunctionalLayout;
-            const json = createModelFileContent(snapshot.tabData, snapshot.treeData, snapshot.goals, layout);
+            const layout = graph ? captureGoalLayouts(graph) : snapshot;
+            const json = createModelFileContent(snapshot.tabData, snapshot.treeData, snapshot.goals, layout.nonFunctionalLayout, layout.functionalLayout);
             const handle = await window.showSaveFilePicker({
                 suggestedName: "model.json",
                 types: [{description: "JSON Files", accept: {"application/json": [".json"]}}],

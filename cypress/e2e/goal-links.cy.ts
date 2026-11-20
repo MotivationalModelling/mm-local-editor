@@ -13,20 +13,20 @@ describe("Related links after develop integration", () => {
 
         cy.contains("Arrange Hierarchy / Render Model").click();
         cy.window().then((win) => cy.stub(win, "open").as("openLink"));
-        cy.get('#graphContainer text').contains(/^Do$/)
-            .should('have.css', 'fill', 'rgb(13, 110, 253)')
+        cy.get('#graphContainer .goal-label-text').contains(/^Do$/)
+            .should('have.css', 'color', 'rgb(13, 110, 253)')
             .click({force: true});
         cy.get('@openLink').should('have.been.calledWith', url, '_blank', 'noopener,noreferrer');
 
         cy.reload();
         cy.contains("Arrange Hierarchy / Render Model").click();
         cy.window().then((win) => cy.stub(win, "open").as("restoredLink"));
-        cy.get('#graphContainer text').contains(/^Do$/).click({force: true});
+        cy.get('#graphContainer .goal-label-text').contains(/^Do$/).click({force: true});
         cy.get('@restoredLink').should('have.been.calledWith', url, '_blank', 'noopener,noreferrer');
     });
 
     for (const type of ['Be', 'Feel', 'Concern']) {
-        it(`${type}: preserves list editing, links and exports when a group becomes a single goal`, () => {
+        it(`${type}: preserves scaled labels, links and exports when a group becomes a single goal`, () => {
             const url = `https://example.com/${type.toLowerCase()}`;
             const rootUrl = 'https://example.com/root';
             const content = 'Careful, "prepared" & ready';
@@ -66,6 +66,9 @@ describe("Related links after develop integration", () => {
             cy.get('#graphContainer li').should('have.length', 2)
                 .and('have.css', 'list-style-type', 'disc').first().click({force: true});
             cy.get('@openGroupedLink').should('not.have.been.called');
+            cy.contains('.card-subtitle', 'Font size').click();
+            cy.contains('.card-subtitle', 'Font size').closest('.card').find('input')
+                .type('{selectall}32').should('have.value', '32');
 
             cy.get('#clusterTab').click();
             cy.contains('.nav-link', new RegExp(`^${type}$`)).click();
@@ -105,6 +108,8 @@ describe("Related links after develop integration", () => {
             cy.wrap(null).should(() => {
                 expect(JSON.parse(saved).treeData.find((goal: {id: number}) => goal.id === 2))
                     .to.include({content: edited, url});
+                const layouts = Object.values(JSON.parse(saved).nonFunctionalLayout) as {fontSize: number}[];
+                expect(layouts[0].fontSize).to.equal(32);
             });
 
             cy.visit('/');
@@ -119,6 +124,8 @@ describe("Related links after develop integration", () => {
             cy.get('#graphContainer li').should('have.length', 1)
                 .and('have.text', edited).and('have.css', 'list-style-type', 'none').click({force: true});
             cy.get('@reopenedLink').should('have.been.calledWith', url, '_blank', 'noopener,noreferrer');
+            cy.contains('.card-subtitle', 'Font size').click();
+            cy.contains('.card-subtitle', 'Font size').closest('.card').find('input').should('have.value', '32');
         });
     }
 });

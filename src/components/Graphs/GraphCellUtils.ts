@@ -11,3 +11,6 @@ export const hasCellId = (id: string | null): id is string => (
 export const isNonFunctionCell = (cell: Pick<Cell, "getId">): boolean => (
     cell.getId()?.startsWith("Nonfunctional-") ?? false
 );
+
+export const isFunctionCellId = (id: string | null): boolean => id?.startsWith("Functional-") ?? false;
+export const isFunctionCell = (cell: Pick<Cell, "getId">): boolean => isFunctionCellId(cell.getId());

@@ -17,8 +17,9 @@ import {
     SymbolKey
 } from "../utils/GraphConstants.tsx";
 
-import {getSymbolKeyByType, formatFunGoalRefId, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, isGoalRefId, parseGoalRefId} from "../utils/GraphUtils";
+import {getSymbolKeyByType, generateCellId, getNonFunctionalGoalColor, makeLabelForGoalType, isTypeAdjustableByText, isGoalRefId, parseGoalRefId} from "../utils/GraphUtils";
 import {getListLabelArea} from "./GraphLabelUtils";
+import {registerNonFunctionalGroup} from "./GraphGeometryUtils";
 
 // ---------------------------------------------------------------------------
 // some image path
@@ -212,8 +213,6 @@ export const renderFunction = (
 ) => {
     const config = SYMBOL_CONFIGS.FUNCTIONAL;
 
-    const arr = goal.GoalContent.split(" ");
-
     // Dynamically set size, based on source (parent) size
     let width = SYMBOL_WIDTH;
     let height = SYMBOL_HEIGHT;
@@ -235,10 +234,10 @@ export const renderFunction = (
 
     // Make sure to specify what shape we're drawing
     style.shape = config.shape;
+    Object.assign(style, {overflow: "fill", whiteSpace: "wrap", verticalAlign: "top", spacing: 0});
 
     style.perimeter = "none"; // Disables the perimeter check so the line reaches the center
 
-    const goalName = formatFunGoalRefId(goal)
     // insert new vertex and edge into graph
     // between functional goal, should connect with edge, rather than cell hierachy
     // Using null ensures the coordinates (SYMBOL_X_COORD, SYMBOL_Y_COORD) are absolute,
@@ -247,7 +246,7 @@ export const renderFunction = (
     const node = graph.insertVertex(
         null,
         generateCellId("Functional", goal.instanceId),
-        arr.join("\n"),
+        goal.GoalContent,
         DEFAULT_ROOT_GOAL_COORD.x,
         DEFAULT_ROOT_GOAL_COORD.y,
         width,
@@ -276,22 +275,7 @@ export const renderFunction = (
     }
 
 
-    //resize functional goal base on text length and number of lines
-    const node_geo = node.getGeometry();
-    const preferred = graph.getPreferredSizeForCell(node); //getPreferredSizeForCell only works for width
-    if (node_geo && preferred) {
-        node_geo.height = arr.length * VERTEX_FONT.size * VERTEX_FONT.scaleHeight; //get height base on the number of lines in goal text and font size
-        node_geo.width = Math.max(
-            node_geo.height,
-            preferred.width * config.scale.width,
-            width
-        );
-        node_geo.height = Math.max(
-            node_geo.height,
-            preferred.height * config.scale.height,
-            height
-        );
-    }
+    // Fit the rendered label after layout using the shared text measurement.
     // then recurse over the goal's children
     renderGoals(
         goal.SubGoals,
@@ -540,6 +524,7 @@ export const renderNonFunction = (
         style
     );
     registerGoalLink(node, goalUrl);
+    registerNonFunctionalGroup(node, source, type);
     console.log("Nonfunctional-goal-node:", node);
     // Insert an invisible edge
     if (showLineBetweenNonFunctionalGoals) {
