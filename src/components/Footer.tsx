@@ -8,7 +8,7 @@ const Footer = () => {
       <p className="text-center">
         Version: {pkg.version}
         <br />
-        &copy;<em>2018-2025 Queue Solutions Pty Ltd</em>
+        &copy; <em>2018-2026 Queue Solutions Pty Ltd</em>
         <br />
         All rights reserved
         <br />
